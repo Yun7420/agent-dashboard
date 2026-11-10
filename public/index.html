@@ -175,7 +175,55 @@
   #drawer .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--faint); }
   #drawer .search input { width: 100%; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; padding: 7px 10px 7px 32px; outline: none; }
   #drawer .search input:focus { border-color: var(--accent); }
+  #log-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  #log-view[hidden] { display: none; }
+  #log-view .search { margin: 12px 18px 4px; }
   #log-list { overflow-y: auto; flex: 1; min-height: 60px; }
+  .tabs { display: flex; gap: 4px; margin-top: 12px; padding: 3px; background: var(--surface-2); border-radius: 10px; width: fit-content; }
+  .tab { border: none; background: transparent; color: var(--dim); padding: 5px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; }
+  .tab.on { background: var(--surface-3); color: var(--text); box-shadow: 0 1px 0 rgba(255,255,255,.06) inset; }
+  .tab:hover:not(.on) { color: var(--text); background: transparent !important; }
+  #log-count { color: var(--faint); font-weight: 500; margin-left: 2px; }
+  #now-view { flex: 1; min-height: 0; overflow: hidden; padding: 14px 18px 8px; display: flex; flex-direction: column; gap: 10px; }
+  #now-view[hidden] { display: none; }
+  .now-prompt { flex: none; align-self: flex-end; max-width: 88%; background: var(--accent-soft); border: 1px solid rgba(139, 124, 246, .28); border-radius: 12px 12px 4px 12px; padding: 8px 12px; font-size: 12.5px; color: #dcd6ff; white-space: pre-wrap; word-break: break-word; max-height: 7.5em; overflow: auto; }
+  .now-prompt:empty { display: none; }
+  .now-card { flex: 1 1 0; min-height: 0; overflow-y: auto; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; }
+  .now-card.working { border-color: rgba(245, 185, 66, .45); box-shadow: 0 0 0 3px rgba(245, 185, 66, .08); }
+  .now-card.waiting { border-color: rgba(251, 111, 146, .5); }
+  .now-head { flex: none; position: sticky; top: -14px; z-index: 1; margin-top: -14px; padding-top: 14px; padding-bottom: 8px; background: var(--surface-2); display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 11.5px; color: var(--faint); }
+  .who-now { font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--claude); }
+  .now-time { margin-left: auto; }
+  .now-reply { font-size: 14px; line-height: 1.75; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+  .now-card { position: relative; }
+  /* 빈 상태 문구는 카드(머리 아래 영역)의 정가운데에 — 스크롤 영역 높이와 상관없이 */
+  .now-reply.empty { position: absolute; inset: 44px 0 0 0; color: var(--faint); font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+  #now-changes:empty { display: none; }
+  #now-changes { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .chg-h { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--dim); }
+  .chg-h .sum { margin-left: auto; font-family: var(--mono); font-weight: 500; }
+  .add { color: var(--ok); } .del { color: var(--waiting); }
+  .chg-file { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg); }
+  .chg-file summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 7px 10px; font-size: 12px; }
+  .chg-file summary::-webkit-details-marker { display: none; }
+  .chg-file summary::before { content: '▸'; color: var(--faint); transition: transform .15s; }
+  .chg-file[open] summary::before { transform: rotate(90deg); }
+  .chg-file .fn { font-family: var(--mono); color: var(--text); white-space: nowrap; flex: none; }
+  .chg-file .dir { font-family: var(--mono); color: var(--faint); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .chg-file .tl { font-size: 10.5px; color: var(--faint); border: 1px solid var(--border); border-radius: 6px; padding: 0 6px; flex: none; }
+  .chg-file .n { margin-left: auto; font-family: var(--mono); font-size: 11.5px; flex: none; }
+  .diff { font: 11.5px/1.55 var(--mono); max-height: 320px; overflow: auto; border-top: 1px solid var(--border); }
+  .diff .hk { color: var(--faint); padding: 4px 10px; background: var(--surface-2); border-top: 1px solid var(--border); }
+  .diff .hk:first-child { border-top: none; }
+  .diff div.l { white-space: pre; padding: 0 10px; }
+  .diff .l.a { background: rgba(62, 207, 142, .13); color: #b6f2d3; }
+  .diff .l.r { background: rgba(251, 111, 146, .13); color: #ffc4d2; }
+  .diff .l.c { color: var(--faint); }
+  .chg-cmds summary { font-size: 12px; color: var(--dim); cursor: pointer; padding: 4px 0; }
+  .chg-cmds code { display: block; white-space: pre-wrap; word-break: break-all; padding: 6px 10px; margin-top: 4px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); color: #d5d8f0; font-size: 11.5px; }
+  .chg-cmds .ds { color: var(--faint); font-size: 11px; margin: 6px 0 0 2px; }
+  #now-state { display: inline-flex; align-items: center; gap: 6px; }
+  #drawer.approving #now-view { display: none; } /* 승인 창이 곧 "지금" — 승인과 입력창만 보이게 */
   .commit { padding: 16px 18px; border-bottom: 1px solid var(--border); }
   .commit .m { display: flex; gap: 8px; align-items: center; color: var(--faint); font-size: 11px; margin-bottom: 8px; }
   .commit .m .sha { color: var(--accent); font-weight: 700; font-family: var(--mono); }
@@ -194,23 +242,22 @@
   .md .h { color: var(--text); font-weight: 700; }
   #d-now .lbl { color: var(--accent); font-weight: 600; }
 
-  #busy { display: flex; align-items: center; gap: 10px; margin: 0 14px 10px; padding: 9px 12px; border-radius: 10px; background: rgba(245, 185, 66, .07); border: 1px solid rgba(245, 185, 66, .25); color: #f3d79c; font-size: 12.5px; }
+  #busy { display: none !important; align-items: center; gap: 10px; margin: 0 14px 10px; padding: 9px 12px; border-radius: 10px; background: rgba(245, 185, 66, .07); border: 1px solid rgba(245, 185, 66, .25); color: #f3d79c; font-size: 12.5px; }
   #busy[hidden] { display: none; }
   #busy-time { margin-left: auto; color: var(--faint); font-size: 11.5px; }
   .spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(245, 185, 66, .25); border-top-color: var(--working); animation: spin .8s linear infinite; flex: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
   /* 승인 창이 떠 있으면 승인과 입력창이 먼저 보이게, 최근 답변·검색은 잠깐 접는다 */
-  #drawer.approving .now, #drawer.approving .search { display: none; }
-  #drawer.approving #log-list { min-height: 0; flex: 0 1 auto; max-height: 0; }
+  #drawer.approving #log-view { display: none; }
   #approval { flex: none; max-height: 52%; overflow-y: auto; margin: 0 12px 10px; border: 1px solid rgba(251, 111, 146, .4); background: rgba(251, 111, 146, .06); border-radius: 12px; padding: 12px 14px; }
   #approval h3 { margin: 0 0 8px; font-size: 13px; color: var(--waiting); }
   #approval pre { margin: 0 0 10px; max-height: 170px; overflow: auto; font: 11px/1.4 var(--mono); white-space: pre-wrap; color: #f3d6e0; background: rgba(0, 0, 0, .25); border-radius: 8px; padding: 8px 10px; }
   #approval .btns { display: flex; flex-wrap: wrap; gap: 6px; }
 
   #composer { flex: none; padding: 12px 14px 14px; border-top: 1px solid var(--border); }
-  #composer .box { background: var(--bg); border: 1px solid var(--border-strong); border-radius: 12px; padding: 8px 10px 6px; transition: border-color .15s, box-shadow .15s; }
+  #composer .box { background: var(--bg); border: 1px solid rgba(139, 124, 246, .35); border-radius: 14px; padding: 10px 12px 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, .25); transition: border-color .15s, box-shadow .15s; }
   #composer .box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139, 124, 246, .15); }
-  #composer textarea { display: block; width: 100%; height: 52px; resize: none; background: transparent; border: none; outline: none; padding: 2px 2px 6px; }
+  #composer textarea { display: block; width: 100%; height: 60px; font-size: 13.5px; resize: none; background: transparent; border: none; outline: none; padding: 2px 2px 6px; }
   #composer .bar { display: flex; align-items: center; justify-content: space-between; }
   #composer .kbd-hint { color: var(--faint); font-size: 11px; }
   #composer .actions { display: flex; gap: 6px; }
@@ -363,10 +410,23 @@
         <button class="ghost" id="close" title="세션은 그대로 두고 이 패널만 접어요">패널 접기 →</button>
       </div>
       <div class="meta" id="d-meta"></div>
-      <div class="now" id="d-now"></div>
-      <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="d-search" placeholder="프롬프트 검색" /></div>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab on" data-tab="now">지금</button>
+        <button type="button" class="tab" data-tab="log">기록 <span id="log-count"></span></button>
+      </div>
     </div>
-    <div id="log-list"></div>
+    <div id="now-view">
+      <div class="now-prompt" id="now-prompt"></div>
+      <div class="now-card">
+        <div class="now-head"><span class="who-now">CLAUDE</span><span id="now-state"></span><span id="now-time" class="now-time"></span></div>
+        <div class="now-reply md" id="now-reply"></div>
+        <div id="now-changes"></div>
+      </div>
+    </div>
+    <div id="log-view" hidden>
+      <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="d-search" placeholder="프롬프트 검색" /></div>
+      <div id="log-list"></div>
+    </div>
     <div id="busy" hidden><span class="spinner"></span><span id="busy-text">작업 중</span><span id="busy-time" class="mono"></span></div>
     <div id="approval" hidden>
       <h3>⚠ 승인 요청 — 무엇을 허락하는지 확인하고 누르세요</h3>
@@ -505,6 +565,7 @@ let state = null;
 let prev = new Map();
 let selected = null;
 let promptLog = [];
+let lastSelected = null;
 
 function ago(iso) {
   if (!iso) return '';
@@ -815,11 +876,14 @@ async function select(key) {
   const s = state.sessions.find((x) => x.key === key);
   if (!s) return;
   if (!$('#drawer').classList.contains('open')) { $('#drawer').classList.add('open'); view.init = false; renderGraph(); }
+  if (key !== lastSelected) { setTab('now'); promptLog = []; lastSelected = key; openFiles.clear(); }
   renderDrawerHead(s);
   $('#log-list').innerHTML = '<div class="commit"><span class="m">기록 읽는 중…</span></div>';
   if (s.orphan) { $('#log-list').innerHTML = '<div class="commit"><span class="m">아직 기록 파일이 없는 세션이에요</span></div>'; return; }
   promptLog = await fetch(`/api/history?key=${encodeURIComponent(key)}`).then((r) => r.json()).catch(() => []);
   renderHistory();
+  const cur = state.sessions.find((x) => x.key === key);
+  if (cur && selected === key) renderNow(cur);
 }
 function renderDrawerHead(s) {
   $('#d-title').textContent = s.title;
@@ -829,8 +893,7 @@ function renderDrawerHead(s) {
   $('#d-model').value = fam;
   $('#d-model').disabled = !s.tmux || s.status === 'ended' || s.status === 'waiting';
   $('#d-model').title = $('#d-model').disabled ? '모델 바꾸기는 tmux 로 띄운 세션에서만 돼요' : '모델 바꾸기 — 세션에 /model 을 보내요';
-  $('#d-now').classList.add('md');
-  $('#d-now').innerHTML = s.lastText ? `<span class="lbl">최근 답변 ›</span> ${md(s.lastText)}` : '최근 답변 없음';
+  renderNow(s);
   renderComposer(s);
   renderBusy(s);
   renderApproval(s);
@@ -852,6 +915,104 @@ function renderComposer(s) {
   $('#why').innerHTML = why;
 }
 
+// ---------- 패널 탭: 지금(현재 답변) / 기록 ----------
+let drawerTab = 'now';
+function setTab(tab) {
+  drawerTab = tab;
+  document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+  $('#now-view').hidden = tab !== 'now';
+  $('#log-view').hidden = tab !== 'log';
+}
+document.querySelector('.tabs').addEventListener('click', (e) => { const b = e.target.closest('.tab'); if (b) setTab(b.dataset.tab); });
+
+// 지금 탭: 마지막 요청은 작게, 현재 답변은 크게
+function renderNow(s) {
+  const last = promptLog[0];
+  const prompt = s.lastPrompt || last?.prompt || '';
+  if ($('#now-prompt').textContent !== prompt) $('#now-prompt').textContent = prompt;
+  const card = document.querySelector('.now-card');
+  card.classList.toggle('working', s.status === 'working');
+  card.classList.toggle('waiting', s.status === 'waiting');
+  const working = s.status === 'working' || (sentAt && Date.now() - sentAt < 20000 && s.status === 'idle');
+  // 끝난 답변은 기록의 전체 답변, 작업 중이면 지금까지 나온 마지막 글
+  let reply = '';
+  if (working) reply = last && last.prompt === prompt && last.reply ? last.reply : '';
+  else reply = (last && last.reply) || s.lastText || '';
+  if (working && s.lastText && s.lastText !== reply && (!last || last.reply !== s.lastText)) reply = s.lastText;
+  const el = $('#now-reply');
+  el.classList.toggle('empty', !reply);
+  const html = reply ? md(reply) : working ? '<span class="spinner"></span>답변을 만들고 있어요…' : '아직 답변이 없어요';
+  if (el.dataset.src !== html) { el.innerHTML = html; el.dataset.src = html; } // 1초마다 다시 그려도 스크롤·선택이 튀지 않게
+  const stateHtml = working
+    ? `<span class="spinner" style="width:12px;height:12px"></span><span style="color:#f3d79c">${sentAt && s.status === 'idle' ? '전달됐어요 · 응답 기다리는 중' : `작업 중${s.lastTool ? ' · ' + esc(s.lastTool) : ''}`}</span>`
+    : s.status === 'waiting' ? `<span class="dot-s waiting"></span><span style="color:var(--waiting)">승인 필요</span>`
+    : `<span class="dot-s ${s.status}"></span>${STATUS_KO[s.status]}`;
+  if ($('#now-state').innerHTML !== stateHtml) $('#now-state').innerHTML = stateHtml;
+  const from = working ? (sentAt && s.status === 'idle' ? sentAt : Date.parse(s.lastPromptAt || s.lastAt)) : Date.parse(s.lastAt);
+  const sec = Math.max(0, Math.floor((Date.now() - from) / 1000));
+  $('#now-time').textContent = working ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : ago(s.lastAt);
+  $('#log-count').textContent = promptLog.length ? promptLog.length : '';
+  renderChanges(s);
+}
+
+// ---------- 이번 턴에 바꾼 파일 · 실행한 명령 ----------
+// 줄 단위 diff (작은 덩어리라 단순 LCS 로 충분)
+function lineDiff(a, b) {
+  const x = a.split('\n'), y = b.split('\n');
+  if (x.length * y.length > 250000) return [...x.map((l) => ['r', l]), ...y.map((l) => ['a', l])];
+  const n = x.length, m = y.length, dp = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) dp[i][j] = x[i] === y[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const out = [];
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (x[i] === y[j]) { out.push(['c', x[i]]); i++; j++; }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) out.push(['r', x[i++]]);
+    else out.push(['a', y[j++]]);
+  }
+  while (i < n) out.push(['r', x[i++]]);
+  while (j < m) out.push(['a', y[j++]]);
+  return out;
+}
+const openFiles = new Set(); // 1초마다 다시 그려도 펼친 파일은 펼친 채로
+function renderChanges(s) {
+  const ch = s.changes;
+  const box = $('#now-changes');
+  if (!ch || (!ch.edits.length && !ch.commands.length)) { if (box.innerHTML) box.innerHTML = ''; return; }
+  const byFile = new Map();
+  for (const e of ch.edits) {
+    if (!byFile.has(e.file)) byFile.set(e.file, []);
+    byFile.get(e.file).push(e);
+  }
+  let total = { a: 0, r: 0 };
+  const files = [...byFile].map(([file, list]) => {
+    let a = 0, r = 0, body = '';
+    list.forEach((e, k) => {
+      const lines = e.old == null ? e.new.split('\n').map((l) => ['a', l]) : lineDiff(e.old, e.new);
+      a += lines.filter((l) => l[0] === 'a').length;
+      r += lines.filter((l) => l[0] === 'r').length;
+      body += `<div class="hk">${esc(e.tool === 'Write' ? '새로 쓰기' : `수정 ${k + 1}`)} · ${new Date(e.at).toLocaleTimeString('ko-KR', { hour12: false })}</div>`;
+      body += lines.map(([t, l]) => `<div class="l ${t}">${t === 'a' ? '+' : t === 'r' ? '-' : ' '} ${esc(l)}</div>`).join('');
+    });
+    total.a += a; total.r += r;
+    const short = file.replace(/^\/Users\/[^/]+/, '~');
+    const name = short.split('/').pop();
+    const dir = short.slice(0, -name.length);
+    return `<details class="chg-file" data-f="${esc(file)}" ${openFiles.has(file) ? 'open' : ''}><summary title="${esc(file)}"><span class="fn">${esc(name)}</span><span class="dir">${esc(dir)}</span><span class="tl">${list.length}회</span><span class="n"><span class="add">+${a}</span> <span class="del">−${r}</span></span></summary><div class="diff">${body}</div></details>`;
+  });
+  let html = '';
+  if (files.length) html += `<div class="chg-h">변경한 파일 ${files.length}개<span class="sum"><span class="add">+${total.a}</span> <span class="del">−${total.r}</span></span></div>${files.join('')}`;
+  if (ch.commands.length) {
+    const open = openFiles.has('__cmds') ? 'open' : '';
+    html += `<details class="chg-cmds" data-f="__cmds" ${open}><summary>실행한 명령 ${ch.commands.length}개</summary>${ch.commands.slice().reverse().map((c) => `${c.description ? `<div class="ds">${esc(c.description)}</div>` : ''}<code>${esc(c.command)}</code>`).join('')}</details>`;
+  }
+  if (box.dataset.src !== html) { box.innerHTML = html; box.dataset.src = html; }
+}
+$('#now-changes').addEventListener('toggle', (e) => {
+  const f = e.target.dataset?.f;
+  if (!f) return;
+  if (e.target.open) openFiles.add(f); else openFiles.delete(f);
+}, true);
+
 // 진행 표시: 선택한 세션이 일하는 동안 스피너 + 지금 쓰는 도구 + 경과 시간
 let sentAt = null; // 방금 보낸 메시지 — 세션이 작업을 시작하기 전까지 "전달됨" 표시
 function renderBusy(s) {
@@ -867,7 +1028,7 @@ function renderBusy(s) {
   const sec = Math.max(0, Math.floor((Date.now() - from) / 1000));
   $('#busy-time').textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 }
-setInterval(() => { const s = selected && state?.sessions.find((x) => x.key === selected); if (s) renderBusy(s); }, 1000);
+setInterval(() => { const s = selected && state?.sessions.find((x) => x.key === selected); if (s) { renderBusy(s); renderNow(s); } }, 1000);
 
 // 승인 창: 터미널 화면을 그대로 보여 주고, 화면에서 찾은 번호 선택지를 버튼으로
 let paneTimer = null;

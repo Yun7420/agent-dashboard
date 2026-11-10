@@ -203,6 +203,7 @@ async function buildState(windowHours) {
       lastText: d.lastText,
       lastTool: d.lastTool,
       model: d.model ?? null,
+      changes: d.changes ?? null,
       context: contextInfo(d),
       lastAt: d.lastAt ?? new Date(s.mtimeMs).toISOString(),
       sizeMB: Math.round((s.size / 1048576) * 10) / 10,

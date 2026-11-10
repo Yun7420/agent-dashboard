@@ -54,6 +54,27 @@ function peerTexts(d) {
   return [];
 }
 
+// 이번 턴(마지막 사람 프롬프트 이후)에 고친 파일·실행한 명령. 화면에서 diff 로 보여 준다.
+const EDIT_TOOLS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit']);
+const CLIP_CODE = 3000;
+function collectChange(c, at, changes) {
+  const i = c.input ?? {};
+  if (EDIT_TOOLS.has(c.name)) {
+    const file = i.file_path || i.notebook_path;
+    if (!file) return;
+    const hunks =
+      c.name === 'MultiEdit' ? (i.edits ?? []).map((e) => ({ old: e.old_string ?? '', new: e.new_string ?? '' }))
+      : c.name === 'Write' ? [{ old: null, new: i.content ?? '' }]
+      : c.name === 'NotebookEdit' ? [{ old: null, new: i.new_source ?? '' }]
+      : [{ old: i.old_string ?? '', new: i.new_string ?? '' }];
+    for (const h of hunks) {
+      changes.edits.push({ at, file, tool: c.name, old: h.old == null ? null : clip(h.old, CLIP_CODE), new: clip(h.new, CLIP_CODE), oldLines: h.old == null ? 0 : h.old.split('\n').length, newLines: h.new.split('\n').length });
+    }
+  } else if (c.name === 'Bash' && i.command) {
+    changes.commands.push({ at, command: clip(i.command, 400), description: i.description ?? '' });
+  }
+}
+
 export default {
   id: 'claude',
   label: 'Claude Code',
@@ -102,6 +123,7 @@ export default {
   async describe(s) {
     let cwd = null, currentDir = null, aiTitle = null, titlePrompt = null, lastPrompt = null, lastPromptAt = null;
     let lastText = null, lastTool = null, turnState = 'idle', lastAt = null, model = null, contextUsed = null;
+    let changes = { edits: [], commands: [] };
     for (const l of await readTailLines(s.file)) {
       const d = parse(l);
       if (!d) continue;
@@ -114,6 +136,7 @@ export default {
         lastPromptAt = d.timestamp;
         if (!p.startsWith('/')) titlePrompt = p;
         turnState = 'working';
+        changes = { edits: [], commands: [] }; // 새 요청이 오면 이번 턴 변경 목록을 새로 시작
       } else if (d.type === 'user' && Array.isArray(d.message?.content) && !d.isSidechain) {
         turnState = 'working'; // 도구 결과가 막 돌아옴 → 다음 응답 생성 중
       } else if (d.type === 'assistant' && !d.isSidechain) {
@@ -122,7 +145,10 @@ export default {
         const u = d.message?.usage;
         if (u) contextUsed = (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
         for (const c of d.message?.content ?? []) {
-          if (c.type === 'tool_use') lastTool = c.name;
+          if (c.type === 'tool_use') {
+            lastTool = c.name;
+            collectChange(c, d.timestamp, changes);
+          }
           if (c.type === 'text' && c.text?.trim()) lastText = c.text.trim();
         }
         turnState = d.message?.stop_reason === 'end_turn' ? 'idle' : 'working';
@@ -154,6 +180,7 @@ export default {
       lastAt,
       model,
       contextUsed,
+      changes: { edits: changes.edits.slice(-40), commands: changes.commands.slice(-20) },
       subagents: await this.subagents(sessionDir),
     };
   },
