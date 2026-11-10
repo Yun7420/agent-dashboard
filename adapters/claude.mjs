@@ -12,7 +12,8 @@ import { clip, parse, readHeadLines, readJsonLines, readJsonOrNull, readTailLine
 
 const ROOT = path.join(os.homedir(), '.claude', 'projects');
 const exec = promisify(execFile);
-const LIVE_STATUS = { busy: 'working', idle: 'idle', waiting: 'waiting' };
+// shell = 응답은 끝났지만 백그라운드 명령(테스트·빌드 등)이 아직 도는 중 → 화면에선 "백그라운드 작업 중"
+const LIVE_STATUS = { busy: 'working', idle: 'idle', waiting: 'waiting', shell: 'background' };
 const encodeCwd = (cwd) => cwd.replace(/[^a-zA-Z0-9]/g, '-');
 
 // 사람이 친 프롬프트만 고른다 (도구 결과·시스템 주입·슬래시 명령 출력 제외).
@@ -110,8 +111,9 @@ export default {
   id: 'claude',
   label: 'Claude Code',
 
-  matchProcess(exeBase) {
-    return exeBase === 'claude';
+  matchProcess(exeBase, command = "") {
+    // `claude agents`, `claude --version` 같은 잠깐 실행되는 명령은 세션이 아니라서 뺀다
+    return exeBase === 'claude' && !/\bclaude\s+(agents|--version|-v|doctor|mcp|update|upgrade|auth|config|logs|attach|stop|kill|rm)\b/.test(command);
   },
 
   async scan() {
