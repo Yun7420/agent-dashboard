@@ -327,7 +327,7 @@
   #composer { flex: none; padding: 12px 16px 16px; border-top: 1px solid var(--border); }
   #composer .box { background: var(--bg); border: 1px solid rgba(139, 124, 246, .35); border-radius: 12px; padding: 10px 12px 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, .25); transition: border-color .15s, box-shadow .15s; }
   #composer .box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139, 124, 246, .15); }
-  #composer textarea { display: block; width: 100%; height: 60px; font-size: 14px; resize: none; background: transparent; border: none; outline: none; padding: 2px 2px 6px; }
+  #composer textarea { display: block; width: 100%; height: 60px; max-height: 60px; overflow-y: auto; font-size: 14px; resize: none; background: transparent; border: none; outline: none; padding: 2px 2px 6px; }
   #composer .bar { display: flex; align-items: center; justify-content: space-between; }
   #composer .kbd-hint { color: var(--faint); font-size: 11px; }
   #composer .actions { display: flex; gap: 6px; }
@@ -337,7 +337,7 @@
   .icon-btn { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border-radius: 8px; }
   #mic, #attach { background: transparent; border-color: transparent; color: var(--dim); }
   #attach:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
-  #attach-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  #attach-list { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; }
   #attach-list:not(:empty) { margin-bottom: 8px; }
   .att { display: inline-flex; align-items: center; gap: 6px; max-width: 220px; padding: 3px 6px 3px 3px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border-strong); font-size: 12px; color: var(--dim); }
   .att img, .att .ic { width: 28px; height: 28px; border-radius: 5px; object-fit: cover; flex: none; background: var(--surface-3); display: grid; place-items: center; font-size: 10px; }
@@ -993,7 +993,7 @@ async function select(key) {
   const s = state.sessions.find((x) => x.key === key);
   if (!s) return;
   if (!$('#drawer').classList.contains('open')) { $('#drawer').classList.add('open'); view.init = false; renderGraph(); }
-  if (key !== lastSelected) { setTab('now'); promptLog = []; lastSelected = key; openFiles.clear(); fullCmds.clear(); closedCmds = false; historyLimit = 80; }
+  if (key !== lastSelected) { setTab('now'); promptLog = []; lastSelected = key; delete $('#pane').dataset.seen; openFiles.clear(); fullCmds.clear(); closedCmds = false; historyLimit = 80; }
   renderDrawerHead(s);
   if (drawerTab === 'log') $('#log-list').innerHTML = '<div class="commit"><span class="m">기록 읽는 중…</span></div>';
   if (s.orphan) { $('#log-list').innerHTML = '<div class="commit"><span class="m">아직 기록 파일이 없는 세션이에요</span></div>'; return; }
@@ -1199,24 +1199,30 @@ async function renderApproval(s) {
   let text = '';
   try { text = await api(`/api/pane?key=${encodeURIComponent(s.key)}`); } catch (e) { text = `(화면을 못 읽었어요: ${e.message})`; }
   if (selected !== s.key) return;
-  $('#pane').textContent = text;
-  $('#pane').scrollTop = $('#pane').scrollHeight;
+  const pane = $('#pane');
+  if (pane.textContent !== text) {
+    const atBottom = pane.scrollHeight - pane.scrollTop - pane.clientHeight < 24 || !pane.dataset.seen;
+    pane.textContent = text;
+    if (atBottom) pane.scrollTop = pane.scrollHeight; // 처음 열 때와 맨 아래를 보고 있을 때만 따라 내려간다
+    pane.dataset.seen = '1';
+  }
   const options = [];
   for (const line of text.split('\n').slice(-20)) {
     const m = line.match(/^[\s│|]*(?:❯|›|>)?\s*([1-9])\.\s+(.+?)[\s│|]*$/);
     if (m && !options.some((o) => o.n === m[1])) options.push({ n: m[1], label: m[2] });
   }
-  $('#approve-btns').innerHTML =
+  const btnHtml =
     options.map((o) => `<button data-choice="${o.n}" class="${/^no\b|아니/i.test(o.label) ? 'danger' : o.n === '1' ? 'primary' : ''}">${esc(o.n)}. ${esc(o.label)}</button>`).join('') +
     `<button data-choice="esc" class="danger">거절 (Esc)</button>` +
     (options.length ? '' : `<span style="color:var(--faint);align-self:center">번호 없는 선택창 →</span><button data-choice="up">↑</button><button data-choice="down">↓</button><button data-choice="enter" class="primary">Enter (❯ 표시된 항목 선택)</button>`);
+  if ($('#approve-btns').dataset.src !== btnHtml) { $('#approve-btns').innerHTML = btnHtml; $('#approve-btns').dataset.src = btnHtml; }
   paneTimer = setTimeout(() => { const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 2000);
 }
 $('#approve-btns').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-choice]');
   if (!b || !selected) return;
   $('#approve-btns').querySelectorAll('button').forEach((x) => (x.disabled = true));
-  try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice }); if (!['up', 'down'].includes(b.dataset.choice)) toast(b.dataset.choice === 'esc' ? '거절했어요' : `${b.textContent} 선택했어요`); setTimeout(() => { const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 400); }
+  try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice }); if (!['up', 'down'].includes(b.dataset.choice)) toast(b.dataset.choice === 'esc' ? '거절했어요' : `${b.textContent} 선택했어요`); setTimeout(() => { $('#approve-btns').dataset.src = ''; const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 400); }
   catch (err) { toast(err.message); }
 });
 
