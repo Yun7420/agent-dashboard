@@ -1259,7 +1259,7 @@ async function renderApproval(s) {
       const picked = /✔\s*$/.test(o.label);
       const label = o.label.replace(/\s*✔\s*$/, '');
       const cls = picked ? 'primary' : /^no\b|아니/i.test(label) ? 'danger' : '';
-      return `<button data-choice="${o.n}" class="${cls}" ${picked ? 'title="지금 고른 답"' : ''}>${picked ? '✓ ' : ''}${esc(o.n)}. ${esc(label)}${picked ? ' <small>선택됨</small>' : ''}</button>`;
+      return `<button data-choice="${o.n}" class="${cls}" ${picked ? 'title="지금 고른 답"' : ''}>${picked ? '✓ ' : ''}${esc(o.n)}. ${esc(label)}</button>`;
     }).join('') +
     `<button data-choice="esc" class="danger">거절 (Esc)</button>` +
     (options.length ? '' : `<span style="color:var(--faint);align-self:center">번호 없는 선택창 →</span><button data-choice="up">↑</button><button data-choice="down">↓</button><button data-choice="enter" class="primary">Enter (❯ 표시된 항목 선택)</button>`);
