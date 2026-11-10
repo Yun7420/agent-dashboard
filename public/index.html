@@ -319,6 +319,10 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   /* 승인 창이 떠 있으면 승인과 입력창이 먼저 보이게, 최근 답변·검색은 잠깐 접는다 */
   #drawer.approving #log-view { display: none; }
+  /* 승인 중엔 승인 창이 남는 높이를 다 채우고(화면 내용은 그 안에서 스크롤), 입력창은 바닥에 그대로 */
+  #drawer.approving #approval { flex: 1 1 auto; max-height: none; min-height: 0; display: flex; flex-direction: column; margin-top: 12px; }
+  #drawer.approving #approval pre { flex: 1 1 auto; max-height: none; min-height: 80px; }
+  #composer { margin-top: auto; } /* 위 내용이 짧아도 입력창은 항상 패널 바닥에 */
   #approval { flex: none; max-height: 52%; overflow-y: auto; margin: 0 16px 10px; border: 1px solid rgba(251, 111, 146, .4); background: rgba(251, 111, 146, .06); border-radius: 12px; padding: 12px 14px; }
   #approval h3 { margin: 0 0 8px; font-size: 13px; color: var(--waiting); }
   #approval pre { margin: 0 0 10px; max-height: 170px; overflow: auto; font: 11px/1.4 var(--mono); white-space: pre-wrap; color: #f3d6e0; background: rgba(0, 0, 0, .25); border-radius: 8px; padding: 8px 10px; }
