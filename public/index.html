@@ -178,7 +178,7 @@
   .node.more rect { fill: transparent; stroke-dasharray: 3 3; }
   .node.more text { fill: var(--dim); opacity: 1 !important; }
   .node.more:hover rect { stroke: var(--accent); } /* 서브에이전트가 많을 때 그림자 효과가 화면을 무겁게 해서 테두리만 */
-  .edge.stack.working { animation: none; }
+  .edge.stack.working { stroke-dashoffset: 0; }
   .node.waiting rect { stroke: var(--waiting); filter: drop-shadow(0 0 12px rgba(251, 111, 146, .4)); }
   .node.ended rect { stroke: rgba(255, 255, 255, .06); }
   .node.background rect { stroke: rgba(245, 185, 66, .55); stroke-dasharray: 4 3; }
@@ -192,12 +192,12 @@
   .node.waiting .sdot { fill: var(--waiting); }
   .node.ended .sdot { fill: var(--ended); }
   .edge { fill: none; stroke: rgba(255, 255, 255, .55); stroke-width: 1.1; stroke-dasharray: 3 4; }
-  .edge.working { stroke: var(--working); animation: flow 1s linear infinite; }
+  /* 흐르는 점선은 CSS 애니메이션(초당 60번 다시 그림) 대신 스크립트가 초당 8번만 --flow 를 바꿔 움직인다 */
+  .edge.working { stroke: var(--working); stroke-dashoffset: var(--flow, 0); }
   .dot { fill: #fff; opacity: .8; }
   .dot.working { fill: var(--working); opacity: 1; }
-  @keyframes flow { to { stroke-dashoffset: -14; } }
   .link { fill: none; stroke: #a99bff; opacity: .85; }
-  .link.recent { stroke-dasharray: 6 5; animation: flow 1s linear infinite; }
+  .link.recent { stroke-dasharray: 6 5; stroke-dashoffset: var(--flow, 0); }
   .link-hit { fill: none; stroke: transparent; stroke-width: 12; cursor: help; }
   .link-label rect { fill: #2a2450; stroke: rgba(169, 155, 255, .6); }
   .link-label text { fill: #e4dfff; font: 600 10px var(--sans); }
@@ -381,7 +381,7 @@
   dialog input:focus, dialog textarea:focus { border-color: var(--accent); }
   dialog .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
   dialog .note { color: var(--faint); font-size: 12px; margin-top: 10px; line-height: 1.6; }
-  #toast { position: fixed; left: 50%; bottom: 156px; transform: translateX(-50%); background: var(--surface-3); border: 1px solid var(--border-strong); border-radius: 999px; padding: 8px 16px; box-shadow: var(--shadow); display: none; font-size: 13px; z-index: 10; }
+  #toast { position: fixed; left: 50%; bottom: 156px; transform: translateX(-50%); background: var(--surface-3); border: 1px solid var(--border-strong); border-radius: 999px; padding: 8px 16px; box-shadow: var(--shadow); display: none; font-size: 13px; z-index: 10; max-width: min(480px, 90vw); text-align: center; }
 
   /* ---------- 연동 중 · 첫 실행 안내 ---------- */
   #boot { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(9, 10, 18, .82); backdrop-filter: blur(6px); transition: opacity .3s; }
@@ -650,9 +650,23 @@ async function api(path, body) {
   if (!res.ok) throw new Error(text || res.statusText);
   return text;
 }
+// 흐르는 점선: 움직일 선이 있고 탭이 보일 때만 125ms 마다 2px 씩(점선 주기 7·11 의 공배수로 되감아 끊김 없이)
+let flowOffset = 0;
+setInterval(() => {
+  if (document.hidden || !document.querySelector('.edge.working:not(.stack), .link.recent')) return;
+  flowOffset = (flowOffset - 2) % 154;
+  $('#graph').style.setProperty('--flow', flowOffset);
+}, 125);
 function toast(msg) {
   const el = $('#toast');
   el.textContent = msg;
+  // 세션 패널이 열려 있으면 패널 가운데·입력창 바로 위에, 아니면 그래프 영역 가운데·하단 안내 위에 띄운다
+  const drawer = $('#drawer');
+  const open = drawer.classList.contains('open');
+  const area = (open ? drawer : $('#graph')).getBoundingClientRect();
+  const floor = open ? $('#composer').getBoundingClientRect().top : area.bottom - 56;
+  el.style.left = `${area.left + area.width / 2}px`;
+  el.style.bottom = `${innerHeight - floor + 12}px`;
   el.style.display = 'block';
   clearTimeout(toast.t);
   toast.t = setTimeout(() => (el.style.display = 'none'), 3500);
@@ -1270,7 +1284,7 @@ $('#approve-btns').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-choice]');
   if (!b || !selected) return;
   $('#approve-btns').querySelectorAll('button').forEach((x) => (x.disabled = true));
-  try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice }); if (!['up', 'down', 'left', 'right'].includes(b.dataset.choice)) toast(b.dataset.choice === 'esc' ? '거절했어요' : `${b.textContent} 선택했어요`); setTimeout(() => { $('#approve-btns').dataset.src = ''; const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 350); }
+  try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice }); if (b.dataset.choice === 'esc') toast('거절했어요'); setTimeout(() => { $('#approve-btns').dataset.src = ''; const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 350); }
   catch (err) { toast(err.message); }
 });
 
@@ -1364,8 +1378,7 @@ async function sendMsg() {
     renderAttachments();
     sentAt = Date.now();
     const s = state.sessions.find((x) => x.key === selected);
-    if (s) renderBusy(s);
-    toast('보냈어요');
+    if (s) renderBusy(s); // 보낸 뒤엔 패널의 "전달됐어요 · 응답 기다리는 중"이 곧 확인 표시
   } catch (err) { toast(err.message); }
   finally { updateSendState(); }
 }
