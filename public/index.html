@@ -162,14 +162,30 @@
   /* ---------- 오른쪽 서랍 ---------- */
   #drawer { position: absolute; top: 12px; right: 12px; bottom: 12px; width: min(540px, 92%); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow); transform: translateX(calc(100% + 24px)); transition: transform .22s cubic-bezier(.2, .8, .2, 1); display: flex; flex-direction: column; overflow: hidden; }
   #drawer.open { transform: none; }
-  #drawer .head { padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
-  #drawer .head-top { display: flex; align-items: center; gap: 8px; }
-  #drawer .head-top h2 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #drawer .head { position: relative; padding: 12px 14px 0 16px; border-bottom: 1px solid var(--border); }
+  #drawer .head-top { display: flex; align-items: center; gap: 6px; padding-bottom: 10px; }
+  #drawer .head-top h2 { margin: 0 2px 0 4px; font-size: 15.5px; font-weight: 700; letter-spacing: -.01em; min-width: 0; max-width: 34%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #drawer .head-top .grow { flex: 1; }
+  #drawer .tabs { margin: 0 0 0 6px; }
+  .icon-btn.sm { width: 28px; height: 28px; border-radius: 7px; }
+  .info-wrap { position: relative; display: inline-flex; }
+  .info-pop, .menu-pop { display: none; position: absolute; top: 34px; z-index: 5; background: var(--surface-3); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow); padding: 12px 14px; }
+  .info-pop { left: -8px; width: 360px; }
+  .info-wrap:hover .info-pop, .info-pop.show { display: flex; }
+  .menu-pop { right: 0; padding: 6px; }
+  .menu-pop.show { display: block; }
+  .menu-pop button { width: 100%; white-space: nowrap; font-size: 12.5px; }
+  .ctx-line { height: 2px; margin: 0 -14px 0 -16px; background: rgba(255, 255, 255, .05); }
+  .ctx-line i { display: block; height: 100%; background: var(--ok); transition: width .3s; }
+  .ctx-line i.mid { background: var(--working); } .ctx-line i.high { background: var(--waiting); }
+  .resize { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; z-index: 4; }
+  .resize:hover, .resize.on { background: linear-gradient(90deg, rgba(139, 124, 246, .5), transparent); }
+  #drawer.dragging { transition: none; user-select: none; }
   #drawer .head-top button { font-size: 12px; padding: 4px 10px; }
   #d-model { font-size: 12px; padding: 4px 26px 4px 10px; }
   .badge-model { background: rgba(139, 124, 246, .14); color: #c8bfff; }
-  #drawer .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; color: var(--faint); font-size: 11.5px; }
-  #drawer .meta .path { font-family: var(--mono); font-size: 11px; color: var(--dim); word-break: break-all; }
+  #drawer .info-pop { flex-wrap: wrap; align-items: center; gap: 8px 10px; color: var(--faint); font-size: 11.5px; }
+  #drawer .info-pop .path { font-family: var(--mono); font-size: 11px; color: var(--dim); word-break: break-all; }
   #drawer .now { margin-top: 12px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); font-size: 12.5px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; max-height: 160px; overflow: auto; resize: vertical; }
   #drawer .search { position: relative; margin-top: 10px; }
   #drawer .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--faint); }
@@ -199,6 +215,9 @@
   /* 빈 상태 문구는 카드(머리 아래 영역)의 정가운데에 — 스크롤 영역 높이와 상관없이 */
   .now-reply.empty { position: absolute; inset: 44px 0 0 0; color: var(--faint); font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; }
   #now-changes:empty { display: none; }
+  /* 답변은 아직 없는데 바꾼 파일·명령이 있으면: 안내 문구는 가운데가 아니라 위에 작게, 구분선 없이 */
+  .now-card.has-changes .now-reply.empty { position: static; inset: auto; justify-content: flex-start; padding: 2px 0 4px; }
+  .now-card.has-changes .now-reply.empty + #now-changes { border-top: none; margin-top: 6px; padding-top: 0; }
   #now-changes { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
   .chg-h { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--dim); }
   .chg-h .sum { margin-left: auto; font-family: var(--mono); font-weight: 500; }
@@ -397,23 +416,36 @@
   <div class="hint">드래그로 이동 · 휠로 확대 · 노드 클릭 시 프롬프트 기록 · <span style="color:#a99bff">보라 화살표</span> = 세션끼리 보낸 메시지</div>
   <div class="empty" id="empty" hidden>떠 있는 세션이 없어요</div>
   <section id="drawer">
+    <div class="resize" id="resize" title="끌어서 폭 조절 · 더블클릭하면 기본 폭"></div>
     <div class="head">
       <div class="head-top">
+        <span class="dot-s" id="d-dot"></span>
         <h2 id="d-title"></h2>
+        <span class="info-wrap">
+          <button type="button" class="ghost icon-btn sm" id="d-info-btn" aria-label="세션 정보"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></button>
+          <div class="info-pop" id="d-meta"></div>
+        </span>
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab on" data-tab="now">지금</button>
+          <button type="button" class="tab" data-tab="log">기록 <span id="log-count"></span></button>
+        </div>
+        <span class="grow"></span>
         <select id="d-model" title="모델 바꾸기 (tmux 세션만)">
-          <option value="" disabled>모델 바꾸기</option>
+          <option value="" disabled>모델</option>
           <option value="opus">Opus</option>
           <option value="sonnet">Sonnet</option>
           <option value="haiku">Haiku</option>
         </select>
-        <button class="danger" id="end-session">세션 종료</button>
-        <button class="ghost" id="close" title="세션은 그대로 두고 이 패널만 접어요">패널 접기 →</button>
+        <button type="button" class="ghost icon-btn sm" id="wide" title="넓게 보기 / 기본 폭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+        <span class="info-wrap">
+          <button type="button" class="ghost icon-btn sm" id="more-btn" aria-label="더 보기"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <div class="menu-pop" id="more-menu">
+            <button type="button" class="danger" id="end-session">세션 종료</button>
+          </div>
+        </span>
+        <button class="ghost icon-btn sm" id="close" title="패널 접기 (세션은 그대로)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
       </div>
-      <div class="meta" id="d-meta"></div>
-      <div class="tabs" role="tablist">
-        <button type="button" class="tab on" data-tab="now">지금</button>
-        <button type="button" class="tab" data-tab="log">기록 <span id="log-count"></span></button>
-      </div>
+      <div class="ctx-line" id="d-ctx"></div>
     </div>
     <div id="now-view">
       <div class="now-prompt" id="now-prompt"></div>
@@ -852,7 +884,13 @@ function applyView() { $('#viewport').setAttribute('transform', `translate(${vie
 (() => {
   const svg = $('#graph');
   let drag = null;
-  svg.addEventListener('pointerdown', (e) => { if (e.target.closest('.node')) return; drag = { x: e.clientX - view.x, y: e.clientY - view.y }; svg.classList.add('drag'); });
+  svg.addEventListener('pointerdown', (e) => { if (e.target.closest('.node')) return; drag = { x: e.clientX - view.x, y: e.clientY - view.y, sx: e.clientX, sy: e.clientY }; svg.classList.add('drag'); });
+  // 빈 곳을 "클릭"(끌지 않고 누름)하면 오른쪽 패널을 접는다
+  svg.addEventListener('pointerup', (e) => {
+    if (!drag || e.target.closest('.node')) return;
+    const moved = Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 4;
+    if (!moved && $('#drawer').classList.contains('open')) $('#close').click();
+  });
   window.addEventListener('pointermove', (e) => { if (!drag) return; view.x = e.clientX - drag.x; view.y = e.clientY - drag.y; applyView(); });
   window.addEventListener('pointerup', () => { drag = null; svg.classList.remove('drag'); });
   svg.addEventListener('wheel', (e) => {
@@ -887,8 +925,12 @@ async function select(key) {
 }
 function renderDrawerHead(s) {
   $('#d-title').textContent = s.title;
+  $('#d-title').title = s.title;
+  $('#d-dot').className = `dot-s ${s.status} ${s.status === 'working' || s.status === 'waiting' ? 'pulse' : ''}`;
+  $('#d-ctx').innerHTML = s.context ? `<i class="${ctxLevel(s.context.percent)}" style="width:${s.context.percent}%"></i>` : '';
+  $('#d-ctx').title = s.context ? `대화 창 ${s.context.percent}% · ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)}` : '';
   $('#d-meta').innerHTML = `<span class="badge tool ${s.tool}">${esc(s.toolLabel)}</span>${s.model ? `<span class="badge badge-model" title="${esc(s.model)}">${esc(modelName(s.model))}</span>` : ''}${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span style="display:inline-flex;align-items:center;gap:6px"><span class="dot-s ${s.status}"></span>${STATUS_KO[s.status]}${s.waitingFor ? ' · ' + esc(s.waitingFor) : ''}</span><span class="path">${esc(s.cwd || '')}</span><span class="mono">세션 ${esc(s.id.slice(0, 8))}</span>${s.pid ? `<span>PID ${s.pid}</span><span>실행 ${esc(s.uptime ?? '')}</span>` : ''}${s.ide ? '<span>에디터 확장</span>' : ''}<span>기록 ${s.sizeMB ?? 0}MB</span>${s.context ? `<span class="ctx-chip" title="${s.context.estimated ? '창 크기는 모델 설정으로 추정했어요. ' : ''}가득 차면 Claude 가 앞부분을 자동 요약(compact)해요"><span class="mini"><span class="ctx-bar ${ctxLevel(s.context.percent)}" style="display:block;width:${s.context.percent}%"></span></span>대화 창 ${s.context.percent}% · ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)} · 남은 ${fmtTok(Math.max(0, s.context.window - s.context.used))}</span>` : ''}`;
-  $('#end-session').hidden = s.status === 'ended';
+  $('#more-btn').hidden = s.status === 'ended';
   const fam = (s.model || '').match(/opus|sonnet|haiku/)?.[0] ?? '';
   $('#d-model').value = fam;
   $('#d-model').disabled = !s.tmux || s.status === 'ended' || s.status === 'waiting';
@@ -953,6 +995,8 @@ function renderNow(s) {
   $('#now-time').textContent = working ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : ago(s.lastAt);
   $('#log-count').textContent = promptLog.length ? promptLog.length : '';
   renderChanges(s);
+  const ch = s.changes;
+  document.querySelector('.now-card').classList.toggle('has-changes', Boolean(ch && (ch.edits.length || ch.commands.length)));
 }
 
 // ---------- 이번 턴에 바꾼 파일 · 실행한 명령 ----------
@@ -1216,8 +1260,38 @@ $('#usage-dlg').addEventListener('close', async () => {
   catch (err) { toast(err.message); }
 });
 
+// ---------- 패널 머리: 정보·메뉴·폭 ----------
+$('#d-info-btn').addEventListener('click', (e) => { e.stopPropagation(); $('#d-meta').classList.toggle('show'); });
+$('#more-btn').addEventListener('click', (e) => { e.stopPropagation(); $('#more-menu').classList.toggle('show'); });
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#d-meta')) $('#d-meta').classList.remove('show');
+  if (!e.target.closest('#more-menu')) $('#more-menu').classList.remove('show');
+});
+const DRAWER_DEFAULT = 540;
+function applyDrawerWidth() {
+  const max = Math.max(380, $('main').clientWidth - 40);
+  const w = Math.min(max, Math.max(380, pref.drawerW || DRAWER_DEFAULT));
+  $('#drawer').style.width = window.innerWidth <= 860 ? '' : `${w}px`;
+  $('#wide').title = w > DRAWER_DEFAULT + 40 ? '기본 폭으로' : '넓게 보기';
+}
+$('#wide').addEventListener('click', () => {
+  const wide = (pref.drawerW || DRAWER_DEFAULT) > DRAWER_DEFAULT + 40;
+  pref.drawerW = wide ? DRAWER_DEFAULT : Math.round($('main').clientWidth * 0.66);
+  savePref(); applyDrawerWidth(); view.init = false; renderGraph();
+});
+(() => {
+  const handle = $('#resize');
+  let start = null;
+  handle.addEventListener('pointerdown', (e) => { start = { x: e.clientX, w: $('#drawer').getBoundingClientRect().width }; handle.classList.add('on'); $('#drawer').classList.add('dragging'); handle.setPointerCapture(e.pointerId); });
+  handle.addEventListener('pointermove', (e) => { if (!start) return; pref.drawerW = Math.round(start.w + (start.x - e.clientX)); applyDrawerWidth(); });
+  handle.addEventListener('pointerup', () => { if (!start) return; start = null; handle.classList.remove('on'); $('#drawer').classList.remove('dragging'); savePref(); view.init = false; renderGraph(); });
+  handle.addEventListener('dblclick', () => { pref.drawerW = DRAWER_DEFAULT; savePref(); applyDrawerWidth(); view.init = false; renderGraph(); });
+})();
+window.addEventListener('resize', applyDrawerWidth);
+applyDrawerWidth();
+
 // 세션 닫기
-$('#end-session').addEventListener('click', () => selected && askClose(selected));
+$('#end-session').addEventListener('click', () => { $('#more-menu').classList.remove('show'); if (selected) askClose(selected); });
 let closing = null;
 function askClose(key) {
   const s = state.sessions.find((x) => x.key === key);
