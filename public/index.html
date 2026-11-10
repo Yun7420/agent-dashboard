@@ -16,6 +16,7 @@
     --dim: #a0a5c0;
     --faint: #626887;
     --accent: #8b7cf6;
+    --accent-strong: #6c54f0; /* 주 버튼(새 세션·보내기) — 배경 위에서 또렷하게 */
     --accent-soft: rgba(139, 124, 246, .14);
     --working: #f5b942;
     --waiting: #fb6f92;
@@ -43,8 +44,9 @@
   button { font: inherit; cursor: pointer; background: var(--surface-2); color: var(--text); border: 1px solid var(--border-strong); border-radius: 8px; padding: 5px 12px; transition: background .15s, border-color .15s, color .15s; }
   button:hover:not(:disabled) { background: var(--surface-3); border-color: rgba(255, 255, 255, .2); }
   button:disabled { opacity: .4; cursor: not-allowed; }
-  button.primary { background: var(--accent); border-color: transparent; color: #fff; font-weight: 600; }
-  button.primary:hover:not(:disabled) { background: #9a8cf8; }
+  button.primary { background: var(--accent-strong); border-color: transparent; color: #fff; font-weight: 600; box-shadow: 0 2px 10px rgba(108, 84, 240, .35); }
+  button.primary:hover:not(:disabled) { background: #7b66ff; }
+  button.primary:disabled { background: var(--surface-3); color: var(--faint); box-shadow: none; opacity: 1; }
   button.danger { background: transparent; border-color: rgba(251, 111, 146, .35); color: var(--waiting); }
   button.danger:hover:not(:disabled) { background: rgba(251, 111, 146, .1); border-color: var(--waiting); }
   button.ghost { background: transparent; border-color: transparent; color: var(--dim); }
@@ -995,7 +997,8 @@ function renderComposer(s) {
   else if (s.status === 'working') why = '작업 중이에요. 보내면 지금 일을 마친 뒤 이어서 처리해요.';
   const can = s.tmux && s.status !== 'ended' && s.status !== 'waiting';
   $('#msg').disabled = !can;
-  $('#send').disabled = !can;
+  canSend = Boolean(can);
+  updateSendState();
   $('#mic').disabled = !can;
   $('#attach').disabled = !can;
   $('#why').innerHTML = why;
@@ -1202,6 +1205,7 @@ if (Recognition) {
         else interim += e.results[i][0].transcript;
       }
       $('#msg').value = base + done + interim;
+      updateSendState(); // 음성으로 채운 글도 보내기 버튼에 반영
     };
     rec.onerror = (e) => toast(e.error === 'not-allowed' ? '마이크 권한을 허용해 주세요' : `음성 인식 오류: ${e.error}`);
     rec.onend = () => { rec = null; $('#mic').classList.remove('rec'); $('#mic').innerHTML = MIC_ICON; $('#msg').focus(); };
@@ -1215,6 +1219,7 @@ if (Recognition) {
 // ---------- 첨부 ----------
 let attachments = []; // { id, name, size, path?, url?, uploading }
 function renderAttachments() {
+  if (typeof updateSendState === 'function') setTimeout(updateSendState);
   $('#attach-list').innerHTML = attachments.map((a) => `<span class="att ${a.uploading ? 'up' : ''}" title="${esc(a.path || a.name)}">${a.url ? `<img src="${a.url}" alt="">` : `<span class="ic">${esc((a.name.split('.').pop() || 'FILE').slice(0, 4).toUpperCase())}</span>`}<span class="nm">${esc(a.name)}</span><button type="button" data-rm="${a.id}" aria-label="빼기">✕</button></span>`).join('');
 }
 async function addFiles(files) {
@@ -1246,6 +1251,13 @@ const box = $('#composer .box');
 ['dragleave', 'drop'].forEach((ev) => box.addEventListener(ev, () => box.classList.remove('drop')));
 box.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length && !$('#msg').disabled) { e.preventDefault(); addFiles([...e.dataTransfer.files]); } });
 
+let canSend = false; // 지금 세션에 보낼 수 있는지(tmux·종료·승인 대기 여부)
+function updateSendState() {
+  const hasContent = $('#msg').value.trim().length > 0 || attachments.length > 0;
+  $('#send').disabled = !canSend || !hasContent || attachments.some((a) => a.uploading);
+}
+$('#msg').addEventListener('input', updateSendState);
+
 async function sendMsg() {
   if (rec) rec.stop();
   if (attachments.some((a) => a.uploading)) { toast('파일을 올리는 중이에요. 잠시 뒤 보내 주세요'); return; }
@@ -1265,7 +1277,7 @@ async function sendMsg() {
     if (s) renderBusy(s);
     toast('보냈어요');
   } catch (err) { toast(err.message); }
-  finally { $('#send').disabled = false; }
+  finally { updateSendState(); }
 }
 $('#composer').addEventListener('submit', (e) => { e.preventDefault(); sendMsg(); });
 // Enter 로 보내기, Shift+Enter 로 줄바꿈. 한글 조합 중 Enter(마지막 글자 확정)는 보내지 않는다.
