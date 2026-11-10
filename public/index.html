@@ -1253,15 +1253,12 @@ async function renderApproval(s) {
     const canPrev = cur > 0 || (cur < 0 && focus === 'Submit');
     nav = `<div class="q-nav"><button type="button" data-choice="left" ${canPrev ? '' : 'disabled'}>← 이전 질문</button><span class="q-steps">${steps.map((st, i) => `<span class="${st.done ? 'done' : ''} ${i === cur ? 'cur' : ''}">${st.done ? '✓' : '○'} ${esc(st.label)}</span>`).join('')}</span><button type="button" data-choice="right" ${canNext ? '' : 'disabled'} title="${canNext ? '' : '지금 질문에 먼저 답해 주세요'}">다음 질문 →</button></div>`;
   }
-  const anyPicked = options.some((o) => /✔\s*$/.test(o.label));
-  const isPermission = /Do you want to/.test(text);
   const btnHtml = nav +
-    // 이미 고른 답(✔)이 있으면 그 버튼만 보라색으로 — 없을 때(권한 확인 등)만 1번을 기본 강조
+    // 보라색은 실제로 고른 답(✔)에만 — 고르기 전엔 모든 선택지가 같은 모양
     options.map((o) => {
       const picked = /✔\s*$/.test(o.label);
       const label = o.label.replace(/\s*✔\s*$/, '');
-      // 1번 기본 강조는 권한 확인 창("Do you want to …")에서만. 질문 창은 고른 답이 생기기 전엔 모두 같은 모양
-      const cls = picked ? 'primary' : /^no\b|아니/i.test(label) ? 'danger' : !anyPicked && isPermission && o.n === '1' ? 'primary' : '';
+      const cls = picked ? 'primary' : /^no\b|아니/i.test(label) ? 'danger' : '';
       return `<button data-choice="${o.n}" class="${cls}" ${picked ? 'title="지금 고른 답"' : ''}>${picked ? '✓ ' : ''}${esc(o.n)}. ${esc(label)}${picked ? ' <small>선택됨</small>' : ''}</button>`;
     }).join('') +
     `<button data-choice="esc" class="danger">거절 (Esc)</button>` +

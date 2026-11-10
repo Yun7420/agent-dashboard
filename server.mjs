@@ -33,7 +33,9 @@ const PUBLIC_DIR = path.join(path.dirname(new URL(import.meta.url).pathname), 'p
 let dialogTick = 0;
 const dialogSeen = new Set(); // 선택창이 떠 있던 세션은 매번 확인(닫히는 걸 바로 알도록)
 const MODELS = new Set(['opus', 'sonnet', 'haiku']); // Claude Code 모델 별칭 — 항상 그 계열의 최신 모델로 연결된다
-const DIALOG_RE = /Enter to confirm|Esc to cancel|Do you want to/; // Claude Code 선택창 하단 안내 문구
+const DIALOG_RE = /^\s*(Enter to |Esc to cancel)/m; // Claude Code 선택창 하단 안내 문구(줄 맨 앞에 온다)
+// 화면 맨 아래 몇 줄만 본다 — 대화 내용·명령 출력에 같은 문구가 섞여 있어도 선택창으로 오인하지 않게
+const hasDialog = (screen) => DIALOG_RE.test(screen.split('\n').filter((l) => l.trim()).slice(-10).join('\n'));
 const byId = Object.fromEntries(adapters.map((a) => [a.id, a]));
 
 // 토큰은 .dashboard-token 파일(본인만 읽기 가능)에 보관해 서버를 다시 켜도 열려 있던 탭이 그대로 동작하게 한다.
@@ -245,7 +247,7 @@ async function buildState(windowHours) {
     let waiting = false;
     if (pane) {
       const screen = await tmux.capture(pane.target, 30).catch(() => '');
-      waiting = DIALOG_RE.test(screen);
+      waiting = hasDialog(screen);
     }
     sessions.push({
       key: p.key ?? `${p.tool}:pid-${p.pid}`,
@@ -276,8 +278,8 @@ async function buildState(windowHours) {
       .filter((s) => dialogTick === 0 || dialogSeen.has(s.key))
       .map(async (s) => {
         const screen = await tmux.capture(s.tmux.target, 30).catch(() => '');
-        if (!DIALOG_RE.test(screen)) dialogSeen.delete(s.key);
-        if (DIALOG_RE.test(screen)) {
+        if (!hasDialog(screen)) dialogSeen.delete(s.key);
+        if (hasDialog(screen)) {
           dialogSeen.add(s.key);
           s.status = 'waiting';
           s.waitingFor ??= s.lastTool === 'AskUserQuestion' ? '질문에 답 필요' : '선택 창';
