@@ -342,6 +342,7 @@
   .q-nav button { height: 28px; font-size: 12px; padding: 0 10px; flex: none; }
   .q-steps { flex: 1; min-width: 0; display: flex; gap: 10px; justify-content: center; font-size: 12px; color: var(--faint); overflow: hidden; white-space: nowrap; }
   .q-steps .done { color: var(--ok); }
+  #approve-btns button small { font-size: 11px; opacity: .8; margin-left: 4px; }
   .q-steps .cur { color: var(--text); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
 
   #composer { flex: none; padding: 12px 16px 16px; border-top: 1px solid var(--border); }
@@ -1252,8 +1253,15 @@ async function renderApproval(s) {
     const canPrev = cur > 0 || (cur < 0 && focus === 'Submit');
     nav = `<div class="q-nav"><button type="button" data-choice="left" ${canPrev ? '' : 'disabled'}>← 이전 질문</button><span class="q-steps">${steps.map((st, i) => `<span class="${st.done ? 'done' : ''} ${i === cur ? 'cur' : ''}">${st.done ? '✓' : '○'} ${esc(st.label)}</span>`).join('')}</span><button type="button" data-choice="right" ${canNext ? '' : 'disabled'} title="${canNext ? '' : '지금 질문에 먼저 답해 주세요'}">다음 질문 →</button></div>`;
   }
+  const anyPicked = options.some((o) => /✔\s*$/.test(o.label));
   const btnHtml = nav +
-    options.map((o) => `<button data-choice="${o.n}" class="${/^no\b|아니/i.test(o.label) ? 'danger' : o.n === '1' ? 'primary' : ''}">${esc(o.n)}. ${esc(o.label)}</button>`).join('') +
+    // 이미 고른 답(✔)이 있으면 그 버튼만 보라색으로 — 없을 때(권한 확인 등)만 1번을 기본 강조
+    options.map((o) => {
+      const picked = /✔\s*$/.test(o.label);
+      const label = o.label.replace(/\s*✔\s*$/, '');
+      const cls = picked ? 'primary' : /^no\b|아니/i.test(label) ? 'danger' : !anyPicked && o.n === '1' ? 'primary' : '';
+      return `<button data-choice="${o.n}" class="${cls}" ${picked ? 'title="지금 고른 답"' : ''}>${picked ? '✓ ' : ''}${esc(o.n)}. ${esc(label)}${picked ? ' <small>선택됨</small>' : ''}</button>`;
+    }).join('') +
     `<button data-choice="esc" class="danger">거절 (Esc)</button>` +
     (options.length ? '' : `<span style="color:var(--faint);align-self:center">번호 없는 선택창 →</span><button data-choice="up">↑</button><button data-choice="down">↓</button><button data-choice="enter" class="primary">Enter (❯ 표시된 항목 선택)</button>`);
   if ($('#approve-btns').dataset.src !== btnHtml) { $('#approve-btns').innerHTML = btnHtml; $('#approve-btns').dataset.src = btnHtml; }
