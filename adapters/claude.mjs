@@ -43,6 +43,24 @@ async function readNew(file, start, end, onLine) {
   for await (const line of rl) onLine(line);
 }
 
+const historyCache = new Map(); // file → { offset, items, cur }
+const startCwd = new Map(); // file → 세션을 시작한 폴더
+
+// 마지막 줄이 아직 쓰이는 중일 수 있어, 마지막 줄바꿈 위치까지만 읽는다
+async function completeLineEnd(file, from, size) {
+  if (size <= from) return from;
+  const fh = await fsp.open(file, 'r');
+  try {
+    const len = Math.min(65536, size - from);
+    const tail = Buffer.alloc(len);
+    await fh.read(tail, 0, len, size - len);
+    const nl = tail.lastIndexOf(10);
+    return nl < 0 ? from : size - len + nl + 1;
+  } finally {
+    await fh.close();
+  }
+}
+
 function peerTexts(d) {
   const a = d.attachment;
   if (a?.type === 'queued_command' && typeof a.prompt === 'string') return [a.prompt];
@@ -71,7 +89,20 @@ function collectChange(c, at, changes) {
       changes.edits.push({ at, file, tool: c.name, old: h.old == null ? null : clip(h.old, CLIP_CODE), new: clip(h.new, CLIP_CODE), oldLines: h.old == null ? 0 : h.old.split('\n').length, newLines: h.new.split('\n').length });
     }
   } else if (c.name === 'Bash' && i.command) {
-    changes.commands.push({ at, command: clip(i.command, 400), description: i.description ?? '' });
+    changes.commands.push({ id: c.id, at, command: clip(i.command, 1500), description: i.description ?? '', done: false, error: false, output: '' });
+  }
+}
+
+// 도구 결과가 돌아오면 그 명령에 결과(성공·실패, 출력 앞부분)를 붙인다
+function attachResult(d, changes) {
+  for (const r of d.message?.content ?? []) {
+    if (r.type !== 'tool_result') continue;
+    const cmd = changes.commands.find((x) => x.id === r.tool_use_id);
+    if (!cmd) continue;
+    const text = typeof r.content === 'string' ? r.content : (r.content ?? []).filter((x) => x.type === 'text').map((x) => x.text).join('\n');
+    cmd.done = true;
+    cmd.error = Boolean(r.is_error) || /^Exit code [1-9]/.test(text);
+    cmd.output = clip(text.trim(), 600);
   }
 }
 
@@ -101,6 +132,25 @@ export default {
   // 공식 목록(`claude agents --json`): 떠 있는 세션의 PID·세션 ID·상태(busy/idle/waiting)를 정확히 준다.
   // 이게 되면 ps·lsof 추정 대신 이걸 쓴다. 실패하면 null → 서버가 추정 방식으로 돌아간다.
   async liveSessions() {
+    // 빠른 길: claude 가 세션마다 남기는 ~/.claude/sessions/<PID>.json 을 직접 읽는다 (claude agents 실행 160ms → 파일 읽기 1ms)
+    try {
+      const dir = path.join(os.homedir(), '.claude', 'sessions');
+      const files = (await fsp.readdir(dir)).filter((f) => /^\d+\.json$/.test(f));
+      const out = [];
+      for (const f of files) {
+        const a = await readJsonOrNull(path.join(dir, f));
+        if (!a?.pid || !a.sessionId) continue;
+        try {
+          process.kill(a.pid, 0); // 살아 있는 프로세스만
+        } catch {
+          continue;
+        }
+        out.push({ pid: a.pid, sessionId: a.sessionId, status: LIVE_STATUS[a.status] ?? 'idle', waitingFor: a.waitingFor ?? null, name: a.name ?? null, background: a.kind && a.kind !== 'interactive', startedAt: a.startedAt });
+      }
+      if (out.length) return out;
+    } catch {
+      /* 폴더가 없는 버전이면 아래 공식 명령으로 */
+    }
     try {
       const { stdout } = await exec('claude', ['agents', '--json'], { timeout: 5000 });
       return JSON.parse(stdout).map((a) => ({
@@ -139,6 +189,7 @@ export default {
         changes = { edits: [], commands: [] }; // 새 요청이 오면 이번 턴 변경 목록을 새로 시작
       } else if (d.type === 'user' && Array.isArray(d.message?.content) && !d.isSidechain) {
         turnState = 'working'; // 도구 결과가 막 돌아옴 → 다음 응답 생성 중
+        attachResult(d, changes);
       } else if (d.type === 'assistant' && !d.isSidechain) {
         if (d.message?.model && !d.message.model.startsWith('<')) model = d.message.model;
         // 이번 답변을 만들 때 읽은 토큰 = 지금 대화 창에 들어 있는 양
@@ -154,8 +205,9 @@ export default {
         turnState = d.message?.stop_reason === 'end_turn' ? 'idle' : 'working';
       }
     }
-    // 프로젝트는 세션을 시작한 폴더로 묶는다(중간에 cd 해도 흔들리지 않게).
-    {
+    // 프로젝트는 세션을 시작한 폴더로 묶는다(중간에 cd 해도 흔들리지 않게). 바뀌지 않는 값이라 파일당 한 번만 읽는다.
+    if (startCwd.has(s.file)) cwd = startCwd.get(s.file);
+    else {
       for (const l of await readHeadLines(s.file, 256 * 1024)) {
         const d = parse(l);
         if (d?.cwd) {
@@ -163,6 +215,7 @@ export default {
           break;
         }
       }
+      if (cwd) startCwd.set(s.file, cwd);
     }
     const sessionDir = path.join(path.dirname(s.file), s.id);
     const custom = (await readJsonOrNull(path.join(sessionDir, 'custom-title.json')))?.customTitle;
@@ -199,6 +252,8 @@ export default {
         const d = parse(l);
         if (d?.type === 'assistant') done = d.message?.stop_reason === 'end_turn';
       }
+      // 마지막이 도구 결과로 끝나 end_turn 이 안 남는 경우가 있어, 2분 넘게 기록이 없으면 끝난 것으로 본다
+      if (Date.now() - st.mtimeMs > 120_000) done = true;
       out.push({ id: f.replace(/^agent-|\.jsonl$/g, ''), type: meta.agentType ?? 'subagent', description: meta.description ?? '', mtimeMs: st.mtimeMs, done });
     }
     return out.sort((a, b) => b.mtimeMs - a.mtimeMs).slice(0, 50); // 너무 오래 쌓인 경우만 자른다
@@ -244,6 +299,32 @@ export default {
   },
 
   async history(s) {
+    let h = historyCache.get(s.file);
+    if (!h || s.size < h.offset) h = { offset: 0, items: [], cur: null };
+    const end = await completeLineEnd(s.file, h.offset, s.size);
+    if (end > h.offset) {
+      await readNew(s.file, h.offset, end, (line) => {
+        if (!line.includes('"type":"user"') && !line.includes('"type":"assistant"')) return;
+        const d = parse(line);
+        if (!d) return;
+        const p = promptText(d);
+        if (p) {
+          h.cur = { at: d.timestamp, prompt: clip(p, 20000), tools: 0, reply: '' };
+          h.items.push(h.cur);
+        } else if (h.cur && d.type === 'assistant' && !d.isSidechain) {
+          for (const c of d.message?.content ?? []) {
+            if (c.type === 'tool_use') h.cur.tools += 1;
+            if (c.type === 'text' && c.text?.trim()) h.cur.reply = clip(c.text.trim(), 20000);
+          }
+        }
+      });
+      h.offset = end;
+      historyCache.set(s.file, h);
+    }
+    return h.items;
+  },
+
+  async historyFull(s) {
     const items = [];
     let cur = null;
     for await (const d of readJsonLines(s.file, ['"type":"user"', '"type":"assistant"'])) {

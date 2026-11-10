@@ -7,6 +7,7 @@
 // 다른 사이트는 브라우저의 같은 출처 정책 때문에 이 페이지를 읽을 수 없어 토큰을 알 수 없다.
 
 import http from 'node:http';
+import { performance } from 'node:perf_hooks';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -29,6 +30,8 @@ const WORKING_GRACE_MS = 8000; // 기록이 막 바뀐 세션은 작업 중으�
 const STALE_MS = 15 * 60_000; // 15분 넘게 기록이 없으면 작업 중이 아니라 대기로 본다
 const HOME = os.homedir();
 const PUBLIC_DIR = path.join(path.dirname(new URL(import.meta.url).pathname), 'public');
+let dialogTick = 0;
+const dialogSeen = new Set(); // 선택창이 떠 있던 세션은 매번 확인(닫히는 걸 바로 알도록)
 const MODELS = new Set(['opus', 'sonnet', 'haiku']); // Claude Code 모델 별칭 — 항상 그 계열의 최신 모델로 연결된다
 const DIALOG_RE = /Enter to confirm|Esc to cancel|Do you want to/; // Claude Code 선택창 하단 안내 문구
 const byId = Object.fromEntries(adapters.map((a) => [a.id, a]));
@@ -61,6 +64,24 @@ function etimeToMs(etime) {
   while (parts.length < 3) parts.unshift(0);
   const [h, m, s] = parts;
   return (((Number(days) * 24 + h) * 60 + m) * 60 + s) * 1000;
+}
+
+let procCache = { at: 0, value: null, sig: '' };
+async function listProcessesCached(sig) {
+  if (procCache.value && Date.now() - procCache.at < 6000 && procCache.sig === sig) return procCache.value;
+  const value = await listProcesses();
+  procCache = { at: Date.now(), value, sig };
+  return value;
+}
+let paneCache = { at: 0, value: null, sig: '' };
+async function listPanesCached(sig) {
+  if (paneCache.value && Date.now() - paneCache.at < 6000 && paneCache.sig === sig) return paneCache.value;
+  paneCache = { at: Date.now(), value: await tmux.listPanes(), sig };
+  return paneCache.value;
+}
+function invalidateProcCaches() {
+  procCache.at = 0;
+  paneCache.at = 0;
 }
 
 async function listProcesses() {
@@ -127,11 +148,17 @@ async function buildState(windowHours) {
   if (DEMO) return demo.demoState();
   const now = Date.now();
   const sinceMs = now - windowHours * 3600_000;
-  const [scanned, { procs, parentOf }, panes] = await Promise.all([
+  // 떠 있는 세션 목록(빠름)을 먼저 읽고, 그 구성이 그대로면 프로세스·tmux 목록은 6초 동안 재사용한다
+  const liveLists = await Promise.all(adapters.filter((a) => a.liveSessions).map(async (a) => [a, await a.liveSessions()]));
+  const liveSig = liveLists.map(([a, l]) => `${a.id}:${(l ?? []).map((x) => x.pid).sort().join(',')}`).join('|');
+  const [scanned, cachedProcs, panes] = await Promise.all([
     Promise.all(adapters.map(async (a) => (await a.scan()).map((s) => ({ ...s, tool: a.id, key: `${a.id}:${s.id}` })))).then((x) => x.flat()),
-    listProcesses(),
-    tmux.listPanes(),
+    listProcessesCached(liveSig),
+    listPanesCached(liveSig),
   ]);
+  // 캐시를 그대로 고치지 않도록 복사해서 쓴다
+  const procs = cachedProcs.procs.map((p) => ({ ...p }));
+  const { parentOf } = cachedProcs;
 
   // 작업 폴더 열쇠를 스캔 단계에서 못 얻는 도구(codex)는 최근 세션만 미리 읽어 채운다.
   await Promise.all(
@@ -141,8 +168,7 @@ async function buildState(windowHours) {
   // 도구가 공식 목록을 주면(claude agents --json) 그걸 정답으로 쓴다.
   const alive = new Map();
   const orphans = [];
-  for (const a of adapters.filter((a) => a.liveSessions)) {
-    const list = await a.liveSessions();
+  for (const [a, list] of liveLists) {
     if (!list) continue;
     for (const x of list) {
       const proc = procs.find((p) => p.pid === x.pid);
@@ -243,12 +269,16 @@ async function buildState(windowHours) {
   }
   // 공식 상태가 대기·작업 중이어도 화면에 선택창(질문·설정 안내·확인 창 등)이 떠 있으면 사람 손이 필요한 상태로 본다.
   // 예: Claude 가 AskUserQuestion 으로 질문하면 공식 상태는 busy 지만 실제로는 사용자 답을 기다린다.
+  dialogTick = (dialogTick + 1) % 2;
   await Promise.all(
     sessions
       .filter((s) => s.tmux && (s.status === 'idle' || s.status === 'working'))
+      .filter((s) => dialogTick === 0 || dialogSeen.has(s.key))
       .map(async (s) => {
         const screen = await tmux.capture(s.tmux.target, 30).catch(() => '');
+        if (!DIALOG_RE.test(screen)) dialogSeen.delete(s.key);
         if (DIALOG_RE.test(screen)) {
+          dialogSeen.add(s.key);
           s.status = 'waiting';
           s.waitingFor ??= s.lastTool === 'AskUserQuestion' ? '질문에 답 필요' : '선택 창';
         }
@@ -322,7 +352,7 @@ async function promptHistory(key) {
   if (!s) return [];
   const hit = historyCache.get(s.file);
   if (hit && hit.size === s.size) return hit.items;
-  const items = (await adapter.history(s)).reverse(); // 최신이 위
+  const items = (await adapter.history(s)).slice().reverse(); // 최신이 위 (어댑터는 새로 붙은 부분만 읽는다)
   historyCache.set(s.file, { size: s.size, items });
   return items;
 }
@@ -604,13 +634,19 @@ const clients = new Set();
 let lastJson = '';
 let windowHours = 24;
 
+const tickMs = []; // 최근 상태 계산 시간(ms) — /api/perf 로 확인
 async function tick() {
   try {
+    const t0 = performance.now();
     latest = await buildState(windowHours);
-    const json = JSON.stringify([latest.sessions, latest.links, latest.usage]);
+    tickMs.push(Math.round(performance.now() - t0));
+    if (tickMs.length > 30) tickMs.shift();
+    // 바뀐 게 있을 때만, 각 부분을 한 번씩만 문자열로 만들어 보낸다
+    const sJ = JSON.stringify(latest.sessions), lJ = JSON.stringify(latest.links), uJ = JSON.stringify(latest.usage);
+    const json = sJ + lJ + uJ;
     if (json !== lastJson) {
       lastJson = json;
-      const msg = `data: ${JSON.stringify(latest)}\n\n`;
+      const msg = `data: {"generatedAt":${JSON.stringify(latest.generatedAt)},"host":${JSON.stringify(latest.host)},"windowHours":${latest.windowHours},"tools":${JSON.stringify(latest.tools)},"sessions":${sJ},"links":${lJ},"usage":${uJ}}\n\n`;
       for (const res of clients) res.write(msg);
     }
   } catch (e) {
@@ -694,6 +730,11 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(env));
     return;
   }
+  if (url.pathname === '/api/perf') {
+    const sorted = [...tickMs].sort((a, b) => a - b);
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ticks: tickMs.length, medianMs: sorted[sorted.length >> 1] ?? null, maxMs: sorted.at(-1) ?? null, payloadKB: Math.round(lastJson.length / 1024) }));
+    return;
+  }
   if (url.pathname === '/api/window') {
     const h = Number(url.searchParams.get('hours'));
     if ([6, 24, 72, 168].includes(h)) {
@@ -740,7 +781,10 @@ const server = http.createServer(async (req, res) => {
     try {
       const [code, msg] = await handleCommand(url.pathname.slice('/api/cmd/'.length), await readBody(req));
       res.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' }).end(msg);
-      if (code === 200) setTimeout(() => (lastJson = ''), 300); // 바로 다시 그리게
+      if (code === 200) {
+        invalidateProcCaches();
+        setTimeout(() => (lastJson = ''), 300); // 바로 다시 그리게
+      }
     } catch (e) {
       res.writeHead(500).end(e.message);
     }
