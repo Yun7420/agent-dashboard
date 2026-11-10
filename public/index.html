@@ -77,16 +77,16 @@
   .brand h1 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
   .brand h1 span { color: var(--faint); font-weight: 500; margin-left: 2px; }
   .stats { display: flex; gap: 6px; }
-  .stat { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--dim); font-size: 12px; }
+  .stat { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--dim); font-size: 12px; }
   .stat em { font-style: normal; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
   header .spacer { flex: 1; }
   #conn { display: inline-flex; align-items: center; gap: 7px; color: var(--dim); font-size: 12px; }
 
   #notify.on { color: var(--accent); background: var(--accent-soft); }
-  footer.folded { height: 38px; }
+  footer.folded { height: 44px; }
   footer .h { user-select: none; }
   footer .h-right { display: inline-flex; align-items: center; gap: 12px; }
-  .fold-btn { font-size: 12px; padding: 2px 10px; border-radius: 999px; color: var(--dim); background: var(--surface-2); }
+  .fold-btn { font-size: 12px; height: 28px; padding: 0 12px; border-radius: 8px; color: var(--dim); background: var(--surface-2); }
   .usage-pill { display: inline-flex; align-items: center; gap: 10px; border-radius: 999px; height: 32px; padding: 0 14px; font-size: 12px; color: var(--dim); background: var(--surface-2); }
   .usage-pill .badge { margin-right: -2px; }
   .usage-pill .u { display: inline-flex; align-items: center; gap: 6px; }
@@ -143,7 +143,7 @@
   .ctx-bar.high { background: var(--waiting); }
   .ctx-chip { display: inline-flex; align-items: center; gap: 6px; }
   .ctx-chip .mini { width: 46px; height: 4px; border-radius: 3px; background: rgba(255, 255, 255, .08); overflow: hidden; }
-  .card .x { position: absolute; right: 8px; bottom: 8px; width: 22px; height: 22px; padding: 0; border-radius: 6px; font-size: 11px; line-height: 20px; color: var(--faint); background: var(--surface-3); border: 1px solid var(--border); opacity: 0; }
+  .card .x { position: absolute; right: 8px; bottom: 8px; width: 24px; height: 24px; padding: 0; border-radius: 8px; font-size: 11px; line-height: 22px; color: var(--faint); background: var(--surface-3); border: 1px solid var(--border); opacity: 0; }
   .card:hover .x { opacity: 1; }
   .card .x:hover { color: var(--waiting); border-color: rgba(251, 111, 146, .5); background: rgba(251, 111, 146, .1); }
   .badge { display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 6px; font-size: 11px; font-weight: 600; flex: none; }
@@ -213,7 +213,7 @@
   .resize:hover, .resize.on { background: linear-gradient(90deg, rgba(139, 124, 246, .5), transparent); }
   #drawer.dragging { transition: none; user-select: none; }
   #drawer .head-top button { font-size: 12px; padding: 4px 10px; }
-  #d-model { font-size: 12px; height: 32px; padding: 0 26px 0 10px; }
+  #d-model { font-size: 13px; height: 32px; padding: 0 26px 0 10px; }
   .badge-model { background: rgba(139, 124, 246, .14); color: #c8bfff; }
   #drawer .info-pop { flex-wrap: wrap; align-items: center; gap: 8px 10px; color: var(--faint); font-size: 12px; }
   #drawer .info-pop .path { font-family: var(--mono); font-size: 11px; color: var(--dim); word-break: break-all; }
@@ -242,6 +242,9 @@
   .now-head { flex: none; position: sticky; top: -14px; z-index: 1; margin-top: -14px; padding-top: 14px; padding-bottom: 8px; background: var(--surface-2); display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12px; color: var(--faint); }
   .who-now { font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--claude); }
   .now-time { margin-left: auto; }
+  .stop-btn { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; font-size: 12px; border-radius: 8px; background: transparent; color: var(--waiting); border: 1px solid rgba(251, 111, 146, .4); }
+  .stop-btn:hover:not(:disabled) { background: rgba(251, 111, 146, .12); border-color: var(--waiting); }
+  .stop-btn[hidden] { display: none; }
   .now-reply { font-size: 14px; line-height: 1.75; color: var(--text); white-space: pre-wrap; word-break: break-word; }
   .now-card { position: relative; }
   /* 빈 상태 문구는 카드(머리 아래 영역)의 정가운데에 — 스크롤 영역 높이와 상관없이 */
@@ -320,7 +323,7 @@
   #composer { flex: none; padding: 12px 16px 16px; border-top: 1px solid var(--border); }
   #composer .box { background: var(--bg); border: 1px solid rgba(139, 124, 246, .35); border-radius: 12px; padding: 10px 12px 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, .25); transition: border-color .15s, box-shadow .15s; }
   #composer .box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139, 124, 246, .15); }
-  #composer textarea { display: block; width: 100%; height: 60px; font-size: 13.5px; resize: none; background: transparent; border: none; outline: none; padding: 2px 2px 6px; }
+  #composer textarea { display: block; width: 100%; height: 60px; font-size: 14px; resize: none; background: transparent; border: none; outline: none; padding: 2px 2px 6px; }
   #composer .bar { display: flex; align-items: center; justify-content: space-between; }
   #composer .kbd-hint { color: var(--faint); font-size: 11px; }
   #composer .actions { display: flex; gap: 6px; }
@@ -387,10 +390,10 @@
 
   /* ---------- 아래 활동 로그 ---------- */
   footer { grid-column: 1 / 3; border-top: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; background: var(--surface); }
-  footer .h { padding: 8px 18px; color: var(--dim); font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+  footer .h { height: 44px; padding: 0 16px; color: var(--dim); font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
   footer .h .ttl { display: inline-flex; align-items: center; gap: 8px; }
   footer .h #updated { color: var(--faint); font-weight: 400; font-variant-numeric: tabular-nums; }
-  #events { overflow-y: auto; padding: 6px 18px; flex: 1; }
+  #events { overflow-y: auto; padding: 6px 16px; flex: 1; }
   #events div { display: flex; align-items: center; gap: 10px; padding: 3px 0; white-space: nowrap; overflow: hidden; }
   #events div > span:last-child { overflow: hidden; text-overflow: ellipsis; }
   #events .t { color: var(--faint); font-family: var(--mono); font-size: 11px; flex: none; }
@@ -498,7 +501,7 @@
     <div id="now-view">
       <div class="now-prompt" id="now-prompt"></div>
       <div class="now-card">
-        <div class="now-head"><span class="who-now">CLAUDE</span><span id="now-state"></span><span id="now-time" class="now-time"></span></div>
+        <div class="now-head"><span class="who-now">CLAUDE</span><span id="now-state"></span><span id="now-time" class="now-time"></span><button type="button" class="stop-btn" id="stop" title="지금 하던 작업 멈추기 (세션은 그대로)" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>멈추기</button></div>
         <div class="now-reply md" id="now-reply"></div>
         <div id="now-changes"></div>
       </div>
@@ -1068,6 +1071,7 @@ function renderNow(s) {
   const sec = Math.max(0, Math.floor((Date.now() - from) / 1000));
   $('#now-time').textContent = working ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : ago(s.lastAt);
   $('#log-count').textContent = promptLog.length ? promptLog.length : '';
+  $('#stop').hidden = !(s.status === 'working' && s.tmux);
   renderChanges(s);
   const ch = s.changes;
   document.querySelector('.now-card').classList.toggle('has-changes', Boolean(ch && (ch.edits.length || ch.commands.length)));
@@ -1402,6 +1406,15 @@ $('#wide').addEventListener('click', () => {
 window.addEventListener('resize', applyDrawerWidth);
 applyDrawerWidth();
 
+// 작업 멈추기
+$('#stop').addEventListener('click', async () => {
+  if (!selected) return;
+  $('#stop').disabled = true;
+  try { await api('/api/cmd/stop', { key: selected }); toast('멈췄어요. 세션과 대화는 그대로예요'); sentAt = null; }
+  catch (err) { toast(err.message); }
+  finally { setTimeout(() => ($('#stop').disabled = false), 1500); }
+});
+
 // 세션 닫기
 $('#end-session').addEventListener('click', () => { $('#more-menu').classList.remove('show'); if (selected) askClose(selected); });
 let closing = null;
@@ -1586,7 +1599,7 @@ applyAsideFold();
 
 function applyFold() {
   document.querySelector('footer').classList.toggle('folded', Boolean(pref.eventsFolded));
-  document.body.style.gridTemplateRows = pref.eventsFolded ? '60px 1fr 38px' : '';
+  document.body.style.gridTemplateRows = pref.eventsFolded ? '60px 1fr 44px' : '';
   $('#fold-ic').textContent = pref.eventsFolded ? '펼치기 ▴' : '접기 ▾';
 }
 $('#fold-ic').addEventListener('click', () => { pref.eventsFolded = !pref.eventsFolded; savePref(); applyFold(); view.init = false; renderGraph(); });

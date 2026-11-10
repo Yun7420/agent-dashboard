@@ -538,6 +538,14 @@ async function handleCommand(action, body) {
     else return [400, '알 수 없는 선택'];
     return [200, 'ok'];
   }
+  if (action === 'stop') {
+    // 작업 멈추기: Claude Code 의 "중단" 키(Esc)를 보낸다. 세션은 그대로 두고 지금 하던 응답·도구 실행만 멈춘다.
+    const s = findSession(body.key);
+    if (!s?.tmux) return [409, 'tmux 로 띄운 세션만 여기서 멈출 수 있어요'];
+    if (s.status !== 'working') return [409, '지금 작업 중이 아니에요'];
+    await tmux.sendKey(s.tmux.target, 'Escape');
+    return [200, 'ok'];
+  }
   if (action === 'close') {
     // 정상 종료: 사람이 치듯 /exit 를 보낸다. 대화 기록은 남아 --resume 으로 다시 열 수 있다.
     // 루프 같은 백그라운드 작업이 있으면 Claude 가 확인 창을 띄우고, 그건 승인 패널에서 고른다.
