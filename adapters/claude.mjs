@@ -174,7 +174,7 @@ export default {
       }
       out.push({ id: f.replace(/^agent-|\.jsonl$/g, ''), type: meta.agentType ?? 'subagent', description: meta.description ?? '', mtimeMs: st.mtimeMs, done });
     }
-    return out.sort((a, b) => b.mtimeMs - a.mtimeMs).slice(0, 8);
+    return out.sort((a, b) => b.mtimeMs - a.mtimeMs).slice(0, 50); // 너무 오래 쌓인 경우만 자른다
   },
 
   async peers(s) {

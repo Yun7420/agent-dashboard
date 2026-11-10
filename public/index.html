@@ -175,7 +175,7 @@
   #drawer .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--faint); }
   #drawer .search input { width: 100%; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; padding: 7px 10px 7px 32px; outline: none; }
   #drawer .search input:focus { border-color: var(--accent); }
-  #log-list { overflow-y: auto; flex: 1; }
+  #log-list { overflow-y: auto; flex: 1; min-height: 60px; }
   .commit { padding: 16px 18px; border-bottom: 1px solid var(--border); }
   .commit .m { display: flex; gap: 8px; align-items: center; color: var(--faint); font-size: 11px; margin-bottom: 8px; }
   .commit .m .sha { color: var(--accent); font-weight: 700; font-family: var(--mono); }
@@ -199,12 +199,15 @@
   #busy-time { margin-left: auto; color: var(--faint); font-size: 11.5px; }
   .spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(245, 185, 66, .25); border-top-color: var(--working); animation: spin .8s linear infinite; flex: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  #approval { margin: 0 12px 10px; border: 1px solid rgba(251, 111, 146, .4); background: rgba(251, 111, 146, .06); border-radius: 12px; padding: 12px 14px; }
+  /* 승인 창이 떠 있으면 승인과 입력창이 먼저 보이게, 최근 답변·검색은 잠깐 접는다 */
+  #drawer.approving .now, #drawer.approving .search { display: none; }
+  #drawer.approving #log-list { min-height: 0; flex: 0 1 auto; max-height: 0; }
+  #approval { flex: none; max-height: 52%; overflow-y: auto; margin: 0 12px 10px; border: 1px solid rgba(251, 111, 146, .4); background: rgba(251, 111, 146, .06); border-radius: 12px; padding: 12px 14px; }
   #approval h3 { margin: 0 0 8px; font-size: 13px; color: var(--waiting); }
-  #approval pre { margin: 0 0 10px; max-height: 220px; overflow: auto; font: 11px/1.4 var(--mono); white-space: pre-wrap; color: #f3d6e0; background: rgba(0, 0, 0, .25); border-radius: 8px; padding: 8px 10px; }
+  #approval pre { margin: 0 0 10px; max-height: 170px; overflow: auto; font: 11px/1.4 var(--mono); white-space: pre-wrap; color: #f3d6e0; background: rgba(0, 0, 0, .25); border-radius: 8px; padding: 8px 10px; }
   #approval .btns { display: flex; flex-wrap: wrap; gap: 6px; }
 
-  #composer { padding: 12px 14px 14px; border-top: 1px solid var(--border); }
+  #composer { flex: none; padding: 12px 14px 14px; border-top: 1px solid var(--border); }
   #composer .box { background: var(--bg); border: 1px solid var(--border-strong); border-radius: 12px; padding: 8px 10px 6px; transition: border-color .15s, box-shadow .15s; }
   #composer .box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139, 124, 246, .15); }
   #composer textarea { display: block; width: 100%; height: 52px; resize: none; background: transparent; border: none; outline: none; padding: 2px 2px 6px; }
@@ -215,7 +218,17 @@
   #composer .why:empty { display: none; }
   #composer .why code { color: var(--dim); user-select: all; }
   .icon-btn { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border-radius: 8px; }
-  #mic { background: transparent; border-color: transparent; color: var(--dim); }
+  #mic, #attach { background: transparent; border-color: transparent; color: var(--dim); }
+  #attach:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
+  #attach-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  #attach-list:not(:empty) { margin-bottom: 8px; }
+  .att { display: inline-flex; align-items: center; gap: 6px; max-width: 220px; padding: 3px 6px 3px 3px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border-strong); font-size: 11.5px; color: var(--dim); }
+  .att img, .att .ic { width: 28px; height: 28px; border-radius: 5px; object-fit: cover; flex: none; background: var(--surface-3); display: grid; place-items: center; font-size: 10px; }
+  .att .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .att.up { opacity: .55; }
+  .att button { padding: 0 4px; border: none; background: transparent; color: var(--faint); font-size: 12px; }
+  .att button:hover { color: var(--waiting); background: transparent !important; }
+  #composer .box.drop { border-color: var(--accent); background: var(--accent-soft); }
   #mic:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
   #send { color: #fff; }
   #send svg { transform: translate(-1px, 1px); } /* 종이비행기는 모양이 오른쪽 위로 쏠려 보여서 살짝 보정 */
@@ -275,6 +288,21 @@
   #events .x { color: var(--waiting); }
   #events .e { color: var(--faint); }
   #events .n { color: var(--text); }
+
+  /* ---------- 좁은 창 (화면을 나눠 쓸 때) ---------- */
+  @media (max-width: 1100px) {
+    .stats .stat:nth-child(n+3) { display: none; }
+    .usage-pill .rs { display: none; }
+    header label.switch { display: none; }
+  }
+  @media (max-width: 860px) {
+    body { grid-template-columns: 1fr; grid-template-rows: 56px 1fr 120px; }
+    aside { display: none; }
+    header { gap: 8px; padding: 0 12px; }
+    .brand h1 span, .stats, #conn, #window { display: none; }
+    #drawer { top: 0; right: 0; bottom: 0; width: 100%; border-radius: 0; border: none; }
+    .hint { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -347,10 +375,13 @@
     </div>
     <form id="composer">
       <div class="box">
-        <textarea id="msg" placeholder="세션에 메시지 보내기"></textarea>
+        <div id="attach-list"></div>
+        <textarea id="msg" placeholder="세션에 메시지 보내기 · 파일은 끌어다 놓거나 붙여넣기"></textarea>
+        <input type="file" id="file-input" multiple hidden />
         <div class="bar">
           <span class="kbd-hint">Enter 보내기 · Shift+Enter 줄바꿈</span>
           <div class="actions">
+        <button type="button" id="attach" class="icon-btn" title="파일·이미지 첨부" aria-label="첨부"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg></button>
         <button type="button" id="mic" class="icon-btn" title="음성 입력 (누르고 말하기 · 다시 누르면 멈춤)" aria-label="음성 입력" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg></button>
         <button class="primary icon-btn" id="send" title="보내기 (Enter)" aria-label="보내기"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></button>
           </div>
@@ -618,11 +649,8 @@ function buildTree() {
       for (const s of items) {
         p.children.push({
           kind: 'session', key: s.key, label: s.title, sub: `${STATUS_KO[s.status]}${s.lastTool && s.status === 'working' ? ' · ' + s.lastTool : ''}`, status: s.status,
-          children: [
-            // 서브에이전트는 최근 3개만 펼치고 나머지는 한 칸으로 접는다(조직도가 세로로 너무 길어지지 않게)
-            ...(s.subagents || []).slice(0, 3).map((a) => ({ kind: 'sub', label: a.type, sub: a.description, status: a.done ? 'idle' : s.status === 'ended' ? 'ended' : 'working', children: [] })),
-            ...((s.subagents || []).length > 3 ? [{ kind: 'sub', more: true, key: s.key, label: `+ ${s.subagents.length - 3}개 더`, sub: '서브에이전트', status: 'ended', children: [] }] : []),
-          ],
+          // 서브에이전트는 전부 세로로 쌓는다(화면이 길어지면 드래그로 내려 보면 된다)
+          children: (s.subagents || []).map((a) => ({ kind: 'sub', label: a.type, sub: a.description, status: a.done ? 'idle' : s.status === 'ended' ? 'ended' : 'working', children: [] })),
         });
       }
       t.children.push(p);
@@ -670,6 +698,8 @@ function renderGraph() {
   const shown = new Set(visible().map((s) => s.key));
   GAP_Y = (state.links || []).some((l) => shown.has(l.from) && shown.has(l.to)) ? 104 : 64;
   layout(tree);
+  const sig = `${bounds(tree).x2 | 0}x${bounds(tree).y2 | 0}`;
+  if (sig !== view.sig) { view.sig = sig; view.init = false; }
   let edges = '', nodes = '';
   const walk = (n) => {
     for (const c of n.children) {
@@ -748,10 +778,13 @@ function autoFit(tree) {
   const drawer = $('#drawer').classList.contains('open') ? $('#drawer').getBoundingClientRect().width + 24 : 0;
   const width = svg.width - drawer;
   const b = bounds(tree);
-  const k = Math.max(0.5, Math.min(1.2, (width - 60) / (b.x2 - b.x1), (svg.height - 60) / (b.y2 - b.y1)));
+  // 가로는 다 들어오게, 세로는 너무 작아지지 않는 선까지만 줄이고 넘치면 위에 붙여 드래그로 내려 보게 한다
+  const fitW = (width - 60) / (b.x2 - b.x1);
+  const fitH = (svg.height - 60) / (b.y2 - b.y1);
+  const k = Math.min(1.2, fitW, Math.max(fitH, Math.min(fitW, 0.7)));
   view.k = k;
   view.x = (width - (b.x2 - b.x1) * k) / 2 - b.x1 * k;
-  view.y = Math.max(24, (svg.height - (b.y2 - b.y1) * k) / 2.6) - b.y1 * k;
+  view.y = Math.max(28, (svg.height - (b.y2 - b.y1) * k) / 2.6) - b.y1 * k;
   view.init = true;
 }
 function applyView() { $('#viewport').setAttribute('transform', `translate(${view.x},${view.y}) scale(${view.k})`); }
@@ -815,6 +848,7 @@ function renderComposer(s) {
   $('#msg').disabled = !can;
   $('#send').disabled = !can;
   $('#mic').disabled = !can;
+  $('#attach').disabled = !can;
   $('#why').innerHTML = why;
 }
 
@@ -840,7 +874,9 @@ let paneTimer = null;
 async function renderApproval(s) {
   const box = $('#approval');
   clearTimeout(paneTimer);
-  if (s.status !== 'waiting' || !s.tmux) { box.hidden = true; return; }
+  const approving = s.status === 'waiting' && Boolean(s.tmux);
+  $('#drawer').classList.toggle('approving', approving);
+  if (!approving) { box.hidden = true; return; }
   box.hidden = false;
   let text = '';
   try { text = await api(`/api/pane?key=${encodeURIComponent(s.key)}`); } catch (e) { text = `(화면을 못 읽었어요: ${e.message})`; }
@@ -897,14 +933,54 @@ if (Recognition) {
   });
 }
 
+// ---------- 첨부 ----------
+let attachments = []; // { id, name, size, path?, url?, uploading }
+function renderAttachments() {
+  $('#attach-list').innerHTML = attachments.map((a) => `<span class="att ${a.uploading ? 'up' : ''}" title="${esc(a.path || a.name)}">${a.url ? `<img src="${a.url}" alt="">` : `<span class="ic">${esc((a.name.split('.').pop() || 'FILE').slice(0, 4).toUpperCase())}</span>`}<span class="nm">${esc(a.name)}</span><button type="button" data-rm="${a.id}" aria-label="빼기">✕</button></span>`).join('');
+}
+async function addFiles(files) {
+  for (const f of files) {
+    const a = { id: Math.random().toString(36).slice(2), name: f.name || 'pasted.png', size: f.size, uploading: true, url: f.type.startsWith('image/') ? URL.createObjectURL(f) : null };
+    attachments.push(a);
+    renderAttachments();
+    try {
+      const res = await fetch(`/api/upload?name=${encodeURIComponent(a.name)}`, { method: 'POST', headers: { 'X-Dashboard-Token': TOKEN }, body: f });
+      if (!res.ok) throw new Error((await res.text()) || '업로드 실패');
+      a.path = (await res.json()).path;
+      a.uploading = false;
+    } catch (err) {
+      attachments = attachments.filter((x) => x !== a);
+      toast(err.message);
+    }
+    renderAttachments();
+  }
+}
+$('#attach').addEventListener('click', () => $('#file-input').click());
+$('#file-input').addEventListener('change', (e) => { addFiles([...e.target.files]); e.target.value = ''; });
+$('#attach-list').addEventListener('click', (e) => { const b = e.target.closest('[data-rm]'); if (b) { attachments = attachments.filter((a) => a.id !== b.dataset.rm); renderAttachments(); } });
+$('#msg').addEventListener('paste', (e) => {
+  const files = [...(e.clipboardData?.files || [])];
+  if (files.length) { e.preventDefault(); addFiles(files.map((f, i) => (f.name && f.name !== 'image.png' ? f : new File([f], `pasted-${Date.now()}-${i}.${(f.type.split('/')[1] || 'png')}`, { type: f.type })))); }
+});
+const box = $('#composer .box');
+['dragenter', 'dragover'].forEach((ev) => box.addEventListener(ev, (e) => { if (e.dataTransfer?.types?.includes('Files') && !$('#msg').disabled) { e.preventDefault(); box.classList.add('drop'); } }));
+['dragleave', 'drop'].forEach((ev) => box.addEventListener(ev, () => box.classList.remove('drop')));
+box.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length && !$('#msg').disabled) { e.preventDefault(); addFiles([...e.dataTransfer.files]); } });
+
 async function sendMsg() {
   if (rec) rec.stop();
-  const text = $('#msg').value.trim();
+  if (attachments.some((a) => a.uploading)) { toast('파일을 올리는 중이에요. 잠시 뒤 보내 주세요'); return; }
+  const files = attachments.map((a) => a.path);
+  // 첨부는 메시지 뒤에 경로로 붙인다 — Claude 가 경로를 보고 파일(이미지 포함)을 직접 연다
+  const typed = $('#msg').value.trim();
+  const text = [typed || (files.length ? '첨부한 파일을 확인해 주세요.' : ''), ...files.map((p) => `첨부: ${p}`)].filter(Boolean).join('\n');
   if (!text || !selected) return;
   $('#send').disabled = true;
   try {
-    await api('/api/cmd/send', { key: selected, text });
+    await api('/api/cmd/send', { key: selected, text, files });
     $('#msg').value = '';
+    attachments = [];
+    renderAttachments();
     sentAt = Date.now();
     const s = state.sessions.find((x) => x.key === selected);
     if (s) renderBusy(s);

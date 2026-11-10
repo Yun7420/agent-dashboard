@@ -15,6 +15,9 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { adapters } from './adapters/index.mjs';
 import * as tmux from './lib/tmux.mjs';
+import * as demo from './lib/demo.mjs';
+
+const DEMO = process.env.DEMO === '1'; // 가짜 데이터로 화면만 보여 주는 모드(스크린샷용)
 
 const exec = promisify(execFile);
 const PORT = Number(process.env.PORT ?? 4545);
@@ -121,6 +124,7 @@ async function describe(s) {
 }
 
 async function buildState(windowHours) {
+  if (DEMO) return demo.demoState();
   const now = Date.now();
   const sinceMs = now - windowHours * 3600_000;
   const [scanned, { procs, parentOf }, panes] = await Promise.all([
@@ -308,6 +312,7 @@ async function buildLinks(chosen, sessions, alive, sinceMs) {
 const historyCache = new Map();
 
 async function promptHistory(key) {
+  if (DEMO) return demo.DEMO_HISTORY[key] ?? [];
   const [tool, ...rest] = key.split(':');
   const id = rest.join(':');
   const adapter = byId[tool];
@@ -478,12 +483,15 @@ function findSession(key) {
 }
 
 async function handleCommand(action, body) {
+  if (DEMO) return [200, action === 'spawn' ? JSON.stringify({ key: 'claude:demo-lead' }) : '데모 모드라 실제로 실행하지 않았어요'];
   if (action === 'send') {
     const s = findSession(body.key);
     const text = String(body.text ?? '').trim();
     if (!s?.tmux) return [409, 'tmux 로 띄운 세션에만 보낼 수 있어요'];
     if (s.status === 'waiting') return [409, '승인을 기다리는 중이라 보내지 않았어요. 먼저 승인/거절하세요'];
     if (!text) return [400, '빈 메시지'];
+    // 첨부 경로가 업로드 폴더 밖을 가리키지 않게 (화면에서 만든 경로만 받는다)
+    for (const f of body.files ?? []) if (!path.resolve(String(f)).startsWith(UPLOAD_DIR)) return [400, '잘못된 첨부 경로'];
     if (text.length > 20000) return [400, '메시지가 너무 길어요'];
     await tmux.sendText(s.tmux.target, text);
     return [200, 'ok'];
@@ -561,6 +569,7 @@ async function probe(cmd, args) {
 
 let envCache = null;
 async function checkEnv() {
+  if (DEMO) return (envCache = demo.DEMO_ENV);
   const platform = os.platform();
   const nodeMajor = Number(process.versions.node.split('.')[0]);
   const [claude, agents, tmuxV, codex, gemini] = await Promise.all([
@@ -608,6 +617,35 @@ async function tick() {
   } finally {
     setTimeout(tick, SCAN_MS);
   }
+}
+
+// 첨부 파일: 본문을 그대로 받아 ~/.agent-dashboard/uploads/<날짜>/ 에 저장하고 경로를 돌려준다(세션에는 경로를 보낸다)
+const UPLOAD_DIR = path.join(HOME, '.agent-dashboard', 'uploads');
+const UPLOAD_MAX = 25 * 1024 * 1024;
+
+function saveUpload(req, rawName) {
+  return new Promise((resolve, reject) => {
+    const safe = path.basename(String(rawName || 'file')).replace(/[^\w.가-힣-]+/g, '_').slice(-80) || 'file';
+    const day = new Date().toISOString().slice(0, 10);
+    const dir = path.join(UPLOAD_DIR, day);
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    const file = path.join(dir, `${crypto.randomBytes(3).toString('hex')}-${safe}`);
+    const chunks = [];
+    let size = 0;
+    req.on('data', (c) => {
+      size += c.length;
+      if (size > UPLOAD_MAX) {
+        reject(new Error('파일이 너무 커요(최대 25MB)'));
+        req.destroy();
+      } else chunks.push(c);
+    });
+    req.on('end', () => {
+      if (size > UPLOAD_MAX) return;
+      fs.writeFileSync(file, Buffer.concat(chunks), { mode: 0o600 });
+      resolve({ path: file, name: safe, size });
+    });
+    req.on('error', reject);
+  });
 }
 
 function readBody(req) {
@@ -675,12 +713,24 @@ const server = http.createServer(async (req, res) => {
   }
   if (url.pathname === '/api/pane') {
     if (!authorized(req)) return void res.writeHead(403).end('forbidden');
+    if (DEMO) return void res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }).end(demo.DEMO_PANE);
     const s = findSession(url.searchParams.get('key'));
     if (!s?.tmux) return void res.writeHead(404).end('');
     try {
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }).end(await tmux.capture(s.tmux.target));
     } catch (e) {
       res.writeHead(500).end(e.message);
+    }
+    return;
+  }
+  if (url.pathname === '/api/upload' && req.method === 'POST') {
+    if (!authorized(req)) return void res.writeHead(403).end('forbidden');
+    if (DEMO) return void res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ path: `/Users/me/.agent-dashboard/uploads/${url.searchParams.get('name')}`, name: url.searchParams.get('name'), size: 0 }));
+    try {
+      const saved = await saveUpload(req, url.searchParams.get('name'));
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(saved));
+    } catch (e) {
+      res.writeHead(413).end(e.message);
     }
     return;
   }
@@ -707,7 +757,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Agent Dashboard → http://localhost:${PORT}`);
+  console.log(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}`);
   checkEnv();
   tick();
 });
