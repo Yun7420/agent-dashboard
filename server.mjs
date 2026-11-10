@@ -778,8 +778,14 @@ const server = http.createServer(async (req, res) => {
   }
   if (url.pathname.startsWith('/api/cmd/') && req.method === 'POST') {
     if (!authorized(req)) return void res.writeHead(403).end('forbidden');
+    let body;
     try {
-      const [code, msg] = await handleCommand(url.pathname.slice('/api/cmd/'.length), await readBody(req));
+      body = await readBody(req);
+    } catch {
+      return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('요청 형식이 잘못됐어요');
+    }
+    try {
+      const [code, msg] = await handleCommand(url.pathname.slice('/api/cmd/'.length), body);
       res.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' }).end(msg);
       if (code === 200) {
         invalidateProcCaches();
