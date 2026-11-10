@@ -26,6 +26,7 @@
     --claude: #e08a68;
     --codex: #4fd1a5;
     --radius: 10px;
+    --bar-h: 52px; /* 왼쪽 목록 맨 윗줄과 오른쪽 패널 머리의 공통 높이 */
     --shadow: 0 10px 30px rgba(0, 0, 0, .35);
     --sans: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', 'Inter', system-ui, sans-serif;
     --mono: ui-monospace, 'SF Mono', Menlo, 'D2Coding', monospace;
@@ -98,17 +99,19 @@
 
   /* ---------- 왼쪽 목록 ---------- */
   aside { border-right: 1px solid var(--border); overflow-y: auto; background: var(--surface); }
-  .sort-bar { position: sticky; top: 0; z-index: 1; background: var(--surface); padding: 12px 12px 8px; }
-  .sort-bar { display: flex; gap: 6px; align-items: center; }
+  .sort-bar { position: sticky; top: 0; z-index: 1; background: var(--surface); height: var(--bar-h); padding: 0 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+  .sort-bar select { height: 32px; }
+  #aside-fold { width: 32px; height: 32px; flex: none; border-radius: 8px; }
   .sort-bar select { flex: 1; min-width: 0; }
   .card .ini { display: none; }
   /* 접힌 목록: 얇은 띠에 상태 점 + 이니셜만 (눌러서 열기, 승인 필요는 그대로 눈에 띄게) */
   body.aside-folded { grid-template-columns: 64px 1fr; }
-  body.aside-folded .sort-bar { padding: 12px 0 8px; justify-content: center; }
+  body.aside-folded .sort-bar { padding: 0 8px; justify-content: center; }
+  body.aside-folded #aside-fold { width: 100%; height: 36px; border-radius: var(--radius); }
   body.aside-folded .sort-bar select, body.aside-folded .group-h { display: none; }
   body.aside-folded #aside-fold svg { transform: scaleX(-1); }
   body.aside-folded #list { padding: 0 8px 12px; }
-  body.aside-folded .card { padding: 8px 0; margin: 6px 0; text-align: center; }
+  body.aside-folded .card { padding: 8px 0; margin: 4px 0; text-align: center; }
   body.aside-folded .card > :not(.ini) { display: none; }
   body.aside-folded .card .ini { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--dim); letter-spacing: .02em; }
   body.aside-folded .card.sel .ini { color: var(--text); }
@@ -185,10 +188,10 @@
   .empty[hidden] { display: none; }
 
   /* ---------- 오른쪽 서랍 ---------- */
-  #drawer { position: absolute; top: 12px; right: 12px; bottom: 12px; width: min(540px, 92%); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow); transform: translateX(calc(100% + 24px)); transition: transform .22s cubic-bezier(.2, .8, .2, 1); display: flex; flex-direction: column; overflow: hidden; }
+  #drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(540px, 92%); background: var(--surface); border-left: 1px solid var(--border); border-radius: 0; box-shadow: -12px 0 30px rgba(0, 0, 0, .25); transform: translateX(calc(100% + 24px)); transition: transform .22s cubic-bezier(.2, .8, .2, 1); display: flex; flex-direction: column; overflow: hidden; }
   #drawer.open { transform: none; }
-  #drawer .head { position: relative; padding: 12px 14px 0 16px; border-bottom: 1px solid var(--border); }
-  #drawer .head-top { display: flex; align-items: center; gap: 6px; padding-bottom: 10px; }
+  #drawer .head { position: relative; padding: 0 12px 0 16px; border-bottom: 1px solid var(--border); }
+  #drawer .head-top { display: flex; align-items: center; gap: 6px; height: calc(var(--bar-h) - 3px); }
   #drawer .head-top h2 { margin: 0 2px 0 4px; font-size: 15.5px; font-weight: 700; letter-spacing: -.01em; min-width: 0; max-width: 34%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #drawer .head-top .grow { flex: 1; }
   #drawer .tabs { margin: 0 0 0 6px; }
@@ -200,7 +203,7 @@
   .menu-pop { right: 0; padding: 6px; }
   .menu-pop.show { display: block; }
   .menu-pop button { width: 100%; white-space: nowrap; font-size: 12.5px; }
-  .ctx-line { height: 2px; margin: 0 -14px 0 -16px; background: rgba(255, 255, 255, .05); }
+  .ctx-line { height: 2px; margin: 0 -12px 0 -16px; background: rgba(255, 255, 255, .05); }
   .ctx-line i { display: block; height: 100%; background: var(--ok); transition: width .3s; }
   .ctx-line i.mid { background: var(--working); } .ctx-line i.high { background: var(--waiting); }
   .resize { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; z-index: 4; }
@@ -932,16 +935,17 @@ function bounds(n, b = { x1: Infinity, y1: Infinity, x2: -Infinity, y2: -Infinit
 function autoFit(tree) {
   const svg = $('#graph').getBoundingClientRect();
   // 오른쪽 패널이 열려 있으면 그 폭을 빼고 남은 공간에 맞춘다
-  const drawer = $('#drawer').classList.contains('open') ? $('#drawer').getBoundingClientRect().width + 24 : 0;
-  // 패널을 빼고 남는 폭이 너무 좁으면(좁은 창) 패널 뒤까지 포함한 전체 폭에 맞춘다 — 조직도가 점처럼 작아지지 않게
-  const width = svg.width - drawer >= 420 ? svg.width - drawer : svg.width;
+  const drawer = $('#drawer').classList.contains('open') ? $('#drawer').getBoundingClientRect().width : 0;
+  const width = Math.max(120, svg.width - drawer); // 패널에 가려지지 않는 보이는 폭
   const b = bounds(tree);
-  // 가로는 다 들어오게, 세로는 너무 작아지지 않는 선까지만 줄이고 넘치면 위에 붙여 드래그로 내려 보게 한다
-  const fitW = (width - 60) / (b.x2 - b.x1);
+  // 가로는 보이는 폭에 맞추되, 남은 폭이 좁아도 글자를 읽을 수 있게 0.45배 아래로는 줄이지 않는다
+  // (그 경우 왼쪽 끝부터 보이고 나머지는 드래그로 본다)
+  const fitW = (width - 48) / (b.x2 - b.x1);
   const fitH = (svg.height - 60) / (b.y2 - b.y1);
-  const k = Math.min(1.2, fitW, Math.max(fitH, Math.min(fitW, 0.7)));
+  const k = Math.max(0.45, Math.min(1.2, fitW, Math.max(fitH, Math.min(fitW, 0.7))));
   view.k = k;
-  view.x = (width - (b.x2 - b.x1) * k) / 2 - b.x1 * k;
+  const graphW = (b.x2 - b.x1) * k;
+  view.x = (graphW <= width - 48 ? (width - graphW) / 2 : 24) - b.x1 * k;
   view.y = Math.max(28, (svg.height - (b.y2 - b.y1) * k) / 2.6) - b.y1 * k;
   view.init = true;
 }
