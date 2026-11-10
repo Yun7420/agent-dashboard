@@ -767,7 +767,8 @@ const server = http.createServer(async (req, res) => {
     const s = findSession(url.searchParams.get('key'));
     if (!s?.tmux) return void res.writeHead(404).end('');
     try {
-      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }).end(await tmux.capture(s.tmux.target));
+      const { text, focus } = await tmux.captureWithFocus(s.tmux.target);
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Focus-Tab': encodeURIComponent(focus ?? '') }).end(text);
     } catch (e) {
       res.writeHead(500).end(e.message);
     }

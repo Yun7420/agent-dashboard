@@ -342,6 +342,7 @@
   .q-nav button { height: 28px; font-size: 12px; padding: 0 10px; flex: none; }
   .q-steps { flex: 1; min-width: 0; display: flex; gap: 10px; justify-content: center; font-size: 12px; color: var(--faint); overflow: hidden; white-space: nowrap; }
   .q-steps .done { color: var(--ok); }
+  .q-steps .cur { color: var(--text); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
 
   #composer { flex: none; padding: 12px 16px 16px; border-top: 1px solid var(--border); }
   #composer .box { background: var(--bg); border: 1px solid rgba(139, 124, 246, .35); border-radius: 12px; padding: 10px 12px 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, .25); transition: border-color .15s, box-shadow .15s; }
@@ -1208,6 +1209,7 @@ setInterval(() => { const s = selected && state?.sessions.find((x) => x.key === 
 
 // 승인 창: 터미널 화면을 그대로 보여 주고, 화면에서 찾은 번호 선택지를 버튼으로
 let paneTimer = null;
+let paneSeq = 0;
 async function renderApproval(s) {
   const box = $('#approval');
   clearTimeout(paneTimer);
@@ -1216,8 +1218,15 @@ async function renderApproval(s) {
   if (!approving) { box.hidden = true; return; }
   box.hidden = false;
   let text = '';
-  try { text = await api(`/api/pane?key=${encodeURIComponent(s.key)}`); } catch (e) { text = `(화면을 못 읽었어요: ${e.message})`; }
-  if (selected !== s.key) return;
+  let focus = '';
+  const seq = ++paneSeq;
+  try {
+    const res = await fetch(`/api/pane?key=${encodeURIComponent(s.key)}`, { headers: { 'X-Dashboard-Token': TOKEN } });
+    text = await res.text();
+    focus = decodeURIComponent(res.headers.get('X-Focus-Tab') || '');
+    if (!res.ok) throw new Error(text || res.statusText);
+  } catch (e) { text = `(화면을 못 읽었어요: ${e.message})`; }
+  if (selected !== s.key || seq !== paneSeq) return; // 그사이 더 새로운 요청이 나갔으면 이 응답은 버린다
   const pane = $('#pane');
   if (pane.textContent !== text) {
     const atBottom = pane.scrollHeight - pane.scrollTop - pane.clientHeight < 24 || !pane.dataset.seen;
@@ -1238,7 +1247,10 @@ async function renderApproval(s) {
   let nav = '';
   if (tabLine) {
     const steps = [...tabLine.matchAll(/([☐☒✔])\s+([^☐☒✔→]+?)(?=\s{2,}|\s*→|$)/g)].map((m) => ({ done: m[1] !== '☐', label: m[2].trim() })).filter((s) => s.label !== 'Submit');
-    nav = `<div class="q-nav"><button type="button" data-choice="left">← 이전 질문</button><span class="q-steps">${steps.map((s) => `<span class="${s.done ? 'done' : ''}">${s.done ? '✓' : '○'} ${esc(s.label)}</span>`).join('')}</span><button type="button" data-choice="right">다음 질문 →</button></div>`;
+    const cur = steps.findIndex((st) => st.label === focus);
+    const canNext = cur >= 0 && steps[cur].done && cur < steps.length - 1;
+    const canPrev = cur > 0 || (cur < 0 && focus === 'Submit');
+    nav = `<div class="q-nav"><button type="button" data-choice="left" ${canPrev ? '' : 'disabled'}>← 이전 질문</button><span class="q-steps">${steps.map((st, i) => `<span class="${st.done ? 'done' : ''} ${i === cur ? 'cur' : ''}">${st.done ? '✓' : '○'} ${esc(st.label)}</span>`).join('')}</span><button type="button" data-choice="right" ${canNext ? '' : 'disabled'} title="${canNext ? '' : '지금 질문에 먼저 답해 주세요'}">다음 질문 →</button></div>`;
   }
   const btnHtml = nav +
     options.map((o) => `<button data-choice="${o.n}" class="${/^no\b|아니/i.test(o.label) ? 'danger' : o.n === '1' ? 'primary' : ''}">${esc(o.n)}. ${esc(o.label)}</button>`).join('') +
@@ -1251,7 +1263,7 @@ $('#approve-btns').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-choice]');
   if (!b || !selected) return;
   $('#approve-btns').querySelectorAll('button').forEach((x) => (x.disabled = true));
-  try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice }); if (!['up', 'down', 'left', 'right'].includes(b.dataset.choice)) toast(b.dataset.choice === 'esc' ? '거절했어요' : `${b.textContent} 선택했어요`); setTimeout(() => { $('#approve-btns').dataset.src = ''; const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 400); }
+  try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice }); if (!['up', 'down', 'left', 'right'].includes(b.dataset.choice)) toast(b.dataset.choice === 'esc' ? '거절했어요' : `${b.textContent} 선택했어요`); setTimeout(() => { $('#approve-btns').dataset.src = ''; const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 350); }
   catch (err) { toast(err.message); }
 });
 
