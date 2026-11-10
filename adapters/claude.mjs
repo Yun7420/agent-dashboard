@@ -101,7 +101,7 @@ export default {
 
   async describe(s) {
     let cwd = null, currentDir = null, aiTitle = null, titlePrompt = null, lastPrompt = null, lastPromptAt = null;
-    let lastText = null, lastTool = null, turnState = 'idle', lastAt = null;
+    let lastText = null, lastTool = null, turnState = 'idle', lastAt = null, model = null, contextUsed = null;
     for (const l of await readTailLines(s.file)) {
       const d = parse(l);
       if (!d) continue;
@@ -117,6 +117,10 @@ export default {
       } else if (d.type === 'user' && Array.isArray(d.message?.content) && !d.isSidechain) {
         turnState = 'working'; // 도구 결과가 막 돌아옴 → 다음 응답 생성 중
       } else if (d.type === 'assistant' && !d.isSidechain) {
+        if (d.message?.model && !d.message.model.startsWith('<')) model = d.message.model;
+        // 이번 답변을 만들 때 읽은 토큰 = 지금 대화 창에 들어 있는 양
+        const u = d.message?.usage;
+        if (u) contextUsed = (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
         for (const c of d.message?.content ?? []) {
           if (c.type === 'tool_use') lastTool = c.name;
           if (c.type === 'text' && c.text?.trim()) lastText = c.text.trim();
@@ -148,6 +152,8 @@ export default {
       lastTool,
       turnState,
       lastAt,
+      model,
+      contextUsed,
       subagents: await this.subagents(sessionDir),
     };
   },

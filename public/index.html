@@ -79,6 +79,16 @@
   header .spacer { flex: 1; }
   #conn { display: inline-flex; align-items: center; gap: 7px; color: var(--dim); font-size: 12px; }
 
+  .usage-pill { display: inline-flex; align-items: center; gap: 10px; border-radius: 999px; padding: 4px 12px; font-size: 12px; color: var(--dim); background: var(--surface-2); }
+  .usage-pill .badge { margin-right: -2px; }
+  .usage-pill .u { display: inline-flex; align-items: center; gap: 6px; }
+  .usage-pill .u b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .usage-pill .bar { width: 38px; height: 4px; border-radius: 3px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+  .usage-pill .bar i { display: block; height: 100%; background: var(--ok); }
+  .usage-pill .bar i.mid { background: var(--working); }
+  .usage-pill .bar i.high { background: var(--waiting); }
+  .usage-pill .rs { color: var(--faint); font-size: 11px; }
+
   /* ---------- 왼쪽 목록 ---------- */
   aside { border-right: 1px solid var(--border); overflow-y: auto; background: var(--surface); }
   .sort-bar { position: sticky; top: 0; z-index: 1; background: var(--surface); padding: 12px 12px 8px; }
@@ -101,6 +111,12 @@
   .card .sub { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--faint); font-size: 11.5px; white-space: nowrap; overflow: hidden; }
   .card .sub .proj { min-width: 2em; overflow: hidden; text-overflow: ellipsis; color: var(--dim); }
   .card .sub .ago { flex: none; }
+  .ctx { height: 3px; margin-top: 8px; border-radius: 3px; background: rgba(255, 255, 255, .06); overflow: hidden; }
+  .ctx-bar { height: 100%; border-radius: 3px; background: var(--ok); }
+  .ctx-bar.mid { background: var(--working); }
+  .ctx-bar.high { background: var(--waiting); }
+  .ctx-chip { display: inline-flex; align-items: center; gap: 6px; }
+  .ctx-chip .mini { width: 46px; height: 4px; border-radius: 3px; background: rgba(255, 255, 255, .08); overflow: hidden; }
   .card .x { position: absolute; right: 8px; bottom: 8px; width: 22px; height: 22px; padding: 0; border-radius: 6px; font-size: 11px; line-height: 20px; color: var(--faint); background: var(--surface-3); border: 1px solid var(--border); opacity: 0; }
   .card:hover .x { opacity: 1; }
   .card .x:hover { color: var(--waiting); border-color: rgba(251, 111, 146, .5); background: rgba(251, 111, 146, .1); }
@@ -150,6 +166,8 @@
   #drawer .head-top { display: flex; align-items: center; gap: 8px; }
   #drawer .head-top h2 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #drawer .head-top button { font-size: 12px; padding: 4px 10px; }
+  #d-model { font-size: 12px; padding: 4px 26px 4px 10px; }
+  .badge-model { background: rgba(139, 124, 246, .14); color: #c8bfff; }
   #drawer .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; color: var(--faint); font-size: 11.5px; }
   #drawer .meta .path { font-family: var(--mono); font-size: 11px; color: var(--dim); word-break: break-all; }
   #drawer .now { margin-top: 12px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); font-size: 12.5px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; max-height: 160px; overflow: auto; resize: vertical; }
@@ -272,6 +290,7 @@
     <span class="stat"><span class="dot-s ended"></span>종료 <em id="c-ended">0</em></span>
   </div>
   <span class="spacer"></span>
+  <button id="usage" class="usage-pill" title="Claude 계정 사용 한도"></button>
   <label class="switch"><input type="checkbox" id="show-ended" /><span class="track"></span>종료된 세션</label>
   <select id="window">
     <option value="6">최근 6시간</option>
@@ -306,6 +325,12 @@
     <div class="head">
       <div class="head-top">
         <h2 id="d-title"></h2>
+        <select id="d-model" title="모델 바꾸기 (tmux 세션만)">
+          <option value="" disabled>모델 바꾸기</option>
+          <option value="opus">Opus</option>
+          <option value="sonnet">Sonnet</option>
+          <option value="haiku">Haiku</option>
+        </select>
         <button class="danger" id="end-session">세션 종료</button>
         <button class="ghost" id="close" title="세션은 그대로 두고 이 패널만 접어요">패널 접기 →</button>
       </div>
@@ -343,6 +368,13 @@
     <datalist id="cwd-list"></datalist>
     <label>세션 이름 (선택)</label>
     <input id="sp-name" placeholder="예: Frontend Manager" />
+    <label>모델</label>
+    <select id="sp-model" style="width:100%">
+      <option value="">기본 설정 따르기</option>
+      <option value="opus">Opus — 가장 똑똑함 · 복잡한 설계·리뷰</option>
+      <option value="sonnet">Sonnet — 균형 · 일반 개발</option>
+      <option value="haiku">Haiku — 가장 빠르고 저렴 · 단순 반복 작업</option>
+    </select>
     <label>첫 프롬프트 (선택)</label>
     <textarea id="sp-prompt" rows="3"></textarea>
     <div class="note">tmux 안에서 열려서 대시보드로 채팅·승인할 수 있어요. 터미널에서 보려면 <code>tmux attach -t dash-…</code></div>
@@ -354,6 +386,13 @@
     <h3 id="cl-title">세션 닫기</h3>
     <div id="cl-body" style="color:var(--dim);font-size:12px;line-height:1.7"></div>
     <div class="row"><button value="cancel">취소</button><button class="danger" id="cl-ok" value="ok">닫기</button></div>
+  </form>
+</dialog>
+<dialog id="usage-dlg">
+  <form method="dialog">
+    <h3><span class="badge tool claude" style="vertical-align:2px">Claude</span> 계정 사용 한도 보기</h3>
+    <div id="usage-body" style="color:var(--dim);font-size:12.5px;line-height:1.75"></div>
+    <div class="row"><button value="cancel">닫기</button><button class="primary" id="usage-act" value="act"></button></div>
   </form>
 </dialog>
 <div id="toast"></div>
@@ -519,6 +558,7 @@ function renderList() {
         <div class="row"><div class="title">${esc(s.title)}</div><span class="status ${s.status}"><span class="dot-s ${s.status} ${s.status === 'working' || s.status === 'waiting' ? 'pulse' : ''}"></span>${STATUS_KO[s.status]}</span></div>
         <button class="x" data-close="${esc(s.key)}" title="${s.status === 'ended' ? '목록에서 숨기기' : '세션 종료'}">✕</button>
         <div class="sub"><span class="badge tool ${s.tool}">${esc(s.toolLabel)}</span>${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span class="proj">${esc(s.project)}</span><span class="ago">· ${ago(s.lastAt)}</span>${s.subagents?.length ? `<span class="ago">· 서브 ${s.subagents.length}</span>` : ''}</div>
+        ${s.context && s.status !== 'ended' ? `<div class="ctx" title="대화 창 사용량 ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)}${s.context.estimated ? ' (창 크기 추정)' : ''}"><div class="ctx-bar ${ctxLevel(s.context.percent)}" style="width:${s.context.percent}%"></div></div>` : ''}
       </div>`;
     }
   }
@@ -750,8 +790,12 @@ async function select(key) {
 }
 function renderDrawerHead(s) {
   $('#d-title').textContent = s.title;
-  $('#d-meta').innerHTML = `<span class="badge tool ${s.tool}">${esc(s.toolLabel)}</span>${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span style="display:inline-flex;align-items:center;gap:6px"><span class="dot-s ${s.status}"></span>${STATUS_KO[s.status]}${s.waitingFor ? ' · ' + esc(s.waitingFor) : ''}</span><span class="path">${esc(s.cwd || '')}</span><span class="mono">세션 ${esc(s.id.slice(0, 8))}</span>${s.pid ? `<span>PID ${s.pid}</span><span>실행 ${esc(s.uptime ?? '')}</span>` : ''}${s.ide ? '<span>에디터 확장</span>' : ''}<span>기록 ${s.sizeMB ?? 0}MB</span>`;
+  $('#d-meta').innerHTML = `<span class="badge tool ${s.tool}">${esc(s.toolLabel)}</span>${s.model ? `<span class="badge badge-model" title="${esc(s.model)}">${esc(modelName(s.model))}</span>` : ''}${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span style="display:inline-flex;align-items:center;gap:6px"><span class="dot-s ${s.status}"></span>${STATUS_KO[s.status]}${s.waitingFor ? ' · ' + esc(s.waitingFor) : ''}</span><span class="path">${esc(s.cwd || '')}</span><span class="mono">세션 ${esc(s.id.slice(0, 8))}</span>${s.pid ? `<span>PID ${s.pid}</span><span>실행 ${esc(s.uptime ?? '')}</span>` : ''}${s.ide ? '<span>에디터 확장</span>' : ''}<span>기록 ${s.sizeMB ?? 0}MB</span>${s.context ? `<span class="ctx-chip" title="${s.context.estimated ? '창 크기는 모델 설정으로 추정했어요. ' : ''}가득 차면 Claude 가 앞부분을 자동 요약(compact)해요"><span class="mini"><span class="ctx-bar ${ctxLevel(s.context.percent)}" style="display:block;width:${s.context.percent}%"></span></span>대화 창 ${s.context.percent}% · ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)} · 남은 ${fmtTok(Math.max(0, s.context.window - s.context.used))}</span>` : ''}`;
   $('#end-session').hidden = s.status === 'ended';
+  const fam = (s.model || '').match(/opus|sonnet|haiku/)?.[0] ?? '';
+  $('#d-model').value = fam;
+  $('#d-model').disabled = !s.tmux || s.status === 'ended' || s.status === 'waiting';
+  $('#d-model').title = $('#d-model').disabled ? '모델 바꾸기는 tmux 로 띄운 세션에서만 돼요' : '모델 바꾸기 — 세션에 /model 을 보내요';
   $('#d-now').classList.add('md');
   $('#d-now').innerHTML = s.lastText ? `<span class="lbl">최근 답변 ›</span> ${md(s.lastText)}` : '최근 답변 없음';
   renderComposer(s);
@@ -876,6 +920,65 @@ $('#msg').addEventListener('keydown', (e) => {
   sendMsg();
 });
 
+// 토큰 수 읽기 쉽게: 625843 → 626K, 1000000 → 1M
+function fmtTok(n) {
+  if (n >= 1e6) return `${(n / 1e6).toFixed(n % 1e6 ? 1 : 0)}M`;
+  if (n >= 1e3) return `${Math.round(n / 1e3)}K`;
+  return String(n);
+}
+const ctxLevel = (p) => (p >= 85 ? 'high' : p >= 60 ? 'mid' : '');
+
+// 모델: 'claude-opus-5-5' → 'Opus 5.5'
+function modelName(id) {
+  const m = String(id).match(/claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?:-|$)/);
+  return m ? `${m[1][0].toUpperCase()}${m[1].slice(1)} ${m[2]}${m[3] ? '.' + m[3] : ''}` : id;
+}
+$('#d-model').addEventListener('change', async (e) => {
+  const model = e.target.value;
+  if (!selected || !model) return;
+  try { await api('/api/cmd/model', { key: selected, model }); toast(`이 세션을 ${model} 로 바꿨어요. 다음 답변부터 적용돼요 (기본 모델은 그대로)`); }
+  catch (err) { toast(err.message); }
+});
+
+// ---------- 계정 사용 한도 ----------
+function resetIn(iso) {
+  if (!iso) return '';
+  const t = typeof iso === 'number' ? iso * 1000 : Date.parse(iso);
+  const m = Math.max(0, Math.round((t - Date.now()) / 60000));
+  if (m < 60) return `${m}분 뒤 초기화`;
+  if (m < 60 * 24) return `${Math.floor(m / 60)}시간 ${m % 60}분 뒤 초기화`;
+  return `${new Date(t).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', weekday: 'short' })} 초기화`;
+}
+function renderUsage() {
+  const u = state?.usage;
+  const el = $('#usage');
+  const who = '<span class="badge tool claude">Claude</span>'; // 지금 사용 한도는 Claude 계정만 — Codex 등이 붙으면 도구별로 늘린다
+  if (!u?.enabled) { el.innerHTML = `${who}사용 한도 보기`; el.title = '켜면 Claude 계정의 5시간·주간 사용 한도를 여기에 보여 줘요'; return; }
+  if (!u.fiveHour && !u.sevenDay) { el.innerHTML = `${who}<span class="dot-s pulse"></span>사용 한도 · 다음 답변 때 갱신돼요`; el.title = 'Claude 세션이 한 번 답을 하면 값이 들어와요'; return; }
+  const item = (label, w) => w ? `<span class="u" title="${resetIn(w.resetsAt)}">${label} <b>${w.percent}%</b><span class="bar"><i class="${ctxLevel(w.percent)}" style="width:${w.percent}%"></i></span></span>` : '';
+  el.innerHTML = who + item('5시간', u.fiveHour) + item('주간', u.sevenDay) + (u.fiveHour?.resetsAt ? `<span class="rs">${resetIn(u.fiveHour.resetsAt)}</span>` : '');
+  el.title = `Claude 계정 사용 한도(5시간·주간) · ${u.updatedAt ? new Date(u.updatedAt).toLocaleTimeString('ko-KR') + ' 기준' : ''}`;
+}
+$('#usage').addEventListener('click', () => {
+  const on = state?.usage?.enabled;
+  $('#usage-body').innerHTML = on
+    ? '지금 <b style="color:var(--text)">켜져 있어요.</b> 끄면 Claude 상태줄 설정을 켜기 전 상태로 되돌려요(원래 쓰던 상태줄이 있었다면 그대로 복구).'
+    : ['Claude 의 <b style="color:var(--text)">5시간·주간 사용 한도</b>와 세션별 <b style="color:var(--text)">정확한 대화 창 사용량</b>을 보여 줘요.',
+       '이 정보는 Claude Code 가 <b style="color:var(--text)">상태줄(statusLine)</b>에만 알려 줘서, 켜면 <code>~/.claude/settings.json</code> 에 상태줄을 하나 등록해요.',
+       '· 모든 Claude 세션 화면 맨 아래에 <code>모델 · 대화 창 % · 5시간 한도 %</code> 한 줄이 생겨요. 원래 쓰던 상태줄이 있으면 그걸 그대로 보여 줘요.',
+       '· 켜기 전 설정은 <code>~/.agent-dashboard/</code> 에 백업하고, 끄면 원래대로 되돌려요.',
+       '· 값은 세션이 답할 때마다 갱신돼요. 한도 정보는 Claude.ai 요금제(Pro·Max)에서만 나와요.'].join('<br>');
+  $('#usage-act').textContent = on ? '끄기' : '켜기';
+  $('#usage-act').className = on ? 'danger' : 'primary';
+  $('#usage-dlg').showModal();
+});
+$('#usage-dlg').addEventListener('close', async () => {
+  if ($('#usage-dlg').returnValue !== 'act') return;
+  const on = state?.usage?.enabled;
+  try { toast(await api(`/api/cmd/${on ? 'usage-off' : 'usage-on'}`, {})); loadEnv(true); }
+  catch (err) { toast(err.message); }
+});
+
 // 세션 닫기
 $('#end-session').addEventListener('click', () => selected && askClose(selected));
 let closing = null;
@@ -923,7 +1026,7 @@ $('#spawn-form').addEventListener('submit', async (e) => {
   if (e.submitter?.value !== 'ok') return;
   e.preventDefault();
   try {
-    const r = JSON.parse(await api('/api/cmd/spawn', { cwd: $('#sp-cwd').value, name: $('#sp-name').value, prompt: $('#sp-prompt').value }));
+    const r = JSON.parse(await api('/api/cmd/spawn', { cwd: $('#sp-cwd').value, name: $('#sp-name').value, model: $('#sp-model').value, prompt: $('#sp-prompt').value }));
     $('#spawn-dlg').close();
     $('#sp-name').value = ''; $('#sp-prompt').value = '';
     toast('새 세션을 열었어요. 몇 초 뒤 목록에 나타나요');
@@ -979,6 +1082,7 @@ $('#window').addEventListener('change', (e) => { fetch(`/api/window?hours=${e.ta
 function render() {
   if (!state) return;
   const count = (st) => state.sessions.filter((s) => s.status === st).length;
+  renderUsage();
   $('#c-waiting').textContent = count('waiting');
   $('#c-working').textContent = count('working');
   $('#c-idle').textContent = count('idle');

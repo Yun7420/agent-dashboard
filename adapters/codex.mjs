@@ -38,6 +38,7 @@ export default {
 
   async describe(s) {
     const meta = parse((await readHeadLines(s.file))[0])?.payload ?? {};
+    let contextUsed = null, contextWindow = null;
     let cwd = meta.cwd ?? null, lastPrompt = null, lastPromptAt = null, lastText = null, lastTool = null, turnState = 'idle', lastAt = null;
     for (const l of await readTailLines(s.file)) {
       const d = parse(l);
@@ -50,7 +51,13 @@ export default {
           lastPrompt = p.message;
           lastPromptAt = d.timestamp;
         } else if (p.type === 'agent_message') lastText = p.message;
-        else if (p.type === 'task_started') turnState = 'working';
+        else if (p.type === 'task_started') {
+        turnState = 'working';
+        if (p.model_context_window) contextWindow = p.model_context_window;
+      } else if (p.type === 'token_count' && p.info?.last_token_usage) {
+        contextUsed = p.info.last_token_usage.input_tokens ?? null;
+        if (p.info.model_context_window) contextWindow = p.info.model_context_window;
+      }
         else if (p.type === 'task_complete') turnState = 'idle';
       } else if (d.type === 'response_item' && p.type === 'function_call') lastTool = p.name;
     }
@@ -65,6 +72,8 @@ export default {
       lastTool,
       turnState,
       lastAt,
+      contextUsed,
+      contextWindow,
       subagents: [],
     };
   },
