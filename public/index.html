@@ -338,6 +338,10 @@
   #approval h3 { margin: 0 0 8px; font-size: 13px; color: var(--waiting); }
   #approval pre { margin: 0 0 10px; max-height: 170px; overflow: auto; font: 11px/1.4 var(--mono); white-space: pre-wrap; color: #f3d6e0; background: rgba(0, 0, 0, .25); border-radius: 8px; padding: 8px 10px; }
   #approval .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+  .q-nav { flex-basis: 100%; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; margin-bottom: 2px; border-bottom: 1px solid rgba(251, 111, 146, .2); }
+  .q-nav button { height: 28px; font-size: 12px; padding: 0 10px; flex: none; }
+  .q-steps { flex: 1; min-width: 0; display: flex; gap: 10px; justify-content: center; font-size: 12px; color: var(--faint); overflow: hidden; white-space: nowrap; }
+  .q-steps .done { color: var(--ok); }
 
   #composer { flex: none; padding: 12px 16px 16px; border-top: 1px solid var(--border); }
   #composer .box { background: var(--bg); border: 1px solid rgba(139, 124, 246, .35); border-radius: 12px; padding: 10px 12px 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, .25); transition: border-color .15s, box-shadow .15s; }
@@ -1222,11 +1226,21 @@ async function renderApproval(s) {
     pane.dataset.seen = '1';
   }
   const options = [];
-  for (const line of text.split('\n').slice(-20)) {
+  // 선택지는 화면 맨 아래 선택창 안에서만 찾는다: 여러 질문 창이면 "← … →" 줄 아래, 아니면 마지막 40줄
+  const lines = text.split('\n');
+  const tabIdx = lines.map((l) => /^\s*←.*(Submit|→)\s*$/.test(l)).lastIndexOf(true);
+  for (const line of tabIdx >= 0 ? lines.slice(tabIdx + 1) : lines.slice(-40)) {
     const m = line.match(/^[\s│|]*(?:❯|›|>)?\s*([1-9])\.\s+(.+?)[\s│|]*$/);
     if (m && !options.some((o) => o.n === m[1])) options.push({ n: m[1], label: m[2] });
   }
-  const btnHtml =
+  // 질문이 여러 개인 선택창: 맨 위 "←  ☒ 질문1  ☐ 질문2 … ✔ Submit  →" 줄이 보이면 이전/다음 질문으로 오갈 수 있게
+  const tabLine = text.split('\n').find((l) => /^\s*←.*(Submit|→)\s*$/.test(l));
+  let nav = '';
+  if (tabLine) {
+    const steps = [...tabLine.matchAll(/([☐☒✔])\s+([^☐☒✔→]+?)(?=\s{2,}|\s*→|$)/g)].map((m) => ({ done: m[1] !== '☐', label: m[2].trim() })).filter((s) => s.label !== 'Submit');
+    nav = `<div class="q-nav"><button type="button" data-choice="left">← 이전 질문</button><span class="q-steps">${steps.map((s) => `<span class="${s.done ? 'done' : ''}">${s.done ? '✓' : '○'} ${esc(s.label)}</span>`).join('')}</span><button type="button" data-choice="right">다음 질문 →</button></div>`;
+  }
+  const btnHtml = nav +
     options.map((o) => `<button data-choice="${o.n}" class="${/^no\b|아니/i.test(o.label) ? 'danger' : o.n === '1' ? 'primary' : ''}">${esc(o.n)}. ${esc(o.label)}</button>`).join('') +
     `<button data-choice="esc" class="danger">거절 (Esc)</button>` +
     (options.length ? '' : `<span style="color:var(--faint);align-self:center">번호 없는 선택창 →</span><button data-choice="up">↑</button><button data-choice="down">↓</button><button data-choice="enter" class="primary">Enter (❯ 표시된 항목 선택)</button>`);
@@ -1237,7 +1251,7 @@ $('#approve-btns').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-choice]');
   if (!b || !selected) return;
   $('#approve-btns').querySelectorAll('button').forEach((x) => (x.disabled = true));
-  try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice }); if (!['up', 'down'].includes(b.dataset.choice)) toast(b.dataset.choice === 'esc' ? '거절했어요' : `${b.textContent} 선택했어요`); setTimeout(() => { $('#approve-btns').dataset.src = ''; const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 400); }
+  try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice }); if (!['up', 'down', 'left', 'right'].includes(b.dataset.choice)) toast(b.dataset.choice === 'esc' ? '거절했어요' : `${b.textContent} 선택했어요`); setTimeout(() => { $('#approve-btns').dataset.src = ''; const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 400); }
   catch (err) { toast(err.message); }
 });
 

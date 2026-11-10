@@ -532,7 +532,7 @@ async function handleCommand(action, body) {
     if (!s?.tmux) return [409, 'tmux 로 띄운 세션만 여기서 승인할 수 있어요'];
     if (s.status !== 'waiting') return [409, '지금은 승인 요청이 없어요'];
     const choice = String(body.choice ?? '');
-    const KEYS = { esc: 'Escape', up: 'Up', down: 'Down', enter: 'Enter' };
+    const KEYS = { esc: 'Escape', up: 'Up', down: 'Down', enter: 'Enter', left: 'Left', right: 'Right' };
     if (KEYS[choice]) await tmux.sendKey(s.tmux.target, KEYS[choice]);
     else if (/^[1-9]$/.test(choice)) await tmux.sendKey(s.tmux.target, choice);
     else return [400, '알 수 없는 선택'];
