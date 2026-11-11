@@ -334,6 +334,9 @@
   .md b { color: var(--text); }
   .md code { background: var(--surface-3); padding: 1px 5px; border-radius: 4px; color: #f5c9d8; }
   .md .h { color: var(--text); font-weight: 700; }
+  .md table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 0; font-size: 12.5px; line-height: 1.55; white-space: normal; }
+  .md th, .md td { border: 1px solid var(--border); padding: 5px 9px; text-align: left; vertical-align: top; }
+  .md th { background: var(--surface-2); color: var(--text); font-weight: 700; white-space: nowrap; }
   #d-now .lbl { color: var(--accent); font-weight: 600; }
 
   #busy { display: none !important; align-items: center; gap: 10px; margin: 0 14px 10px; padding: 9px 12px; border-radius: 12px; background: rgba(245, 185, 66, .07); border: 1px solid rgba(245, 185, 66, .25); color: #f3d79c; font-size: 13px; }
@@ -1558,9 +1561,31 @@ $('#spawn-form').addEventListener('submit', async (e) => {
   } catch (err) { toast(err.message); }
 });
 let pendingSelect = null;
-// 마크다운 일부만 가볍게: **굵게**, `코드`, # 제목. (나머지는 원문 그대로)
+// 마크다운 일부만 가볍게: **굵게**, `코드`, # 제목, | 표 |. (나머지는 원문 그대로)
+const TABLE_ROW = /^\s*\|.*\|\s*$/;
+const TABLE_SEP = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/;
+const cells = (line) => line.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+function mdTables(s) {
+  const lines = s.split('\n');
+  let out = '';
+  for (let i = 0; i < lines.length; i++) {
+    if (TABLE_ROW.test(lines[i]) && TABLE_SEP.test(lines[i + 1] || '')) {
+      const head = cells(lines[i]);
+      let j = i + 2;
+      const rows = [];
+      while (j < lines.length && TABLE_ROW.test(lines[j])) rows.push(cells(lines[j++]));
+      // 표는 블록이라 앞뒤 줄바꿈을 그대로 두면 pre-wrap 에서 빈 줄이 생긴다 → 표 뒤 줄바꿈은 먹는다
+      out += `<table><thead><tr>${head.map((c) => `<th>${c}</th>`).join('')}</tr></thead><tbody>${
+        rows.map((r) => `<tr>${head.map((_, k) => `<td>${r[k] ?? ''}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      i = j - 1;
+      continue;
+    }
+    out += lines[i] + (i < lines.length - 1 ? '\n' : '');
+  }
+  return out;
+}
 function md(s) {
-  return esc(s)
+  return mdTables(esc(s))
     .replace(/`([^`\n]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>')
     .replace(/^#{1,4}\s+(.+)$/gm, '<span class="h">$1</span>');
