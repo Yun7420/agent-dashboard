@@ -130,6 +130,7 @@ A session already running in a terminal has no official way to receive input fro
 
 - Drag to pan · wheel to zoom · double-click to fit · **click empty space = close the right panel**
 - Dashed line = working in the same folder, yellow = working, **purple arrow = messages between sessions**
+- **Status text color** under each session box: idle = purple · working = yellow · background = light yellow · **needs approval = pink (bold)**
 - **Click a project box** to open that folder in **VS Code · Cursor, or reveal it in Finder** (only installed apps are shown; only folders of listed sessions can be opened)
 - Subagents: all running ones, up to 5 finished in the last 10 minutes, the rest folded into **"N done"** (click to expand)
 </details>
@@ -142,6 +143,7 @@ A session already running in a terminal has no official way to receive input fro
 - **Now** tab: last request + **current answer** + **file diffs** + **commands** (✓/✕, output, "show all" for long ones)
 - While working, **■ Stop** on the answer card stops the current task only (sends Esc); the session and conversation stay
 - **History** tab: past prompts and answers, search, "load more"
+- Answers render **bold** · `code` · headings · **tables** (`| head |` + `|---|`). Wide tables scroll horizontally inside the table
 - Input: **Enter** to send · Shift+Enter for a new line · 🎤 voice · 📎 attach (drag & drop or ⌘V, up to 25MB)
 - Needs approval: the real terminal screen plus option buttons. **Check what you're allowing before you click.** The approval view fills the panel with the input pinned at the bottom, and keeps your scroll position while you read.
 - Multi-question prompts show **← Previous / Next →** and progress (✓ answered). You can go back to change an answer; you can't skip ahead before answering the current one.
