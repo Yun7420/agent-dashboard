@@ -83,6 +83,16 @@ tmux new -d -s dashboard -c <repo path> ./bin/run.sh
 tmux respawn-pane -k -t dashboard     # restart after editing code (sending Ctrl+C would kill the tmux session too)
 ```
 
+### After a restart: restore all sessions at once
+
+A restart kills tmux and every session inside it, but the conversations are saved, so they can be reopened with `--resume`. The dashboard keeps saving the list of live tmux Claude sessions (name · folder · session ID) to `~/.agent-dashboard/restore.json`, so you can bring them all back in one go.
+
+```bash
+npm run restore    # reopens the pre-restart sessions in tmux and starts the dashboard
+```
+
+If you open the dashboard first, the top of the list shows **"N sessions from before the restart · Reopen all"**. Sessions follow your default model; only ones you picked explicitly (Sonnet/Haiku) keep it. Conversations older than 30 days are cleaned up by Claude Code and can't be resumed.
+
 ## To chat and approve: start sessions in tmux
 
 A session already running in a terminal has no official way to receive input from outside. The dashboard types into sessions **through tmux, the way a person would**, so **only sessions started inside tmux** can be chatted with, approved or closed. Other sessions are view-only.

@@ -6,7 +6,8 @@
   "description": "내 컴퓨터에 떠 있는 AI 코딩 에이전트(Claude Code·Codex) 세션을 한 화면에서 보는 로컬 대시보드",
   "type": "module",
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "restore": "node bin/restore.mjs"
   },
   "engines": {
     "node": ">=18"

@@ -17,6 +17,7 @@ import { promisify } from 'node:util';
 import { adapters } from './adapters/index.mjs';
 import * as tmux from './lib/tmux.mjs';
 import * as demo from './lib/demo.mjs';
+import { saveSnapshot, restoreCandidates, restoreSessions } from './lib/restore.mjs';
 
 const DEMO = process.env.DEMO === '1'; // 가짜 데이터로 화면만 보여 주는 모드(스크린샷용)
 
@@ -595,6 +596,13 @@ async function handleCommand(action, body) {
       return [500, `설정 파일을 바꾸지 못했어요: ${e.message}`];
     }
   }
+  if (action === 'restore') {
+    // 재시동 전에 떠 있던 세션을 --resume 으로 한 번에 다시 띄운다(저장된 목록에 있는 것만)
+    const live = new Set((latest?.sessions ?? []).filter((s) => s.status !== 'ended').map((s) => s.id));
+    const done = await restoreSessions(restoreCandidates(live));
+    lastJson = '';
+    return [200, done.length ? `세션 ${done.length}개를 다시 열었어요. 몇 초 뒤 목록에 나타나요` : '다시 열 세션이 없어요'];
+  }
   if (action === 'spawn') {
     const cwd = path.resolve(String(body.cwd ?? '').replace(/^~(?=$|\/)/, HOME));
     if (!cwd.startsWith(HOME) || !fs.existsSync(cwd) || !fs.statSync(cwd).isDirectory()) return [400, '홈 폴더 아래에 있는 폴더만 열 수 있어요'];
@@ -668,11 +676,16 @@ async function tick() {
     tickMs.push(Math.round(performance.now() - t0));
     if (tickMs.length > 30) tickMs.shift();
     // 바뀐 게 있을 때만, 각 부분을 한 번씩만 문자열로 만들어 보낸다
-    const sJ = JSON.stringify(latest.sessions), lJ = JSON.stringify(latest.links), uJ = JSON.stringify(latest.usage);
-    const json = sJ + lJ + uJ;
+    // 재시동 복구: 떠 있는 tmux 세션 목록을 저장하고, 재시동 전 목록 중 지금 없는 세션을 알려 준다
+    if (!DEMO) {
+      saveSnapshot(latest.sessions);
+      latest.restore = restoreCandidates(new Set(latest.sessions.filter((s) => s.status !== 'ended').map((s) => s.id))).map((e) => ({ id: e.id, title: e.title, cwd: e.cwd }));
+    } else latest.restore = [];
+    const sJ = JSON.stringify(latest.sessions), lJ = JSON.stringify(latest.links), uJ = JSON.stringify(latest.usage), rJ = JSON.stringify(latest.restore);
+    const json = sJ + lJ + uJ + rJ;
     if (json !== lastJson) {
       lastJson = json;
-      const msg = `data: {"generatedAt":${JSON.stringify(latest.generatedAt)},"host":${JSON.stringify(latest.host)},"windowHours":${latest.windowHours},"tools":${JSON.stringify(latest.tools)},"sessions":${sJ},"links":${lJ},"usage":${uJ}}\n\n`;
+      const msg = `data: {"generatedAt":${JSON.stringify(latest.generatedAt)},"host":${JSON.stringify(latest.host)},"windowHours":${latest.windowHours},"tools":${JSON.stringify(latest.tools)},"sessions":${sJ},"links":${lJ},"usage":${uJ},"restore":${rJ}}\n\n`;
       for (const res of clients) res.write(msg);
     }
   } catch (e) {
