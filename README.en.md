@@ -43,6 +43,7 @@ Agent Dashboard puts all of this on one screen.
 | 👀 | **Live status** | Working · **background task** · idle · **needs approval** · ended, plus the current tool and elapsed time |
 | 🗺️ | **Org chart** | This Mac → tool → project → session → subagent. Messages between sessions are **purple arrows** (count + last message) |
 | 💬 | **Chat · approve** | Send messages to tmux sessions (Enter), voice input, **file/image attachments**. Approval prompts show the real terminal screen plus option buttons; multi-question prompts let you go back and forth |
+| 📂 | **Open the folder** | Click a project box to open that folder in VS Code · Cursor or reveal it in Finder — no hunting for the folder when you want to check what changed |
 | ■ | **Stop · close** | Stop only what a session is doing (the conversation stays), or close a session from the dashboard |
 | 📝 | **Live code diff** | Files changed in the current request with +/− counts and red/green diffs; commands with ✓ pass / ✕ fail and output |
 | 🧠 | **Model · usage** | Start sessions with Opus · Sonnet · Haiku, switch a running session's model, context usage, Claude account 5-hour/weekly limits |
@@ -129,6 +130,7 @@ A session already running in a terminal has no official way to receive input fro
 
 - Drag to pan · wheel to zoom · double-click to fit · **click empty space = close the right panel**
 - Dashed line = working in the same folder, yellow = working, **purple arrow = messages between sessions**
+- **Click a project box** to open that folder in **VS Code · Cursor, or reveal it in Finder** (only installed apps are shown; only folders of listed sessions can be opened)
 - Subagents: all running ones, up to 5 finished in the last 10 minutes, the rest folded into **"N done"** (click to expand)
 </details>
 

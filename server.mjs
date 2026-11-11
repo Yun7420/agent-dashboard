@@ -596,6 +596,18 @@ async function handleCommand(action, body) {
       return [500, `설정 파일을 바꾸지 못했어요: ${e.message}`];
     }
   }
+  if (action === 'open-dir') {
+    // 지금 목록에 있는 세션의 작업 폴더만 연다(아무 경로나 열지 않게)
+    const dir = path.resolve(String(body.dir ?? ''));
+    const known = (latest?.sessions ?? []).some((s) => s.cwd && path.resolve(s.cwd) === dir);
+    if (!known || !dir.startsWith(HOME) || !fs.existsSync(dir)) return [400, '목록에 있는 세션의 폴더만 열 수 있어요'];
+    try {
+      await openDir(dir, String(body.app ?? ''));
+    } catch (e) {
+      return [500, `열지 못했어요: ${e.message}`];
+    }
+    return [200, `${dir.replace(HOME, '~')} 를 열었어요`];
+  }
   if (action === 'restore') {
     // 재시동 전에 떠 있던 세션을 --resume 으로 한 번에 다시 띄운다(저장된 목록에 있는 것만)
     const live = new Set((latest?.sessions ?? []).filter((s) => s.status !== 'ended').map((s) => s.id));
@@ -632,6 +644,30 @@ async function probe(cmd, args) {
   }
 }
 
+// ---------- 폴더를 에디터·Finder 로 열기 ----------
+// macOS 는 앱이 설치돼 있으면 open -a 로, 그 밖에는 명령(code·cursor)이 있으면 그걸로 연다.
+const EDITORS = [
+  { id: 'vscode', label: 'VS Code', app: 'Visual Studio Code', cmd: 'code' },
+  { id: 'cursor', label: 'Cursor', app: 'Cursor', cmd: 'cursor' },
+];
+async function detectEditors() {
+  const found = [];
+  for (const e of EDITORS) {
+    const appOk = os.platform() === 'darwin' && ['/Applications', path.join(HOME, 'Applications')].some((d) => fs.existsSync(path.join(d, `${e.app}.app`)));
+    const cmdOk = !appOk && (await probe('which', [e.cmd])).ok;
+    if (appOk || cmdOk) found.push({ id: e.id, label: e.label });
+  }
+  found.push({ id: 'finder', label: os.platform() === 'darwin' ? 'Finder' : '파일 관리자' });
+  return found;
+}
+async function openDir(dir, id) {
+  const e = EDITORS.find((x) => x.id === id);
+  if (id === 'finder') return exec(os.platform() === 'darwin' ? 'open' : 'xdg-open', [dir]);
+  if (!e) throw new Error('알 수 없는 앱');
+  if (os.platform() === 'darwin' && ['/Applications', path.join(HOME, 'Applications')].some((d) => fs.existsSync(path.join(d, `${e.app}.app`)))) return exec('open', ['-a', e.app, dir]);
+  return exec(e.cmd, [dir]);
+}
+
 let envCache = null;
 async function checkEnv() {
   if (DEMO) return (envCache = demo.DEMO_ENV);
@@ -658,7 +694,7 @@ async function checkEnv() {
   ];
   const tokenFile = path.join(path.dirname(new URL(import.meta.url).pathname), '.dashboard-token');
   const token = { createdNow: TOKEN_CREATED_NOW, path: tokenFile.replace(HOME, '~'), createdAt: fs.statSync(tokenFile).birthtime.toISOString() };
-  envCache = { checkedAt: new Date().toISOString(), host: os.hostname(), items, token };
+  envCache = { checkedAt: new Date().toISOString(), host: os.hostname(), items, token, editors: await detectEditors() };
   return envCache;
 }
 

@@ -228,6 +228,12 @@
   .menu-pop { right: 0; padding: 6px; }
   .menu-pop.show { display: block; }
   .menu-pop button { width: 100%; white-space: nowrap; font-size: 13px; }
+  /* 프로젝트 박스를 누르면 뜨는 "폴더 열기" 메뉴 */
+  #dir-menu { position: fixed; top: 0; left: 0; right: auto; display: none; z-index: 12; min-width: 200px; max-width: 280px; }
+  #dir-menu.show { display: block; }
+  #dir-menu .dm-path { font-size: 11px; color: var(--faint); padding: 4px 6px 8px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #dir-menu button { text-align: left; margin-top: 4px; }
+  .node.proj:hover rect { stroke: var(--accent); }
   .ctx-line { height: 2px; margin: 0 -12px 0 -16px; background: rgba(255, 255, 255, .05); }
   .ctx-line i { display: block; height: 100%; background: var(--ok); transition: width .3s; }
   .ctx-line i.mid { background: var(--working); } .ctx-line i.high { background: var(--waiting); }
@@ -595,6 +601,7 @@
     <div class="row"><button value="cancel">닫기</button><button class="primary" id="usage-act" value="act"></button></div>
   </form>
 </dialog>
+<div class="menu-pop" id="dir-menu"></div>
 <div id="toast"></div>
 <div id="boot">
   <div class="boot-card">
@@ -838,7 +845,7 @@ function buildTree() {
       byProject.get(s.project).push(s);
     }
     for (const [project, items] of byProject) {
-      const p = { kind: 'group', label: project, sub: 'PROJECT', children: [], status: items.some((s) => s.status === 'waiting') ? 'waiting' : items.some((s) => s.status === 'working') ? 'working' : items.some((s) => s.status === 'background') ? 'background' : items.some((s) => s.status === 'idle') ? 'idle' : 'ended' };
+      const p = { kind: 'group', label: project, sub: 'PROJECT', dir: items.find((s) => s.cwd)?.cwd ?? null, children: [], status: items.some((s) => s.status === 'waiting') ? 'waiting' : items.some((s) => s.status === 'working') ? 'working' : items.some((s) => s.status === 'background') ? 'background' : items.some((s) => s.status === 'idle') ? 'idle' : 'ended' };
       for (const s of items) {
         p.children.push({
           kind: 'session', key: s.key, label: s.title, sub: `${STATUS_KO[s.status]}${s.lastTool && s.status === 'working' ? ' · ' + s.lastTool : ''}`, status: s.status,
@@ -928,10 +935,10 @@ function renderGraph() {
       edges += `<circle class="dot ${hot ? 'working' : ''}" cx="${(x1 + x2) / 2}" cy="${my}" r="2.5"/>`;
       walk(c);
     }
-    const cls = ['node', n.kind === 'sub' ? 'sub' : '', n.more ? 'more' : '', n.kind === 'group' || n.kind === 'root' ? 'group' : '', n.status || '', n.key && n.key === selected ? 'sel' : ''].join(' ');
+    const cls = ['node', n.dir ? 'proj' : '', n.kind === 'sub' ? 'sub' : '', n.more ? 'more' : '', n.kind === 'group' || n.kind === 'root' ? 'group' : '', n.status || '', n.key && n.key === selected ? 'sel' : ''].join(' ');
     const max = Math.floor((n.w - 14) / 7.4); // 12px 고정폭 글자 기준
     const subMax = Math.floor((n.w - 12) / 6.4); // 10px
-    nodes += `<g class="${cls}" ${n.key ? `data-key="${esc(n.key)}"` : ''} ${n.toggle ? `data-toggle="${esc(n.toggle)}"` : ''} transform="translate(${n.x},${n.y})">
+    nodes += `<g class="${cls}" ${n.key ? `data-key="${esc(n.key)}"` : ''} ${n.toggle ? `data-toggle="${esc(n.toggle)}"` : ''} ${n.dir ? `data-dir="${esc(n.dir)}"` : ''} transform="translate(${n.x},${n.y})">
       <rect width="${n.w}" height="${n.h}" rx="10"/>
       ${(n.kind === 'session' || n.kind === 'sub') && !n.more ? `<circle class="sdot" cx="12" cy="${n.h / 2}" r="3.5"/>` : ''}
       <text x="${n.w / 2}" y="${n.h / 2 - 4}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
@@ -1594,8 +1601,35 @@ document.addEventListener('click', (e) => {
   if (tg) { const k = tg.dataset.toggle; pref.expandSubs[k] = !pref.expandSubs[k]; savePref(); renderGraph(); return; }
   const x = e.target.closest('[data-close]');
   if (x) { e.stopPropagation(); askClose(x.dataset.close); return; }
+  const d = e.target.closest('#graph [data-dir]');
+  if (d) { openDirMenu(d.dataset.dir, e.clientX, e.clientY); return; }
   const el = e.target.closest('[data-key]');
   if (el && (el.closest('#list') || el.closest('#graph'))) select(el.dataset.key);
+});
+
+// 프로젝트 박스 → 이 폴더를 VS Code · Cursor · Finder 로 열기 (설치된 것만 보여 줌)
+function openDirMenu(dir, x, y) {
+  const m = $('#dir-menu');
+  const apps = envData?.editors?.length ? envData.editors : [{ id: 'finder', label: 'Finder' }];
+  m.innerHTML = `<div class="dm-path" title="${esc(dir)}">${esc(dir.replace(/^\/Users\/[^/]+/, '~'))}</div>` +
+    apps.map((a) => `<button type="button" data-open-app="${esc(a.id)}">${a.id === 'finder' ? `${esc(a.label)}에서 보기` : `${esc(a.label)}로 열기`}</button>`).join('');
+  m.dataset.dir = dir;
+  m.classList.add('show');
+  const r = m.getBoundingClientRect();
+  m.style.left = `${Math.min(x, innerWidth - r.width - 8)}px`;
+  m.style.top = `${Math.min(y + 8, innerHeight - r.height - 8)}px`;
+}
+document.addEventListener('click', async (e) => {
+  const m = $('#dir-menu');
+  if (!m.classList.contains('show')) return;
+  const b = e.target.closest('[data-open-app]');
+  if (b) {
+    m.classList.remove('show');
+    try { toast(await api('/api/cmd/open-dir', { dir: m.dataset.dir, app: b.dataset.openApp })); }
+    catch (err) { toast(err.message); }
+    return;
+  }
+  if (!e.target.closest('#dir-menu') && !e.target.closest('#graph [data-dir]')) m.classList.remove('show');
 });
 
 // ---------- 컨트롤 ----------
@@ -1725,6 +1759,7 @@ function notifyChanges(prevSessions, next) {
 // Esc: 열린 팝업 → 패널 순서로 닫기
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape' || document.querySelector('dialog[open]')) return;
+  if ($('#dir-menu').classList.contains('show')) { $('#dir-menu').classList.remove('show'); return; }
   if ($('#more-menu').classList.contains('show') || $('#d-meta').classList.contains('show')) { $('#more-menu').classList.remove('show'); $('#d-meta').classList.remove('show'); return; }
   if (document.activeElement === $('#msg') && $('#msg').value) return; // 입력 중인 글이 있으면 패널을 닫지 않는다
   if ($('#drawer').classList.contains('open')) $('#close').click();
