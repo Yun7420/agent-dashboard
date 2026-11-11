@@ -189,15 +189,15 @@
   .node.waiting rect { stroke: var(--waiting); filter: drop-shadow(0 0 12px rgba(251, 111, 146, .4)); }
   .node.ended rect { stroke: rgba(255, 255, 255, .06); }
   .node.background rect { stroke: rgba(245, 185, 66, .55); stroke-dasharray: 4 3; }
-  .node.background .sdot { fill: transparent; stroke: var(--working); stroke-width: 2; }
   .node.ended text { opacity: .45; }
   .node.sel rect { stroke: var(--accent); stroke-width: 1.6; filter: drop-shadow(0 0 14px rgba(139, 124, 246, .45)); }
   .node text { fill: var(--text); font: 600 12px var(--sans); }
   .node text.t2 { fill: var(--faint); font: 500 10px var(--sans); letter-spacing: .04em; }
-  .node .sdot { fill: var(--idle); }
-  .node.working .sdot { fill: var(--working); }
-  .node.waiting .sdot { fill: var(--waiting); }
-  .node.ended .sdot { fill: var(--ended); }
+  /* 세션 상태는 점 대신 아래 줄(대기 · 작업 중 …) 글자색으로 */
+  .node:not(.proj):not(.group).idle text.t2 { fill: var(--idle); }
+  .node:not(.proj):not(.group).working text.t2 { fill: var(--working); }
+  .node:not(.proj):not(.group).background text.t2 { fill: #e9c77a; }
+  .node:not(.proj):not(.group).waiting text.t2 { fill: var(--waiting); font-weight: 700; }
   .edge { fill: none; stroke: rgba(255, 255, 255, .55); stroke-width: 1.1; stroke-dasharray: 3 4; }
   /* 흐르는 점선은 CSS 애니메이션(초당 60번 다시 그림) 대신 스크립트가 초당 8번만 --flow 를 바꿔 움직인다 */
   .edge.working { stroke: var(--working); stroke-dashoffset: var(--flow, 0); }
@@ -940,7 +940,6 @@ function renderGraph() {
     const subMax = Math.floor((n.w - 12) / 6.4); // 10px
     nodes += `<g class="${cls}" ${n.key ? `data-key="${esc(n.key)}"` : ''} ${n.toggle ? `data-toggle="${esc(n.toggle)}"` : ''} ${n.dir ? `data-dir="${esc(n.dir)}"` : ''} transform="translate(${n.x},${n.y})">
       <rect width="${n.w}" height="${n.h}" rx="10"/>
-      ${(n.kind === 'session' || n.kind === 'sub') && !n.more ? `<circle class="sdot" cx="12" cy="${n.h / 2}" r="3.5"/>` : ''}
       <text x="${n.w / 2}" y="${n.h / 2 - 4}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
       <text class="t2" x="${n.w / 2}" y="${n.h / 2 + 13}" text-anchor="middle">${esc(fit(String(n.sub || '').toUpperCase(), subMax))}</text>
     </g>`;
