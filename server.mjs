@@ -536,8 +536,24 @@ async function handleCommand(action, body) {
     const choice = String(body.choice ?? '');
     const KEYS = { esc: 'Escape', up: 'Up', down: 'Down', enter: 'Enter', left: 'Left', right: 'Right' };
     if (KEYS[choice]) await tmux.sendKey(s.tmux.target, KEYS[choice]);
-    else if (/^[1-9]$/.test(choice)) await tmux.sendKey(s.tmux.target, choice);
-    else return [400, '알 수 없는 선택'];
+    else if (/^[1-9]$/.test(choice)) {
+      // 오른쪽에 미리보기가 붙은 질문 창은 숫자 키를 받지 않는다(↑/↓ + Enter 만).
+      // 그 경우엔 지금 커서(❯) 위치에서 고른 번호까지 화살표로 옮긴 뒤 Enter 를 보낸다.
+      const screen = await tmux.capture(s.tmux.target, 60).catch(() => '');
+      const opts = [...screen.split('\n').entries()]
+        .map(([i, l]) => ({ i, m: l.match(/^[\s│|]*(❯|›)?\s*([1-9])\.\s+(.*)$/) }))
+        .filter((x) => x.m);
+      const preview = opts.some((x) => /\s{2,}[│┌└├]/.test(x.m[3]));
+      const cur = Number(opts.findLast((x) => x.m[1])?.m[2]);
+      if (preview && cur) {
+        const diff = Number(choice) - cur;
+        for (let k = 0; k < Math.abs(diff); k++) {
+          await tmux.sendKey(s.tmux.target, diff > 0 ? 'Down' : 'Up');
+          await new Promise((r) => setTimeout(r, 60));
+        }
+        await tmux.sendKey(s.tmux.target, 'Enter');
+      } else await tmux.sendKey(s.tmux.target, choice);
+    } else return [400, '알 수 없는 선택'];
     return [200, 'ok'];
   }
   if (action === 'stop') {

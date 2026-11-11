@@ -1255,7 +1255,8 @@ async function renderApproval(s) {
   const tabIdx = lines.map((l) => /^\s*←.*(Submit|→)\s*$/.test(l)).lastIndexOf(true);
   for (const line of tabIdx >= 0 ? lines.slice(tabIdx + 1) : lines.slice(-40)) {
     const m = line.match(/^[\s│|]*(?:❯|›|>)?\s*([1-9])\.\s+(.+?)[\s│|]*$/);
-    if (m && !options.some((o) => o.n === m[1])) options.push({ n: m[1], label: m[2] });
+    // 미리보기 상자가 옆에 붙은 질문 창: 선택지 뒤의 상자 테두리(│ ┌ └ …)는 떼어 낸다
+    if (m && !options.some((o) => o.n === m[1])) options.push({ n: m[1], label: m[2].replace(/\s{2,}[│┌└├].*$/, '').trim() });
   }
   // 질문이 여러 개인 선택창: 맨 위 "←  ☒ 질문1  ☐ 질문2 … ✔ Submit  →" 줄이 보이면 이전/다음 질문으로 오갈 수 있게
   const tabLine = text.split('\n').find((l) => /^\s*←.*(Submit|→)\s*$/.test(l));
