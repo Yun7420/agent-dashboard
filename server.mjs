@@ -17,6 +17,7 @@ import { promisify } from 'node:util';
 import { adapters } from './adapters/index.mjs';
 import * as tmux from './lib/tmux.mjs';
 import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions } from './lib/dialog.mjs';
+import { summarizeTool, guessFromScreen } from './lib/approval.mjs';
 import * as demo from './lib/demo.mjs';
 import { saveSnapshot, restoreCandidates, restoreSessions } from './lib/restore.mjs';
 
@@ -237,6 +238,7 @@ async function buildState(windowHours) {
       ide: proc?.ide ?? false,
       tmux: status === 'ended' ? null : paneOf(proc?.pid),
       waitingFor: proc?.live?.waitingFor ?? null,
+      pendingTool: d.pendingTool ?? null,
       background: proc?.live?.background ?? false,
       lastPrompt: d.lastPrompt,
       lastPromptAt: d.lastPromptAt,
@@ -293,7 +295,8 @@ async function buildState(windowHours) {
         const screen = await tmux.capture(s.tmux.target, 30).catch(() => '');
         const d = detectDialog(screen);
         if (screen) noteMismatch(s, dialogMismatch({ official: s.status === 'waiting', hint: d.hint, options: d.options })); // 화면을 못 읽은 건 엇갈림이 아님
-        if (s.status === 'waiting') return;
+        if (d.dialog || s.status === 'waiting') s.screenTool = guessFromScreen(screen); // 기록에 없을 때 카드의 2순위 출처
+        if (s.status === 'waiting') return void dialogSeen.add(s.key); // 승인 중엔 매번 본다(카드가 깜빡이지 않게)
         if (!d.dialog) dialogSeen.delete(s.key);
         else {
           dialogSeen.add(s.key);
@@ -302,6 +305,11 @@ async function buildState(windowHours) {
         }
       }),
   );
+  // 승인 창 「허락할 내용」: 1순위 기록의 결과 없는 도구 호출, 2순위 화면에서 추정. 승인 중일 때만 싣는다
+  for (const s of sessions) {
+    s.pendingTool = s.status === 'waiting' ? summarizeTool(s.pendingTool ?? s.screenTool, s.cwd) : null;
+    delete s.screenTool;
+  }
   for (const i of dialogIssues.values()) { const s = sessions.find((x) => x.key === i.key); if (s) s.dialogIssue = i.kind; }
   sessions.sort((a, b) => Date.parse(b.lastAt) - Date.parse(a.lastAt));
   const links = await buildLinks(chosen, sessions, alive, sinceMs);
@@ -933,7 +941,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (url.pathname === '/api/pane') {
-    if (DEMO) return void res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }).end(demo.DEMO_PANE);
+    if (DEMO) return void res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }).end(demo.demoPane(url.searchParams.get('key')));
     const s = findSession(url.searchParams.get('key'));
     if (!s?.tmux) return void res.writeHead(404).end('');
     try {

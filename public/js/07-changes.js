@@ -106,6 +106,27 @@ setInterval(() => { const s = selected && state?.sessions.find((x) => x.key === 
 // 승인 창: 터미널 화면을 그대로 보여 주고, 화면에서 찾은 번호 선택지를 버튼으로
 let paneTimer = null;
 let paneSeq = 0;
+// 「허락할 내용」 카드: 무엇을(종류) · 어디에(명령 전문 · 파일 경로) · 왜 조심(위험 이유). 내용은 모두 esc 로 글자 처리
+function renderApproveCard(t) {
+  const card = $('#approve-card');
+  const html = !t ? '' : `<div class="ac-head"><span class="ac-kind">${esc(t.kind)}</span><span class="ac-tool">${esc(t.tool)}</span>${
+    t.outside ? '<span class="ac-tag">세션 폴더 밖</span>' : ''}${t.source === 'screen' ? '<span class="ac-src" title="기록에서 못 찾아 터미널 화면에서 읽었어요">화면에서 추정</span>' : ''}</div>${
+    t.risks.length ? `<div class="ac-risk">⚠ ${t.risks.map(esc).join(' · ')}</div>` : ''}${
+    t.main ? `<pre class="ac-main${t.main.length > 300 || t.main.split('\n').length > 6 ? ' fold closed' : ''}">${esc(t.main)}</pre>` : ''}${
+    t.main.length > 300 || t.main.split('\n').length > 6 ? '<button class="more" type="button" data-ac-more>전체 보기 ▾</button>' : ''}${
+    t.desc ? `<div class="ac-desc">${esc(t.desc)}</div>` : ''}`;
+  if (card.dataset.src === html) return; // 2초마다 다시 그려도 펼친 상태가 접히지 않게
+  card.dataset.src = html;
+  card.innerHTML = html;
+  card.hidden = !t;
+  card.classList.toggle('risky', Boolean(t?.risks.length));
+}
+$('#approve-card').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ac-more]');
+  if (!b) return;
+  const closed = $('#approve-card .ac-main').classList.toggle('closed');
+  b.textContent = closed ? '전체 보기 ▾' : '접기 ▴';
+});
 async function renderApproval(s) {
   const box = $('#approval');
   clearTimeout(paneTimer);
@@ -113,6 +134,7 @@ async function renderApproval(s) {
   $('#drawer').classList.toggle('approving', approving);
   if (!approving) { box.hidden = true; return; }
   box.hidden = false;
+  renderApproveCard(s.pendingTool);
   let text = '';
   let focus = '';
   const seq = ++paneSeq;

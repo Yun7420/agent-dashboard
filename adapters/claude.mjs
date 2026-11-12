@@ -142,6 +142,32 @@ function attachResult(d, changes) {
   }
 }
 
+// 승인 창 카드용: 아직 결과(tool_result)가 오지 않은 도구 호출을 기억한다. 크기가 큰 입력(파일 내용 등)은 버리고 필요한 칸만
+const PENDING_KEYS = ['command', 'description', 'file_path', 'notebook_path', 'url', 'prompt', 'query', 'questions'];
+function slimInput(input = {}) {
+  const out = {};
+  for (const k of PENDING_KEYS) {
+    if (input[k] == null) continue;
+    out[k] = k === 'questions' ? (input.questions ?? []).slice(0, 4).map((q) => ({ question: clip(q?.question, 500) })) : clip(String(input[k]), k === 'command' ? 2000 : 500);
+  }
+  if (Array.isArray(input.edits)) out.edits = input.edits.map(() => ({})); // 몇 곳 고치는지만
+  return out;
+}
+function trackPending(d, pending) {
+  if (d.isSidechain) return;
+  if (promptText(d)) return void pending.clear(); // 새 요청이 왔으면 그 전 도구 호출은 끝났거나 취소된 것
+  for (const c of Array.isArray(d.message?.content) ? d.message.content : []) {
+    if (d.type === 'assistant' && c.type === 'tool_use') pending.set(c.id, { name: c.name, input: slimInput(c.input) });
+    if (d.type === 'user' && c.type === 'tool_result') pending.delete(c.tool_use_id);
+  }
+}
+// 기록 줄들 → 마지막으로 결과가 없는 도구 호출(없으면 null). describe 와 같은 규칙(테스트용으로 따로 내보냄)
+export function pendingToolOf(records) {
+  const pending = new Map();
+  for (const d of records) if (d) trackPending(d, pending);
+  return [...pending.values()].at(-1) ?? null;
+}
+
 export default {
   id: 'claude',
   label: 'Claude Code',
@@ -211,9 +237,11 @@ export default {
     let cwd = null, currentDir = null, aiTitle = null, titlePrompt = null, lastPrompt = null, lastPromptAt = null;
     let lastText = null, lastTool = null, turnState = 'idle', lastAt = null, model = null, contextUsed = null;
     let changes = { edits: [], commands: [] };
+    const pending = new Map();
     for (const l of await readTailLines(s.file)) {
       const d = parse(l);
       if (!d) continue;
+      trackPending(d, pending);
       if (d.cwd) currentDir = d.cwd;
       if (d.type === 'ai-title') aiTitle = d.aiTitle;
       if (d.timestamp) lastAt = d.timestamp;
@@ -266,6 +294,7 @@ export default {
       lastPromptAt,
       lastText: clip(lastText, 8000),
       lastTool,
+      pendingTool: [...pending.values()].at(-1) ?? null,
       turnState,
       lastAt,
       model,
