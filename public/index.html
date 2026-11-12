@@ -1114,7 +1114,8 @@ function renderNow(s) {
   let reply = '';
   if (working) reply = last && last.prompt === prompt && last.reply ? last.reply : '';
   else reply = (last && last.reply) || s.lastText || '';
-  if (working && s.lastText && s.lastText !== reply && (!last || last.reply !== s.lastText)) reply = s.lastText;
+  // 작업 중엔 기록보다 상태(마지막 글)가 먼저 갱신될 수 있다 → 아직 안 붙은 마지막 글만 뒤에 덧붙인다
+  if (working && s.lastText && !reply.includes(s.lastText.slice(0, 200))) reply = reply ? `${reply}\n\n${s.lastText}` : s.lastText;
   const el = $('#now-reply');
   el.classList.toggle('empty', !reply);
   const html = reply ? md(reply) : working ? '<span class="spinner"></span>답변을 만들고 있어요…' : '아직 답변이 없어요';

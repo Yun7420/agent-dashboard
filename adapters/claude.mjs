@@ -10,6 +10,10 @@ import fs from 'node:fs';
 import readline from 'node:readline';
 import { clip, parse, readHeadLines, readJsonLines, readJsonOrNull, readTailLines, statOrNull } from '../lib/util.mjs';
 
+// 한 턴의 답변은 도구 호출 사이사이에 글이 여러 덩어리로 나뉜다. 마지막 덩어리만 남기면
+// 앞의 설명이 사라지므로 이어 붙인다(너무 길면 앞쪽을 남긴다).
+const joinReply = (prev, text) => clip(prev ? `${prev}\n\n${text.trim()}` : text.trim(), 20000);
+
 const ROOT = path.join(os.homedir(), '.claude', 'projects');
 const exec = promisify(execFile);
 // shell = 응답은 끝났지만 백그라운드 명령(테스트·빌드 등)이 아직 도는 중 → 화면에선 "백그라운드 작업 중"
@@ -316,7 +320,7 @@ export default {
         } else if (h.cur && d.type === 'assistant' && !d.isSidechain) {
           for (const c of d.message?.content ?? []) {
             if (c.type === 'tool_use') h.cur.tools += 1;
-            if (c.type === 'text' && c.text?.trim()) h.cur.reply = clip(c.text.trim(), 20000);
+            if (c.type === 'text' && c.text?.trim()) h.cur.reply = joinReply(h.cur.reply, c.text);
           }
         }
       });
@@ -337,7 +341,7 @@ export default {
       } else if (cur && d.type === 'assistant' && !d.isSidechain) {
         for (const c of d.message?.content ?? []) {
           if (c.type === 'tool_use') cur.tools += 1;
-          if (c.type === 'text' && c.text?.trim()) cur.reply = clip(c.text.trim(), 20000);
+          if (c.type === 'text' && c.text?.trim()) cur.reply = joinReply(cur.reply, c.text);
         }
       }
     }
