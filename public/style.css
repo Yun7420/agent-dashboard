@@ -463,3 +463,15 @@ footer .h #updated { color: var(--faint); font-weight: 400; font-variant-numeric
   #drawer .head-top h2 { max-width: none; flex: 1 1 auto; }
   #drawer .head-top .grow { display: none; }
 }
+
+/* ---------- 전체 기록 검색 ---------- */
+#search-dlg { width: min(720px, 94vw); }
+#gs-q { width: 100%; height: 40px; padding: 0 12px; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font-size: 14px; }
+#gs-meta { color: var(--faint); font-size: 12px; margin: 10px 2px 6px; min-height: 16px; }
+#gs-list { max-height: min(60vh, 520px); overflow: auto; display: flex; flex-direction: column; gap: 6px; }
+.gs-item { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 10px 12px; border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--border); height: auto; }
+.gs-item:hover { border-color: var(--accent); }
+.gs-head { display: flex; gap: 8px; align-items: baseline; font-size: 11px; color: var(--faint); }
+.gs-head b { color: var(--text); font-size: 13px; }
+.gs-snip { font-size: 12.5px; line-height: 1.6; color: var(--dim); word-break: break-word; }
+.gs-snip mark { background: rgba(139, 124, 246, .35); color: var(--text); border-radius: 3px; padding: 0 2px; }

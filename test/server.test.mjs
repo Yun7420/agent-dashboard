@@ -40,7 +40,7 @@ test('화면 파일은 토큰 없이 열린다', async () => {
 });
 
 test('대화 목록 · 기록 · 명령은 토큰이 없으면 403', async () => {
-  for (const p of ['/events', '/api/history?key=x', '/api/env', '/api/perf']) assert.equal(await req(p), 403, p);
+  for (const p of ['/events', '/api/history?key=x', '/api/search?q=test', '/api/env', '/api/perf']) assert.equal(await req(p), 403, p);
   assert.equal(await req('/api/cmd/send', { method: 'POST', body: '{}' }), 403);
 });
 
@@ -64,4 +64,14 @@ test('다른 사이트(Origin)에서 온 요청은 토큰이 맞아도 403', asy
 test('화면 폴더 밖 파일은 열리지 않는다', async () => {
   assert.equal(await req('/../server.mjs'), 404);
   assert.equal(await req('/..%2f.dashboard-token'), 404);
+});
+
+test('전체 기록 검색: 데모 기록에서 찾고 최신순으로 돌려준다', async () => {
+  const res = await fetch(`http://127.0.0.1:${PORT}/api/search?q=${encodeURIComponent('필터')}`, { headers: { 'x-dashboard-token': TOKEN } });
+  const items = await res.json();
+  assert.ok(items.length >= 2);
+  assert.ok(items.every((x) => x.snippet.includes('필터')));
+  assert.ok(items.every((x, i) => i === 0 || Date.parse(items[i - 1].at) >= Date.parse(x.at)));
+  const short = await (await fetch(`http://127.0.0.1:${PORT}/api/search?q=a`, { headers: { 'x-dashboard-token': TOKEN } })).json();
+  assert.deepEqual(short, []); // 1글자는 찾지 않음
 });

@@ -358,6 +358,28 @@ async function promptHistory(key) {
   return items;
 }
 
+// 전체 기록 검색: 목록에 있는 세션(켜져 있는 것 + 기간 안에 끝난 것)의 프롬프트 · 답변에서 찾는다. 최신순 100개
+async function searchHistory(q) {
+  const needle = String(q ?? '').trim().toLowerCase();
+  if (needle.length < 2) return [];
+  const snippet = (text, i) => {
+    const from = Math.max(0, i - 40);
+    return (from ? '…' : '') + text.slice(from, i + needle.length + 80).replace(/\s+/g, ' ').trim() + (i + needle.length + 80 < text.length ? '…' : '');
+  };
+  const out = [];
+  for (const s of latest?.sessions ?? []) {
+    if (s.orphan) continue;
+    const items = await promptHistory(s.key).catch(() => []);
+    for (const h of items) {
+      const ip = h.prompt.toLowerCase().indexOf(needle);
+      const ir = (h.reply || '').toLowerCase().indexOf(needle);
+      if (ip < 0 && ir < 0) continue;
+      out.push({ key: s.key, title: s.title, project: s.project, at: h.at, where: ip >= 0 ? 'prompt' : 'reply', snippet: ip >= 0 ? snippet(h.prompt, ip) : snippet(h.reply, ir) });
+    }
+  }
+  return out.sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 100);
+}
+
 // ---------- 대화 창(컨텍스트) 사용량 ----------
 // 창 크기는 기록에 없어서 추정한다: 이미 20만을 넘었거나, 기본 모델이 1M 설정이고 같은 계열이면 1M, 아니면 20만.
 function contextInfo(d) {
@@ -846,6 +868,11 @@ const server = http.createServer(async (req, res) => {
     } catch (e) {
       res.writeHead(500).end(e.message);
     }
+    return;
+  }
+  if (url.pathname === '/api/search') {
+    const results = await searchHistory(url.searchParams.get('q'));
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(results));
     return;
   }
   if (url.pathname === '/api/pane') {

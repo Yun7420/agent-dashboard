@@ -20,6 +20,7 @@
   </div>
   <span class="spacer"></span>
   <button id="usage" class="usage-pill" title="Claude 계정 사용 한도"></button>
+  <button id="search-btn" class="ghost icon-btn" title="전체 기록 검색 ( / )" aria-label="전체 기록 검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
   <button id="notify" class="ghost icon-btn" title="알림 켜기 — 승인이 필요하거나 오래 걸린 작업이 끝나면 알려 줘요" aria-label="알림"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
   <button id="help" class="ghost icon-btn" title="환경 점검 · 사용 안내" aria-label="도움말"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
   <button id="new-session" class="primary">+ 새 세션</button>
@@ -135,6 +136,15 @@
     <div class="row"><button value="cancel" formnovalidate>취소</button><button class="primary" id="sp-ok" value="ok">열기</button></div>
   </form>
 </dialog>
+<dialog id="search-dlg">
+  <form method="dialog">
+    <h3>전체 기록 검색</h3>
+    <input id="gs-q" type="search" placeholder="모든 세션의 요청 · 답변에서 찾기 (2글자 이상)" autocomplete="off">
+    <div id="gs-meta"></div>
+    <div id="gs-list"></div>
+    <div class="row"><button value="cancel">닫기</button></div>
+  </form>
+</dialog>
 <dialog id="close-dlg">
   <form method="dialog">
     <h3 id="cl-title">세션 닫기</h3>
@@ -217,5 +227,6 @@
 <script src="/js/14-notify.js"></script>
 <script src="/js/15-restore.js"></script>
 <script src="/js/16-live.js"></script>
+<script src="/js/17-search.js"></script>
 </body>
 </html>

@@ -143,6 +143,7 @@ A session already running in a terminal has no official way to receive input fro
 - **Now** tab: last request + **current answer** + **file diffs** + **commands** (✓/✕, output, "show all" for long ones)
 - While working, **■ Stop** on the answer card stops the current task only (sends Esc); the session and conversation stay
 - **History** tab: past prompts and answers, search, "load more"
+- **Search all history**: the magnifier at the top (or the `/` key) searches prompts and answers across all sessions → picking a result opens that session's History tab with the same query
 - Answers render **bold** · `code` · headings · **tables** (`| head |` + `|---|`). Wide tables scroll horizontally inside the table
 - Input: **Enter** to send · Shift+Enter for a new line · 🎤 voice · 📎 attach (drag & drop or ⌘V, up to 25MB)
 - Needs approval: the real terminal screen plus option buttons. **Check what you're allowing before you click.** The approval view fills the panel with the input pinned at the bottom, and keeps your scroll position while you read.
