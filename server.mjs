@@ -734,6 +734,26 @@ async function tick() {
 // 첨부 파일: 본문을 그대로 받아 ~/.agent-dashboard/uploads/<날짜>/ 에 저장하고 경로를 돌려준다(세션에는 경로를 보낸다)
 const UPLOAD_DIR = path.join(HOME, '.agent-dashboard', 'uploads');
 const UPLOAD_MAX = 25 * 1024 * 1024;
+const UPLOAD_KEEP_DAYS = 14;
+
+// 첨부는 세션에 경로만 넘기고 나면 다시 쓸 일이 없다 → 오래된 것은 지운다(스크린샷에 민감한 화면이 섞이기 쉬움)
+function pruneUploads() {
+  const cutoff = Date.now() - UPLOAD_KEEP_DAYS * 86400_000;
+  let removed = 0;
+  for (const day of fs.existsSync(UPLOAD_DIR) ? fs.readdirSync(UPLOAD_DIR) : []) {
+    const dir = path.join(UPLOAD_DIR, day);
+    if (!fs.statSync(dir).isDirectory()) continue;
+    for (const f of fs.readdirSync(dir)) {
+      const file = path.join(dir, f);
+      if (fs.statSync(file).mtimeMs < cutoff) {
+        fs.rmSync(file, { force: true });
+        removed += 1;
+      }
+    }
+    if (!fs.readdirSync(dir).length) fs.rmdirSync(dir);
+  }
+  if (removed) console.log(`첨부 ${removed}개 정리(${UPLOAD_KEEP_DAYS}일 지남)`);
+}
 
 function saveUpload(req, rawName) {
   return new Promise((resolve, reject) => {
@@ -777,10 +797,11 @@ function readBody(req) {
   });
 }
 
-const authorized = (req) => {
+const authorized = (req, url) => {
   const origin = req.headers.origin;
   const originOk = !origin || origin === `http://localhost:${PORT}` || origin === `http://127.0.0.1:${PORT}`;
-  const token = req.headers['x-dashboard-token'] ?? '';
+  // EventSource(SSE)는 헤더를 못 넣어서 주소의 ?token= 도 받는다
+  const token = req.headers['x-dashboard-token'] ?? url?.searchParams.get('token') ?? '';
   return originOk && token.length === TOKEN.length && crypto.timingSafeEqual(Buffer.from(token), Buffer.from(TOKEN));
 };
 
@@ -792,6 +813,11 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   const url = new URL(req.url, 'http://localhost');
+  // 대화 목록·기록도 명령과 같은 토큰을 요구한다(화면 파일만 토큰 없이 연다)
+  if ((url.pathname === '/events' || url.pathname.startsWith('/api/')) && !authorized(req, url)) {
+    res.writeHead(403).end('forbidden');
+    return;
+  }
 
   if (url.pathname === '/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
@@ -829,7 +855,6 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (url.pathname === '/api/pane') {
-    if (!authorized(req)) return void res.writeHead(403).end('forbidden');
     if (DEMO) return void res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }).end(demo.DEMO_PANE);
     const s = findSession(url.searchParams.get('key'));
     if (!s?.tmux) return void res.writeHead(404).end('');
@@ -842,7 +867,6 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (url.pathname === '/api/upload' && req.method === 'POST') {
-    if (!authorized(req)) return void res.writeHead(403).end('forbidden');
     if (DEMO) return void res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ path: `/Users/me/.agent-dashboard/uploads/${url.searchParams.get('name')}`, name: url.searchParams.get('name'), size: 0 }));
     try {
       const saved = await saveUpload(req, url.searchParams.get('name'));
@@ -853,7 +877,6 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (url.pathname.startsWith('/api/cmd/') && req.method === 'POST') {
-    if (!authorized(req)) return void res.writeHead(403).end('forbidden');
     let body;
     try {
       body = await readBody(req);
@@ -887,4 +910,8 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}`);
   checkEnv();
   tick();
+  if (!DEMO) {
+    try { pruneUploads(); } catch (e) { console.error('첨부 정리 실패:', e.message); }
+    setInterval(() => { try { pruneUploads(); } catch {} }, 6 * 3600_000);
+  }
 });

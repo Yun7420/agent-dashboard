@@ -1049,7 +1049,7 @@ async function select(key) {
   renderDrawerHead(s);
   if (drawerTab === 'log') $('#log-list').innerHTML = '<div class="commit"><span class="m">기록 읽는 중…</span></div>';
   if (s.orphan) { $('#log-list').innerHTML = '<div class="commit"><span class="m">아직 기록 파일이 없는 세션이에요</span></div>'; return; }
-  promptLog = await fetch(`/api/history?key=${encodeURIComponent(key)}`).then((r) => r.json()).catch(() => []);
+  promptLog = await fetch(`/api/history?key=${encodeURIComponent(key)}`, { headers: { 'X-Dashboard-Token': TOKEN } }).then((r) => r.json()).catch(() => []);
   renderHistory();
   const cur = state.sessions.find((x) => x.key === key);
   if (cur && selected === key) renderNow(cur);
@@ -1665,7 +1665,7 @@ $('#list').addEventListener('click', (e) => {
 });
 $('#list').addEventListener('change', (e) => {
   if (e.target.id !== 'ended-window') return;
-  fetch(`/api/window?hours=${e.target.value}`); view.init = false;
+  fetch(`/api/window?hours=${e.target.value}`, { headers: { 'X-Dashboard-Token': TOKEN } }); view.init = false;
 });
 
 function render() {
@@ -1688,7 +1688,7 @@ function render() {
 const LV_ICON = { ok: '✓', warn: '!', error: '✕', info: 'i' };
 let envData = null;
 async function loadEnv(refresh = false) {
-  try { envData = await fetch(`/api/env${refresh ? '?refresh' : ''}`).then((r) => r.json()); }
+  try { envData = await fetch(`/api/env${refresh ? '?refresh' : ''}`, { headers: { 'X-Dashboard-Token': TOKEN } }).then((r) => r.json()); }
   catch { envData = null; }
   $('#bs-3')?.classList.add('done');
   renderEnv();
@@ -1813,7 +1813,7 @@ document.addEventListener('click', async (e) => {
 
 // ---------- 실시간 연결 ----------
 function connect() {
-  const es = new EventSource('/events');
+  const es = new EventSource(`/events?token=${TOKEN}`); // EventSource 는 헤더를 못 넣어 주소로 보낸다
   es.onopen = () => { $('#conn').innerHTML = '<span class="dot-s live"></span>실시간'; };
   es.onerror = () => { $('#conn').innerHTML = '<span class="dot-s waiting"></span>재연결 중…'; };
   es.onmessage = (e) => {
