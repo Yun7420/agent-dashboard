@@ -195,7 +195,10 @@ agent-dashboard/
 ├─ adapters/           # 도구별 차이만 여기 — claude.mjs · codex.mjs · index.mjs
 ├─ lib/                # tmux 조작 · 파일 읽기 유틸 · 데모 데이터
 ├─ bin/                # run.sh(자동 재시작) · statusline.mjs(사용 한도 다리)
-└─ public/index.html   # 화면 전체 (바닐라 HTML/CSS/JS, SVG 조직도)
+└─ public/             # 화면 (바닐라 HTML/CSS/JS, 빌드 없음)
+   ├─ index.html       # 뼈대
+   ├─ style.css        # 모양
+   └─ js/01~16-*.js    # 동작 — 구역별(목록 · 조직도 · 서랍 · 첨부 · 알림 …), 번호 순서대로 불러옴
 ```
 
 ### 새 에이전트 붙이기

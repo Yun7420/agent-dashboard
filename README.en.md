@@ -195,7 +195,10 @@ agent-dashboard/
 ├─ adapters/           # per-tool differences only — claude.mjs · codex.mjs · index.mjs
 ├─ lib/                # tmux control · file utils · demo data
 ├─ bin/                # run.sh (auto-restart) · statusline.mjs (usage-limit bridge)
-└─ public/index.html   # the whole UI (vanilla HTML/CSS/JS, SVG org chart)
+└─ public/             # UI (vanilla HTML/CSS/JS, no build)
+   ├─ index.html       # structure
+   ├─ style.css        # styles
+   └─ js/01~16-*.js    # behavior, one file per area (list · org chart · drawer · attach · notify …), loaded in number order
 ```
 
 ### Adding another agent
