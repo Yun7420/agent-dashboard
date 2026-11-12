@@ -16,7 +16,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { adapters } from './adapters/index.mjs';
 import * as tmux from './lib/tmux.mjs';
-import { hasDialog, parseOptions } from './lib/dialog.mjs';
+import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions } from './lib/dialog.mjs';
 import * as demo from './lib/demo.mjs';
 import { saveSnapshot, restoreCandidates, restoreSessions } from './lib/restore.mjs';
 
@@ -34,6 +34,19 @@ const HOME = os.homedir();
 const PUBLIC_DIR = path.join(path.dirname(new URL(import.meta.url).pathname), 'public');
 let dialogTick = 0;
 const dialogSeen = new Set(); // 선택창이 떠 있던 세션은 매번 확인(닫히는 걸 바로 알도록)
+// 승인 감지 신호가 엇갈린 기록(세션 · 종류마다 한 번만). 환경 점검의 「승인 감지」 줄과 활동 로그에 보인다
+const dialogIssues = new Map(); // `${key}|${kind}` → { at, key, title, kind }
+const mismatchStreak = new Map(); // key → { kind, n } — 화면이 막 바뀌는 순간의 엇갈림은 넘기고 두 번 연속일 때만 기록
+function noteMismatch(s, kind) {
+  const prevStreak = mismatchStreak.get(s.key);
+  if (!kind) return void mismatchStreak.delete(s.key);
+  const n = prevStreak?.kind === kind ? prevStreak.n + 1 : 1;
+  mismatchStreak.set(s.key, { kind, n });
+  const id = `${s.key}|${kind}`;
+  if (n < 2 || dialogIssues.has(id)) return;
+  dialogIssues.set(id, { at: new Date().toISOString(), key: s.key, title: s.title, kind });
+  console.log(`[승인 감지] ${s.title}: ${MISMATCH_KO[kind]}`);
+}
 const MODELS = new Set(['opus', 'sonnet', 'haiku']); // Claude Code 모델 별칭 — 항상 그 계열의 최신 모델로 연결된다
 const byId = Object.fromEntries(adapters.map((a) => [a.id, a]));
 
@@ -271,20 +284,25 @@ async function buildState(windowHours) {
   // 공식 상태가 대기·작업 중이어도 화면에 선택창(질문·설정 안내·확인 창 등)이 떠 있으면 사람 손이 필요한 상태로 본다.
   // 예: Claude 가 AskUserQuestion 으로 질문하면 공식 상태는 busy 지만 실제로는 사용자 답을 기다린다.
   dialogTick = (dialogTick + 1) % 2;
+  // 공식 상태가 이미 승인 필요인 세션도 화면을 본다 — 상태는 그대로 두고 두 신호가 맞는지만 확인
   await Promise.all(
     sessions
-      .filter((s) => s.tmux && (s.status === 'idle' || s.status === 'working'))
+      .filter((s) => s.tmux && (s.status === 'idle' || s.status === 'working' || s.status === 'waiting'))
       .filter((s) => dialogTick === 0 || dialogSeen.has(s.key))
       .map(async (s) => {
         const screen = await tmux.capture(s.tmux.target, 30).catch(() => '');
-        if (!hasDialog(screen)) dialogSeen.delete(s.key);
-        if (hasDialog(screen)) {
+        const d = detectDialog(screen);
+        if (screen) noteMismatch(s, dialogMismatch({ official: s.status === 'waiting', hint: d.hint, options: d.options })); // 화면을 못 읽은 건 엇갈림이 아님
+        if (s.status === 'waiting') return;
+        if (!d.dialog) dialogSeen.delete(s.key);
+        else {
           dialogSeen.add(s.key);
           s.status = 'waiting';
           s.waitingFor ??= s.lastTool === 'AskUserQuestion' ? '질문에 답 필요' : '선택 창';
         }
       }),
   );
+  for (const i of dialogIssues.values()) { const s = sessions.find((x) => x.key === i.key); if (s) s.dialogIssue = i.kind; }
   sessions.sort((a, b) => Date.parse(b.lastAt) - Date.parse(a.lastAt));
   const links = await buildLinks(chosen, sessions, alive, sinceMs);
   const status = readStatusFiles();
@@ -711,6 +729,13 @@ async function openDir(dir, id) {
 }
 
 let envCache = null;
+function dialogEnvItem() {
+  const list = [...dialogIssues.values()];
+  if (!list.length) return { name: '승인 감지', level: 'ok', detail: '화면 안내 문구 · 선택지 · 공식 상태가 서로 맞아요' };
+  const last = list.at(-1);
+  const when = new Date(last.at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+  return { name: '승인 감지', level: 'warn', detail: `${when} · ${last.title} — ${MISMATCH_KO[last.kind]}${list.length > 1 ? ` (외 ${list.length - 1}건)` : ''}. Claude Code 화면 문구가 바뀌었을 수 있어요` };
+}
 async function checkEnv() {
   if (DEMO) return (envCache = demo.DEMO_ENV);
   const platform = os.platform();
@@ -870,7 +895,8 @@ const server = http.createServer(async (req, res) => {
   }
   if (url.pathname === '/api/env') {
     const env = url.searchParams.has('refresh') || !envCache ? await checkEnv() : envCache;
-    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(env));
+    // 「승인 감지」 줄은 서버가 켜진 뒤 쌓인 기록이라 캐시 없이 매번 붙인다
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ...env, items: [...env.items, dialogEnvItem()] }));
     return;
   }
   if (url.pathname === '/api/perf') {

@@ -228,7 +228,7 @@ Uses Node's built-in test runner (`node --test`), nothing to install. Covers tra
 - File diffs come from the Edit/Write tools. Files changed by shell commands only show up under "commands".
 - If several sessions start in the same folder without `--resume`, they're matched by process start time. After `/clear` in a long-running session they can occasionally get mixed up.
 - If Claude Code changes its transcript format, some details may be wrong (only the adapter needs fixing).
-- Prompts are detected from Claude Code's English hint lines. If that wording changes, "needs approval" may show late or not at all.
+- Prompts are detected from Claude Code's English hint line at the bottom of the screen **or** from numbered options with a cursor (❯). If one of them changes the other still catches it, and when the signals (including the official status) disagree, the **"Approval detection"** row in the environment check turns into a warning and a line is added to the activity log.
 
 ## License
 

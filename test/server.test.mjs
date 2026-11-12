@@ -76,3 +76,9 @@ test('전체 기록 검색: 데모 기록에서 찾고 최신순으로 돌려준
   const short = await (await fetch(`http://127.0.0.1:${PORT}/api/search?q=a`, { headers: { 'x-dashboard-token': TOKEN } })).json();
   assert.deepEqual(short, []); // 1글자는 찾지 않음
 });
+
+test('환경 점검에 「승인 감지」 줄이 붙는다(엇갈림이 없으면 ok)', async () => {
+  const env = await (await fetch(`http://127.0.0.1:${PORT}/api/env`, { headers: { 'x-dashboard-token': TOKEN } })).json();
+  const row = env.items.find((x) => x.name === '승인 감지');
+  assert.equal(row?.level, 'ok');
+});

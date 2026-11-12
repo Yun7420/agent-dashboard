@@ -14,6 +14,7 @@ function logEvents(sessions) {
       const p = prev.get(s.key);
       if (!p) { add('n', `[${s.toolLabel}] 새 세션 · ${s.title} (${s.project})`); continue; }
       if (s.lastPromptAt && s.lastPromptAt !== p.lastPromptAt) add('n', `[${s.title}] 프롬프트 › ${s.lastPrompt}`);
+      if (s.dialogIssue && s.dialogIssue !== p.dialogIssue) add('x', `[${s.title}] 승인 감지 엇갈림 — ${s.dialogIssue === 'options-only' ? '선택지는 보이는데 안내 문구가 없음' : '공식 상태는 승인 필요인데 화면에서 선택창을 못 찾음'} (환경 점검에서 확인)`);
       if (p.status !== s.status) add(s.status === 'working' || s.status === 'background' ? 'w' : s.status === 'waiting' ? 'x' : s.status === 'idle' ? 'i' : 'e', `[${s.title}] ${STATUS_KO[p.status]} → ${STATUS_KO[s.status]}${s.lastTool && s.status === 'working' ? ` (${s.lastTool})` : ''}`);
       const pDone = new Set((p.subagents || []).filter((a) => a.done).map((a) => a.id));
       for (const a of s.subagents || []) {
