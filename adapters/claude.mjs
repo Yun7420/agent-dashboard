@@ -21,6 +21,37 @@ const LIVE_STATUS = { busy: 'working', idle: 'idle', waiting: 'waiting', shell: 
 const encodeCwd = (cwd) => cwd.replace(/[^a-zA-Z0-9]/g, '-');
 
 // 사람이 친 프롬프트만 고른다 (도구 결과·시스템 주입·슬래시 명령 출력 제외).
+// "git commit" 명령에서 커밋 제목을 꺼낸다(-m "…" 의 첫 줄, 또는 <<'EOF' 다음 줄). 명령 하나에 커밋이 여러 번 있을 수 있다.
+// 명령 자리(줄 맨 앞 · ; · && · ||)에 온 git … commit 만 본다 — 스크립트 글자 속 "git commit" 은 세지 않는다.
+const COMMIT_RE = /(?:^|[;&|]\s*|\n\s*)git(?:\s+-C\s+\S+)?\s+commit\b/g;
+
+// 다른 명령의 <<'EOF' 본문(파일 내용 · 스크립트)은 지운다 — 그 안의 "git commit" 글자는 명령이 아니다
+function dropForeignHeredocs(cmd) {
+  const out = [];
+  let end = null;
+  for (const l of String(cmd ?? '').split('\n')) {
+    if (end) { if (l.trim() === end) end = null; continue; }
+    out.push(l);
+    const h = l.match(/<<-?\s*['"]?(\w+)['"]?/);
+    if (h && !/\bgit(?:\s+-C\s+\S+)?\s+commit\b/.test(l)) end = h[1];
+  }
+  return out.join('\n');
+}
+
+export function commitMessages(command) {
+  const cmd = dropForeignHeredocs(command);
+  const starts = [...cmd.matchAll(COMMIT_RE)].map((m) => m.index);
+  return starts
+    .map((st, i) => {
+      const seg = cmd.slice(st, starts[i + 1] ?? cmd.length); // 이 커밋부터 다음 커밋 전까지
+      const m = seg.match(/\s-m\s+(?:"([^"]+)"|'([^']+)')/);
+      if (m) return (m[1] ?? m[2]).split('\n')[0].trim();
+      const [first, next] = seg.replace(/^\s+/, '').split('\n');
+      return /<<-?\s*['"]?\w+['"]?/.test(first) && next?.trim() ? next.trim() : null; // 제목을 알 수 없으면(편집기 커밋 등) 세지 않는다
+    })
+    .filter(Boolean);
+}
+
 function promptText(d) {
   if (d.type !== 'user' || d.isMeta || d.isSidechain || d.isCompactSummary) return null;
   let c = d.message?.content;
@@ -328,6 +359,39 @@ export default {
       historyCache.set(s.file, h);
     }
     return h.items;
+  },
+
+  // 하루(fromMs ~ toMs) 동안 한 일: 요청 수 · 고친 파일 · 실행한 명령 수 · 커밋. 기록 전체를 한 번 훑는다.
+  async daySummary(s, fromMs, toMs) {
+    const sum = { prompts: 0, files: new Map(), commands: 0, commits: [], firstAt: null, lastAt: null };
+    const commitIds = new Map();
+    for await (const d of readJsonLines(s.file, ['"type":"user"', '"type":"assistant"'])) {
+      const t = Date.parse(d.timestamp);
+      if (!(t >= fromMs && t < toMs) || d.isSidechain) continue;
+      if (promptText(d)) {
+        sum.prompts += 1;
+        sum.firstAt ??= d.timestamp;
+        sum.lastAt = d.timestamp;
+        continue;
+      }
+      for (const c of d.message?.content ?? []) {
+        // 커밋 명령이 실패하면(예: 바뀐 것 없음) 그 명령의 커밋은 뺀다
+        if (d.type === 'user' && c.type === 'tool_result' && commitIds.has(c.tool_use_id) && c.is_error) sum.commits.forEach((x) => { if (x.id === c.tool_use_id) x.failed = true; });
+        if (d.type !== 'assistant' || c.type !== 'tool_use') continue;
+        sum.lastAt = d.timestamp;
+        const file = c.input?.file_path ?? c.input?.notebook_path;
+        if (/^(Edit|Write|MultiEdit|NotebookEdit)$/.test(c.name) && file) sum.files.set(file, (sum.files.get(file) ?? 0) + 1);
+        if (c.name === 'Bash' && c.input?.command) {
+          sum.commands += 1;
+          for (const message of commitMessages(c.input.command)) {
+            const entry = { at: d.timestamp, message, failed: false, id: c.id };
+            sum.commits.push(entry);
+          }
+          if (sum.commits.at(-1)?.id === c.id) commitIds.set(c.id, true);
+        }
+      }
+    }
+    return { ...sum, files: [...sum.files].map(([file, edits]) => ({ file, edits })), commits: sum.commits.filter((x) => !x.failed).map(({ at, message }) => ({ at, message })) };
   },
 
   async historyFull(s) {

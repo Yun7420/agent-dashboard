@@ -380,6 +380,32 @@ async function searchHistory(q) {
   return out.sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 100);
 }
 
+// 하루 동안 한 일: 그날 기록이 남은 세션마다 요청 수 · 고친 파일 · 명령 수 · 커밋 (Claude Code 기록 기준)
+const dayCache = new Map(); // `${file}|${date}` → { size, summary }
+async function daySummary(date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? '')) return [];
+  if (DEMO) return demo.DEMO_DAY;
+  const fromMs = new Date(`${date}T00:00:00`).getTime();
+  const toMs = fromMs + 86400_000;
+  const adapter = byId.claude;
+  const files = (await adapter.scan()).filter((s) => s.mtimeMs >= fromMs && (s.birthtimeMs || 0) < toMs);
+  const out = [];
+  for (const s of files) {
+    const ck = `${s.file}|${date}`;
+    let summary = dayCache.get(ck)?.size === s.size ? dayCache.get(ck).summary : null;
+    if (!summary) {
+      summary = await adapter.daySummary(s, fromMs, toMs).catch(() => null);
+      dayCache.set(ck, { size: s.size, summary });
+    }
+    if (!summary || (!summary.prompts && !summary.files.length && !summary.commands)) continue;
+    const key = `claude:${s.id}`;
+    const live = latest?.sessions.find((x) => x.key === key);
+    const d = live ?? (await adapter.describe(s).catch(() => ({})));
+    out.push({ key, title: live?.title ?? d.title ?? s.id.slice(0, 8), project: live?.project ?? projectName(d.cwd, s), ...summary });
+  }
+  return out.sort((a, b) => Date.parse(b.lastAt ?? 0) - Date.parse(a.lastAt ?? 0));
+}
+
 // ---------- 대화 창(컨텍스트) 사용량 ----------
 // 창 크기는 기록에 없어서 추정한다: 이미 20만을 넘었거나, 기본 모델이 1M 설정이고 같은 계열이면 1M, 아니면 20만.
 function contextInfo(d) {
@@ -868,6 +894,11 @@ const server = http.createServer(async (req, res) => {
     } catch (e) {
       res.writeHead(500).end(e.message);
     }
+    return;
+  }
+  if (url.pathname === '/api/day') {
+    const summary = await daySummary(url.searchParams.get('date'));
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(summary));
     return;
   }
   if (url.pathname === '/api/search') {

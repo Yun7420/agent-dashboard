@@ -20,6 +20,7 @@
   </div>
   <span class="spacer"></span>
   <button id="usage" class="usage-pill" title="Claude 계정 사용 한도"></button>
+  <button id="day-btn" class="ghost icon-btn" title="오늘 한 일" aria-label="오늘 한 일"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16M9 16l2 2 4-4"/></svg></button>
   <button id="search-btn" class="ghost icon-btn" title="전체 기록 검색 ( / )" aria-label="전체 기록 검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
   <button id="notify" class="ghost icon-btn" title="알림 켜기 — 승인이 필요하거나 오래 걸린 작업이 끝나면 알려 줘요" aria-label="알림"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
   <button id="help" class="ghost icon-btn" title="환경 점검 · 사용 안내" aria-label="도움말"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
@@ -136,6 +137,20 @@
     <div class="row"><button value="cancel" formnovalidate>취소</button><button class="primary" id="sp-ok" value="ok">열기</button></div>
   </form>
 </dialog>
+<dialog id="day-dlg">
+  <form method="dialog">
+    <h3>오늘 한 일</h3>
+    <div class="day-bar">
+      <button type="button" data-day="0" class="on">오늘</button><button type="button" data-day="-1">어제</button>
+      <input type="date" id="day-date">
+      <span class="grow"></span>
+      <button type="button" id="day-copy" title="업무 일지에 붙여 넣기 좋은 마크다운으로 복사">마크다운 복사</button>
+    </div>
+    <div id="day-total"></div>
+    <div id="day-list"></div>
+    <div class="row"><button value="cancel">닫기</button></div>
+  </form>
+</dialog>
 <dialog id="search-dlg">
   <form method="dialog">
     <h3>전체 기록 검색</h3>
@@ -228,5 +243,6 @@
 <script src="/js/15-restore.js"></script>
 <script src="/js/16-live.js"></script>
 <script src="/js/17-search.js"></script>
+<script src="/js/18-day.js"></script>
 </body>
 </html>

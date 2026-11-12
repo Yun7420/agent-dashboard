@@ -40,7 +40,7 @@ test('화면 파일은 토큰 없이 열린다', async () => {
 });
 
 test('대화 목록 · 기록 · 명령은 토큰이 없으면 403', async () => {
-  for (const p of ['/events', '/api/history?key=x', '/api/search?q=test', '/api/env', '/api/perf']) assert.equal(await req(p), 403, p);
+  for (const p of ['/events', '/api/history?key=x', '/api/search?q=test', '/api/day?date=2026-11-12', '/api/env', '/api/perf']) assert.equal(await req(p), 403, p);
   assert.equal(await req('/api/cmd/send', { method: 'POST', body: '{}' }), 403);
 });
 
