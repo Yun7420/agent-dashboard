@@ -4,10 +4,11 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
+import { fileURLToPath } from 'node:url';
 
 // 데모 모드 서버를 따로 띄워 보안 검사를 시험한다(실제 세션은 건드리지 않음)
 const PORT = 4699;
-const ROOT = path.resolve(import.meta.dirname, '..');
+const ROOT = fileURLToPath(new URL('..', import.meta.url)); // import.meta.dirname 은 Node 20.11+ 라 18 에서 안 됨
 let srv;
 let TOKEN;
 
