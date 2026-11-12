@@ -16,6 +16,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { adapters } from './adapters/index.mjs';
 import * as tmux from './lib/tmux.mjs';
+import { hasDialog, parseOptions } from './lib/dialog.mjs';
 import * as demo from './lib/demo.mjs';
 import { saveSnapshot, restoreCandidates, restoreSessions } from './lib/restore.mjs';
 
@@ -34,9 +35,6 @@ const PUBLIC_DIR = path.join(path.dirname(new URL(import.meta.url).pathname), 'p
 let dialogTick = 0;
 const dialogSeen = new Set(); // 선택창이 떠 있던 세션은 매번 확인(닫히는 걸 바로 알도록)
 const MODELS = new Set(['opus', 'sonnet', 'haiku']); // Claude Code 모델 별칭 — 항상 그 계열의 최신 모델로 연결된다
-const DIALOG_RE = /^\s*(Enter to |Esc to cancel)/m; // Claude Code 선택창 하단 안내 문구(줄 맨 앞에 온다)
-// 화면 맨 아래 몇 줄만 본다 — 대화 내용·명령 출력에 같은 문구가 섞여 있어도 선택창으로 오인하지 않게
-const hasDialog = (screen) => DIALOG_RE.test(screen.split('\n').filter((l) => l.trim()).slice(-10).join('\n'));
 const byId = Object.fromEntries(adapters.map((a) => [a.id, a]));
 
 // 토큰은 .dashboard-token 파일(본인만 읽기 가능)에 보관해 서버를 다시 켜도 열려 있던 탭이 그대로 동작하게 한다.
@@ -541,11 +539,7 @@ async function handleCommand(action, body) {
       // 오른쪽에 미리보기가 붙은 질문 창은 숫자 키를 받지 않는다(↑/↓ + Enter 만).
       // 그 경우엔 지금 커서(❯) 위치에서 고른 번호까지 화살표로 옮긴 뒤 Enter 를 보낸다.
       const screen = await tmux.capture(s.tmux.target, 60).catch(() => '');
-      const opts = [...screen.split('\n').entries()]
-        .map(([i, l]) => ({ i, m: l.match(/^[\s│|]*(❯|›)?\s*([1-9])\.\s+(.*)$/) }))
-        .filter((x) => x.m);
-      const preview = opts.some((x) => /\s{2,}[│┌└├]/.test(x.m[3]));
-      const cur = Number(opts.findLast((x) => x.m[1])?.m[2]);
+      const { preview, cursor: cur } = parseOptions(screen);
       if (preview && cur) {
         const diff = Number(choice) - cur;
         for (let k = 0; k < Math.abs(diff); k++) {

@@ -213,6 +213,14 @@ DEMO=1 PORT=4646 npm start
 
 Shows the UI with fake data (Project1, Lead Manager, …). No commands are executed. The images in this README were taken in demo mode.
 
+
+### Tests
+
+```bash
+npm test
+```
+
+Uses Node's built-in test runner (`node --test`), nothing to install. Covers transcript parsing (joining reply chunks), dialog detection and security checks (token, Host, Origin, paths). The security tests start a demo server on port 4699 for a moment.
 ## Known limitations
 
 - File diffs come from the Edit/Write tools. Files changed by shell commands only show up under "commands".
