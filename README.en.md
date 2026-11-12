@@ -145,7 +145,7 @@ A session already running in a terminal has no official way to receive input fro
 - **History** tab: past prompts and answers, search, "load more"
 - **What I did today**: the calendar button at the top → per session: prompts, edited files, command count and **commit titles** (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts)
 - **Search all history**: the magnifier at the top (or the `/` key) searches prompts and answers across all sessions → picking a result opens that session's History tab with the same query
-- Answers render **bold** · `code` · headings · **tables** (`| head |` + `|---|`). Wide tables scroll horizontally inside the table
+- Answers render **bold** · `code` · headings · **tables** (`| head |` + `|---|`) · **lists** (`-` · `1.`, one nesting level) · **quotes** (`>`) · **code blocks** (```). Wide tables and long code scroll horizontally inside the block
 - Input: **Enter** to send · Shift+Enter for a new line · 🎤 voice · 📎 attach (drag & drop or ⌘V, up to 25MB)
 - Needs approval: the real terminal screen plus option buttons. **Check what you're allowing before you click.** The approval view fills the panel with the input pinned at the bottom, and keeps your scroll position while you read.
 - Multi-question prompts show **← Previous / Next →** and progress (✓ answered). You can go back to change an answer; you can't skip ahead before answering the current one.

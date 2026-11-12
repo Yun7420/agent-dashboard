@@ -93,35 +93,7 @@ $('#spawn-form').addEventListener('submit', async (e) => {
   } catch (err) { toast(err.message); }
 });
 let pendingSelect = null;
-// 마크다운 일부만 가볍게: **굵게**, `코드`, # 제목, | 표 |. (나머지는 원문 그대로)
-const TABLE_ROW = /^\s*\|.*\|\s*$/;
-const TABLE_SEP = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/;
-const cells = (line) => line.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
-function mdTables(s) {
-  const lines = s.split('\n');
-  let out = '';
-  for (let i = 0; i < lines.length; i++) {
-    if (TABLE_ROW.test(lines[i]) && TABLE_SEP.test(lines[i + 1] || '')) {
-      const head = cells(lines[i]);
-      let j = i + 2;
-      const rows = [];
-      while (j < lines.length && TABLE_ROW.test(lines[j])) rows.push(cells(lines[j++]));
-      // 표는 블록이라 앞뒤 줄바꿈을 그대로 두면 pre-wrap 에서 빈 줄이 생긴다 → 표 뒤 줄바꿈은 먹는다
-      out += `<table><thead><tr>${head.map((c) => `<th>${c}</th>`).join('')}</tr></thead><tbody>${
-        rows.map((r) => `<tr>${head.map((_, k) => `<td>${r[k] ?? ''}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-      i = j - 1;
-      continue;
-    }
-    out += lines[i] + (i < lines.length - 1 ? '\n' : '');
-  }
-  return out;
-}
-function md(s) {
-  return mdTables(esc(s))
-    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>')
-    .replace(/^#{1,4}\s+(.+)$/gm, '<span class="h">$1</span>');
-}
+// 마크다운 변환 md() 는 00-md.js
 // 길면 처음 몇 줄만 보여 주고 "더 보기"로 펼친다
 const LONG = (s) => s.length > 400 || s.split('\n').length > 7;
 function foldable(cls, text) {

@@ -34,7 +34,7 @@ function toast(msg) {
   clearTimeout(toast.t);
   toast.t = setTimeout(() => (el.style.display = 'none'), 3500);
 }
-const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// esc() 는 00-md.js (마크다운 변환과 함께 node 에서 시험하려고)
 const STATUS_KO = { working: '작업 중', background: '백그라운드 작업', waiting: '승인 필요', idle: '대기', ended: '종료' };
 const pref = (() => { try { return JSON.parse(localStorage.getItem('agent-deck') || '{}'); } catch { return {}; } })();
 const savePref = () => { try { localStorage.setItem('agent-deck', JSON.stringify(pref)); } catch {} };
