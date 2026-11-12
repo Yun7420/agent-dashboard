@@ -41,7 +41,7 @@
 server.mjs            HTTP · SSE 서버, 상태 조립, 명령(채팅 · 승인 · 종료 · 새 세션), 보안 검사, 검색 · 오늘 한 일 API
 adapters/             도구별 차이(claude.mjs · codex.mjs). 새 에이전트 = 어댑터 파일 하나
 lib/                  tmux · 기록 읽기 util · dialog(선택창 감지) · restore(재시동 복구) · demo(데모 데이터)
-public/index.html     뼈대 / style.css 모양 / js/01-core.js ~ 18-day.js 동작(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다)
+public/index.html     뼈대 / style.css 모양 / js/00-md.js ~ 18-day.js 동작(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다)
 test/                 node --test (기록 파싱 · 선택창 감지 · 보안 · 검색 · 오늘 한 일)
 docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 ```
