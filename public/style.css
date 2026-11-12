@@ -444,12 +444,22 @@ footer .h #updated { color: var(--faint); font-weight: 400; font-variant-numeric
   .usage-pill .rs { display: none; }
   header label.switch { display: none; }
 }
+/* 태블릿 세로 · 좁은 창: 목록을 숨기지 않고 접힌 띠(상태 점 + 이니셜)로 둔다 — 접기 단추는 숨김(JS 가 항상 접음) */
 @media (max-width: 860px) {
-  body { grid-template-columns: 1fr; grid-template-rows: 56px 1fr 120px; }
-  body.aside-folded { grid-template-columns: 1fr; }
-  aside { display: none; }
+  body, body.aside-folded { grid-template-columns: 64px 1fr; grid-template-rows: 56px 1fr 120px; }
+  #aside-fold { display: none; }
   header { gap: 8px; padding: 0 12px; }
   .brand h1 span, .stats, #conn { display: none; }
   #drawer { top: 0; right: 0; bottom: 0; width: 100%; border-radius: 0; border: none; }
   .hint { display: none; }
+}
+/* 휴대폰 크기: 사용 한도 막대는 글자가 줄바꿈되며 가로로 넘쳐서 숨긴다(도움말 창에서 볼 수 있음) */
+@media (max-width: 600px) {
+  .usage-pill { display: none; }
+  #new-session { padding: 0 12px; }
+  body, body.aside-folded { grid-template-columns: 56px 1fr; }
+  /* 패널 머리: 이름 · 탭 · ⋯ · 닫기만 남겨 오른쪽 단추가 잘리지 않게 */
+  #d-model, #wide, #d-info-btn { display: none; }
+  #drawer .head-top h2 { max-width: none; flex: 1 1 auto; }
+  #drawer .head-top .grow { display: none; }
 }

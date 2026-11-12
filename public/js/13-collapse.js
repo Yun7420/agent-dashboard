@@ -7,12 +7,15 @@ function initials(title) {
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[1][0]).toUpperCase(); // Lead Manager → LM, Project2 Builder → PB
 }
+// 좁은 화면(태블릿 세로 · 휴대폰)에선 저장된 설정과 상관없이 접힌 띠로 둔다
+const narrowScreen = matchMedia('(max-width: 860px)');
 function applyAsideFold() {
-  document.body.classList.toggle('aside-folded', Boolean(pref.asideFolded));
+  document.body.classList.toggle('aside-folded', Boolean(pref.asideFolded) || narrowScreen.matches);
   $('#aside-fold').title = pref.asideFolded ? '목록 펼치기' : '목록 접기';
 }
 $('#aside-fold').addEventListener('click', () => { pref.asideFolded = !pref.asideFolded; savePref(); applyAsideFold(); view.init = false; setTimeout(() => { applyDrawerWidth(); renderGraph(); }, 0); });
 applyAsideFold();
+narrowScreen.addEventListener('change', () => { applyAsideFold(); view.init = false; setTimeout(() => { applyDrawerWidth(); renderGraph(); }, 0); });
 
 function applyFold() {
   document.querySelector('footer').classList.toggle('folded', Boolean(pref.eventsFolded));
