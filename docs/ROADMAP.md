@@ -5,6 +5,7 @@
 ## 0. 기반
 - [ ] **어댑터 바퀴(④)** — history-core 공용화는 보류
   - [x] a. Codex: 답변 이어 붙이기(joinReply 를 lib/util 로 같이 씀) · 이번 턴만(새 요청에 앞 턴 답 지움) · 끝 256KB 밖 요청도 찾기(8MB 까지, 넘으면 turnClipped) · 첫 테스트(예시 jsonl) `003d9c1`
+  - [x] b. Claude 캐시: inode 가 바뀌면 처음부터(history · peers · describe) · 합성 응답(usage 0)이 대화 창을 0 으로 덮지 않게 · 서브에이전트 메타/끝은 바뀔 때만 · 응답 id 기억은 최근 것만 · 추이 점 상한(응답 수 · 떨어짐은 따로) `24f1537`
 - [x] GitHub Actions(사용자 승인): push · PR 마다 Ubuntu · macOS × Node 18 · 20 · 22 에서 npm test, contents: read · SHA 고정. 리눅스에서 드러난 테스트 2건(tmux 없는 PATH · 서버 종료 전 임시 폴더 삭제) 고침 `048a352` `5a3c923` `a80e8ce`
 - [x] 버그: 켜자마자 누른 보내기 · 승인이 첫 상태 전이라 「tmux 밖」 409 → 503(읽는 중). 흔들리던 시험 서버 테스트(Node 18 6번 중 2번 실패)를 가짜 ps 첫 호출 지연으로 매번 재현 · 고침 `894beb2`
 - [x] npx 준비 C4(사용자 승인): 실행 명령 하위 명령 run(다시 켜기 · 간격 늘리기 · 포트 충돌 멈춤 · 신호 전달) · restore(띄우기만). run.sh · npm run restore 그대로 `1d4f131`
