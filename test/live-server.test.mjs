@@ -47,6 +47,8 @@ function setupHome() {
   fs.writeFileSync(path.join(FAKE_DIR, 'lsof.txt'), `p${PID[0]}\nn${CWD}\np${PID[1]}\nn${CWD}\n`);
   fs.writeFileSync(path.join(FAKE_DIR, 'screen.txt'), '> ');
   fs.writeFileSync(TOKEN_FILE, TOKEN, { mode: 0o600 });
+  // 사용 한도 보기가 옛 방식(저장소의 bin/statusline.mjs 를 직접 등록)으로 켜져 있던 설치
+  fs.writeFileSync(path.join(HOME, '.claude', 'settings.json'), `${JSON.stringify({ model: 'opus[1m]', statusLine: { type: 'command', command: `"${fs.realpathSync(process.execPath)}" "${path.join(ROOT, 'bin', 'statusline.mjs')}"`, padding: 0 }, theme: 'dark' }, null, 2)}\n`);
 }
 
 const req = (p, { method = 'GET', headers = {}, body } = {}) =>
@@ -195,4 +197,21 @@ test('평소 실행에서는 DASHBOARD_HOME · DASHBOARD_TOKEN_FILE 를 무시(D
   assert.deepEqual(probe({ DASHBOARD_TEST: '0', DEMO: undefined }), { test: false, home: os.homedir(), token: normal });
   assert.deepEqual(probe({ DASHBOARD_TEST: '1', DEMO: '1' }), { test: false, home: os.homedir(), token: { file: path.join(data, 'demo-token'), legacy: [] } });
   assert.deepEqual(probe({ DASHBOARD_TEST: '1', DEMO: undefined }), { test: true, home: '/tmp/가짜-홈', token: { file: '/tmp/가짜-토큰', legacy: [] } });
+});
+
+test('상태줄 다리: 서버를 켤 때 옛 경로 등록을 ~/.agent-dashboard/bin 복사본으로 바꾸고, 끄기 · 켜기도 그 경로로', async () => {
+  const settingsFile = path.join(HOME, '.claude', 'settings.json');
+  const dst = path.join(HOME, '.agent-dashboard', 'bin', 'statusline.mjs');
+  const want = `"${fs.realpathSync(process.execPath)}" "${dst}"`;
+  let s = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+  assert.equal(s.statusLine.command, want); // 시작할 때 바뀜
+  assert.deepEqual([s.model, s.theme, s.statusLine.padding], ['opus[1m]', 'dark', 0]);
+  assert.equal(fs.statSync(dst).mode & 0o777, 0o600);
+  assert.equal(fs.readFileSync(dst, 'utf8'), fs.readFileSync(path.join(ROOT, 'bin', 'statusline.mjs'), 'utf8'));
+  assert.deepEqual([(await cmd('usage-off', {})).text], ['껐어요']);
+  assert.equal(JSON.parse(fs.readFileSync(settingsFile, 'utf8')).statusLine, undefined); // 원래 상태줄이 없던 설치 → 키를 지움
+  assert.deepEqual([(await cmd('usage-on', {})).text], ['켰어요']);
+  s = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+  assert.equal(s.statusLine.command, want);
+  assert.equal(s.theme, 'dark');
 });

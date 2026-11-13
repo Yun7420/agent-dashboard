@@ -188,6 +188,8 @@ A session already running in a terminal has no official way to receive input fro
 - **Account usage limits (5-hour · weekly)** — turn on with **Show usage limits** in the header. Claude Code only passes this to the status line, so turning it on registers a status line (`bin/statusline.mjs`) in `~/.claude/settings.json`.
   - Every Claude session gets one line at the bottom: `model · context % · 5-hour limit %` (if you already had a status line, it keeps showing yours).
   - Your previous settings are backed up to `~/.agent-dashboard/` and **restored exactly** when you turn it off. While on, context usage becomes exact instead of estimated.
+  - When turned on, the status-line script is copied to `~/.agent-dashboard/bin/statusline.mjs` and that path is registered (so moving or deleting the dashboard folder doesn't break your status line). A newer version refreshes the copy automatically, and an older registration is switched to the new path. If the node or copy path contains a quote, `$`, `` ` `` or `\`, it refuses to turn on and tells you why.
+  - If `~/.claude/settings.json` is a **symlink** (e.g. to your dotfiles), on/off is refused with "the settings file is a link" so the real file it points to isn't edited behind your back. Register it in the linked file yourself in that case.
   - While on, click the limits in the header to open a **limits trend chart** (last 24 hours · 7 days, 5-hour and weekly lines, reset points). A line with time · % · reset times is appended to `~/.agent-dashboard/limits/<date>.jsonl` only when values change (at most once a minute, readable only by you), and files older than 30 days are deleted. Settings are under "Settings…" below the chart.
 
 ## Security

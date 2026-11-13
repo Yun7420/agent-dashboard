@@ -32,7 +32,8 @@ import { detectEditors, openDir } from './lib/open-dir.mjs';
 import { UPLOAD_DIR, UPLOAD_MAX, pruneUploads } from './lib/uploads.mjs';
 import { fileCache } from './lib/filecache.mjs';
 import { pruneStatusFiles } from './lib/status.mjs';
-import { updateText, isBridge, enableStatusLine, disableStatusLine, modelOf, restoreModelText } from './lib/claude-settings.mjs';
+import { enableBridge, disableBridge, syncBridge } from './lib/bridge.mjs';
+import { updateText, isBridge, modelOf, restoreModelText } from './lib/claude-settings.mjs';
 import { sendText, sendJson, friendly } from './lib/respond.mjs';
 import { isObject, validDate, KEY_RE, WINDOW_HOURS } from './lib/validate.mjs';
 import { CLAUDE_DIR, DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
@@ -168,23 +169,29 @@ async function daySummary(date) {
 // ---------- 계정 사용 한도 (상태줄 다리, 사용자가 켰을 때만) ----------
 // Claude Code 는 사용 한도·정확한 대화 창 정보를 상태줄 스크립트에만 넘긴다. bin/statusline.mjs 가 그걸 파일로 남긴다.
 const STATUS_DIR = path.join(DATA_DIR, 'status');
-const BRIDGE = path.join(ROOT, 'bin', 'statusline.mjs');
+const SETTINGS = path.join(CLAUDE_DIR, 'settings.json'); // Claude Code 설정(상태줄 다리 등록 · 기본 모델)
+// 상태줄 다리: 패키지의 원본(BRIDGE_SRC)을 ~/.agent-dashboard/bin 으로 복사해 그 경로(BRIDGE_DST)를 등록한다(lib/bridge.mjs).
+// 옛 설치는 원본 경로가 등록돼 있어, 둘 다 「우리 다리」로 알아본다
+const BRIDGE_SRC = path.join(ROOT, 'bin', 'statusline.mjs');
+const BRIDGE_DST = path.join(DATA_DIR, 'bin', 'statusline.mjs');
+const BRIDGE_PATHS = [BRIDGE_SRC, BRIDGE_DST];
+const NODE_BIN = fs.realpathSync(process.execPath); // 셸 PATH 와 상관없이 실행되게 실제 node 경로
 
 // 켜기/끄기는 lib/claude-settings.mjs(쓰기 직전 다시 읽기 · 원자적 쓰기 · 링크 거절 · 깨진 JSON 이면 멈춤)
+const BRIDGE = { settingsFile: SETTINGS, dataDir: DATA_DIR, src: BRIDGE_SRC, dst: BRIDGE_DST, node: NODE_BIN };
 function enableUsage() {
-  const node = fs.realpathSync(process.execPath); // 셸 PATH 와 상관없이 실행되게 실제 node 경로
-  const msg = enableStatusLine(SETTINGS, { dataDir: DATA_DIR, command: `"${node}" "${BRIDGE}"` });
+  const msg = enableBridge(BRIDGE);
   fileCache.forget(SETTINGS); // 바로 다음 틱에 바뀐 값이 보이게
   return msg;
 }
 function disableUsage() {
-  const msg = disableStatusLine(SETTINGS, { dataDir: DATA_DIR });
+  const msg = disableBridge(BRIDGE);
   fileCache.forget(SETTINGS);
   return msg;
 }
 
 // 틱마다 불리므로 캐시(lib/filecache.mjs)로 — 고치는 쪽은 lib/claude-settings 가 디스크에서 새로 읽는다
-const usageEnabled = () => isBridge(fileCache.json(SETTINGS)?.statusLine);
+const usageEnabled = () => isBridge(fileCache.json(SETTINGS)?.statusLine, BRIDGE_PATHS);
 
 // 세션별 마지막 상태줄 입력 (계정 한도는 가장 최근 것 하나로 충분)
 function readStatusFiles() {
@@ -221,7 +228,6 @@ function usageState(status) {
 
 // ---------- 사용자 기본 모델 보존 ----------
 // ~/.claude/settings.json 의 "model" 한 줄만 다룬다(다른 설정·서식은 건드리지 않는다).
-const SETTINGS = path.join(CLAUDE_DIR, 'settings.json');
 
 // fresh: 고치기 직전(/model 보내기 전)엔 캐시 없이 새로 읽는다. 틱 안(대화 창 크기 추정)에선 캐시
 function readDefaultModel({ fresh = false } = {}) {
@@ -628,6 +634,12 @@ server.listen(PORT, '127.0.0.1', () => {
     try { pruneUploads(); } catch (e) { console.error('첨부 정리 실패:', e.message); }
     try { pruneLimits(LIMITS_DIR); } catch (e) { console.error('한도 기록 정리 실패:', e.message); }
     try { pruneStatusFiles(STATUS_DIR); } catch (e) { console.error('상태줄 기록 정리 실패:', e.message); }
+    // 사용 한도가 켜져 있으면 다리 복사본을 패키지의 최신으로 맞추고, 옛 경로 등록은 새 경로로(꺼져 있으면 아무것도 안 함)
+    try {
+      const b = syncBridge(BRIDGE);
+      if (b.copied) console.log('상태줄 다리를 새 버전으로 맞췄어요 →', tildify(BRIDGE_DST));
+      if (b.migrated) { fileCache.forget(SETTINGS); console.log('상태줄 등록을 새 경로로 바꿨어요 →', tildify(BRIDGE_DST)); }
+    } catch (e) { console.error('[상태줄 다리]', e.message); }
     setInterval(() => { try { pruneUploads(); } catch {} try { pruneLimits(LIMITS_DIR); } catch {} try { pruneStatusFiles(STATUS_DIR); } catch {} }, 6 * 3600_000);
   }
 });
