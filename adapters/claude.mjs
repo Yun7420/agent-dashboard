@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import readline from 'node:readline';
 import { clip, parse, readHeadLines, readJsonLines, readJsonOrNull, readTailLines, statOrNull } from '../lib/util.mjs';
 import { createLru } from '../lib/lru.mjs';
+import { createSerial } from '../lib/serial.mjs';
 import { usageOf, contextOf, addUsage, emptyTokens } from '../lib/usage.mjs';
 
 // 한 턴의 답변은 도구 호출 사이사이에 글이 여러 덩어리로 나뉜다. 마지막 덩어리만 남기면
@@ -104,6 +105,16 @@ async function readNew(file, start, end, onLine) {
 // 목록 세션 수(보통 10~30개)보다 작으면 전체 검색 때마다 처음부터 다시 읽게 되므로 30. 비워진 뒤엔 처음부터 다시 읽는다
 const historyCache = createLru({ max: 30, ttlMs: 30 * 60_000 }); // file → { offset, items, cur }
 const startCwd = createLru({ max: 500, ttlMs: 24 * 3600_000 }); // file → 세션을 시작한 폴더(짧은 글자라 넉넉히)
+
+// 증분 캐시(peers · history · describe)는 같은 파일이면 한 번에 하나씩 읽는다(lib/serial.mjs).
+// 기록 · 지금 탭 · 검색 · 상태 조립이 동시에 부르면 같은 줄이 두 번 붙던 버그(2026-11-13)
+const serial = createSerial();
+// 부른 쪽이 먼저 잰 크기(s.size)가 이미 읽은 위치보다 작으면, 줄 서 있는 사이 앞 호출이 더 읽은 것 —
+// 파일이 실제로 줄었을 때(새로 쓰기)만 처음부터 다시 읽도록 지금 크기를 다시 잰다
+async function sizeNow(s, offset) {
+  if (s.size >= offset) return s.size;
+  return (await statOrNull(s.file))?.size ?? s.size;
+}
 
 // 마지막 줄이 아직 쓰이는 중일 수 있어, 마지막 줄바꿈 위치까지만 읽는다
 async function completeLineEnd(file, from, size) {
@@ -267,6 +278,70 @@ function applyLine(st, d) {
   if (st.changes.commands.length > 100) st.changes.commands = st.changes.commands.slice(-40);
 }
 
+// 세션 사이 메시지: 새로 붙은 줄만 읽어 peerCache 에 더한다(같은 파일은 serial 로 한 번에 하나)
+async function readPeers(s) {
+  let c = peerCache.get(s.file);
+  const size = await sizeNow(s, c?.offset ?? 0);
+  if (!c || size < c.offset) c = { offset: 0, msgs: [], names: new Set() };
+  // 마지막 줄이 아직 쓰이는 중일 수 있어, 줄바꿈까지만 읽고 나머지는 다음 번에
+  const end = await completeLineEnd(s.file, c.offset, size);
+  if (end > c.offset) {
+    await readNew(s.file, c.offset, end, (line) => {
+      if (line.includes('"agent-name"')) {
+        const d = parse(line);
+        if (d?.agentName) c.names.add(d.agentName);
+        return;
+      }
+      if (!line.includes('cross-session-message')) return;
+      const d = parse(line);
+      if (!d) return;
+      for (const text of peerTexts(d)) {
+        for (const m of text.matchAll(PEER_RE)) {
+          c.msgs.push({ at: d.timestamp, fromAddr: m[1], fromName: m[2], fromPid: Number(m[1].match(/(\d+)\.sock$/)?.[1]) || null, text: clip(m[3].trim(), 300) });
+        }
+      }
+    });
+    if (c.msgs.length > 300) c.msgs = c.msgs.slice(-300);
+    c.offset = end;
+  }
+  peerCache.set(s.file, c);
+  return { msgs: c.msgs, names: [...c.names] };
+}
+
+// 기록 전체(요청 · 답변): 새로 붙은 줄만 읽어 historyCache 에 더한다(같은 파일은 serial 로 한 번에 하나)
+async function readHistory(s) {
+  let h = historyCache.get(s.file);
+  // trend = 응답마다 [시각ms, 대화 창 토큰] — 기록을 읽는 김에 같이 모은다(같은 응답이 여러 줄이면 한 번만)
+  const size = await sizeNow(s, h?.offset ?? 0);
+  if (!h || size < h.offset) h = { offset: 0, items: [], cur: null, trend: [], seen: new Set() };
+  const end = await completeLineEnd(s.file, h.offset, size);
+  if (end > h.offset) {
+    await readNew(s.file, h.offset, end, (line) => {
+      if (!line.includes('"type":"user"') && !line.includes('"type":"assistant"')) return;
+      const d = parse(line);
+      if (!d) return;
+      const u = d.isSidechain ? null : usageOf(d);
+      if (u && (!u.id || !h.seen.has(u.id)) && Date.parse(d.timestamp)) {
+        if (u.id) h.seen.add(u.id);
+        h.trend.push([Date.parse(d.timestamp), contextOf(u)]);
+      }
+      const t = turnStart(d);
+      if (t) {
+        h.cur = { at: d.timestamp, prompt: clip(t.prompt, 20000), tools: 0, reply: '', from: t.from };
+        h.items.push(h.cur);
+      } else if (h.cur && d.type === 'assistant' && !d.isSidechain) {
+        for (const c of d.message?.content ?? []) {
+          if (c.type === 'tool_use') h.cur.tools += 1;
+          if (c.type === 'text' && c.text?.trim()) h.cur.reply = joinReply(h.cur.reply, c.text);
+        }
+      }
+    });
+    h.offset = end;
+    historyCache.set(s.file, h);
+  }
+  return h.items;
+}
+
 export default {
   id: 'claude',
   label: 'Claude Code',
@@ -334,21 +409,25 @@ export default {
 
   async describe(s) {
     // 파일별 상태를 기억하고 새로 붙은 줄만 반영한다. 처음엔 마지막 턴 시작(사람 요청 · 다른 세션 메시지)부터 읽는다
-    let c = describeState.get(s.file);
-    if (!c || s.size < c.offset) {
-      const found = await findTurnStart(s.file, s.size);
-      c = { offset: found.start, clipped: found.clipped, st: newDescribeState() };
-    }
-    const end = await completeLineEnd(s.file, c.offset, s.size);
-    if (end > c.offset) {
-      describeStats.reads += 1;
-      await readNew(s.file, c.offset, end, (line) => {
-        const d = parse(line);
-        if (d) applyLine(c.st, d);
-      });
-      c.offset = end;
-    }
-    describeState.set(s.file, c);
+    const c = await serial(`describe|${s.file}`, async () => {
+      let c = describeState.get(s.file);
+      const size = await sizeNow(s, c?.offset ?? 0);
+      if (!c || size < c.offset) {
+        const found = await findTurnStart(s.file, size);
+        c = { offset: found.start, clipped: found.clipped, st: newDescribeState() };
+      }
+      const end = await completeLineEnd(s.file, c.offset, size);
+      if (end > c.offset) {
+        describeStats.reads += 1;
+        await readNew(s.file, c.offset, end, (line) => {
+          const d = parse(line);
+          if (d) applyLine(c.st, d);
+        });
+        c.offset = end;
+      }
+      describeState.set(s.file, c);
+      return c;
+    });
     const { currentDir, aiTitle, titlePrompt, lastPrompt, lastPromptAt, lastPromptFrom, lastText, lastTool, turnState, lastAt, model, contextUsed, changes, pending } = c.st;
     let cwd = null;
     // 프로젝트는 세션을 시작한 폴더로 묶는다(중간에 cd 해도 흔들리지 않게). 바뀌지 않는 값이라 파일당 한 번만 읽는다.
@@ -408,75 +487,12 @@ export default {
     return out.sort((a, b) => b.mtimeMs - a.mtimeMs).slice(0, 50); // 너무 오래 쌓인 경우만 자른다
   },
 
-  async peers(s) {
-    let c = peerCache.get(s.file);
-    if (!c || s.size < c.offset) c = { offset: 0, msgs: [], names: new Set() };
-    if (s.size > c.offset) {
-      // 마지막 줄이 아직 쓰이는 중일 수 있어, 줄바꿈까지만 읽고 나머지는 다음 번에
-      const fh = await fsp.open(s.file, 'r');
-      let end = s.size;
-      try {
-        const tail = Buffer.alloc(Math.min(65536, s.size - c.offset));
-        await fh.read(tail, 0, tail.length, s.size - tail.length);
-        const nl = tail.lastIndexOf(10);
-        end = nl < 0 ? c.offset : s.size - tail.length + nl + 1;
-      } finally {
-        await fh.close();
-      }
-      if (end > c.offset) {
-        await readNew(s.file, c.offset, end, (line) => {
-          if (line.includes('"agent-name"')) {
-            const d = parse(line);
-            if (d?.agentName) c.names.add(d.agentName);
-            return;
-          }
-          if (!line.includes('cross-session-message')) return;
-          const d = parse(line);
-          if (!d) return;
-          for (const text of peerTexts(d)) {
-            for (const m of text.matchAll(PEER_RE)) {
-              c.msgs.push({ at: d.timestamp, fromAddr: m[1], fromName: m[2], fromPid: Number(m[1].match(/(\d+)\.sock$/)?.[1]) || null, text: clip(m[3].trim(), 300) });
-            }
-          }
-        });
-        if (c.msgs.length > 300) c.msgs = c.msgs.slice(-300);
-        c.offset = end;
-      }
-      peerCache.set(s.file, c);
-    }
-    return { msgs: c.msgs, names: [...c.names] };
+  peers(s) {
+    return serial(`peers|${s.file}`, () => readPeers(s));
   },
 
-  async history(s) {
-    let h = historyCache.get(s.file);
-    // trend = 응답마다 [시각ms, 대화 창 토큰] — 기록을 읽는 김에 같이 모은다(같은 응답이 여러 줄이면 한 번만)
-    if (!h || s.size < h.offset) h = { offset: 0, items: [], cur: null, trend: [], seen: new Set() };
-    const end = await completeLineEnd(s.file, h.offset, s.size);
-    if (end > h.offset) {
-      await readNew(s.file, h.offset, end, (line) => {
-        if (!line.includes('"type":"user"') && !line.includes('"type":"assistant"')) return;
-        const d = parse(line);
-        if (!d) return;
-        const u = d.isSidechain ? null : usageOf(d);
-        if (u && (!u.id || !h.seen.has(u.id)) && Date.parse(d.timestamp)) {
-          if (u.id) h.seen.add(u.id);
-          h.trend.push([Date.parse(d.timestamp), contextOf(u)]);
-        }
-        const t = turnStart(d);
-        if (t) {
-          h.cur = { at: d.timestamp, prompt: clip(t.prompt, 20000), tools: 0, reply: '', from: t.from };
-          h.items.push(h.cur);
-        } else if (h.cur && d.type === 'assistant' && !d.isSidechain) {
-          for (const c of d.message?.content ?? []) {
-            if (c.type === 'tool_use') h.cur.tools += 1;
-            if (c.type === 'text' && c.text?.trim()) h.cur.reply = joinReply(h.cur.reply, c.text);
-          }
-        }
-      });
-      h.offset = end;
-      historyCache.set(s.file, h);
-    }
-    return h.items;
+  history(s) {
+    return serial(`history|${s.file}`, () => readHistory(s));
   },
 
   // 대화 창 사용 추이(history 와 같은 캐시 · 증분 읽기)
