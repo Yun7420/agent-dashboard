@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import claude from '../adapters/claude.mjs';
+import { historyFull } from './_history-full.mjs';
 
 // 기록 · 지금 탭 · 검색이 같은 세션의 기록을 동시에 부르면, 증분 캐시가 같은 줄을 두 번 읽어
 // 답변 문단 · 요청이 두 번씩 붙던 버그(2026-11-13). 동시에 불러도 한 번 부른 결과와 같아야 한다.
@@ -33,13 +34,13 @@ const plain = (items) => items.map(({ at, prompt, tools, reply, from }) => ({ at
 test('history: 같은 세션을 동시에 3번 불러도 항목 · 답변이 한 번 부른 것과 같다(줄을 덧붙인 뒤에도)', async () => {
   const file = makeFile(turns(200, '앞'));
   const results = await Promise.all([1, 2, 3].map(() => claude.history(stat(file))));
-  const want = plain(await claude.historyFull(stat(file)));
+  const want = plain(await historyFull(stat(file)));
   assert.equal(want.length, 200);
   for (const r of results) assert.deepEqual(plain(r), want);
 
   fs.appendFileSync(file, jsonl(turns(50, '뒤')));
   const again = await Promise.all([1, 2, 3].map(() => claude.history(stat(file))));
-  const want2 = plain(await claude.historyFull(stat(file)));
+  const want2 = plain(await historyFull(stat(file)));
   assert.equal(want2.length, 250);
   for (const r of again) assert.deepEqual(plain(r), want2);
 });
@@ -49,7 +50,7 @@ test('history: 먼저 받은 크기(오래된 stat)로 늦게 불러도 처음�
   const old = stat(file);
   fs.appendFileSync(file, jsonl(turns(5, '뒤')));
   const [a, b] = await Promise.all([claude.history(stat(file)), claude.history(old)]);
-  const want = plain(await claude.historyFull(stat(file)));
+  const want = plain(await historyFull(stat(file)));
   assert.deepEqual(plain(a), want);
   assert.deepEqual(plain(b), want);
 });

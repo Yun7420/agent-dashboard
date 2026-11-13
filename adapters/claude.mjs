@@ -126,7 +126,7 @@ function peerPrompt(d) {
   const name = d.origin?.name ?? raw.match(/from-name="([^"]*)"/)?.[1] ?? '다른 세션';
   return { prompt: body, from: { kind: 'peer', name } };
 }
-function turnStart(d) {
+export function turnStart(d) {
   const p = promptText(d);
   return p ? { prompt: p, from: null } : peerPrompt(d);
 }
@@ -625,23 +625,5 @@ export default {
       }
     }
     return { ...sum, files: [...sum.files].map(([file, edits]) => ({ file, edits })), commits: sum.commits.filter((x) => !x.failed).map(({ at, message }) => ({ at, message })) };
-  },
-
-  async historyFull(s) {
-    const items = [];
-    let cur = null;
-    for await (const d of readJsonLines(s.file, ['"type":"user"', '"type":"assistant"'])) {
-      const t = turnStart(d);
-      if (t) {
-        cur = { at: d.timestamp, prompt: clip(t.prompt, 20000), tools: 0, reply: '', from: t.from };
-        items.push(cur);
-      } else if (cur && d.type === 'assistant' && !d.isSidechain) {
-        for (const c of d.message?.content ?? []) {
-          if (c.type === 'tool_use') cur.tools += 1;
-          if (c.type === 'text' && c.text?.trim()) cur.reply = joinReply(cur.reply, c.text);
-        }
-      }
-    }
-    return items;
   },
 };

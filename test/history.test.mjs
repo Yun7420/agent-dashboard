@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import claude from '../adapters/claude.mjs';
+import { historyFull } from './_history-full.mjs';
 
 // Claude Code 대화 기록(.jsonl) 흉내: 질문 → 글 → 도구 → 글 → 도구 → 글
 function writeTranscript(lines) {
@@ -32,9 +33,9 @@ test('다음 질문이 오면 새 항목으로 나뉜다', async () => {
   assert.deepEqual(items.map((h) => [h.prompt, h.reply]), [['첫 질문', '첫 답'], ['둘째 질문', '둘째 답']]);
 });
 
-test('전체 기록 읽기(historyFull)도 같은 결과', async () => {
+test('캐시 없이 전체를 읽은 정답(test/_history-full)도 같은 결과', async () => {
   const file = writeTranscript([user('질문'), said(text('하나')), said(tool()), said(text('둘'))]);
-  const items = await claude.historyFull({ file, size: fs.statSync(file).size });
+  const items = await historyFull({ file, size: fs.statSync(file).size });
   assert.equal(items[0].reply, '하나\n\n둘');
 });
 
@@ -50,7 +51,7 @@ const peerTranscript = () => writeTranscript([user('사람 요청'), said(text('
 
 test('다른 세션이 보낸 메시지는 새 턴으로 나뉘고, 그 답이 앞 턴에 붙지 않는다', async () => {
   const file = peerTranscript();
-  for (const items of [await claude.history({ file, size: fs.statSync(file).size }), await claude.historyFull({ file, size: fs.statSync(file).size })]) {
+  for (const items of [await claude.history({ file, size: fs.statSync(file).size }), await historyFull({ file, size: fs.statSync(file).size })]) {
     assert.deepEqual(items.map((h) => [h.prompt, h.reply, h.from]), [
       ['사람 요청', '사람 요청에 대한 답', null],
       [peerBody, 'peer 메시지에 대한 답', { kind: 'peer', name: '예시 매니저' }],
