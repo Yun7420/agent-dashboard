@@ -47,7 +47,7 @@ Agent Dashboard puts all of this on one screen.
 | ■ | **Stop · close** | Stop only what a session is doing (the conversation stays), or close a session from the dashboard |
 | 📝 | **Live code diff** | Files changed in the current request with +/− counts and red/green diffs; commands with ✓ pass / ✕ fail and output |
 | 🧠 | **Model · usage** | Start sessions with Opus · Sonnet · Haiku, switch a running session's model, context usage, Claude account 5-hour/weekly limits |
-| 🔔 | **Notifications** | macOS notification when approval is needed or a task over 1 minute finishes; pending approvals in the tab title |
+| 🔔 | **Notifications** | Alert when approval is needed or a task over 1 minute finishes — browser notifications, or **macOS notifications that arrive even with the tab closed** (choose a sound); pending approvals in the tab title |
 | 🛡️ | **Local-only security** | 127.0.0.1 only, Host/Origin checks, a secret token generated per machine |
 
 ![Session panel — current answer, file diffs, commands](docs/images/session-panel.png)
@@ -170,7 +170,7 @@ A session already running in a terminal has no official way to receive input fro
 
 - Activity: changes since the dashboard started (status · new prompts · messages between sessions · subagents). Fold it to one line with the button on the right
 - **Esc**: close popups → press again to collapse the panel
-- 🔔: turn on notifications (approval needed · task over 1 minute finished)
+- 🔔: notification settings (approval needed · task over 1 minute finished) — browser notifications (while this tab is open) · macOS notifications (even with the tab closed, sent by the server) · sound · test notification. When macOS notifications are on, browser notifications are skipped so you don't get two. The same session and reason alerts at most once a minute, and simultaneous alerts are merged into one. Settings live in `~/.agent-dashboard/notify.json` (readable only by you). macOS notifications may need notification permission for Script Editor (or Terminal)
 </details>
 
 ## Model · usage

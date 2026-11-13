@@ -226,6 +226,19 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 .menu-pop { right: 0; padding: 6px; }
 .menu-pop.show { display: block; }
 .menu-pop button { width: 100%; white-space: nowrap; font-size: 13px; }
+/* 종 단추 → 알림 설정(브라우저 · macOS · 소리) */
+#notify-menu { width: 300px; padding: 12px 14px; display: none; flex-direction: column; gap: 10px; z-index: 20; }
+#notify-menu.show { display: flex; }
+#notify-menu .np-title { font-weight: 700; font-size: 13px; }
+#notify-menu .np-title span { display: block; font-weight: 400; font-size: 11px; color: var(--faint); margin-top: 2px; }
+#notify-menu .np-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+#notify-menu .np-row small { display: block; font-size: 11px; color: var(--faint); }
+#notify-menu .np-row button, #notify-menu .np-row select { width: auto; min-width: 96px; height: 30px; font-size: 12px; }
+#notify-menu .np-row button { border: 1px solid var(--border-strong); }
+#notify-menu label.switch { display: inline-flex; } /* 좁은 화면에서 머리의 스위치를 숨기는 규칙에 걸리지 않게 */
+#notify-menu .np-hint { margin: 0; font-size: 11px; line-height: 1.5; color: var(--dim); white-space: normal; }
+#notify-menu .np-hint:empty { display: none; }
+@media (max-width: 600px) { #notify-menu { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; } } /* 좁은 화면에선 종 단추 기준으로 두면 왼쪽이 화면 밖으로 나간다 */
 /* 프로젝트 박스를 누르면 뜨는 "폴더 열기" 메뉴 */
 #dir-menu { position: fixed; top: 0; left: 0; right: auto; display: none; z-index: 12; min-width: 200px; max-width: 280px; }
 #dir-menu.show { display: block; }

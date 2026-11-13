@@ -20,6 +20,7 @@ import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions } fr
 import { summarizeTool, guessFromScreen } from './lib/approval.mjs';
 import { createLru } from './lib/lru.mjs';
 import { tightenFiles } from './lib/perms.mjs';
+import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNotifier } from './lib/notify.mjs';
 import { pageHistory, pageParams } from './lib/paging.mjs';
 import { thinTrend, drops } from './lib/usage.mjs';
 import * as demo from './lib/demo.mjs';
@@ -804,6 +805,29 @@ async function checkEnv() {
   return envCache;
 }
 
+// ---------- macOS 알림 (브라우저 탭을 닫아도) ----------
+// 켜기/끄기 · 소리는 ~/.agent-dashboard/notify.json(600). 데모 모드에선 파일을 건드리지 않고 메모리에만 두고, 실제 알림도 보내지 않는다
+const NOTIFY_FILE = path.join(HOME, '.agent-dashboard', 'notify.json');
+const MAC_NOTIFY = process.platform === 'darwin' && !DEMO;
+let notifySettings = DEMO ? { mac: false, sound: 'Glass' } : loadSettings(NOTIFY_FILE);
+const notifier = createNotifier();
+// 셸을 거치지 않고(execFile) 값은 argv 로만 넘긴다 → 세션 이름에 따옴표 · $(…) 가 있어도 스크립트가 되지 않는다
+function sendMacNotification(title, body) {
+  if (!MAC_NOTIFY) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    execFile('osascript', osascriptArgs(title, body, notifySettings.sound), { timeout: 5000 }, (err) => {
+      if (err) console.error('macOS 알림 실패:', err.message);
+      resolve(!err);
+    });
+  });
+}
+function notifyTick(sessions) {
+  notifier.observe(sessions); // 꺼져 있어도 상태는 따라가야 켠 순간 지난 일이 한꺼번에 뜨지 않는다
+  const n = notifier.take();
+  if (n && notifySettings.mac) sendMacNotification(n.title, n.body);
+}
+const notifyInfo = () => ({ ...notifySettings, sounds: SOUNDS, supported: MAC_NOTIFY, demo: DEMO });
+
 // ---------- HTTP (SSE 로 2초마다 바뀐 상태만 보냄) ----------
 
 const clients = new Set();
@@ -817,6 +841,7 @@ async function tick() {
     latest = await buildState(windowHours);
     tickMs.push(Math.round(performance.now() - t0));
     if (tickMs.length > 30) tickMs.shift();
+    notifyTick(latest.sessions);
     // 바뀐 게 있을 때만, 각 부분을 한 번씩만 문자열로 만들어 보낸다
     // 재시동 복구: 떠 있는 tmux 세션 목록을 저장하고, 재시동 전 목록 중 지금 없는 세션을 알려 준다
     if (!DEMO) {
@@ -936,6 +961,33 @@ const server = http.createServer(async (req, res) => {
     const env = url.searchParams.has('refresh') || !envCache ? await checkEnv() : envCache;
     // 「승인 감지」 줄은 서버가 켜진 뒤 쌓인 기록이라 캐시 없이 매번 붙인다
     res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ...env, items: [...env.items, dialogEnvItem()] }));
+    return;
+  }
+  // 알림 설정: GET 은 지금 값, POST { mac?, sound? } 는 바꾸기(소리는 허용 목록만), /api/notify/test 는 시험 알림 한 번
+  if (url.pathname === '/api/notify') {
+    if (req.method === 'POST') {
+      let body;
+      try {
+        body = await readBody(req);
+      } catch {
+        return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('요청 형식이 잘못됐어요');
+      }
+      if (!body || typeof body !== 'object' || Array.isArray(body)) return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('요청 형식이 잘못됐어요');
+      if ('sound' in body && !validSound(body.sound)) return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('고를 수 없는 소리예요');
+      if ('mac' in body && typeof body.mac !== 'boolean') return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('mac 은 true/false 만');
+      const next = { ...notifySettings, ...('mac' in body ? { mac: body.mac } : {}), ...('sound' in body ? { sound: body.sound } : {}) };
+      try {
+        notifySettings = DEMO ? next : saveSettings(NOTIFY_FILE, next);
+      } catch (e) {
+        return void res.writeHead(500).end(e.message);
+      }
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(notifyInfo()));
+    return;
+  }
+  if (url.pathname === '/api/notify/test' && req.method === 'POST') {
+    const sent = await sendMacNotification('Agent Dashboard', '시험 알림이에요 — 이게 보이면 macOS 알림이 동작해요');
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ sent, supported: MAC_NOTIFY }));
     return;
   }
   if (url.pathname === '/api/perf') {

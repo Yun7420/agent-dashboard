@@ -103,3 +103,20 @@ test('대화 창 추이 API: 토큰 필요, 데모는 점 · 자동 요약 수�
   assert.ok(t.points.length >= 2 && t.points.length <= 120);
   assert.equal(t.drops, 1);
 });
+
+test('알림 설정 API: 토큰 없거나 다른 Origin 이면 403, 소리는 허용 목록만, 데모는 설정 파일을 건드리지 않는다', async () => {
+  const H = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };
+  assert.equal(await req('/api/notify'), 403);
+  assert.equal(await req('/api/notify', { method: 'POST', body: '{"mac":true}' }), 403);
+  assert.equal(await req('/api/notify/test', { method: 'POST', body: '{}' }), 403);
+  assert.equal(await req('/api/notify', { method: 'POST', headers: { ...H, origin: 'http://evil.example' }, body: '{"mac":true}' }), 403);
+  const file = path.join(process.env.HOME, '.agent-dashboard', 'notify.json');
+  const before = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+  assert.equal(await req('/api/notify', { headers: H }), 200);
+  assert.equal(await req('/api/notify', { method: 'POST', headers: H, body: '{"sound":"../../etc/passwd"}' }), 400);
+  assert.equal(await req('/api/notify', { method: 'POST', headers: H, body: '{"mac":"yes"}' }), 400);
+  assert.equal(await req('/api/notify', { method: 'POST', headers: H, body: 'null' }), 400);
+  assert.equal(await req('/api/notify', { method: 'POST', headers: H, body: '{"mac":true,"sound":"Ping"}' }), 200);
+  assert.equal(await req('/api/notify/test', { method: 'POST', headers: H, body: '{}' }), 200); // 데모라 실제로는 보내지 않음
+  assert.equal(fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null, before);
+});

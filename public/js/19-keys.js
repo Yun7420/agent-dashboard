@@ -68,6 +68,6 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'j' || e.key === 'k') { moveCursor(e.key === 'j' ? 1 : -1); done = true; }
   else if ((e.key === 'g' || e.key === 'Enter') && kbKey && !$('#drawer').classList.contains('open')) { select(kbKey); done = true; }
   else if (/^[1-9]$/.test(e.key)) done = approveKey(e.key);
-  else if (e.key === 'Escape' && !document.querySelector('#dir-menu.show, #more-menu.show, #d-meta.show')) done = approveKey('Escape');
+  else if (e.key === 'Escape' && !document.querySelector('#dir-menu.show, #more-menu.show, #d-meta.show, #notify-menu.show')) done = approveKey('Escape');
   if (done) { e.preventDefault(); e.stopImmediatePropagation(); }
 }, true);
