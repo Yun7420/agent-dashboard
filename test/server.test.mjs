@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
+import net from 'node:net';
 import { fileURLToPath } from 'node:url';
 
 // 데모 모드 서버를 따로 띄워 보안 검사를 시험한다(실제 세션은 건드리지 않음)
@@ -137,4 +138,38 @@ test('복구 API: 토큰 없거나 다른 Origin 이면 403, 데모에선 흉내
   assert.equal(await req('/api/cmd/recent-restore', { method: 'POST', headers: { ...H, origin: 'http://evil.example' }, body: '{"ids":[]}' }), 403);
   assert.equal(await req('/api/recent', { headers: H }), 200);
   assert.equal(await req('/api/cmd/recent-restore', { method: 'POST', headers: H, body: '{"ids":["00000000-0000-4000-8000-000000000001"],"cwd":"/etc"}' }), 200);
+});
+
+// 날 요청(브라우저가 못 만드는 모양)을 그대로 보내고 첫 줄(상태)만 받는다
+const raw = (text) =>
+  new Promise((resolve, reject) => {
+    const s = net.connect(PORT, '127.0.0.1', () => s.write(text));
+    let got = '';
+    s.on('data', (d) => { got += d; if (got.includes('\r\n')) { s.destroy(); resolve(got.split('\r\n')[0]); } });
+    s.on('error', reject);
+    s.on('close', () => resolve(got.split('\r\n')[0]));
+    s.setTimeout(3000, () => { s.destroy(); resolve('응답 없음'); }); // 응답이 안 오면 멈추지 않고 실패로
+  });
+
+test('화면 파일: 폴더 경로(/js · /js/ · /fonts)는 404 이고 서버는 그대로 산다', async () => {
+  for (const p of ['/js', '/js/', '/fonts', '/../public', '/%2e%2e/server.mjs']) assert.equal(await req(p), 404, p);
+  assert.equal(await req('/'), 200);
+  assert.equal(await req('/js/01-core.js'), 200);
+});
+
+test('처리기 안의 오류: 500 짧은 한국어 문장, 서버는 그대로 산다', async () => {
+  const line = await raw(`GET http://[ HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n`); // 주소 해석(new URL)에서 throw
+  assert.match(line, / 500 /);
+  assert.equal(await req('/'), 200);
+});
+
+test('포트 충돌: 안내 문구를 찍고 종료 코드 1', async () => {
+  const p = spawn(process.execPath, ['server.mjs'], { cwd: ROOT, env: { ...process.env, DEMO: '1', PORT: String(PORT) } });
+  let out = '';
+  p.stdout.on('data', (d) => (out += d));
+  p.stderr.on('data', (d) => (out += d));
+  const code = await new Promise((r) => { p.on('exit', r); setTimeout(() => { p.kill(); r('timeout'); }, 5000); });
+  assert.equal(code, 1, out);
+  assert.match(out, new RegExp(`${PORT} 포트를 이미 쓰고 있어요 — PORT=${PORT + 1} npm start`));
+  assert.equal(await req('/'), 200); // 원래 서버는 그대로
 });

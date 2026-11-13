@@ -982,7 +982,16 @@ const authorized = (req, url) => {
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 
-const server = http.createServer(async (req, res) => {
+// 처리 안 된 오류는 500 + 짧은 한국어 문장으로 돌려주고 자세한 내용은 로그로만(요청 하나 때문에 서버 전체가 죽지 않게)
+const server = http.createServer((req, res) => {
+  handle(req, res).catch((e) => {
+    console.error('[요청 오류]', req.method, req.url, e?.stack ?? e);
+    if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' }).end('서버에서 문제가 생겼어요. 잠시 뒤 다시 해 주세요');
+    else res.destroy(); // SSE 처럼 이미 보내기 시작한 응답은 끊는다
+  });
+});
+
+async function handle(req, res) {
   if (!ALLOWED_HOSTS.has(req.headers.host ?? '')) {
     res.writeHead(403).end('forbidden host');
     return;
@@ -1127,19 +1136,39 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // 화면 파일: public 폴더 안의 「일반 파일」만. 폴더(/js 등)를 스트림으로 열면 EISDIR 로 프로세스가 죽었다(토큰 없이 아무 사이트나 부를 수 있는 경로)
   const file = path.join(PUBLIC_DIR, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname));
-  if (!file.startsWith(PUBLIC_DIR) || !fs.existsSync(file)) {
+  const inside = file.startsWith(PUBLIC_DIR + path.sep); // 「public-other」 같은 옆 폴더는 안 됨
+  if (!inside || !fs.statSync(file, { throwIfNoEntry: false })?.isFile()) {
     res.writeHead(404).end();
     return;
   }
-  res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store' });
-  if (file.endsWith('index.html')) res.end(fs.readFileSync(file, 'utf8').replace('__DASHBOARD_TOKEN__', TOKEN));
-  else fs.createReadStream(file).pipe(res);
+  const head = { 'Content-Type': MIME[path.extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store' };
+  if (file.endsWith('index.html')) return void res.writeHead(200, head).end(fs.readFileSync(file, 'utf8').replace('__DASHBOARD_TOKEN__', TOKEN));
+  const stream = fs.createReadStream(file);
+  stream.on('open', () => { res.writeHead(200, head); stream.pipe(res); });
+  stream.on('error', (e) => { // 읽는 사이 지워진 파일 등 — 응답만 정리하고 서버는 계속
+    console.error('[화면 파일]', file, e.message);
+    if (!res.headersSent) res.writeHead(500).end();
+    else res.destroy();
+  });
+}
+
+// 처리기 밖에서 놓친 Promise 거절도 로그만 남기고 서버는 계속 돈다.
+// 실행기(run.sh)가 2초 뒤 다시 살려도 열린 탭의 SSE 가 끊기고, 같은 요청을 웹사이트가 반복해서 보내면 계속 꺼지기 때문.
+// uncaughtException 은 삼키지 않는다 — 동기 코드가 중간에 멈춰 상태가 망가졌을 수 있어 다시 켜는 편이 안전하다
+process.on('unhandledRejection', (e) => console.error('[처리 안 된 거절]', e?.stack ?? e));
+
+// 포트가 이미 쓰이면 오류 덩어리 대신 안내를 찍고 끝낸다(다음 포트로 자동으로 넘어가는 건 하지 않음)
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') console.error(`${PORT} 포트를 이미 쓰고 있어요 — PORT=${PORT + 1} npm start 처럼 다른 포트로 켜 주세요`);
+  else console.error('서버를 열지 못했어요:', e.message);
+  process.exit(1);
 });
 
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}`);
-  checkEnv();
+  checkEnv().catch((e) => console.error('[환경 점검]', e.message)); // 시작 때 실패해도 서버는 계속(화면에서 다시 점검 가능)
   tick();
   if (!DEMO) {
     // 예전에 644 로 만들어진 로그 · 설정 백업도 본인만 읽게(lib/perms.mjs). 링크는 따라가지 않는다
