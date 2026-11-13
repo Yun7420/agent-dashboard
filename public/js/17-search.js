@@ -44,5 +44,5 @@ $('#gs-list').addEventListener('click', async (e) => {
   await select(b.dataset.key);
   setTab('log');
   $('#d-search').value = q;
-  renderHistory();
+  if (await loadHistory(b.dataset.key)) renderHistory();
 });

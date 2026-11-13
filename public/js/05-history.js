@@ -1,5 +1,25 @@
 // 오른쪽 서랍: 프롬프트 기록(깃 로그처럼)
 // ---------- 오른쪽 서랍: 프롬프트 기록(깃 로그처럼) ----------
+// 기록은 서버에서 80개씩 받는다(검색어가 있으면 서버가 거른 결과). 기록 탭에 보이는 묶음 = hist
+const hist = { seq: 0, key: null, q: '', items: [], total: 0, next: null };
+const fetchHistory = (key, { offset = 0, limit = 80, q = '' } = {}) =>
+  fetch(`/api/history?key=${encodeURIComponent(key)}&offset=${offset}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ''}`, { headers: { 'X-Dashboard-Token': TOKEN } })
+    .then((r) => r.json()).catch(() => ({ items: [], total: 0, nextOffset: null }));
+// more = 다음 묶음을 뒤에 붙이기. 다시 받을 때는 지금까지 펼쳐 본 만큼(최대 200)을 한 번에 → 새 요청이 맨 위에 붙어도 펼친 게 줄지 않게
+async function loadHistory(key, more = false) {
+  const seq = ++hist.seq;
+  const q = $('#d-search').value.trim();
+  const same = hist.key === key && hist.q === q;
+  const offset = more ? hist.items.length : 0;
+  const limit = more ? 80 : Math.min(200, Math.max(80, same ? hist.items.length : 0));
+  const [r, base] = await Promise.all([fetchHistory(key, { offset, limit, q }), !more && q ? fetchHistory(key, { limit: 1 }) : null]);
+  if (seq !== hist.seq || selected !== key) return false; // 그사이 다른 세션 · 검색어로 바뀌었으면 늦게 온 응답은 버린다
+  Object.assign(hist, { key, q, items: more ? hist.items.concat(r.items) : r.items, total: r.total, next: r.nextOffset });
+  const b = q ? base : more ? null : r; // 지금 탭 · 탭 숫자는 검색과 상관없는 전체 기준
+  if (b) { promptLog = b.items; historyTotal = b.total; }
+  return true;
+}
+
 async function select(key) {
   selected = key;
   renderList();
@@ -7,11 +27,11 @@ async function select(key) {
   const s = state.sessions.find((x) => x.key === key);
   if (!s) return;
   if (!$('#drawer').classList.contains('open')) { $('#drawer').classList.add('open'); view.init = false; renderGraph(); }
-  if (key !== lastSelected) { setTab('now'); promptLog = []; lastSelected = key; delete $('#pane').dataset.seen; openFiles.clear(); fullCmds.clear(); closedCmds = false; historyLimit = 80; }
+  if (key !== lastSelected) { setTab('now'); promptLog = []; historyTotal = 0; hist.key = null; hist.items = []; lastSelected = key; delete $('#pane').dataset.seen; openFiles.clear(); fullCmds.clear(); closedCmds = false; }
   renderDrawerHead(s);
   if (drawerTab === 'log') $('#log-list').innerHTML = '<div class="commit"><span class="m">기록 읽는 중…</span></div>';
-  if (s.orphan) { $('#log-list').innerHTML = '<div class="commit"><span class="m">아직 기록 파일이 없는 세션이에요</span></div>'; return; }
-  promptLog = await fetch(`/api/history?key=${encodeURIComponent(key)}`, { headers: { 'X-Dashboard-Token': TOKEN } }).then((r) => r.json()).catch(() => []);
+  if (s.orphan) { Object.assign(hist, { key, q: '', items: [], total: 0, next: null }); $('#log-list').innerHTML = '<div class="commit"><span class="m">아직 기록 파일이 없는 세션이에요</span></div>'; return; }
+  if (!(await loadHistory(key))) return;
   renderHistory();
   const cur = state.sessions.find((x) => x.key === key);
   if (cur && selected === key) renderNow(cur);

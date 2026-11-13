@@ -188,7 +188,8 @@ It doesn't touch hooks or global settings — it **only reads** (except for one 
 | `ps` · `lsof` · `tmux` | running processes, working folders, prompts on screen (detected by the `Enter to …` / `Esc to cancel` line at the bottom) |
 
 - Updates use **SSE** — the server builds the state every 2 seconds and sends it **only when something changed**.
-- Transcript files over 100MB are read **incrementally** (only the new part). Building the state usually takes about 20ms (see `/api/perf`).
+- Transcript files over 100MB are read **incrementally** (only the new part). Building the state usually takes about 20ms (see `/api/perf`, which also shows server memory).
+- The history tab loads **80 items at a time** from the server (search is filtered server-side too). The history cache keeps only the 30 most recently opened sessions for 30 minutes, so it doesn't grow while the dashboard stays up.
 - The screen redraws only what changed, the history tab renders 80 items at a time, and the flowing dashed lines update 8 times a second and pause when the tab is hidden.
 
 ```

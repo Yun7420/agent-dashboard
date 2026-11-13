@@ -9,6 +9,7 @@ import os from 'node:os';
 import fs from 'node:fs';
 import readline from 'node:readline';
 import { clip, parse, readHeadLines, readJsonLines, readJsonOrNull, readTailLines, statOrNull } from '../lib/util.mjs';
+import { createLru } from '../lib/lru.mjs';
 
 // 한 턴의 답변은 도구 호출 사이사이에 글이 여러 덩어리로 나뉜다. 마지막 덩어리만 남기면
 // 앞의 설명이 사라지므로 이어 붙인다(너무 길면 앞쪽을 남긴다).
@@ -71,7 +72,8 @@ function promptText(d) {
 //   <cross-session-message from="uds:/tmp/cc-socks/<보낸 PID>.sock" from-name="<보낸 세션 이름>">본문</cross-session-message>
 // 로 남는다. 큰 파일을 매번 다 읽지 않게, 읽은 위치(offset)부터 새로 붙은 부분만 읽는다.
 const PEER_RE = /<cross-session-message from="([^"]*)" from-name="([^"]*)"[^>]*>([\s\S]*?)<\/cross-session-message>/g;
-const peerCache = new Map(); // file → { offset, msgs, names }
+// 서버가 오래 켜져 있어도 쌓이지 않게 LRU + 30분. 떠 있는 세션은 2초마다 쓰여 만료되지 않는다
+const peerCache = createLru({ max: 200, ttlMs: 30 * 60_000 }); // file → { offset, msgs, names }
 
 async function readNew(file, start, end, onLine) {
   const input = fs.createReadStream(file, { encoding: 'utf8', start, end: end - 1 });
@@ -79,8 +81,10 @@ async function readNew(file, start, end, onLine) {
   for await (const line of rl) onLine(line);
 }
 
-const historyCache = new Map(); // file → { offset, items, cur }
-const startCwd = new Map(); // file → 세션을 시작한 폴더
+// 기록 전체(요청 · 답변): 가장 큰 세션(375MB 파일, 요청 301개)도 응답 0.5MB 정도 → 최근 30개면 15MB 안쪽.
+// 목록 세션 수(보통 10~30개)보다 작으면 전체 검색 때마다 처음부터 다시 읽게 되므로 30. 비워진 뒤엔 처음부터 다시 읽는다
+const historyCache = createLru({ max: 30, ttlMs: 30 * 60_000 }); // file → { offset, items, cur }
+const startCwd = createLru({ max: 500, ttlMs: 24 * 3600_000 }); // file → 세션을 시작한 폴더(짧은 글자라 넉넉히)
 
 // 마지막 줄이 아직 쓰이는 중일 수 있어, 마지막 줄바꿈 위치까지만 읽는다
 async function completeLineEnd(file, from, size) {
@@ -271,8 +275,8 @@ export default {
       }
     }
     // 프로젝트는 세션을 시작한 폴더로 묶는다(중간에 cd 해도 흔들리지 않게). 바뀌지 않는 값이라 파일당 한 번만 읽는다.
-    if (startCwd.has(s.file)) cwd = startCwd.get(s.file);
-    else {
+    cwd = startCwd.get(s.file) ?? null;
+    if (cwd == null) {
       for (const l of await readHeadLines(s.file, 256 * 1024)) {
         const d = parse(l);
         if (d?.cwd) {

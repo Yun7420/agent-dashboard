@@ -101,28 +101,38 @@ function foldable(cls, text) {
   return `<div class="${cls} md fold closed">${md(text)}</div><button class="more" type="button">더 보기 ▾</button>`;
 }
 $('#log-list').addEventListener('click', (e) => {
-  const b = e.target.closest('.more');
+  const b = e.target.closest('.more:not(#hist-more)'); // "이전 기록 더 보기"도 같은 모양(.more)이라 빼고
   if (!b) return;
   const box = b.previousElementSibling;
   const open = box.classList.toggle('closed');
   b.textContent = open ? '더 보기 ▾' : '접기 ▴';
 });
 
-let historyLimit = 80;
+// 기록 탭: 서버에서 받은 묶음(hist)만 그린다. "더 보기"는 다음 묶음을 받아 뒤에 붙인다
 function renderHistory() {
   if (drawerTab !== 'log') return; // 지금 탭에선 그리지 않는다 — 기록 탭을 열 때 그린다
-  const q = $('#d-search').value.trim().toLowerCase();
-  const items = q ? promptLog.filter((h) => h.prompt.toLowerCase().includes(q) || h.reply.toLowerCase().includes(q)) : promptLog;
-  const more = items.length > historyLimit ? `<div class="commit" style="text-align:center"><button class="more" type="button" id="hist-more">이전 기록 ${Math.min(80, items.length - historyLimit)}개 더 보기 (${items.length - historyLimit}개 남음)</button></div>` : '';
-  $('#log-list').innerHTML = items.slice(0, historyLimit).map((h) => `
+  if (hist.key !== selected) { $('#log-list').innerHTML = '<div class="commit"><span class="m">기록 읽는 중…</span></div>'; return; }
+  const left = hist.total - hist.items.length;
+  const more = hist.next != null ? `<div class="commit" style="text-align:center"><button class="more" type="button" id="hist-more">이전 기록 ${Math.min(80, left)}개 더 보기 (${left}개 남음)</button></div>` : '';
+  $('#log-list').innerHTML = hist.items.map((h) => `
     <div class="commit">
-      <div class="m"><span class="sha">#${promptLog.length - promptLog.indexOf(h)}</span><span>${new Date(h.at).toLocaleString('ko-KR')}</span><span class="tools">도구 ${h.tools}회</span></div>
+      <div class="m"><span class="sha">#${h.n}</span><span>${new Date(h.at).toLocaleString('ko-KR')}</span><span class="tools">도구 ${h.tools}회</span></div>
       ${foldable('p', h.prompt)}
       ${h.reply ? `<div class="who">CLAUDE</div>${foldable('r', h.reply)}` : ''}
     </div>`).join('') + more || '<div class="commit"><span class="m">프롬프트 없음</span></div>';
 }
-$('#log-list').addEventListener('click', (e) => { if (e.target.id === 'hist-more') { historyLimit += 80; renderHistory(); } });
-$('#d-search').addEventListener('input', renderHistory);
+$('#log-list').addEventListener('click', async (e) => {
+  if (e.target.id !== 'hist-more' || !selected) return;
+  e.target.disabled = true;
+  e.target.textContent = '읽는 중…';
+  if (await loadHistory(selected, true)) renderHistory();
+});
+// 기록 탭 검색: 서버에서 거른다(입력이 멎은 뒤 한 번)
+let histSearchTimer = null;
+$('#d-search').addEventListener('input', () => {
+  clearTimeout(histSearchTimer);
+  histSearchTimer = setTimeout(async () => { if (selected && (await loadHistory(selected))) renderHistory(); }, 200);
+});
 $('#close').addEventListener('click', () => { clearTimeout(paneTimer); $('#drawer').classList.remove('open'); selected = null; view.init = false; renderList(); renderGraph(); });
 document.addEventListener('click', (e) => {
   const tg = e.target.closest('[data-toggle]');

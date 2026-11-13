@@ -82,3 +82,16 @@ test('환경 점검에 「승인 감지」 줄이 붙는다(엇갈림이 없으�
   const row = env.items.find((x) => x.name === '승인 감지');
   assert.equal(row?.level, 'ok');
 });
+
+test('기록 API: 나눠 보내기 · 검색어 거르기 (데모 기록 132개)', async () => {
+  const get = async (qs) => (await fetch(`http://127.0.0.1:${PORT}/api/history?key=claude:demo-ops${qs}`, { headers: { 'x-dashboard-token': TOKEN } })).json();
+  const first = await get('');
+  assert.deepEqual([first.items.length, first.total, first.nextOffset], [80, 132, 80]);
+  assert.equal(first.items[0].n, 132); // 최신이 위
+  const last = await get('&offset=80&limit=200');
+  assert.deepEqual([last.items.length, last.nextOffset, last.items.at(-1).n], [52, null, 1]);
+  const found = await get(`&q=${encodeURIComponent('새 알림 2건')}`);
+  assert.equal(found.total, 15);
+  assert.ok(found.items.every((h) => h.reply.includes('새 알림 2건')));
+  assert.equal(await req('/api/history?key=claude:demo-ops&offset=0&limit=80'), 403); // 토큰 없이는 그대로 막힘
+});

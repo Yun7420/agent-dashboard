@@ -18,6 +18,8 @@ import { adapters } from './adapters/index.mjs';
 import * as tmux from './lib/tmux.mjs';
 import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions } from './lib/dialog.mjs';
 import { summarizeTool, guessFromScreen } from './lib/approval.mjs';
+import { createLru } from './lib/lru.mjs';
+import { pageHistory, pageParams } from './lib/paging.mjs';
 import * as demo from './lib/demo.mjs';
 import { saveSnapshot, restoreCandidates, restoreSessions } from './lib/restore.mjs';
 
@@ -149,7 +151,8 @@ function projectName(cwd, s) {
   return s?.cwdKey ?? '(알 수 없음)';
 }
 
-const describeCache = new Map(); // file → { size, mtimeMs, value }
+// 목록 세션마다 2초마다 쓰인다. 목록에서 빠진 세션은 5분 뒤 정리(buildState 끝에서), 상한은 넉넉히
+const describeCache = createLru({ max: 300 }); // file → { size, mtimeMs, value }
 
 async function describe(s) {
   const hit = describeCache.get(s.file);
@@ -312,6 +315,10 @@ async function buildState(windowHours) {
   }
   for (const i of dialogIssues.values()) { const s = sessions.find((x) => x.key === i.key); if (s) s.dialogIssue = i.kind; }
   sessions.sort((a, b) => Date.parse(b.lastAt) - Date.parse(a.lastAt));
+  // 목록에서 빠진(종료 기간이 지난) 세션의 캐시는 5분 안 쓰면 정리 — 오늘 한 일 · 전체 검색에서 막 연 세션은 잠깐 남긴다
+  const listed = new Set(chosen.map((s) => s.file));
+  describeCache.keep(listed, 5 * 60_000);
+  historyCache.keep(listed, 5 * 60_000);
   const links = await buildLinks(chosen, sessions, alive, sinceMs);
   const status = readStatusFiles();
   for (const s of sessions) {
@@ -367,10 +374,13 @@ async function buildLinks(chosen, sessions, alive, sinceMs) {
 
 // ---------- 프롬프트 기록 ----------
 
-const historyCache = new Map();
+// 어댑터가 따로 기억하지 않는 도구(Codex)도 매번 다시 읽지 않게. Claude 는 어댑터 배열을 그대로 가리켜 메모리를 두 번 쓰지 않는다.
+// 상한 · 만료는 어댑터 기록 캐시와 같게(최근 30개 · 30분)
+const historyCache = createLru({ max: 30, ttlMs: 30 * 60_000 }); // file → { size, items }
 
+// 세션의 요청 · 답변 전체(오래된 것부터). 화면에는 pageHistory 로 나눠 보낸다
 async function promptHistory(key) {
-  if (DEMO) return demo.DEMO_HISTORY[key] ?? [];
+  if (DEMO) return [...(demo.DEMO_HISTORY[key] ?? [])].reverse(); // 데모 데이터는 최신이 위
   const [tool, ...rest] = key.split(':');
   const id = rest.join(':');
   const adapter = byId[tool];
@@ -379,7 +389,7 @@ async function promptHistory(key) {
   if (!s) return [];
   const hit = historyCache.get(s.file);
   if (hit && hit.size === s.size) return hit.items;
-  const items = (await adapter.history(s)).slice().reverse(); // 최신이 위 (어댑터는 새로 붙은 부분만 읽는다)
+  const items = await adapter.history(s); // 어댑터는 새로 붙은 부분만 읽는다
   historyCache.set(s.file, { size: s.size, items });
   return items;
 }
@@ -407,7 +417,7 @@ async function searchHistory(q) {
 }
 
 // 하루 동안 한 일: 그날 기록이 남은 세션마다 요청 수 · 고친 파일 · 명령 수 · 커밋 (Claude Code 기록 기준)
-const dayCache = new Map(); // `${file}|${date}` → { size, summary }
+const dayCache = createLru({ max: 500, ttlMs: 30 * 60_000 }); // `${file}|${date}` → { size, summary } — 요약은 작지만 날짜를 넘겨 볼수록 쌓여서
 async function daySummary(date) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? '')) return [];
   if (DEMO) return demo.DEMO_DAY;
@@ -418,7 +428,8 @@ async function daySummary(date) {
   const out = [];
   for (const s of files) {
     const ck = `${s.file}|${date}`;
-    let summary = dayCache.get(ck)?.size === s.size ? dayCache.get(ck).summary : null;
+    const hitDay = dayCache.get(ck);
+    let summary = hitDay?.size === s.size ? hitDay.summary : null;
     if (!summary) {
       summary = await adapter.daySummary(s, fromMs, toMs).catch(() => null);
       dayCache.set(ck, { size: s.size, summary });
@@ -923,8 +934,9 @@ const server = http.createServer(async (req, res) => {
   }
   if (url.pathname === '/api/history') {
     try {
+      // 기록 전체가 아니라 80개씩(최대 200), 검색어가 있으면 서버에서 거른 뒤 → { items, total, nextOffset }
       const items = await promptHistory(url.searchParams.get('key') ?? '');
-      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(items));
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(pageHistory(items, pageParams(url.searchParams))));
     } catch (e) {
       res.writeHead(500).end(e.message);
     }

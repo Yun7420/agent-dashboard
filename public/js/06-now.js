@@ -38,7 +38,7 @@ function renderNow(s) {
   const from = working ? (sentAt && s.status === 'idle' ? sentAt : Date.parse(s.lastPromptAt || s.lastAt)) : Date.parse(s.lastAt);
   const sec = Math.max(0, Math.floor((Date.now() - from) / 1000));
   $('#now-time').textContent = working ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : ago(s.lastAt);
-  $('#log-count').textContent = promptLog.length ? promptLog.length : '';
+  $('#log-count').textContent = historyTotal || '';
   $('#stop').hidden = !(s.status === 'working' && s.tmux);
   renderChanges(s);
   const ch = s.changes;
