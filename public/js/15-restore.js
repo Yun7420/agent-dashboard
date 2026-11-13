@@ -23,8 +23,13 @@ document.addEventListener('click', async (e) => {
 // ---------- 복구 단추: 최근에 떠 있다가 꺼진 세션을 골라 다시 열기 ----------
 // 브라우저는 고른 세션 ID 만 보낸다(폴더 · 이름 · 모델은 서버가 기억해 둔 목록에서 꺼냄). 신뢰 확인 창은 대신 누르지 않고 안내만
 let recentData = null;
+let recentSeq = 0; // 늦게 온 응답이 새 것을 덮지 않게(다시 열기 뒤 3 · 8초 다시 읽기와 단추가 겹칠 수 있음)
 async function loadRecent() {
-  try { recentData = JSON.parse(await api('/api/recent')); } catch (err) { toast(err.message); return; }
+  const seq = ++recentSeq;
+  let d;
+  try { d = JSON.parse(await api('/api/recent')); } catch (err) { if (seq === recentSeq) toast(err.message); return; }
+  if (seq !== recentSeq) return;
+  recentData = d;
   renderRecent();
 }
 function renderRecent() {

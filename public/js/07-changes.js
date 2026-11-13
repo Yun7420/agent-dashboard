@@ -132,7 +132,7 @@ async function renderApproval(s) {
   clearTimeout(paneTimer);
   const approving = s.status === 'waiting' && Boolean(s.tmux);
   $('#drawer').classList.toggle('approving', approving);
-  if (!approving) { box.hidden = true; return; }
+  if (!approving) { box.hidden = true; ++paneSeq; return; } // 숨길 때도 순번을 올려, 그 전에 나간 화면 읽기가 돌아와 다시 타이머를 걸지 않게
   box.hidden = false;
   renderApproveCard(s.pendingTool);
   let text = '';

@@ -3,9 +3,13 @@
 const LV_ICON = { ok: '✓', warn: '!', error: '✕', info: 'i' };
 let envData = null;
 let envError = '';
+let envSeq = 0; // 늦게 온 응답이 새 것을 덮지 않게(시작 점검 · 다시 점검 · 사용 한도 켜고 끄기가 겹칠 수 있음)
 async function loadEnv(refresh = false) {
-  try { envData = await apiJson(`/api/env${refresh ? '?refresh' : ''}`); envError = ''; }
-  catch (e) { envData = null; envError = e.message; }
+  const seq = ++envSeq;
+  let d = null, err = '';
+  try { d = await apiJson(`/api/env${refresh ? '?refresh' : ''}`); } catch (e) { err = e.message; }
+  if (seq !== envSeq) return envData;
+  envData = d; envError = err;
   $('#bs-3')?.classList.add('done');
   renderEnv();
   applyTools();

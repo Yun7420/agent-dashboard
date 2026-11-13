@@ -1,12 +1,15 @@
 // 활동 로그: 이전 상태와 비교해 바뀐 것만 남긴다
 // ---------- 활동 로그: 이전 상태와 비교해 바뀐 것만 남긴다 ----------
+// 첫 상태인지는 따로 기억한다 — 예전엔 prev 가 비었는지로 봐서, 세션이 0개면 갱신마다 「온라인」 줄이 또 쌓였다
+let logStarted = false;
 function logEvents(sessions) {
   const box = $('#events');
   const add = (cls, text) => {
     const t = new Date().toLocaleTimeString('ko-KR', { hour12: false });
     box.insertAdjacentHTML('afterbegin', `<div><span class="t">${t}</span> <span class="${cls}">${esc(text)}</span></div>`);
   };
-  if (prev.size === 0) {
+  if (!logStarted) {
+    logStarted = true;
     const live = sessions.filter((s) => s.status !== 'ended');
     add('n', `Agent Dashboard 온라인 — 떠 있는 세션 ${live.length}개 감지`);
   } else {

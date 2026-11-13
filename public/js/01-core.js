@@ -88,4 +88,29 @@ function ordered(list) {
   return [...list].sort((a, b) => idx.get(a.key) - idx.get(b.key));
 }
 pref.hidden ??= [];
+
+// 세션 열쇠로 기억하는 설정(직접 정렬 순서 · 숨긴 세션 · 펼친 서브에이전트)은 본 세션이 계속 쌓이기만 했다.
+// 열쇠마다 「마지막으로 본 시각」(seen)을 같은 저장 키(agent-deck) 안에 두고, 지금 상태에 없고 14일 넘게 못 본 것만 지운다.
+// 종료된 세션 칸(보기 범위 최대 7일)에 다시 보일 수 있는 열쇠는 남고, 남은 것의 순서는 바뀌지 않는다.
+// 처음(업그레이드) 실행 때 seen 이 없는 열쇠는 「지금 봄」으로 시작한다 — 예전에 정한 순서를 첫날 지우지 않게
+const PREF_KEEP_MS = 14 * 86400_000;
+pref.seen ??= {};
+// 순수 판정(test/prefs.test.mjs): p 를 고치고, 바뀌었으면 true(저장할지)
+function prunePrefs(p, liveKeys, now, keepMs = PREF_KEEP_MS) {
+  let changed = false;
+  const seen = (p.seen ??= {});
+  const HOUR = 3600_000;
+  for (const k of liveKeys) if (!(now - (seen[k] ?? 0) < HOUR)) { seen[k] = now; changed = true; } // 한 시간에 한 번만 고쳐 저장을 줄인다
+  const known = new Set([...(p.order ?? []), ...(p.hidden ?? []), ...Object.keys(p.expandSubs ?? {}), ...Object.keys(seen)]);
+  for (const k of known) if (seen[k] == null) { seen[k] = now; changed = true; }
+  const live = new Set(liveKeys);
+  const stale = (k) => !live.has(k) && now - seen[k] > keepMs;
+  const gone = [...known].filter(stale);
+  if (!gone.length) return changed;
+  const drop = new Set(gone);
+  if (p.order) p.order = p.order.filter((k) => !drop.has(k));
+  if (p.hidden) p.hidden = p.hidden.filter((k) => !drop.has(k));
+  for (const k of gone) { if (p.expandSubs) delete p.expandSubs[k]; delete seen[k]; }
+  return true;
+}
 const visible = () => ordered(state.sessions.filter((s) => (pref.showEnded || s.status !== 'ended') && !(s.status === 'ended' && pref.hidden.includes(s.key))));

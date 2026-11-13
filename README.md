@@ -279,7 +279,7 @@ agent-dashboard/
 │  ├─ index.html       # 뼈대(토큰은 서버가 여기에만 끼워 넣음)
 │  ├─ style.css        # 모양
 │  └─ js/00-md.js ~ 19-keys.js   # 동작 — 구역별(목록 · 조직도 · 기록 · 첨부 · 알림 · 복구 · 검색 · 오늘 한 일 · 단축키 …), 번호 순서대로 불러옴
-└─ test/               # node --test 35개 파일 · fake-bin(가짜 tmux · claude · ps · lsof)
+└─ test/               # node --test 36개 파일 · fake-bin(가짜 tmux · claude · ps · lsof)
 ```
 
 파일마다 하는 일 · 요청 하나가 지나가는 길 · 보안 검사 위치는 [코드 지도(docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)에 있어요.
@@ -302,7 +302,7 @@ DEMO=1 PORT=4646 npm start
 npm test
 ```
 
-Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없어요. 테스트 214개(2026-11-13): 기록 읽기 · 선택창 감지 · 승인 카드 위험 판별 · 보안 검사(토큰 · Host · Origin · 경로 · 파일 권한) · 명령 · 복구 · 실행기 등.
+Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없어요. 테스트 218개(2026-11-13): 기록 읽기 · 선택창 감지 · 승인 카드 위험 판별 · 보안 검사(토큰 · Host · Origin · 경로 · 파일 권한) · 명령 · 복구 · 실행기 등.
 - 시험 서버는 4694 · 4696~4699 포트를 잠깐 써요. 진짜 세션 · tmux 대신 임시 홈 폴더와 `test/fake-bin` 의 가짜 명령(tmux · claude · ps · lsof)을 써서, 내 `~/.claude` · `~/.agent-dashboard` 는 건드리지 않아요.
 - GitHub Actions 가 main 에 push 하거나 PR 이 올 때마다 Ubuntu · macOS × Node 18 · 20 · 22 · 24 에서 `npm test` 를 돌려요(위 배지). macOS 알림(osascript) 테스트는 macOS 에서만 돌아요.
 
