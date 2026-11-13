@@ -1,6 +1,6 @@
 # Agent Dashboard — 작업 안내 (세션이 시작될 때 먼저 읽기)
 
-내 Mac 에 떠 있는 AI 코딩 세션(Claude Code · Codex)을 한 화면에서 보고, tmux 로 띄운 세션은 채팅 · 승인 · 종료까지 하는 **로컬 전용** 대시보드. 사용자 본인 전용 도구이자 포트폴리오. 저장소는 비공개(2026-11-12 전환), 홍보는 보류 중.
+내 Mac 에 떠 있는 AI 코딩 세션(Claude Code · Codex)을 한 화면에서 보고, tmux 로 띄운 세션은 채팅 · 승인 · 종료까지 하는 **로컬 전용** 대시보드. 사용자 본인 전용 도구이자 포트폴리오. 저장소는 공개(2026-11-13 다시 전환, main 보호 규칙 있음 — push 때 "Bypassed rule violations" 안내는 정상), 홍보는 보류 중.
 
 ## 역할 (세션을 둘로 나눠 개발한다)
 | 세션 이름 | 하는 일 |
@@ -51,7 +51,7 @@ docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 2. 구현 — 기존 구역 · 이름 · 주석 스타일을 따른다
 3. `npm test` 전부 통과 + 새 동작은 테스트 추가(가능하면 "되돌리면 실패하는지"도 확인)
 4. 화면이 바뀌면 **데모 모드로 확인**: `DEMO=1 PORT=4646 node server.mjs` → 헤드리스 Playwright 로 스크린샷(창 띄우지 않기), 콘솔 오류 0. 시험이 끝나면 4646 서버를 반드시 끈다
-5. 서버 코드를 바꿨으면 실제 대시보드를 다시 켠다: 실행기(`bin/run.sh`)가 자동 재시작하므로 `kill $(pgrep -f "^node server.mjs$")` 후 몇 초 뒤 `http://localhost:4545` 200 확인. 화면 파일만 바꿨으면 새로고침이면 됨
+5. 서버 코드를 바꿨으면 실제 대시보드를 다시 켠다: 실행기(`bin/run.sh`)가 자동 재시작하므로 `pgrep -lf "^node server.mjs$"` 가 1줄인지 확인하고 `kill $(pgrep -f "^node server.mjs$")` 후 몇 초 뒤 `http://localhost:4545` 200 확인. 화면 파일만 바꿨으면 새로고침이면 됨
 6. 커밋: 제목 한 줄(한국어, 무엇을) + 본문 2~4줄(왜 · 어떻게 확인) + 마지막 줄 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` → `git push origin main`. 항목 하나 = 커밋 하나 이상, 중간중간 커밋
 7. `docs/ROADMAP.md` 에 `[x]` 와 커밋 해시 · 한 줄 요약
 8. README(한국어 · 영어 둘 다)에 사용자에게 보이는 변화가 있으면 반영
@@ -66,4 +66,11 @@ docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 - 브라우저 저장 키는 `agent-deck` (바꾸면 사용자 정렬 · 설정이 초기화됨).
 - 데모 모드 데이터: `lib/demo.mjs`. README 스크린샷 · GIF 도 데모로 찍는다(회사 · 개인 정보가 화면에 나오면 안 됨).
 - 상용화 · 클라우드 · npx 공개 배포는 **나중에**(사용자 결정 대기). Vercel 같은 서버 배포는 구조상 불가 — 서버가 내 Mac 의 파일 · tmux 에 닿을 수 없음. 하려면 "수집기가 밖으로 먼저 연결 + 상태 요약만" 방식(ROADMAP 「나중에」).
-- 회사 저장소 · 회사 정보는 이 저장소에 절대 넣지 않는다(이 저장소는 다시 공개될 수 있음).
+- 회사 저장소 · 회사 정보는 이 저장소에 절대 넣지 않는다(이 저장소는 공개).
+- **프로세스 끄기 사고(2026-11-13)**: 데모를 끄려고 `pkill -f "^node server.mjs$" -P 1` 을 썼다가 tmux 밖 Claude 세션 전부 · Cursor · Chrome 탭이 SIGTERM 으로 꺼졌다. macOS 에서 `-f` 와 `-P` 는 "둘 중 하나라도"로 묶여 57~61개가 골라진다. 규칙:
+  1. `pkill` · `killall` · `lsof … | xargs kill` 금지
+  2. 데모는 띄울 때 `… & echo $! > demo.pid` 로 번호를 적고 그 번호만 끈다(`kill "$(cat demo.pid)"`)
+  3. 포트로 찾을 땐 `lsof -a -nP -iTCP:포트 -sTCP:LISTEN -t` 가 정확히 1개이고 `ps -o command= -p` 가 `node server.mjs` 인지 확인한 뒤 끈다
+  4. 실제 서버 재시작은 `pgrep -lf "^node server.mjs$"` 가 1줄인지 확인한 뒤 `kill $(pgrep -f "^node server.mjs$")`
+  5. 끄기 전에 대상 목록을 먼저 출력한다
+  - 원칙: 보안 문제가 아니면 직접 띄운 것과 실제 서버 재시작 외에는 끄거나 재시작하지 않는다(다른 프로세스 · tmux 세션 · `respawn-pane -k` · `kill-session` · 다른 Claude 세션 · 앱 포함). 꼭 꺼야 하면 먼저 My All Manager 에게 `[승인 요청]`(PID · 명령 · 이유). 보안 문제로 바로 껐다면 끈 뒤 즉시 알린다.
