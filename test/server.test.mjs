@@ -129,3 +129,12 @@ test('한도 추이 API: 토큰 없으면 403, range 는 24h · 7d 만(그 밖�
   assert.equal(await req('/api/limits?range=7d', { headers: H }), 200);
   for (const r of ['30d', '__proto__', '../x']) assert.equal(await req(`/api/limits?range=${encodeURIComponent(r)}`, { headers: H }), 400, r);
 });
+
+test('복구 API: 토큰 없거나 다른 Origin 이면 403, 데모에선 흉내만', async () => {
+  const H = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };
+  assert.equal(await req('/api/recent'), 403);
+  assert.equal(await req('/api/cmd/recent-restore', { method: 'POST', body: '{"ids":[]}' }), 403);
+  assert.equal(await req('/api/cmd/recent-restore', { method: 'POST', headers: { ...H, origin: 'http://evil.example' }, body: '{"ids":[]}' }), 403);
+  assert.equal(await req('/api/recent', { headers: H }), 200);
+  assert.equal(await req('/api/cmd/recent-restore', { method: 'POST', headers: H, body: '{"ids":["00000000-0000-4000-8000-000000000001"],"cwd":"/etc"}' }), 200);
+});

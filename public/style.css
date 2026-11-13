@@ -463,6 +463,18 @@ dialog input, dialog textarea { width: 100%; background: var(--bg); border: 1px 
 dialog input:focus, dialog textarea:focus { border-color: var(--accent); }
 dialog .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 dialog .note { color: var(--faint); font-size: 12px; margin-top: 10px; line-height: 1.6; }
+/* 복구 단추 창: 체크 목록(이름 · 폴더 · 마지막으로 본 때), 직접 닫은 세션은 따로 */
+#recent-dlg label.rc-all, #recent-dlg .rc-item { display: flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; }
+#recent-dlg input[type=checkbox] { width: 16px; height: 16px; flex: none; accent-color: var(--accent); }
+#recent-dlg label.rc-all { padding: 6px 2px; border-bottom: 1px solid var(--border); color: var(--text); font-size: 13px; }
+#rc-list { max-height: min(46vh, 360px); overflow-y: auto; }
+#rc-list .rc-item { padding: 8px 2px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text); }
+#rc-list .rc-item span { min-width: 0; flex: 1; }
+#rc-list .rc-item small { display: block; color: var(--faint); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#rc-list .rc-sub { font-size: 11px; color: var(--faint); margin: 12px 2px 2px; }
+#rc-list .rc-empty { color: var(--dim); font-size: 13px; padding: 14px 2px; }
+#rc-launched .rc-msg { font-size: 12px; line-height: 1.6; padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; background: var(--surface-2); color: var(--dim); }
+#rc-launched .rc-msg.trust { color: var(--text); border: 1px solid var(--waiting); }
 #toast { position: fixed; left: 50%; bottom: 156px; transform: translateX(-50%); background: var(--surface-3); border: 1px solid var(--border-strong); border-radius: 999px; padding: 8px 16px; box-shadow: var(--shadow); display: none; font-size: 13px; z-index: 10; max-width: min(480px, 90vw); text-align: center; }
 
 /* ---------- 연동 중 · 첫 실행 안내 ---------- */

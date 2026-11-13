@@ -94,6 +94,11 @@ npm run restore    # reopens the pre-restart sessions in tmux and starts the das
 
 If you open the dashboard first, the top of the list shows **"N sessions from before the restart · Reopen all"**. Sessions follow your default model; only ones you picked explicitly (Sonnet/Haiku) keep it. Conversations older than 30 days are cleaned up by Claude Code and can't be resumed.
 
+Even without a restart, if sessions stopped unexpectedly, click the **restore button (clock arrow)** in the header. It lists Claude sessions that were running in the last 7 days but aren't now (including ones started outside tmux), with name and folder; pick some or select all to reopen them in tmux.
+- Sessions that are running now aren't listed (no duplicates). Sessions you closed on purpose with "Close session" are grouped separately and not selected by default.
+- If the folder trust prompt appears, the dashboard doesn't answer it for you; it only tells you "trust confirmation needed".
+- The list lives in `~/.agent-dashboard/recent.json` (readable only by you). The page sends only the chosen session IDs; folders and names come only from the server's saved list.
+
 ## To chat and approve: start sessions in tmux
 
 A session already running in a terminal has no official way to receive input from outside. The dashboard types into sessions **through tmux, the way a person would**, so **only sessions started inside tmux** can be chatted with, approved or closed. Other sessions are view-only.

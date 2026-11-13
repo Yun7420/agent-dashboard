@@ -27,6 +27,7 @@
       <div class="lp-foot"><span class="lp-key"><i class="k5"></i>5시간 <i class="k7"></i>주간 <i class="kr"></i>리셋</span><button type="button" class="ghost" id="limits-setup">설정…</button></div>
     </div>
   </span>
+  <button id="recent-btn" class="ghost icon-btn" title="꺼진 세션 다시 열기(복구)" aria-label="꺼진 세션 다시 열기"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></button>
   <button id="day-btn" class="ghost icon-btn" title="오늘 한 일" aria-label="오늘 한 일"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16M9 16l2 2 4-4"/></svg></button>
   <button id="search-btn" class="ghost icon-btn" title="전체 기록 검색 ( / )" aria-label="전체 기록 검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
   <span class="info-wrap">
@@ -178,6 +179,16 @@
     <div id="gs-meta"></div>
     <div id="gs-list"></div>
     <div class="row"><button value="cancel">닫기</button></div>
+  </form>
+</dialog>
+<dialog id="recent-dlg">
+  <form method="dialog">
+    <h3>꺼진 세션 다시 열기</h3>
+    <div class="note" style="margin:0 0 10px">최근 <span id="rc-days">7</span>일 안에 떠 있다가 지금은 꺼진 Claude 세션이에요. 고르면 같은 대화를 이어서(<code>--resume</code>) tmux 로 다시 띄워요. 지금 떠 있는 세션은 목록에 없어요.</div>
+    <div id="rc-launched"></div>
+    <label class="rc-all"><input type="checkbox" id="rc-all"> 전체 선택</label>
+    <div id="rc-list"></div>
+    <div class="row"><button value="cancel">닫기</button><button type="button" class="primary" id="rc-go" disabled>다시 열기</button></div>
   </form>
 </dialog>
 <dialog id="close-dlg">

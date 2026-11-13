@@ -16,7 +16,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { adapters } from './adapters/index.mjs';
 import * as tmux from './lib/tmux.mjs';
-import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions } from './lib/dialog.mjs';
+import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions, isTrustPrompt } from './lib/dialog.mjs';
 import { summarizeTool, guessFromScreen } from './lib/approval.mjs';
 import { createLru } from './lib/lru.mjs';
 import { tightenFiles } from './lib/perms.mjs';
@@ -25,7 +25,8 @@ import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNo
 import { pageHistory, pageParams } from './lib/paging.mjs';
 import { thinTrend, drops } from './lib/usage.mjs';
 import * as demo from './lib/demo.mjs';
-import { saveSnapshot, restoreCandidates, restoreSessions } from './lib/restore.mjs';
+import { saveSnapshot, restoreCandidates, restoreSessions, modelAlias, defaultAlias } from './lib/restore.mjs';
+import { createRecent, liveEntries, KEEP_DAYS as RECENT_DAYS } from './lib/recent.mjs';
 
 const DEMO = process.env.DEMO === '1'; // 가짜 데이터로 화면만 보여 주는 모드(스크린샷용)
 
@@ -622,6 +623,7 @@ function findSession(key) {
 }
 
 async function handleCommand(action, body) {
+  if (DEMO && action === 'recent-restore') return [200, demo.demoRecentRestore(body)];
   if (DEMO) return [200, action === 'spawn' ? JSON.stringify({ key: 'claude:demo-lead' }) : '데모 모드라 실제로 실행하지 않았어요'];
   if (action === 'send') {
     const s = findSession(body.key);
@@ -674,6 +676,7 @@ async function handleCommand(action, body) {
     if (s.status === 'waiting') return [409, '선택 창이 떠 있어요. 먼저 승인/거절하세요'];
     await tmux.sendKey(s.tmux.target, 'Escape'); // 입력 중이던 글자·자동완성 정리
     await tmux.sendText(s.tmux.target, '/exit');
+    recent?.markClosed(s.id); // 복구 목록에선 「직접 닫은 세션」으로 따로 보인다
     return [200, 'ok'];
   }
   if (action === 'model') {
@@ -715,6 +718,21 @@ async function handleCommand(action, body) {
     const done = await restoreSessions(restoreCandidates(live));
     lastJson = '';
     return [200, done.length ? `세션 ${done.length}개를 다시 열었어요. 몇 초 뒤 목록에 나타나요` : '다시 열 세션이 없어요'];
+  }
+  if (action === 'recent-restore') {
+    // 복구 단추: 브라우저는 ID 목록만 보낸다. 폴더 · 이름 · 모델은 기억해 둔 목록(recent.json)에서만 꺼내고, 지금 떠 있는 것은 뺀다
+    if (restoring) return [409, '다시 여는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
+    const entries = recent.pick(body, liveIdSet());
+    if (!entries.length) return [400, '다시 열 세션이 없어요(이미 떠 있거나 목록에 없는 세션)'];
+    restoring = true;
+    try {
+      const done = await restoreSessions(entries);
+      for (const d of done) recent.noteLaunched(d.id, { title: d.title, tmuxSession: d.tmuxSession });
+      lastJson = '';
+      return [200, done.length ? `세션 ${done.length}개를 다시 열었어요. 몇 초 뒤 목록에 나타나요` : '다시 열 수 있는 세션이 없어요(폴더가 없거나 홈 밖)'];
+    } finally {
+      restoring = false;
+    }
   }
   if (action === 'spawn') {
     const cwd = path.resolve(String(body.cwd ?? '').replace(/^~(?=$|\/)/, HOME));
@@ -831,6 +849,22 @@ function notifyTick(sessions) {
 const LIMITS_DIR = path.join(HOME, '.agent-dashboard', 'limits');
 const limitsRecorder = DEMO ? null : createRecorder({ dir: LIMITS_DIR });
 
+// 복구 단추: 최근 7일 안에 떠 있던 Claude 세션(tmux 밖 포함)을 기억(recent.json, 600). 데모는 파일을 읽지도 쓰지도 않는다
+const recent = DEMO ? null : createRecent({ file: path.join(HOME, '.agent-dashboard', 'recent.json') });
+let restoring = false; // 한 번에 하나의 복구만(같은 세션을 두 번 띄우지 않게)
+const liveIdSet = () => new Set((latest?.sessions ?? []).filter((s) => s.status !== 'ended').map((s) => s.id));
+// 복구 후보 + 방금 다시 띄운 세션의 상태(폴더 신뢰 확인 창이 떴는지 — 대신 누르지 않고 안내만)
+async function recentInfo() {
+  if (DEMO) return demo.demoRecent();
+  const items = recent.candidates(liveIdSet()).map((e) => ({ ...e, cwd: e.cwd.replace(HOME, '~') }));
+  const launched = [];
+  for (const l of recent.launchedList()) {
+    const screen = await tmux.capture(l.tmuxSession, 30).catch(() => null);
+    launched.push({ id: l.id, title: l.title, tmuxSession: l.tmuxSession, state: screen == null ? 'gone' : isTrustPrompt(screen) ? 'trust' : 'started' });
+  }
+  return { items, launched, keepDays: RECENT_DAYS };
+}
+
 const notifyInfo = () => ({ ...notifySettings, sounds: SOUNDS, supported: MAC_NOTIFY, demo: DEMO });
 
 // ---------- HTTP (SSE 로 2초마다 바뀐 상태만 보냄) ----------
@@ -854,6 +888,8 @@ async function tick() {
     // 재시동 복구: 떠 있는 tmux 세션 목록을 저장하고, 재시동 전 목록 중 지금 없는 세션을 알려 준다
     if (!DEMO) {
       saveSnapshot(latest.sessions);
+      const def = defaultAlias();
+      try { recent.observe(liveEntries(latest.sessions, (s) => { const m = modelAlias(s.model); return m === def ? null : m; })); } catch (e) { console.error('복구 목록 기억 실패:', e.message); }
       latest.restore = restoreCandidates(new Set(latest.sessions.filter((s) => s.status !== 'ended').map((s) => s.id))).map((e) => ({ id: e.id, title: e.title, cwd: e.cwd }));
     } else latest.restore = [];
     const sJ = JSON.stringify(latest.sessions), lJ = JSON.stringify(latest.links), uJ = JSON.stringify(latest.usage), rJ = JSON.stringify(latest.restore);
@@ -1004,6 +1040,10 @@ const server = http.createServer(async (req, res) => {
     if (!validRange(range)) return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('range 는 24h 또는 7d');
     const data = DEMO ? demo.demoLimits(range) : readRange(LIMITS_DIR, range);
     res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(data));
+    return;
+  }
+  if (url.pathname === '/api/recent') {
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(await recentInfo()));
     return;
   }
   if (url.pathname === '/api/perf') {
