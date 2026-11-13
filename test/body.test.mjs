@@ -92,3 +92,14 @@ test('재시동 배너 복구도 방금 띄운 ID 는 뺀다(launchedIds)', () =
   r.noteLaunched('00000000-0000-4000-8000-000000000001', { title: 'a', tmuxSession: 't' });
   assert.deepEqual([...r.launchedIds()], ['00000000-0000-4000-8000-000000000001']);
 });
+
+test('saveUpload: 파일이 열리기도 전에 끊겨도 .part 가 남지 않는다(여러 번)', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-up-'));
+  for (let i = 0; i < 30; i++) {
+    const r = fakeReq();
+    const p = saveUpload(r, `early-${i}.bin`, { dir, max: 1000 });
+    r.emit('aborted'); // 바로 끊김 — 쓰기 파일은 아직 여는 중
+    await assert.rejects(p, (e) => e.status === 499);
+  }
+  assert.deepEqual(files(dir), []);
+});
