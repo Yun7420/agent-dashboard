@@ -8,6 +8,8 @@ Claude Code · Codex · zero dependencies · everything stays on your machine
 
 [한국어](README.md) · **English**
 
+[![test](https://github.com/Yun7420/agent-dashboard/actions/workflows/test.yml/badge.svg)](https://github.com/Yun7420/agent-dashboard/actions/workflows/test.yml)
+
 </div>
 
 > I built this because I needed it while running many AI coding sessions at once, and I built it **together with an AI coding agent (Claude Code)**. I use it every day and keep improving it.
@@ -16,7 +18,7 @@ Claude Code · Codex · zero dependencies · everything stays on your machine
 >
 > 🌐 **The UI is currently in Korean.** The screenshots below show what each part does.
 
-**Roadmap** — ✅ Stage 1: vanilla JS, built fast and used for real · ⏳ Stage 2: split files and clean up (still zero dependencies) · ⏳ Stage 3: move to React
+**Roadmap** — ✅ Stage 1: vanilla JS, built fast and used for real · 🔄 Stage 2: split files (done) · clean up (in progress), still zero dependencies · ⏳ Stage 3: move to React
 
 ![Demo — approving a prompt and watching live diffs](docs/images/demo.gif)
 
@@ -42,13 +44,15 @@ Agent Dashboard puts all of this on one screen.
 |---|---|---|
 | 👀 | **Live status** | Working · **background task** · idle · **needs approval** · ended, plus the current tool and elapsed time |
 | 🗺️ | **Org chart** | This Mac → tool → project → session → subagent. Messages between sessions are **purple arrows** (count + last message) |
-| 💬 | **Chat · approve** | Send messages to tmux sessions (Enter), voice input, **file/image attachments**. Approval prompts show the real terminal screen plus option buttons; multi-question prompts let you go back and forth |
+| 💬 | **Chat · approve** | Send messages to tmux sessions (Enter), voice input, **file/image attachments**. Approval prompts show a **"what you're allowing" card** (warns on risky commands or files outside the folder), the real terminal screen and option buttons; multi-question prompts let you go back and forth |
+| ⌨️ | **Shortcuts** | `j`/`k` move between sessions · `/` search everything · `1`–`9` pick an approval option (risky requests need a second press) · `Esc` reject · close |
+| ♻️ | **Restore** | Reopen ended sessions in tmux — all at once after a Mac restart (`restore`), or pick from sessions that ended in the last 7 days with the restore button in the header |
 | 📂 | **Open the folder** | Click a project box to open that folder in VS Code · Cursor or reveal it in Finder — no hunting for the folder when you want to check what changed |
 | ■ | **Stop · close** | Stop only what a session is doing (the conversation stays), or close a session from the dashboard |
 | 📝 | **Live code diff** | Files changed in the current request with +/− counts and red/green diffs; commands with ✓ pass / ✕ fail and output |
 | 🧠 | **Model · usage** | Start sessions with Opus · Sonnet · Haiku, switch a running session's model, context usage, Claude account 5-hour/weekly limits and their trend |
 | 🔔 | **Notifications** | Alert when approval is needed or a task over 1 minute finishes — browser notifications, or **macOS notifications that arrive even with the tab closed** (choose a sound); pending approvals in the tab title |
-| 🛡️ | **Local-only security** | 127.0.0.1 only, Host/Origin checks, a secret token generated per machine |
+| 🛡️ | **Local-only security** | 127.0.0.1 only, Host/Origin checks, a secret token generated per machine (`~/.agent-dashboard/token`), no framing (clickjacking), path checks for attachments and folders |
 
 ![Session panel — current answer, file diffs, commands](docs/images/session-panel.png)
 
@@ -62,7 +66,7 @@ You need: **macOS · Node 18+ · tmux · Claude Code**. If something is missing 
 
 | | Required | Install |
 |---|---|---|
-| macOS | yes | Linux mostly works, Windows is not supported |
+| macOS | yes | On Linux only the tests run (in CI); it hasn't been used there for real. Windows is not supported — see [Supported environment and limits](#supported-environment-and-limits) |
 | Node.js 18+ | yes | `brew install node` |
 | Claude Code | yes | latest recommended — `brew upgrade claude-code` |
 | tmux | for chat/approve | `brew install tmux` (without it, view-only) |
@@ -206,6 +210,8 @@ A session already running in a terminal has no official way to receive input fro
   - Don't share it. If it leaks, delete the file and restart to get a new one.
   - Older versions kept it in `.dashboard-token` inside the repo folder. On first start the value is moved to the new place once and the old file is deleted (open tabs keep working). A token file that is a symlink is never used.
 - Attachments outside `~/.agent-dashboard/uploads/` are rejected, and attachments are **deleted automatically after 14 days**.
+- Open folder (VS Code · Cursor · Finder) only opens **folders of sessions currently in the list**; any other path sent by the page is rejected.
+- Aborted or oversized requests are rejected right away (body limit 413, attachments 25MB). If an upload is cut off midway, no half-written file (`.part`) is left behind.
 - The `~/.agent-dashboard` folder is yours only (700), and the files in it (log, settings backups, restore list) are readable only by you (600). On start the server also tightens older files that were created wider (symlinks are not followed).
 - Reading the session list and history also requires the same token as commands (so other accounts or programs on the same Mac can't read your conversations).
 - Every response carries `X-Frame-Options: DENY`, `frame-ancestors 'none'` and `nosniff`, so another website can't load this page in a hidden iframe and trick you into clicking approve.
@@ -223,20 +229,29 @@ It doesn't touch hooks or global settings — it **only reads** (except for one 
 | `ps` · `lsof` · `tmux` | running processes, working folders, prompts on screen (detected by the `Enter to …` / `Esc to cancel` line at the bottom) |
 
 - Updates use **SSE** — the server builds the state every 2 seconds and sends it **only when something changed**.
-- Transcript files over 100MB are read **incrementally** (only the new part). Building the state usually takes about 20ms (see `/api/perf`, which also shows server memory).
+- Transcript files over 100MB are read **incrementally** (only the new part). How long building the state takes is shown at `/api/perf` (with server memory) — on the author's Mac in daily use, median 37ms and max 88ms over the last 30 ticks (2026-11-13).
 - The history tab loads **80 items at a time** from the server (search is filtered server-side too). The history cache keeps only the 30 most recently opened sessions for 30 minutes, so it doesn't grow while the dashboard stays up.
 - The screen redraws only what changed, the history tab renders 80 items at a time, and the flowing dashed lines update 8 times a second and pause when the tab is hidden.
 
 ```
 agent-dashboard/
-├─ server.mjs          # HTTP/SSE server, state, commands (chat · approve · close · new session)
+├─ server.mjs          # start the server · security checks at the request entry · route table (ROUTES) · 2-second tick (build state, send over SSE)
 ├─ adapters/           # per-tool differences only — claude.mjs · codex.mjs · index.mjs
-├─ lib/                # tmux control · file utils · demo data
-├─ bin/                # run.sh (auto-restart) · statusline.mjs (usage-limit bridge)
-└─ public/             # UI (vanilla HTML/CSS/JS, no build)
-   ├─ index.html       # structure
-   ├─ style.css        # styles
-   └─ js/01~16-*.js    # behavior, one file per area (list · org chart · drawer · attach · notify …), loaded in number order
+├─ lib/                # one job per file
+│  ├─ state · procs · tmux · dialog · approval     build state · process list · tmux control · prompt detection · "what you're allowing" card
+│  ├─ commands · spawn · open-dir · env           commands (chat · approve · new session …) · new-session args · open folder · environment check
+│  ├─ body · uploads · respond · validate         request bodies · attachments · response shapes · input checks
+│  ├─ token · paths · perms                       secret token · paths (inside-folder checks) · file permissions
+│  ├─ claude-settings · bridge · status · limits · usage   usage limits (status-line bridge · limit history · token totals)
+│  ├─ recent · restore · restore-cli · runner     restore · restore after reboot · runner
+│  ├─ notify · paging · filecache · lru · serial · lock · util   notifications · paged history · caches · ordering
+│  └─ demo                                        demo data
+├─ bin/                # agent-dashboard.mjs (start · run · restore) · run.sh (older runner) · restore.mjs (npm run restore) · statusline.mjs (status-line bridge source)
+├─ public/             # UI (vanilla HTML/CSS/JS, no build)
+│  ├─ index.html       # structure (the server injects the token here only)
+│  ├─ style.css        # styles
+│  └─ js/00-md.js ~ 19-keys.js   # behavior, one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
+└─ test/               # node --test, 28 files · fake-bin (fake tmux · claude · ps · lsof)
 ```
 
 ### Adding another agent
@@ -258,9 +273,16 @@ Shows the UI with fake data (Project1, Lead Manager, …). No commands are execu
 npm test
 ```
 
-Uses Node's built-in test runner (`node --test`), nothing to install. Covers transcript parsing (joining reply chunks), dialog detection and security checks (token, Host, Origin, paths). The security tests start a demo server on port 4699 for a moment.
-## Known limitations
+Uses Node's built-in test runner (`node --test`), nothing to install. 184 tests (2026-11-13): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
+- Test servers briefly use ports 4694 and 4696–4699. Instead of real sessions and tmux they use a temporary home folder and the fake commands in `test/fake-bin` (tmux · claude · ps · lsof), so your `~/.claude` and `~/.agent-dashboard` are never touched.
+- GitHub Actions runs `npm test` on every push to main and every PR, on Ubuntu · macOS × Node 18 · 20 · 22 (badge above). The macOS notification (osascript) test runs only on macOS.
 
+## Supported environment and limits
+
+- Built for and used daily on **macOS · tmux · Claude Code**. On Linux only the tests have been run. Open folder (`open`) and macOS notifications (`osascript`) exist only on macOS. Windows is not supported.
+- **Codex is partial** — list · status · Now tab (request · answer · context) · History tab · search work. Today's work · tokens · account usage limits · context trend · subagents · messages between sessions · new session · restore are Claude Code only. Prompt detection is based on the Claude Code screen too.
+- No Gemini or other tools yet (each can be added as one adapter file).
+- **This Mac only.** The server listens on `127.0.0.1` only; there is no access from other devices or remote access (login · tunnels · cloud).
 - File diffs come from the Edit/Write tools. Files changed by shell commands only show up under "commands".
 - If several sessions start in the same folder without `--resume`, they're matched by process start time. After `/clear` in a long-running session they can occasionally get mixed up.
 - If Claude Code changes its transcript format, some details may be wrong (only the adapter needs fixing).
