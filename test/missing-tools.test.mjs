@@ -17,8 +17,9 @@ const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-notool-'));
 const HOME = path.join(TMP, 'home');
 const BIN = path.join(TMP, 'bin');
 const TOKEN = crypto.randomBytes(24).toString('hex');
-// tmux 를 뺀 가짜 명령 + node · 기본 명령 폴더만(진짜 tmux 가 있는 /opt/homebrew/bin 등은 넣지 않음)
-const PATH_NO_TMUX = [BIN, path.dirname(process.execPath), '/usr/bin', '/bin'].join(':');
+// tmux 를 뺀 가짜 명령 + node 만 둔 폴더 하나. 기본 명령 폴더(/usr/bin 등)는 넣지 않는다 —
+// 리눅스(CI)는 tmux 가 /usr/bin 에 있다. 서버가 부르는 명령은 tmux · ps · lsof · claude(+ macOS 의 open · osascript)뿐
+const PATH_NO_TMUX = BIN;
 let srv;
 let log = '';
 
@@ -39,6 +40,7 @@ before(async () => {
   fs.mkdirSync(path.join(HOME, 'proj'), { recursive: true });
   fs.mkdirSync(BIN);
   for (const f of ['claude', 'ps', 'lsof']) fs.symlinkSync(path.join(ROOT, 'test', 'fake-bin', f), path.join(BIN, f));
+  fs.symlinkSync(process.execPath, path.join(BIN, 'node')); // 가짜 명령의 #!/usr/bin/env node 가 찾을 node
   fs.writeFileSync(path.join(TMP, 'token'), TOKEN, { mode: 0o600 });
   const env = { ...process.env, DASHBOARD_TEST: '1', DASHBOARD_HOME: HOME, DASHBOARD_TOKEN_FILE: path.join(TMP, 'token'), PORT: String(PORT), PATH: PATH_NO_TMUX, FAKE_DIR: path.join(TMP, 'fake') };
   delete env.DEMO;
