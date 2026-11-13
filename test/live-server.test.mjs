@@ -107,7 +107,8 @@ after(async () => {
     srv.kill();
     await gone;
   }
-  fs.rmSync(TMP, { recursive: true, force: true });
+  // 서버가 끝나기 직전에 띄운 가짜 명령(ps · tmux, 서버의 자식)이 몇 ms 늦게 기록 파일을 써서 ENOTEMPTY 가 날 수 있다(CI macOS · Node 18) → 잠깐 다시 시도
+  fs.rmSync(TMP, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 });
 
 test('시험 서버: 임시 홈의 가짜 세션 2개가 tmux 창과 함께 보이고, 가짜 명령만 불렸다', async () => {
