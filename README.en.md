@@ -52,7 +52,7 @@ Agent Dashboard puts all of this on one screen.
 
 ![Session panel — current answer, file diffs, commands](docs/images/session-panel.png)
 
-![Approval — the real terminal screen plus option buttons](docs/images/approval.png)
+![Approval — "what you're allowing" card (amber when risky) + the real terminal screen + option buttons](docs/images/approval.png)
 
 ## Getting started
 

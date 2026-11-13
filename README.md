@@ -52,7 +52,7 @@ Agent Dashboard는 이걸 한 화면에 모읍니다.
 
 ![세션 패널 — 현재 답변, 바꾼 파일 diff, 실행한 명령](docs/images/session-panel.png)
 
-![승인 요청 — 터미널 화면 그대로 + 선택지 버튼](docs/images/approval.png)
+![승인 요청 — 허락할 내용 카드(위험하면 경고) + 터미널 화면 그대로 + 선택지 버튼](docs/images/approval.png)
 
 ## 시작하기
 
