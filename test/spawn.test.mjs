@@ -14,7 +14,7 @@ test('새 세션: \'-\' 로 시작하는 첫 프롬프트도 옵션이 아니라
 
 test('새 세션: 평범한 프롬프트는 글자 그대로, 이름 · 모델은 옵션 자리', () => {
   assert.deepEqual(newSessionArgs({ sessionId: ID, name: '이름 "따옴표"', model: 'sonnet', prompt: '목록 정리해 줘' }),
-    ['claude', '--session-id', ID, '--name', '이름 "따옴표"', '--model', 'sonnet', '--', '목록 정리해 줘']);
+    ['claude', '--session-id', ID, '--name=이름 "따옴표"', '--model', 'sonnet', '--', '목록 정리해 줘']);
 });
 
 test('새 세션: 빈 프롬프트면 -- 를 붙이지 않고, 모르는 모델은 넣지 않는다', () => {

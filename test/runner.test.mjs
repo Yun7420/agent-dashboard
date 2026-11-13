@@ -132,7 +132,7 @@ test('restore(실행 파일): 떠 있는 세션은 빼고 꺼진 것만 --resume
   const news = t.calls().filter((c) => c.cmd === 'tmux' && c.args[0] === 'new-session');
   assert.equal(news.length, 2);
   const sess = news.find((c) => c.args.includes(t.id(2)));
-  assert.deepEqual(sess.args.slice(sess.args.indexOf('--') + 1), ['claude', '--resume', t.id(2), '--name', '꺼짐', '--model', 'sonnet']);
+  assert.deepEqual(sess.args.slice(sess.args.indexOf('--') + 1), ['claude', '--resume', t.id(2), '--name=꺼짐', '--model', 'sonnet']);
   assert.equal(sess.args[sess.args.indexOf('-c') + 1], t.cwd);
   assert.ok(!news.some((c) => c.args.includes(t.id(1)))); // 떠 있는 세션은 다시 안 띄움
   const dash = news.find((c) => c.args[c.args.indexOf('-s') + 1] === 'dashboard');

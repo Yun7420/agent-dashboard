@@ -18,6 +18,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { adapters } from './adapters/index.mjs';
+import { unknownStatuses } from './adapters/claude.mjs';
 import * as tmux from './lib/tmux.mjs';
 import { isTrustPrompt } from './lib/dialog.mjs';
 import { createLru } from './lib/lru.mjs';
@@ -276,8 +277,9 @@ const env = createEnvCheck({
   tokenInfo: () => ({ createdNow: TOKEN_CREATED_NOW, path: tildify(TOKEN_FILE), createdAt: fs.statSync(TOKEN_FILE).birthtime.toISOString() }),
   detectEditors,
   dialogIssues,
+  unknownStatuses,
 });
-const { checkEnv, dialogEnvItem } = env;
+const { checkEnv, dialogEnvItem, statusEnvItem } = env;
 
 // ---------- macOS 알림 (브라우저 탭을 닫아도) ----------
 // 켜기/끄기 · 소리는 ~/.agent-dashboard/notify.json(600). 데모 모드에선 파일을 건드리지 않고 메모리에만 두고, 실제 알림도 보내지 않는다
@@ -481,7 +483,7 @@ async function openEvents(req, res) {
 async function getEnv(req, res, url) {
   const e = url.searchParams.has('refresh') || !env.cached() ? await checkEnv() : env.cached();
   // 「승인 감지」 줄은 서버가 켜진 뒤 쌓인 기록이라 캐시 없이 매번 붙인다
-  sendJson(res, 200, { ...e, items: [...e.items, dialogEnvItem()] });
+  sendJson(res, 200, { ...e, items: [...e.items, dialogEnvItem(), statusEnvItem()] });
 }
 
 // 알림 설정: GET 은 지금 값, POST { mac?, sound? } 는 바꾸기(소리는 허용 목록만)

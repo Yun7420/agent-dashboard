@@ -18,6 +18,14 @@ const ROOT = path.join(CLAUDE_DIR, 'projects');
 const exec = promisify(execFile);
 // shell = 응답은 끝났지만 백그라운드 명령(테스트·빌드 등)이 아직 도는 중 → 화면에선 "백그라운드 작업 중"
 const LIVE_STATUS = { busy: 'working', idle: 'idle', waiting: 'waiting', shell: 'background' };
+// 표에 없는 상태 값은 대기로 보여 주되 기억해서 환경 점검 「세션 상태 값」 줄에 알린다(Claude Code 가 새 값을 만들면 바로 알 수 있게)
+const unknownStatus = new Set();
+function liveStatus(v) {
+  if (Object.hasOwn(LIVE_STATUS, v)) return LIVE_STATUS[v];
+  if (v != null && unknownStatus.size < 10) unknownStatus.add(String(v).replace(/[^\w-]/g, '').slice(0, 20) || '(빈 값)');
+  return 'idle';
+}
+export const unknownStatuses = () => [...unknownStatus];
 const encodeCwd = (cwd) => cwd.replace(/[^a-zA-Z0-9]/g, '-');
 
 // 사람이 친 프롬프트만 고른다 (도구 결과·시스템 주입·슬래시 명령 출력 제외).
@@ -83,13 +91,20 @@ export function commitMessages(command) {
   return starts.map((st, i) => commitTitle(text.slice(st, starts[i + 1] ?? text.length))).filter(Boolean); // 이 커밋부터 다음 커밋 전까지
 }
 
+// 기록의 필드로 먼저 가른다: 요약(isCompactSummary) · 화면 전용(isVisibleInTranscriptOnly) · 백그라운드 작업 알림(origin.kind · turnOrigin).
+// 아래 문구 비교는 이 필드가 없던 옛 기록용 예비다(2026-11 실제 기록: 요약 48줄 · 작업 알림 120줄 모두 필드 있음).
+// 예약 실행(turnOrigin scheduled)은 사람이 친 글은 아니어도 새 턴이라 그대로 둔다(빼면 그 답이 앞 턴 답에 붙는다)
+const NOTIFY_ORIGIN = new Set(['task-notification', 'task_notification']);
+const INJECTED = /^<(ide_opened_file|ide_selection|browser_instruction|system-reminder)\b/; // 에디터 · 브라우저 확장이 요청 앞에 끼워 넣는 블록
 function promptText(d) {
-  if (d.type !== 'user' || d.isMeta || d.isSidechain || d.isCompactSummary) return null;
+  if (d.type !== 'user' || d.isMeta || d.isSidechain || d.isCompactSummary || d.isVisibleInTranscriptOnly) return null;
+  if (NOTIFY_ORIGIN.has(d.origin?.kind) || NOTIFY_ORIGIN.has(d.turnOrigin)) return null;
   let c = d.message?.content;
-  // 에디터 확장(Cursor·VS Code)은 프롬프트를 [{type:'text'}] 배열로 남긴다. 도구 결과·주입 문구는 빼고 사람 글만.
+  // 에디터 확장(Cursor·VS Code)은 프롬프트를 [{type:'text'}] 배열로 남긴다. 도구 결과·끼워 넣은 블록은 빼고 사람 글만.
+  // (예전엔 「<」로 시작하는 블록을 모두 뺐다 → 붙여 넣은 글(<pasted_content>)만 있는 요청이 통째로 빠졌다)
   if (Array.isArray(c)) {
     if (c.some((x) => x.type === 'tool_result')) return null;
-    c = c.filter((x) => x.type === 'text' && !x.text?.trim().startsWith('<')).map((x) => x.text).join('\n');
+    c = c.filter((x) => x.type === 'text' && x.text && !INJECTED.test(x.text.trim())).map((x) => x.text).join('\n');
   }
   if (typeof c !== 'string') return null;
   const t = c.trim();
@@ -246,7 +261,7 @@ export function createLiveSessions({ dir = path.join(CLAUDE_DIR, 'sessions'), ru
   const fromCommand = async () => {
     try {
       const { stdout } = await run('claude', ['agents', '--json'], { timeout: 5000 });
-      return JSON.parse(stdout).map((a) => ({ pid: a.pid, sessionId: a.sessionId, status: LIVE_STATUS[a.status] ?? 'idle', waitingFor: a.waitingFor ?? null, name: a.name ?? null, background: a.kind !== 'interactive', startedAt: a.startedAt }));
+      return JSON.parse(stdout).map((a) => ({ pid: a.pid, sessionId: a.sessionId, status: liveStatus(a.status), waitingFor: a.waitingFor ?? null, name: a.name ?? null, background: a.kind !== 'interactive', startedAt: a.startedAt }));
     } catch {
       return null;
     }
@@ -263,7 +278,7 @@ export function createLiveSessions({ dir = path.join(CLAUDE_DIR, 'sessions'), ru
       for (const f of files) {
         const a = await readJsonOrNull(path.join(dir, f));
         if (!a?.pid || !a.sessionId || !alive(a.pid)) continue; // 살아 있는 프로세스만
-        out.push({ pid: a.pid, sessionId: a.sessionId, status: LIVE_STATUS[a.status] ?? 'idle', waitingFor: a.waitingFor ?? null, name: a.name ?? null, background: a.kind && a.kind !== 'interactive', startedAt: a.startedAt });
+        out.push({ pid: a.pid, sessionId: a.sessionId, status: liveStatus(a.status), waitingFor: a.waitingFor ?? null, name: a.name ?? null, background: a.kind && a.kind !== 'interactive', startedAt: a.startedAt });
       }
       return out;
     }

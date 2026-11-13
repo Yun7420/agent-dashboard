@@ -110,7 +110,7 @@ test('다시 띄우기: 같은 ID 는 한 번, 홈 밖 · 없는 폴더는 건�
   assert.deepEqual(done.map((d) => d.id), [ID(1), ID(2)]);
   assert.equal(calls[0].name, 't1-2'); // t1 이 이미 있음
   assert.deepEqual(calls[0].command, ['claude', '--resume', ID(1)]);
-  assert.deepEqual(calls[1].command, ['claude', '--resume', ID(2), '--name', '이름 "따옴표" $(x)', '--model', 'sonnet']);
+  assert.deepEqual(calls[1].command, ['claude', '--resume', ID(2), '--name=이름 "따옴표" $(x)', '--model', 'sonnet']);
   assert.match(calls[1].name, /^re-[a-zA-Z0-9가-힣_-]+$/);
 });
 
