@@ -714,14 +714,15 @@ async function handleCommand(action, body) {
   }
   if (action === 'restore') {
     // 재시동 전에 떠 있던 세션을 --resume 으로 한 번에 다시 띄운다(저장된 목록에 있는 것만)
-    const live = new Set((latest?.sessions ?? []).filter((s) => s.status !== 'ended').map((s) => s.id));
-    const done = await restoreSessions(restoreCandidates(live));
+    if (!latest) return [503, '세션 목록을 읽는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
+    const done = await restoreSessions(restoreCandidates(liveIdSet()));
     lastJson = '';
     return [200, done.length ? `세션 ${done.length}개를 다시 열었어요. 몇 초 뒤 목록에 나타나요` : '다시 열 세션이 없어요'];
   }
   if (action === 'recent-restore') {
     // 복구 단추: 브라우저는 ID 목록만 보낸다. 폴더 · 이름 · 모델은 기억해 둔 목록(recent.json)에서만 꺼내고, 지금 떠 있는 것은 뺀다
     if (restoring) return [409, '다시 여는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
+    if (!latest) return [503, '세션 목록을 읽는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
     const entries = recent.pick(body, liveIdSet());
     if (!entries.length) return [400, '다시 열 세션이 없어요(이미 떠 있거나 목록에 없는 세션)'];
     restoring = true;
@@ -851,7 +852,8 @@ const limitsRecorder = DEMO ? null : createRecorder({ dir: LIMITS_DIR });
 // 복구 단추: 최근 7일 안에 떠 있던 Claude 세션(tmux 밖 포함)을 기억(recent.json, 600). 데모는 파일을 읽지도 쓰지도 않는다
 const recent = DEMO ? null : createRecent({ file: path.join(DATA_DIR, 'recent.json') });
 let restoring = false; // 한 번에 하나의 복구만(같은 세션을 두 번 띄우지 않게)
-const liveIdSet = () => new Set((latest?.sessions ?? []).filter((s) => s.status !== 'ended').map((s) => s.id));
+// 아직 첫 상태를 만들기 전(서버를 켠 직후)이면 null — 복구는 「무엇이 떠 있는지」를 알 때만 한다
+const liveIdSet = () => (latest ? new Set(latest.sessions.filter((s) => s.status !== 'ended').map((s) => s.id)) : null);
 // 복구 후보 + 방금 다시 띄운 세션의 상태(폴더 신뢰 확인 창이 떴는지 — 대신 누르지 않고 안내만)
 async function recentInfo() {
   if (DEMO) return demo.demoRecent();
@@ -861,7 +863,7 @@ async function recentInfo() {
     const screen = await tmux.capture(l.tmuxSession, 30).catch(() => null);
     launched.push({ id: l.id, title: l.title, tmuxSession: l.tmuxSession, state: screen == null ? 'gone' : isTrustPrompt(screen) ? 'trust' : 'started' });
   }
-  return { items, launched, keepDays: RECENT_DAYS };
+  return { items, launched, keepDays: RECENT_DAYS, loading: !latest };
 }
 
 const notifyInfo = () => ({ ...notifySettings, sounds: SOUNDS, supported: MAC_NOTIFY, demo: DEMO });

@@ -120,3 +120,11 @@ test('폴더 신뢰 확인 창: 화면 맨 아래에서만 알아본다', () => 
   assert.equal(isTrustPrompt(['예전 대화: Yes, I trust this folder', ...Array(20).fill('평범한 줄'), '> '].join('\n')), false);
   assert.equal(isTrustPrompt(null), false);
 });
+
+test('떠 있는 세션을 아직 모르면(서버를 켠 직후) 후보도 고르기도 없다 — 떠 있는 세션을 또 띄우지 않게', () => {
+  const now = clock(), r = createRecent({ file: tmpFile(), now });
+  r.observe(liveEntries([sess(1), sess(2)]));
+  assert.deepEqual(r.candidates(null), []);
+  assert.deepEqual(r.pick({ ids: [ID(1)] }, null), []);
+  assert.deepEqual(ids(r.candidates(new Set([ID(2)]))), [ID(1)]); // 알게 되면 평소대로
+});

@@ -39,7 +39,8 @@ function renderRecent() {
     : `<div class="rc-msg">✓ 「${esc(l.title)}」 다시 띄웠어요 — 곧 목록에 나타나요</div>`).join('');
   const row = (e) => `<label class="rc-item"><input type="checkbox" value="${esc(e.id)}" ${(first ? !e.closed : keep.has(e.id)) ? 'checked' : ''}><span>${esc(e.title || e.id.slice(0, 8))}<small>${esc(e.cwd)} · ${ago(new Date(e.lastSeen).toISOString())}에 봄</small></span></label>`;
   const open = d.items.filter((e) => !e.closed), closed = d.items.filter((e) => e.closed);
-  $('#rc-list').innerHTML = !d.items.length ? '<div class="rc-empty">다시 열 세션이 없어요. 최근에 떠 있던 세션이 모두 지금도 떠 있어요.</div>'
+  $('#rc-list').innerHTML = d.loading ? '<div class="rc-empty">세션 목록을 읽는 중이에요. 잠시 뒤에 다시 열어 주세요.</div>'
+    : !d.items.length ? '<div class="rc-empty">다시 열 세션이 없어요. 최근에 떠 있던 세션이 모두 지금도 떠 있어요.</div>'
     : open.map(row).join('') + (closed.length ? `<div class="rc-sub">대시보드에서 직접 닫은 세션(기본으로 고르지 않음)</div>${closed.map(row).join('')}` : '');
   $('#rc-list').dataset.drawn = '1';
   $('.rc-all').style.display = d.items.length ? '' : 'none'; // display:flex 라 hidden 속성이 먹지 않는다
