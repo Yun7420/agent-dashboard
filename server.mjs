@@ -939,6 +939,8 @@ const server = http.createServer((req, res) => {
   });
 });
 
+// 요청 입구: 보안 검사(Host → Origin · 토큰)를 여기서 순서대로 한 뒤 경로 표(아래 ROUTES)로 보낸다.
+// 보안 검사는 이 함수에만 둔다 — 경로가 늘어도 검사를 빠뜨리지 않게
 async function handle(req, res) {
   if (!ALLOWED_HOSTS.has(req.headers.host ?? '')) {
     sendText(res, 403, '이 주소로는 열 수 없어요 — http://localhost:' + PORT + ' 로 열어 주세요');
@@ -950,154 +952,167 @@ async function handle(req, res) {
     sendText(res, 403, '보안 토큰이 맞지 않아요. 페이지를 새로고침해 주세요');
     return;
   }
+  const route = ROUTES.find((r) => (r.prefix ? url.pathname.startsWith(r.prefix) : url.pathname === r.path) && (!r.method || r.method === req.method));
+  return route ? route.handler(req, res, url) : serveStatic(res, url);
+}
 
-  if (url.pathname === '/events') {
-    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
-    clients.add(res);
-    req.on('close', () => clients.delete(res));
-    res.write(`data: ${JSON.stringify(latest ?? (await buildState(windowHours)))}\n\n`);
-    return;
+// ---------- 경로 표: 주소 → 처리 함수 ----------
+// method 가 적힌 경로는 그 방식만 받고(다른 방식은 화면 파일 쪽으로 떨어져 404), 없으면 방식을 가리지 않는다.
+// 처리 함수는 (req, res, url) 을 받는다. 일은 각 구역 함수 · lib 에 있고 여기는 요청 값 검사와 응답만
+const ROUTES = [
+  { path: '/events', handler: openEvents },
+  { path: '/api/env', handler: getEnv },
+  { path: '/api/notify', handler: notifyRoute },
+  { path: '/api/notify/test', method: 'POST', handler: notifyTest },
+  { path: '/api/limits', handler: getLimits },
+  { path: '/api/recent', handler: async (req, res) => sendJson(res, 200, await recentInfo()) },
+  { path: '/api/perf', handler: getPerf },
+  { path: '/api/window', handler: windowRoute },
+  { path: '/api/history', handler: getHistory },
+  { path: '/api/trend', handler: getTrend },
+  { path: '/api/day', handler: getDay },
+  { path: '/api/search', handler: async (req, res, url) => sendJson(res, 200, await searchHistory(url.searchParams.get('q'))) },
+  { path: '/api/pane', handler: getPane },
+  { path: '/api/upload', method: 'POST', handler: postUpload },
+  { prefix: '/api/cmd/', method: 'POST', handler: postCommand },
+];
+
+// JSON 본문 읽기 — 실패하면 응답까지 보내고 undefined(부른 쪽은 그냥 끝낸다)
+async function jsonBody(req, res) {
+  try {
+    return await readBody(req);
+  } catch (e) {
+    bodyFail(req, res, e);
+    return undefined;
   }
-  if (url.pathname === '/api/env') {
-    const env = url.searchParams.has('refresh') || !envCache ? await checkEnv() : envCache;
-    // 「승인 감지」 줄은 서버가 켜진 뒤 쌓인 기록이라 캐시 없이 매번 붙인다
-    sendJson(res, 200, { ...env, items: [...env.items, dialogEnvItem()] });
-    return;
-  }
-  // 알림 설정: GET 은 지금 값, POST { mac?, sound? } 는 바꾸기(소리는 허용 목록만), /api/notify/test 는 시험 알림 한 번
-  if (url.pathname === '/api/notify') {
-    if (req.method === 'POST') {
-      let body;
-      try {
-        body = await readBody(req);
-      } catch (e) {
-        return bodyFail(req, res, e);
-      }
-      if (!isObject(body)) return void sendText(res, 400, '요청 형식이 잘못됐어요');
-      if ('sound' in body && !validSound(body.sound)) return void sendText(res, 400, '고를 수 없는 소리예요');
-      if ('mac' in body && typeof body.mac !== 'boolean') return void sendText(res, 400, 'macOS 알림 켜기/끄기 값이 잘못됐어요');
-      const next = { ...notifySettings, ...('mac' in body ? { mac: body.mac } : {}), ...('sound' in body ? { sound: body.sound } : {}) };
-      try {
-        notifySettings = DEMO ? next : saveSettings(NOTIFY_FILE, next);
-      } catch (e) {
-        return void sendText(res, ...friendly(e, '알림 설정을 저장하지 못했어요'));
-      }
-    }
-    sendJson(res, 200, notifyInfo());
-    return;
-  }
-  if (url.pathname === '/api/notify/test' && req.method === 'POST') {
-    const sent = await sendMacNotification('Agent Dashboard', '시험 알림이에요 — 이게 보이면 macOS 알림이 동작해요');
-    sendJson(res, 200, { sent, supported: MAC_NOTIFY });
-    return;
-  }
-  // 계정 한도 추이: ?range=24h|7d → { points: [[ms, 5시간 %, 주간 %]], resets: [{ t, kind }] }
-  if (url.pathname === '/api/limits') {
-    const range = url.searchParams.get('range') ?? '24h';
-    if (!validRange(range)) return void sendText(res, 400, '기간은 24h 또는 7d 만 고를 수 있어요');
-    const data = DEMO ? demo.demoLimits(range) : readRange(LIMITS_DIR, range);
-    sendJson(res, 200, data);
-    return;
-  }
-  if (url.pathname === '/api/recent') {
-    sendJson(res, 200, await recentInfo());
-    return;
-  }
-  if (url.pathname === '/api/perf') {
-    const sorted = [...tickMs].sort((a, b) => a - b);
-    sendJson(res, 200, { ticks: tickMs.length, medianMs: sorted[sorted.length >> 1] ?? null, maxMs: sorted.at(-1) ?? null, payloadKB: Math.round(lastJson.length / 1024), heapMB: Math.round(process.memoryUsage().heapUsed / 1048576), rssMB: Math.round(process.memoryUsage().rss / 1048576) });
-    return;
-  }
-  // 종료된 세션을 얼마나 이전까지 볼지(서버 전체 · 열린 탭 모두에 영향). 바꾸기는 POST { hours }, GET 은 지금 값 읽기만
-  if (url.pathname === '/api/window') {
-    if (req.method !== 'POST') return void sendJson(res, 200, { hours: windowHours });
-    let body;
+}
+
+// SSE: 처음 한 번 지금 상태 전체, 그 뒤로는 tick() 이 바뀐 것만 보낸다
+async function openEvents(req, res) {
+  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+  clients.add(res);
+  req.on('close', () => clients.delete(res));
+  res.write(`data: ${JSON.stringify(latest ?? (await buildState(windowHours)))}\n\n`);
+}
+
+async function getEnv(req, res, url) {
+  const env = url.searchParams.has('refresh') || !envCache ? await checkEnv() : envCache;
+  // 「승인 감지」 줄은 서버가 켜진 뒤 쌓인 기록이라 캐시 없이 매번 붙인다
+  sendJson(res, 200, { ...env, items: [...env.items, dialogEnvItem()] });
+}
+
+// 알림 설정: GET 은 지금 값, POST { mac?, sound? } 는 바꾸기(소리는 허용 목록만)
+async function notifyRoute(req, res) {
+  if (req.method === 'POST') {
+    const body = await jsonBody(req, res);
+    if (body === undefined) return;
+    if (!isObject(body)) return void sendText(res, 400, '요청 형식이 잘못됐어요');
+    if ('sound' in body && !validSound(body.sound)) return void sendText(res, 400, '고를 수 없는 소리예요');
+    if ('mac' in body && typeof body.mac !== 'boolean') return void sendText(res, 400, 'macOS 알림 켜기/끄기 값이 잘못됐어요');
+    const next = { ...notifySettings, ...('mac' in body ? { mac: body.mac } : {}), ...('sound' in body ? { sound: body.sound } : {}) };
     try {
-      body = await readBody(req);
+      notifySettings = DEMO ? next : saveSettings(NOTIFY_FILE, next);
     } catch (e) {
-      return bodyFail(req, res, e);
+      return void sendText(res, ...friendly(e, '알림 설정을 저장하지 못했어요'));
     }
-    const h = Number(body?.hours);
-    if (!WINDOW_HOURS.includes(h)) return void sendText(res, 400, `기간은 ${WINDOW_HOURS.join(' · ')}시간 중에서 골라 주세요`);
-    windowHours = h;
-    lastJson = '';
-    res.writeHead(204).end();
-    return;
   }
-  if (url.pathname === '/api/history') {
-    try {
-      // 기록 전체가 아니라 80개씩(최대 200), 검색어가 있으면 서버에서 거른 뒤 → { items, total, nextOffset }
-      const key = url.searchParams.get('key') ?? '';
-      if (!KEY_RE.test(key)) return void sendText(res, 400, '세션을 고르지 않았어요');
-      const items = await promptHistory(key);
-      sendJson(res, 200, pageHistory(items, pageParams(url.searchParams)));
-    } catch (e) {
-      sendText(res, ...friendly(e, '기록을 읽지 못했어요'));
-    }
-    return;
-  }
-  if (url.pathname === '/api/trend') {
+  sendJson(res, 200, notifyInfo());
+}
+// 시험 알림 한 번
+async function notifyTest(req, res) {
+  const sent = await sendMacNotification('Agent Dashboard', '시험 알림이에요 — 이게 보이면 macOS 알림이 동작해요');
+  sendJson(res, 200, { sent, supported: MAC_NOTIFY });
+}
+
+// 계정 한도 추이: ?range=24h|7d → { points: [[ms, 5시간 %, 주간 %]], resets: [{ t, kind }] }
+async function getLimits(req, res, url) {
+  const range = url.searchParams.get('range') ?? '24h';
+  if (!validRange(range)) return void sendText(res, 400, '기간은 24h 또는 7d 만 고를 수 있어요');
+  sendJson(res, 200, DEMO ? demo.demoLimits(range) : readRange(LIMITS_DIR, range));
+}
+
+async function getPerf(req, res) {
+  const sorted = [...tickMs].sort((a, b) => a - b);
+  sendJson(res, 200, { ticks: tickMs.length, medianMs: sorted[sorted.length >> 1] ?? null, maxMs: sorted.at(-1) ?? null, payloadKB: Math.round(lastJson.length / 1024), heapMB: Math.round(process.memoryUsage().heapUsed / 1048576), rssMB: Math.round(process.memoryUsage().rss / 1048576) });
+}
+
+// 종료된 세션을 얼마나 이전까지 볼지(서버 전체 · 열린 탭 모두에 영향). 바꾸기는 POST { hours }, GET 은 지금 값 읽기만
+async function windowRoute(req, res) {
+  if (req.method !== 'POST') return void sendJson(res, 200, { hours: windowHours });
+  const body = await jsonBody(req, res);
+  if (body === undefined) return;
+  const h = Number(body?.hours);
+  if (!WINDOW_HOURS.includes(h)) return void sendText(res, 400, `기간은 ${WINDOW_HOURS.join(' · ')}시간 중에서 골라 주세요`);
+  windowHours = h;
+  lastJson = '';
+  res.writeHead(204).end();
+}
+
+// 기록 전체가 아니라 80개씩(최대 200), 검색어가 있으면 서버에서 거른 뒤 → { items, total, nextOffset }
+async function getHistory(req, res, url) {
+  try {
     const key = url.searchParams.get('key') ?? '';
     if (!KEY_RE.test(key)) return void sendText(res, 400, '세션을 고르지 않았어요');
-    const trend = await contextTrend(key).catch(() => ({ supported: true, points: [], drops: 0, total: 0 }));
-    sendJson(res, 200, trend);
-    return;
+    const items = await promptHistory(key);
+    sendJson(res, 200, pageHistory(items, pageParams(url.searchParams)));
+  } catch (e) {
+    sendText(res, ...friendly(e, '기록을 읽지 못했어요'));
   }
-  if (url.pathname === '/api/day') {
-    const date = url.searchParams.get('date') ?? '';
-    if (!validDate(date)) return void sendText(res, 400, '날짜는 2026-11-13 처럼 YYYY-MM-DD 로 보내 주세요');
-    sendJson(res, 200, await daySummary(date));
-    return;
-  }
-  if (url.pathname === '/api/search') {
-    const results = await searchHistory(url.searchParams.get('q'));
-    sendJson(res, 200, results);
-    return;
-  }
-  if (url.pathname === '/api/pane') {
-    if (DEMO) return void sendText(res, 200, demo.demoPane(url.searchParams.get('key')));
-    const s = findSession(url.searchParams.get('key'));
-    if (!s?.tmux) return void sendText(res, 404, 'tmux 로 띄운 세션만 화면을 볼 수 있어요');
-    try {
-      const { text, focus } = await tmux.captureWithFocus(s.tmux.target);
-      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Focus-Tab': encodeURIComponent(focus ?? '') }).end(text);
-    } catch (e) {
-      sendText(res, ...friendly(e, '세션 화면을 읽지 못했어요'));
-    }
-    return;
-  }
-  if (url.pathname === '/api/upload' && req.method === 'POST') {
-    if (DEMO) return void sendJson(res, 200, { path: `/Users/me/.agent-dashboard/uploads/${url.searchParams.get('name')}`, name: url.searchParams.get('name'), size: 0 });
-    try {
-      const saved = await saveUpload(req, url.searchParams.get('name'), { dir: UPLOAD_DIR, max: UPLOAD_MAX });
-      sendJson(res, 200, saved);
-    } catch (e) {
-      bodyFail(req, res, e); // 너무 큼 413 · 끊김 · 디스크 오류 500 을 구분
-    }
-    return;
-  }
-  if (url.pathname.startsWith('/api/cmd/') && req.method === 'POST') {
-    let body;
-    try {
-      body = await readBody(req);
-    } catch (e) {
-      return bodyFail(req, res, e);
-    }
-    if (!isObject(body)) return void sendText(res, 400, '요청 형식이 잘못됐어요');
-    try {
-      const [code, msg] = await handleCommand(url.pathname.slice('/api/cmd/'.length), body);
-      sendText(res, code, msg);
-      if (code === 200) {
-        invalidateProcCaches();
-        setTimeout(() => (lastJson = ''), 300); // 바로 다시 그리게
-      }
-    } catch (e) {
-      sendText(res, ...friendly(e, '명령을 처리하지 못했어요')); // tmux 가 없으면 409 「tmux 가 필요해요」
-    }
-    return;
-  }
+}
 
-  // 화면 파일: public 폴더 안의 「일반 파일」만. 폴더(/js 등)를 스트림으로 열면 EISDIR 로 프로세스가 죽었다(토큰 없이 아무 사이트나 부를 수 있는 경로)
+async function getTrend(req, res, url) {
+  const key = url.searchParams.get('key') ?? '';
+  if (!KEY_RE.test(key)) return void sendText(res, 400, '세션을 고르지 않았어요');
+  sendJson(res, 200, await contextTrend(key).catch(() => ({ supported: true, points: [], drops: 0, total: 0 })));
+}
+
+async function getDay(req, res, url) {
+  const date = url.searchParams.get('date') ?? '';
+  if (!validDate(date)) return void sendText(res, 400, '날짜는 2026-11-13 처럼 YYYY-MM-DD 로 보내 주세요');
+  sendJson(res, 200, await daySummary(date));
+}
+
+// tmux 세션 화면(색 정보로 「지금 보고 있는 질문 탭」도)
+async function getPane(req, res, url) {
+  if (DEMO) return void sendText(res, 200, demo.demoPane(url.searchParams.get('key')));
+  const s = findSession(url.searchParams.get('key'));
+  if (!s?.tmux) return void sendText(res, 404, 'tmux 로 띄운 세션만 화면을 볼 수 있어요');
+  try {
+    const { text, focus } = await tmux.captureWithFocus(s.tmux.target);
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Focus-Tab': encodeURIComponent(focus ?? '') }).end(text);
+  } catch (e) {
+    sendText(res, ...friendly(e, '세션 화면을 읽지 못했어요'));
+  }
+}
+
+async function postUpload(req, res, url) {
+  if (DEMO) return void sendJson(res, 200, { path: `/Users/me/.agent-dashboard/uploads/${url.searchParams.get('name')}`, name: url.searchParams.get('name'), size: 0 });
+  try {
+    sendJson(res, 200, await saveUpload(req, url.searchParams.get('name'), { dir: UPLOAD_DIR, max: UPLOAD_MAX }));
+  } catch (e) {
+    bodyFail(req, res, e); // 너무 큼 413 · 끊김 · 디스크 오류 500 을 구분
+  }
+}
+
+// 명령(채팅 · 승인 · 종료 · 새 세션 …): /api/cmd/<이름> 에 JSON 본문
+async function postCommand(req, res, url) {
+  const body = await jsonBody(req, res);
+  if (body === undefined) return;
+  if (!isObject(body)) return void sendText(res, 400, '요청 형식이 잘못됐어요');
+  try {
+    const [code, msg] = await handleCommand(url.pathname.slice('/api/cmd/'.length), body);
+    sendText(res, code, msg);
+    if (code === 200) {
+      invalidateProcCaches();
+      setTimeout(() => (lastJson = ''), 300); // 바로 다시 그리게
+    }
+  } catch (e) {
+    sendText(res, ...friendly(e, '명령을 처리하지 못했어요')); // tmux 가 없으면 409 「tmux 가 필요해요」
+  }
+}
+
+// 화면 파일: public 폴더 안의 「일반 파일」만. 폴더(/js 등)를 스트림으로 열면 EISDIR 로 프로세스가 죽었다(토큰 없이 아무 사이트나 부를 수 있는 경로)
+function serveStatic(res, url) {
   const file = path.join(PUBLIC_DIR, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname));
   if (!isInside(PUBLIC_DIR, file) || !fs.statSync(file, { throwIfNoEntry: false })?.isFile()) { // 「public-other」 같은 옆 폴더는 안 됨
     sendText(res, 404, '없는 파일이에요');
