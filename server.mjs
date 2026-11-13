@@ -23,7 +23,7 @@ import * as tmux from './lib/tmux.mjs';
 import { isTrustPrompt } from './lib/dialog.mjs';
 import { createLru } from './lib/lru.mjs';
 import { tightenFiles } from './lib/perms.mjs';
-import { readBody, saveUpload } from './lib/body.mjs';
+import { readBody, saveUpload, drainRest } from './lib/body.mjs';
 import { createLock } from './lib/lock.mjs';
 import { createCommands } from './lib/commands.mjs';
 import { createProcesses } from './lib/procs.mjs';
@@ -365,14 +365,14 @@ async function tick() {
 }
 
 // 본문 읽기 · 첨부 저장은 lib/body.mjs. 실패 응답: 끊긴 요청(499)은 보낼 곳이 없어 소켓만 닫고,
-// 너무 큰 본문(413)은 문장을 보낸 뒤 소켓을 닫아 나머지를 받지 않는다
+// 너무 큰 본문(413)은 문장을 보낸 뒤 남은 본문을 읽어 버리고(상한 안에서) 다 받으면 닫는다 — 바로 끊으면 문장이 사라질 수 있다(lib/body.mjs 의 drainRest)
 function bodyFail(req, res, e) {
   const status = e?.status ?? 500;
   if (status >= 500 && status !== 499) console.error('[본문]', e?.cause?.message ?? e?.message);
   if (status === 499 || res.headersSent) return void res.destroy();
   const msg = e?.status ? e.message : '요청을 처리하지 못했어요'; // status 는 lib/body 가 붙인 한국어 문장일 때만 — 낯선 시스템 오류 문구는 보내지 않는다
-  res.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8', ...(status === 413 ? { Connection: 'close' } : {}) }).end(msg, () => {
-    if (status === 413) req.destroy();
+  res.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' }).end(msg, () => {
+    if (status === 413) drainRest(req);
   });
 }
 

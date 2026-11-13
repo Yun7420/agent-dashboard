@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { PassThrough } from 'node:stream';
-import { readBody, saveUpload } from '../lib/body.mjs';
+import { EventEmitter } from 'node:events';
+import { readBody, saveUpload, drainRest } from '../lib/body.mjs';
 import { createLock } from '../lib/lock.mjs';
 import { createRecent } from '../lib/recent.mjs';
 
@@ -102,4 +103,34 @@ test('saveUpload: 파일이 열리기도 전에 끊겨도 .part 가 남지 않�
     await assert.rejects(p, (e) => e.status === 499);
   }
   assert.deepEqual(files(dir), []);
+});
+
+// drainRest: 413 뒤 남은 본문을 읽어 버리고 다 오면 소켓을 정상 종료, 상한(크기 · 시간)을 넘으면 그때 끊는다
+function drainReq() {
+  const r = new EventEmitter();
+  r.calls = [];
+  r.resume = () => r.calls.push('resume');
+  r.destroy = () => r.calls.push('destroy');
+  r.socket = { end: () => r.calls.push('end') };
+  return r;
+}
+test('drainRest: 다 받으면 end(끊지 않음), 크기 상한을 넘으면 destroy, 시간 상한도', async () => {
+  const a = drainReq();
+  drainRest(a, { maxBytes: 100, ms: 1000 });
+  a.emit('data', Buffer.alloc(60));
+  a.emit('end');
+  assert.deepEqual(a.calls, ['resume', 'end']);
+  const b = drainReq();
+  drainRest(b, { maxBytes: 100, ms: 1000 });
+  b.emit('data', Buffer.alloc(60));
+  b.emit('data', Buffer.alloc(60));
+  assert.deepEqual(b.calls, ['resume', 'destroy']);
+  const c = drainReq();
+  drainRest(c, { maxBytes: 100, ms: 30 });
+  await new Promise((r) => setTimeout(r, 60));
+  assert.deepEqual(c.calls, ['resume', 'destroy']);
+  const d = drainReq();
+  d.complete = true; // 이미 다 받은 요청은 바로 정상 종료
+  drainRest(d);
+  assert.deepEqual(d.calls, ['end']);
 });
