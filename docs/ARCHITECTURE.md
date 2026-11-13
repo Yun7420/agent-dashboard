@@ -181,7 +181,7 @@
 
 ### test
 
-29개 파일, 187개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+33개 파일, 205개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -319,6 +319,8 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 | `test/approval.test.mjs` | 위험 판별(`rm -rf` · `curl \| sh` · 폴더 밖 파일 · `.env`)과 잡으면 안 되는 것 |
 | `test/history.test.mjs` · `describe.test.mjs` · `day.test.mjs` | 기록 읽기 · 답변 이어 붙이기 · 커밋 제목 · 오늘 한 일 |
 | `test/concurrent.test.mjs` | 같은 세션을 동시에 불러도 한 번 부른 결과와 같음(7절) |
+| `test/adapters.test.mjs` | 어댑터마다 필수 함수 · describe/history 결과 모양(`adapters/index.mjs` 머리 주석과 같게) |
+| `test/codex.test.mjs` · `claude-cache.test.mjs` · `claude-fields.test.mjs` | Codex 답 이어 붙이기 · 파일 교체(inode) · 합성 응답 · 기록 폴더 환경 변수 · 요청 가르기 |
 | `test/commands.test.mjs` | 명령 표: 409 · 400 · 503 문장, tmux 로 무엇을 보내는지(가짜 tmux) |
 | `test/token.test.mjs` · `perms.test.mjs` · `paths.test.mjs` | 토큰 파일 · 권한 600/700 · 폴더 안 검사 |
 | `test/body.test.mjs` | 본문 상한 413 · 끊긴 요청 · `.part` 안 남김 |

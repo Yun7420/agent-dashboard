@@ -8,7 +8,7 @@
 
 ## 요약
 
-- 끝난 것 16개, 남은 것 9개(처음 정리 때는 9 · 16 → manager 가 할 수 있는 7개를 `9a7ff1d` 에서 끝냄)
+- 끝난 것 17개, 남은 것 8개(처음 정리 때는 9 · 16 → manager 가 할 수 있는 7개를 `9a7ff1d`, 기록 폴더 환경 변수를 `6d8f081` 에서 끝냄)
 - 남은 것 중 **사용자 결정** 7개: 공개 · 패키지 이름 · 버전 정책 · Node 지원 범위 · LaunchAgent · Actions 설정 · 실제 배포
 - 깨질 하드코딩(내 Mac 경로 · Homebrew · nvm · fnm 경로)은 **없음** — 데모 데이터의 가짜 경로 `/Users/me` 뿐이에요
 
@@ -87,6 +87,9 @@
 - [x] **끄기 · 다시 켜기 · 지우기 안내**
   - 지금: README(한 · 영) 「끄기 · 지우기」 — 서버 끄기 → 사용 한도 끄기 → 폴더 지우기 순서, 사용 한도를 켠 채 지우면 settings.json 등록이 남는다는 경고 (`9a7ff1d`)
   - 남은 일: 없음
+- [x] **`CLAUDE_CONFIG_DIR` · `CODEX_HOME`** — 기록 폴더를 옮긴 사람도 세션이 보이게
+  - 지금: `lib/paths.mjs` 의 `CLAUDE_DIR` · `CODEX_DIR` 가 두 변수를 따른다(시험 모드에선 무시), 환경 점검도 같은 폴더 (`6d8f081`)
+  - 남은 일: 없음
 - [x] **남의 Mac 에서 깨질 하드코딩**
   - 지금: `server.mjs` · `lib/` · `adapters/` · `bin/` · `public/` 에서 `/Users/` · `/opt/homebrew` · `.nvm` · `fnm` · `/usr/local` · `/home/` 를 찾았어요(주석 빼고). 나온 것은 데모 가짜 데이터(`lib/demo.mjs` 의 `/Users/me…`)와 데모 업로드 응답(`server.mjs` 의 `/Users/me/.agent-dashboard/uploads/…`)뿐이에요. 데이터 위치는 모두 `lib/paths.mjs`(`HOME` · `DATA_DIR` · `CLAUDE_DIR` · `CODEX_DIR`)에서 정해요
   - 남은 일: 없음
@@ -128,10 +131,6 @@
 
 ### 그 밖
 
-- [ ] **`CLAUDE_CONFIG_DIR` · `CODEX_HOME`**
-  - 지금: `lib/paths.mjs` 의 `CLAUDE_DIR` · `CODEX_DIR` 는 늘 `~/.claude` · `~/.codex` 예요. 이 환경 변수로 기록 폴더를 옮긴 사람은 세션이 안 보여요
-  - 남은 일: ④ adapters 나머지에서
-  - 결정: manager
 - [ ] **공개 전 기록 재검사** — 저장소 전체 기록에 회사 · 개인 정보가 없는지
   - 결정: My All Manager 담당
 

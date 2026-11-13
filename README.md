@@ -278,7 +278,7 @@ agent-dashboard/
 │  ├─ index.html       # 뼈대(토큰은 서버가 여기에만 끼워 넣음)
 │  ├─ style.css        # 모양
 │  └─ js/00-md.js ~ 19-keys.js   # 동작 — 구역별(목록 · 조직도 · 기록 · 첨부 · 알림 · 복구 · 검색 · 오늘 한 일 · 단축키 …), 번호 순서대로 불러옴
-└─ test/               # node --test 29개 파일 · fake-bin(가짜 tmux · claude · ps · lsof)
+└─ test/               # node --test 33개 파일 · fake-bin(가짜 tmux · claude · ps · lsof)
 ```
 
 파일마다 하는 일 · 요청 하나가 지나가는 길 · 보안 검사 위치는 [코드 지도(docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)에 있어요.
@@ -301,7 +301,7 @@ DEMO=1 PORT=4646 npm start
 npm test
 ```
 
-Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없어요. 테스트 187개(2026-11-13): 기록 읽기 · 선택창 감지 · 승인 카드 위험 판별 · 보안 검사(토큰 · Host · Origin · 경로 · 파일 권한) · 명령 · 복구 · 실행기 등.
+Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없어요. 테스트 205개(2026-11-13): 기록 읽기 · 선택창 감지 · 승인 카드 위험 판별 · 보안 검사(토큰 · Host · Origin · 경로 · 파일 권한) · 명령 · 복구 · 실행기 등.
 - 시험 서버는 4694 · 4696~4699 포트를 잠깐 써요. 진짜 세션 · tmux 대신 임시 홈 폴더와 `test/fake-bin` 의 가짜 명령(tmux · claude · ps · lsof)을 써서, 내 `~/.claude` · `~/.agent-dashboard` 는 건드리지 않아요.
 - GitHub Actions 가 main 에 push 하거나 PR 이 올 때마다 Ubuntu · macOS × Node 18 · 20 · 22 · 24 에서 `npm test` 를 돌려요(위 배지). macOS 알림(osascript) 테스트는 macOS 에서만 돌아요.
 
@@ -310,6 +310,7 @@ Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없�
 - **macOS · tmux · Claude Code 기준**으로 만들고 매일 쓰고 있어요. Linux 에서는 테스트만 돌려 봤어요. 폴더 열기(`open`) · macOS 알림(`osascript`)은 macOS 에만 있어요. Windows 는 지원하지 않아요.
 - **Codex 는 일부만** — 목록 · 상태 · 지금 탭(요청 · 답변 · 대화 창) · 기록 탭 · 전체 검색은 돼요. 오늘 한 일 · 토큰 · 계정 사용 한도 · 대화 창 추이 · 서브에이전트 · 세션 간 메시지 · 새 세션 · 복구는 Claude Code 만이에요. 승인 창 감지도 Claude Code 화면 기준이에요.
 - Gemini 등 다른 도구는 아직 없어요(어댑터 파일 하나로 붙일 수 있게 만들어 뒀어요).
+- 기록 폴더를 `CLAUDE_CONFIG_DIR` · `CODEX_HOME` 으로 옮겼다면 그 폴더를 읽어요(대시보드를 켜는 셸에 같은 변수가 있어야 해요).
 - **이 Mac 에서만** 써요. 서버는 `127.0.0.1` 에만 열고, 다른 기기 · 원격 접속(로그인 · 터널 · 클라우드)은 하지 않아요.
 - 바꾼 파일 diff 는 Edit·Write 도구 기준이에요. 명령어로 고친 파일은 "실행한 명령"에만 보여요.
 - 같은 폴더에서 `--resume` 없이 띄운 세션이 여러 개면 프로세스 시작 시각으로 짝을 맞춰요. 오래 켜 둔 세션에서 `/clear` 하면 가끔 엇갈릴 수 있어요.

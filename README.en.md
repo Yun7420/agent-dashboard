@@ -278,7 +278,7 @@ agent-dashboard/
 │  ├─ index.html       # structure (the server injects the token here only)
 │  ├─ style.css        # styles
 │  └─ js/00-md.js ~ 19-keys.js   # behavior, one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
-└─ test/               # node --test, 29 files · fake-bin (fake tmux · claude · ps · lsof)
+└─ test/               # node --test, 33 files · fake-bin (fake tmux · claude · ps · lsof)
 ```
 
 ### Adding another agent
@@ -300,7 +300,7 @@ Shows the UI with fake data (Project1, Lead Manager, …). No commands are execu
 npm test
 ```
 
-Uses Node's built-in test runner (`node --test`), nothing to install. 187 tests (2026-11-13): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
+Uses Node's built-in test runner (`node --test`), nothing to install. 205 tests (2026-11-13): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
 - Test servers briefly use ports 4694 and 4696–4699. Instead of real sessions and tmux they use a temporary home folder and the fake commands in `test/fake-bin` (tmux · claude · ps · lsof), so your `~/.claude` and `~/.agent-dashboard` are never touched.
 - GitHub Actions runs `npm test` on every push to main and every PR, on Ubuntu · macOS × Node 18 · 20 · 22 · 24 (badge above). The macOS notification (osascript) test runs only on macOS.
 
@@ -309,6 +309,7 @@ Uses Node's built-in test runner (`node --test`), nothing to install. 187 tests 
 - Built for and used daily on **macOS · tmux · Claude Code**. On Linux only the tests have been run. Open folder (`open`) and macOS notifications (`osascript`) exist only on macOS. Windows is not supported.
 - **Codex is partial** — list · status · Now tab (request · answer · context) · History tab · search work. Today's work · tokens · account usage limits · context trend · subagents · messages between sessions · new session · restore are Claude Code only. Prompt detection is based on the Claude Code screen too.
 - No Gemini or other tools yet (each can be added as one adapter file).
+- If you moved the record folders with `CLAUDE_CONFIG_DIR` · `CODEX_HOME`, those folders are read (the shell that starts the dashboard needs the same variables).
 - **This Mac only.** The server listens on `127.0.0.1` only; there is no access from other devices or remote access (login · tunnels · cloud).
 - File diffs come from the Edit/Write tools. Files changed by shell commands only show up under "commands".
 - If several sessions start in the same folder without `--resume`, they're matched by process start time. After `/clear` in a long-running session they can occasionally get mixed up.
