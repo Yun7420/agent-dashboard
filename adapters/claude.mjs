@@ -7,15 +7,12 @@ import { promisify } from 'node:util';
 import path from 'node:path';
 import fs from 'node:fs';
 import readline from 'node:readline';
-import { clip, parse, readHeadLines, readJsonLines, readJsonOrNull, readTailLines, statOrNull } from '../lib/util.mjs';
+import { clip, joinReply, parse, readHeadLines, readJsonLines, readJsonOrNull, readTailLines, statOrNull } from '../lib/util.mjs';
 import { createLru } from '../lib/lru.mjs';
 import { CLAUDE_DIR } from '../lib/paths.mjs';
 import { createSerial } from '../lib/serial.mjs';
 import { usageOf, contextOf, addUsage, emptyTokens } from '../lib/usage.mjs';
 
-// 한 턴의 답변은 도구 호출 사이사이에 글이 여러 덩어리로 나뉜다. 마지막 덩어리만 남기면
-// 앞의 설명이 사라지므로 이어 붙인다(너무 길면 앞쪽을 남긴다).
-const joinReply = (prev, text) => clip(prev ? `${prev}\n\n${text.trim()}` : text.trim(), 20000);
 
 const ROOT = path.join(CLAUDE_DIR, 'projects');
 const exec = promisify(execFile);
