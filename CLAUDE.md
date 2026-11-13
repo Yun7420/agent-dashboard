@@ -49,7 +49,7 @@ lib/                  구역별 일(모듈은 createXxx(deps) 로 필요한 것�
   token                토큰 파일(~/.agent-dashboard/token)
   recent · restore · restore-cli · runner   복구 단추 · 재시동 복구 · 실행기(run)
   notify · limits · usage · status   알림 · 한도 추이 · 토큰 사용량 · 상태줄 파일 정리
-  respond · validate · paths · filecache · lru · serial · lock   응답 모양 · 입력 검사 · 경로 · 캐시 · 차례 · 잠금
+  respond · validate · paging · paths · perms · filecache · lru · serial · lock   응답 모양 · 입력 검사 · 나눠 보내기 · 경로 · 파일 권한 정리 · 캐시 · 차례 · 잠금
   tmux · dialog · approval · spawn · demo · util   tmux 조작 · 선택창 감지 · 승인 카드 · 새 세션 인자 · 데모 · 기록 읽기
 bin/                  agent-dashboard.mjs(실행 명령: start · run · restore) · run.sh(예전 실행기) · restore.mjs(npm run restore) · statusline.mjs(상태줄 다리 원본)
 public/               index.html 뼈대 · style.css · js/00-md.js ~ 19-keys.js(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다)
