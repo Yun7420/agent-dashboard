@@ -5,6 +5,11 @@
 // 보안: 127.0.0.1 에만 열고, Host 헤더를 확인해(DNS 리바인딩 차단) 다른 사이트가 이 서버를 못 부르게 한다.
 // 명령(채팅·승인·새 세션)은 서버가 켜질 때 만든 비밀 토큰이 있어야 받는다. 토큰은 이 페이지에만 심겨 있고,
 // 다른 사이트는 브라우저의 같은 출처 정책 때문에 이 페이지를 읽을 수 없어 토큰을 알 수 없다.
+//
+// 이 파일: 서버 켜기 · 요청 입구의 보안 검사 · 경로 표(ROUTES) · 2초 틱(상태를 만들어 SSE 로 보냄) · 각 구역을 잇는 일.
+// 구역별 일은 lib/ 에: 상태 조립 state · 프로세스 procs · 명령 commands · 환경 점검 env · 폴더 열기 open-dir · 첨부 uploads · body,
+// 설정 파일 claude-settings · 복구 recent · restore · 알림 notify · 한도 limits · 응답 모양 respond · 입력 검사 validate.
+// lib 모듈은 createXxx(deps) 로 필요한 것만 이름 붙여 받는다(바뀌는 값은 함수로 받아 늘 지금 값을 본다).
 
 import http from 'node:http';
 import { performance } from 'node:perf_hooks';
