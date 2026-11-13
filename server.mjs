@@ -22,6 +22,8 @@ import { createLru } from './lib/lru.mjs';
 import { tightenFiles } from './lib/perms.mjs';
 import { readBody, saveUpload } from './lib/body.mjs';
 import { createLock } from './lib/lock.mjs';
+import { sendText, sendJson, friendly } from './lib/respond.mjs';
+import { isObject, validDate, KEY_RE, WINDOW_HOURS } from './lib/validate.mjs';
 import { MODELS, newSessionArgs } from './lib/spawn.mjs';
 import { HOME, DATA_DIR, dirOf, isInside, allInside, tildify } from './lib/paths.mjs';
 import { createRecorder, readRange, pruneLimits, validRange } from './lib/limits.mjs';
@@ -389,13 +391,19 @@ async function buildLinks(chosen, sessions, alive, sinceMs) {
 const historyCache = createLru({ max: 30, ttlMs: 30 * 60_000 }); // file → { size, items }
 
 // 세션의 요청 · 답변 전체(오래된 것부터). 화면에는 pageHistory 로 나눠 보낸다
+// 세션 열쇠(「도구:ID」) → 그 도구의 어댑터와 기록 파일. 없으면 null
+async function findScanned(key) {
+  const [tool, ...rest] = String(key).split(':');
+  const adapter = byId[tool];
+  if (!adapter) return null;
+  const id = rest.join(':');
+  const s = (await adapter.scan()).find((x) => x.id === id);
+  return s ? { adapter, s } : { adapter, s: null };
+}
+
 async function promptHistory(key) {
   if (DEMO) return [...(demo.DEMO_HISTORY[key] ?? [])].reverse(); // 데모 데이터는 최신이 위
-  const [tool, ...rest] = key.split(':');
-  const id = rest.join(':');
-  const adapter = byId[tool];
-  if (!adapter) return [];
-  const s = (await adapter.scan()).find((x) => x.id === id);
+  const { adapter, s } = (await findScanned(key)) ?? {};
   if (!s) return [];
   const hit = historyCache.get(s.file);
   if (hit && hit.size === s.size) return hit.items;
@@ -409,10 +417,9 @@ async function promptHistory(key) {
 const TREND_MAX = 120;
 async function contextTrend(key) {
   if (DEMO) return demo.demoTrend(key);
-  const [tool, ...rest] = key.split(':');
-  const adapter = byId[tool];
+  const adapter = byId[String(key).split(':')[0]];
   if (!adapter?.contextTrend) return { supported: false, points: [], drops: 0, total: 0 };
-  const s = (await adapter.scan()).find((x) => x.id === rest.join(':'));
+  const { s } = await findScanned(key);
   if (!s) return { supported: true, points: [], drops: 0, total: 0 };
   const all = await adapter.contextTrend(s);
   return { supported: true, points: thinTrend(all, TREND_MAX), drops: drops(all), total: all.length };
@@ -443,7 +450,7 @@ async function searchHistory(q) {
 // 하루 동안 한 일: 그날 기록이 남은 세션마다 요청 수 · 고친 파일 · 명령 수 · 커밋 (Claude Code 기록 기준)
 const dayCache = createLru({ max: 500, ttlMs: 30 * 60_000 }); // `${file}|${date}` → { size, summary } — 요약은 작지만 날짜를 넘겨 볼수록 쌓여서
 async function daySummary(date) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? '')) return [];
+  if (!validDate(date)) return [];
   if (DEMO) return demo.DEMO_DAY;
   const fromMs = new Date(`${date}T00:00:00`).getTime();
   const toMs = fromMs + 86400_000;
@@ -699,7 +706,7 @@ async function handleCommand(action, body) {
     try {
       return [200, action === 'usage-on' ? enableUsage() : disableUsage()];
     } catch (e) {
-      return [500, `설정 파일을 바꾸지 못했어요: ${e.message}`];
+      return friendly(e, '설정 파일(~/.claude/settings.json)을 바꾸지 못했어요');
     }
   }
   if (action === 'open-dir') {
@@ -710,7 +717,7 @@ async function handleCommand(action, body) {
     try {
       await openDir(dir, String(body.app ?? ''));
     } catch (e) {
-      return [500, `열지 못했어요: ${e.message}`];
+      return friendly(e, '폴더를 열지 못했어요');
     }
     return [200, `${tildify(dir)} 를 열었어요`];
   }
@@ -754,7 +761,7 @@ async function handleCommand(action, body) {
     if (name) spawnedNames.set(`claude:${sessionId}`, name);
     return [200, JSON.stringify({ key: `claude:${sessionId}` })];
   }
-  return [404, 'unknown'];
+  return [404, '알 수 없는 명령이에요'];
 }
 
 // ---------- 환경 점검 (처음 켤 때 화면에 보여 줌) ----------
@@ -774,10 +781,12 @@ const EDITORS = [
   { id: 'vscode', label: 'VS Code', app: 'Visual Studio Code', cmd: 'code' },
   { id: 'cursor', label: 'Cursor', app: 'Cursor', cmd: 'cursor' },
 ];
+// macOS 앱이 /Applications 나 ~/Applications 에 깔려 있는가
+const appInstalled = (e) => os.platform() === 'darwin' && ['/Applications', path.join(HOME, 'Applications')].some((d) => fs.existsSync(path.join(d, `${e.app}.app`)));
 async function detectEditors() {
   const found = [];
   for (const e of EDITORS) {
-    const appOk = os.platform() === 'darwin' && ['/Applications', path.join(HOME, 'Applications')].some((d) => fs.existsSync(path.join(d, `${e.app}.app`)));
+    const appOk = appInstalled(e);
     const cmdOk = !appOk && (await probe('which', [e.cmd])).ok;
     if (appOk || cmdOk) found.push({ id: e.id, label: e.label });
   }
@@ -788,7 +797,7 @@ async function openDir(dir, id) {
   const e = EDITORS.find((x) => x.id === id);
   if (id === 'finder') return exec(os.platform() === 'darwin' ? 'open' : 'xdg-open', [dir]);
   if (!e) throw new Error('알 수 없는 앱');
-  if (os.platform() === 'darwin' && ['/Applications', path.join(HOME, 'Applications')].some((d) => fs.existsSync(path.join(d, `${e.app}.app`)))) return exec('open', ['-a', e.app, dir]);
+  if (appInstalled(e)) return exec('open', ['-a', e.app, dir]);
   return exec(e.cmd, [dir]);
 }
 
@@ -895,7 +904,7 @@ async function tick() {
       saveSnapshot(latest.sessions);
       const def = defaultAlias();
       try { recent.observe(liveEntries(latest.sessions, (s) => { const m = modelAlias(s.model); return m === def ? null : m; })); } catch (e) { console.error('복구 목록 기억 실패:', e.message); }
-      latest.restore = restoreCandidates(new Set(latest.sessions.filter((s) => s.status !== 'ended').map((s) => s.id))).map((e) => ({ id: e.id, title: e.title, cwd: e.cwd }));
+      latest.restore = restoreCandidates(liveIdSet()).map((e) => ({ id: e.id, title: e.title, cwd: e.cwd }));
     } else latest.restore = [];
     const sJ = JSON.stringify(latest.sessions), lJ = JSON.stringify(latest.links), uJ = JSON.stringify(latest.usage), rJ = JSON.stringify(latest.restore);
     const json = sJ + lJ + uJ + rJ;
@@ -941,7 +950,8 @@ function bodyFail(req, res, e) {
   const status = e?.status ?? 500;
   if (status >= 500 && status !== 499) console.error('[본문]', e?.cause?.message ?? e?.message);
   if (status === 499 || res.headersSent) return void res.destroy();
-  res.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8', ...(status === 413 ? { Connection: 'close' } : {}) }).end(e?.message ?? '요청을 처리하지 못했어요', () => {
+  const msg = e?.status ? e.message : '요청을 처리하지 못했어요'; // status 는 lib/body 가 붙인 한국어 문장일 때만 — 낯선 시스템 오류 문구는 보내지 않는다
+  res.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8', ...(status === 413 ? { Connection: 'close' } : {}) }).end(msg, () => {
     if (status === 413) req.destroy();
   });
 }
@@ -966,20 +976,20 @@ const server = http.createServer((req, res) => {
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v); // writeHead 의 헤더와 합쳐진다
   handle(req, res).catch((e) => {
     console.error('[요청 오류]', req.method, req.url, e?.stack ?? e);
-    if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' }).end('서버에서 문제가 생겼어요. 잠시 뒤 다시 해 주세요');
+    if (!res.headersSent) sendText(res, 500, '서버에서 문제가 생겼어요. 잠시 뒤 다시 해 주세요');
     else res.destroy(); // SSE 처럼 이미 보내기 시작한 응답은 끊는다
   });
 });
 
 async function handle(req, res) {
   if (!ALLOWED_HOSTS.has(req.headers.host ?? '')) {
-    res.writeHead(403).end('forbidden host');
+    sendText(res, 403, '이 주소로는 열 수 없어요 — http://localhost:' + PORT + ' 로 열어 주세요');
     return;
   }
   const url = new URL(req.url, 'http://localhost');
   // 대화 목록·기록도 명령과 같은 토큰을 요구한다(화면 파일만 토큰 없이 연다)
   if ((url.pathname === '/events' || url.pathname.startsWith('/api/')) && !authorized(req, url)) {
-    res.writeHead(403).end('forbidden');
+    sendText(res, 403, '보안 토큰이 맞지 않아요. 페이지를 새로고침해 주세요');
     return;
   }
 
@@ -993,7 +1003,7 @@ async function handle(req, res) {
   if (url.pathname === '/api/env') {
     const env = url.searchParams.has('refresh') || !envCache ? await checkEnv() : envCache;
     // 「승인 감지」 줄은 서버가 켜진 뒤 쌓인 기록이라 캐시 없이 매번 붙인다
-    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ...env, items: [...env.items, dialogEnvItem()] }));
+    sendJson(res, 200, { ...env, items: [...env.items, dialogEnvItem()] });
     return;
   }
   // 알림 설정: GET 은 지금 값, POST { mac?, sound? } 는 바꾸기(소리는 허용 목록만), /api/notify/test 는 시험 알림 한 번
@@ -1005,92 +1015,104 @@ async function handle(req, res) {
       } catch (e) {
         return bodyFail(req, res, e);
       }
-      if (!body || typeof body !== 'object' || Array.isArray(body)) return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('요청 형식이 잘못됐어요');
-      if ('sound' in body && !validSound(body.sound)) return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('고를 수 없는 소리예요');
-      if ('mac' in body && typeof body.mac !== 'boolean') return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('mac 은 true/false 만');
+      if (!isObject(body)) return void sendText(res, 400, '요청 형식이 잘못됐어요');
+      if ('sound' in body && !validSound(body.sound)) return void sendText(res, 400, '고를 수 없는 소리예요');
+      if ('mac' in body && typeof body.mac !== 'boolean') return void sendText(res, 400, 'macOS 알림 켜기/끄기 값이 잘못됐어요');
       const next = { ...notifySettings, ...('mac' in body ? { mac: body.mac } : {}), ...('sound' in body ? { sound: body.sound } : {}) };
       try {
         notifySettings = DEMO ? next : saveSettings(NOTIFY_FILE, next);
       } catch (e) {
-        return void res.writeHead(500).end(e.message);
+        return void sendText(res, ...friendly(e, '알림 설정을 저장하지 못했어요'));
       }
     }
-    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(notifyInfo()));
+    sendJson(res, 200, notifyInfo());
     return;
   }
   if (url.pathname === '/api/notify/test' && req.method === 'POST') {
     const sent = await sendMacNotification('Agent Dashboard', '시험 알림이에요 — 이게 보이면 macOS 알림이 동작해요');
-    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ sent, supported: MAC_NOTIFY }));
+    sendJson(res, 200, { sent, supported: MAC_NOTIFY });
     return;
   }
   // 계정 한도 추이: ?range=24h|7d → { points: [[ms, 5시간 %, 주간 %]], resets: [{ t, kind }] }
   if (url.pathname === '/api/limits') {
     const range = url.searchParams.get('range') ?? '24h';
-    if (!validRange(range)) return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('range 는 24h 또는 7d');
+    if (!validRange(range)) return void sendText(res, 400, '기간은 24h 또는 7d 만 고를 수 있어요');
     const data = DEMO ? demo.demoLimits(range) : readRange(LIMITS_DIR, range);
-    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(data));
+    sendJson(res, 200, data);
     return;
   }
   if (url.pathname === '/api/recent') {
-    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(await recentInfo()));
+    sendJson(res, 200, await recentInfo());
     return;
   }
   if (url.pathname === '/api/perf') {
     const sorted = [...tickMs].sort((a, b) => a - b);
-    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ticks: tickMs.length, medianMs: sorted[sorted.length >> 1] ?? null, maxMs: sorted.at(-1) ?? null, payloadKB: Math.round(lastJson.length / 1024), heapMB: Math.round(process.memoryUsage().heapUsed / 1048576), rssMB: Math.round(process.memoryUsage().rss / 1048576) }));
+    sendJson(res, 200, { ticks: tickMs.length, medianMs: sorted[sorted.length >> 1] ?? null, maxMs: sorted.at(-1) ?? null, payloadKB: Math.round(lastJson.length / 1024), heapMB: Math.round(process.memoryUsage().heapUsed / 1048576), rssMB: Math.round(process.memoryUsage().rss / 1048576) });
     return;
   }
+  // 종료된 세션을 얼마나 이전까지 볼지(서버 전체 · 열린 탭 모두에 영향). 바꾸기는 POST { hours }, GET 은 지금 값 읽기만
   if (url.pathname === '/api/window') {
-    const h = Number(url.searchParams.get('hours'));
-    if ([6, 24, 72, 168].includes(h)) {
-      windowHours = h;
-      lastJson = '';
+    if (req.method !== 'POST') return void sendJson(res, 200, { hours: windowHours });
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (e) {
+      return bodyFail(req, res, e);
     }
+    const h = Number(body?.hours);
+    if (!WINDOW_HOURS.includes(h)) return void sendText(res, 400, `기간은 ${WINDOW_HOURS.join(' · ')}시간 중에서 골라 주세요`);
+    windowHours = h;
+    lastJson = '';
     res.writeHead(204).end();
     return;
   }
   if (url.pathname === '/api/history') {
     try {
       // 기록 전체가 아니라 80개씩(최대 200), 검색어가 있으면 서버에서 거른 뒤 → { items, total, nextOffset }
-      const items = await promptHistory(url.searchParams.get('key') ?? '');
-      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(pageHistory(items, pageParams(url.searchParams))));
+      const key = url.searchParams.get('key') ?? '';
+      if (!KEY_RE.test(key)) return void sendText(res, 400, '세션을 고르지 않았어요');
+      const items = await promptHistory(key);
+      sendJson(res, 200, pageHistory(items, pageParams(url.searchParams)));
     } catch (e) {
-      res.writeHead(500).end(e.message);
+      sendText(res, ...friendly(e, '기록을 읽지 못했어요'));
     }
     return;
   }
   if (url.pathname === '/api/trend') {
-    const trend = await contextTrend(url.searchParams.get('key') ?? '').catch(() => ({ supported: true, points: [], drops: 0, total: 0 }));
-    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(trend));
+    const key = url.searchParams.get('key') ?? '';
+    if (!KEY_RE.test(key)) return void sendText(res, 400, '세션을 고르지 않았어요');
+    const trend = await contextTrend(key).catch(() => ({ supported: true, points: [], drops: 0, total: 0 }));
+    sendJson(res, 200, trend);
     return;
   }
   if (url.pathname === '/api/day') {
-    const summary = await daySummary(url.searchParams.get('date'));
-    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(summary));
+    const date = url.searchParams.get('date') ?? '';
+    if (!validDate(date)) return void sendText(res, 400, '날짜는 2026-11-13 처럼 YYYY-MM-DD 로 보내 주세요');
+    sendJson(res, 200, await daySummary(date));
     return;
   }
   if (url.pathname === '/api/search') {
     const results = await searchHistory(url.searchParams.get('q'));
-    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(results));
+    sendJson(res, 200, results);
     return;
   }
   if (url.pathname === '/api/pane') {
-    if (DEMO) return void res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' }).end(demo.demoPane(url.searchParams.get('key')));
+    if (DEMO) return void sendText(res, 200, demo.demoPane(url.searchParams.get('key')));
     const s = findSession(url.searchParams.get('key'));
-    if (!s?.tmux) return void res.writeHead(404).end('');
+    if (!s?.tmux) return void sendText(res, 404, 'tmux 로 띄운 세션만 화면을 볼 수 있어요');
     try {
       const { text, focus } = await tmux.captureWithFocus(s.tmux.target);
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Focus-Tab': encodeURIComponent(focus ?? '') }).end(text);
     } catch (e) {
-      res.writeHead(500).end(e.message);
+      sendText(res, ...friendly(e, '세션 화면을 읽지 못했어요'));
     }
     return;
   }
   if (url.pathname === '/api/upload' && req.method === 'POST') {
-    if (DEMO) return void res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ path: `/Users/me/.agent-dashboard/uploads/${url.searchParams.get('name')}`, name: url.searchParams.get('name'), size: 0 }));
+    if (DEMO) return void sendJson(res, 200, { path: `/Users/me/.agent-dashboard/uploads/${url.searchParams.get('name')}`, name: url.searchParams.get('name'), size: 0 });
     try {
       const saved = await saveUpload(req, url.searchParams.get('name'), { dir: UPLOAD_DIR, max: UPLOAD_MAX });
-      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(saved));
+      sendJson(res, 200, saved);
     } catch (e) {
       bodyFail(req, res, e); // 너무 큼 413 · 끊김 · 디스크 오류 500 을 구분
     }
@@ -1103,15 +1125,16 @@ async function handle(req, res) {
     } catch (e) {
       return bodyFail(req, res, e);
     }
+    if (!isObject(body)) return void sendText(res, 400, '요청 형식이 잘못됐어요');
     try {
       const [code, msg] = await handleCommand(url.pathname.slice('/api/cmd/'.length), body);
-      res.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' }).end(msg);
+      sendText(res, code, msg);
       if (code === 200) {
         invalidateProcCaches();
         setTimeout(() => (lastJson = ''), 300); // 바로 다시 그리게
       }
     } catch (e) {
-      res.writeHead(500).end(e.message);
+      sendText(res, ...friendly(e, '명령을 처리하지 못했어요')); // tmux 가 없으면 409 「tmux 가 필요해요」
     }
     return;
   }
@@ -1119,7 +1142,7 @@ async function handle(req, res) {
   // 화면 파일: public 폴더 안의 「일반 파일」만. 폴더(/js 등)를 스트림으로 열면 EISDIR 로 프로세스가 죽었다(토큰 없이 아무 사이트나 부를 수 있는 경로)
   const file = path.join(PUBLIC_DIR, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname));
   if (!isInside(PUBLIC_DIR, file) || !fs.statSync(file, { throwIfNoEntry: false })?.isFile()) { // 「public-other」 같은 옆 폴더는 안 됨
-    res.writeHead(404).end();
+    sendText(res, 404, '없는 파일이에요');
     return;
   }
   const head = { 'Content-Type': MIME[path.extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store' };
@@ -1128,7 +1151,7 @@ async function handle(req, res) {
   stream.on('open', () => { res.writeHead(200, head); stream.pipe(res); });
   stream.on('error', (e) => { // 읽는 사이 지워진 파일 등 — 응답만 정리하고 서버는 계속
     console.error('[화면 파일]', file, e.message);
-    if (!res.headersSent) res.writeHead(500).end();
+    if (!res.headersSent) sendText(res, 500, '파일을 읽지 못했어요');
     else res.destroy();
   });
 }

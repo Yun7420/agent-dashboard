@@ -7,7 +7,8 @@ $('#list').addEventListener('click', (e) => {
 });
 $('#list').addEventListener('change', (e) => {
   if (e.target.id !== 'ended-window') return;
-  fetch(`/api/window?hours=${e.target.value}`, { headers: { 'X-Dashboard-Token': TOKEN } }); view.init = false;
+  api('/api/window', { hours: Number(e.target.value) }).catch((err) => toast(err.message)); // 서버 전체 상태를 바꾸므로 POST
+  view.init = false;
 });
 
 function render() {

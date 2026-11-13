@@ -242,3 +242,56 @@ test('요청 본문: 너무 크면 413 한국어 문장 후 소켓을 닫고, �
   assert.equal(await req('/'), 200);
   assert.equal(await req('/api/perf', { headers: { 'x-dashboard-token': TOKEN } }), 200);
 });
+
+// 응답 본문까지 받는다
+const fetchText = (p, { method = 'GET', headers = {}, body } = {}) =>
+  new Promise((resolve, reject) => {
+    const r = http.request({ host: '127.0.0.1', port: PORT, path: p, method, headers: { host: `127.0.0.1:${PORT}`, ...headers } }, (res) => {
+      let t = '';
+      res.setEncoding('utf8');
+      res.on('data', (d) => (t += d));
+      res.on('end', () => resolve({ status: res.statusCode, type: res.headers['content-type'], text: t }));
+    });
+    r.on('error', reject);
+    if (body) r.write(body);
+    r.end();
+  });
+
+test('오류 응답 모양: text/plain; charset=utf-8 한국어 문장, 영어 · 시스템 문구 없음', async () => {
+  const T = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };
+  const cases = [
+    ['/', { headers: { host: 'evil.example:4699' } }, 403],
+    ['/api/perf', {}, 403],
+    ['/no-such-file.js', {}, 404],
+    ['/api/window', { method: 'POST', headers: T, body: '{"hours":5}' }, 400],
+    ['/api/day?date=2026-02-30', { headers: T }, 400],
+    ['/api/day?date=abc', { headers: T }, 400],
+    ['/api/limits?range=30d', { headers: T }, 400],
+    ['/api/history', { headers: T }, 400],
+    ['/api/trend?key=', { headers: T }, 400],
+    ['/api/cmd/send', { method: 'POST', headers: T, body: 'null' }, 400],
+    ['/api/cmd/send', { method: 'POST', headers: T, body: '[1]' }, 400],
+    ['/api/cmd/send', { method: 'POST', headers: T, body: '{' }, 400],
+    ['/api/notify', { method: 'POST', headers: T, body: '{"mac":"yes"}' }, 400],
+  ];
+  for (const [p, opt, want] of cases) {
+    const r = await fetchText(p, opt);
+    assert.equal(r.status, want, `${p} → ${r.status} ${r.text}`);
+    assert.equal(r.type, 'text/plain; charset=utf-8', p);
+    assert.match(r.text, /[가-힣]/, `${p}: ${r.text}`);
+    assert.doesNotMatch(r.text, /forbidden|unknown|Error|ENOENT|SyntaxError|Unexpected/i, `${p}: ${r.text}`);
+  }
+});
+
+test('창 기간(/api/window): 바꾸기는 POST, 틀리면 400, GET 은 읽기만', async () => {
+  const T = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };
+  const now = async () => JSON.parse((await fetchText('/api/window', { headers: T })).text).hours;
+  assert.equal(await now(), 24);
+  await fetchText('/api/window?hours=6', { headers: T }); // 예전 방식(GET 으로 바꾸기)은 이제 바꾸지 않는다
+  assert.equal(await now(), 24);
+  assert.equal((await fetchText('/api/window', { method: 'POST', headers: T, body: '{"hours":72}' })).status, 204);
+  assert.equal(await now(), 72);
+  assert.equal((await fetchText('/api/window', { method: 'POST', headers: T, body: '{"hours":"72; x"}' })).status, 400);
+  assert.equal(await now(), 72);
+  assert.equal((await fetchText('/api/window', { method: 'POST', headers: T, body: '{"hours":24}' })).status, 204);
+});
