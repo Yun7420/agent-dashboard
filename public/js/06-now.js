@@ -15,6 +15,10 @@ function renderNow(s) {
   const last = promptLog[0];
   const prompt = s.lastPrompt || last?.prompt || '';
   if ($('#now-prompt').textContent !== prompt) $('#now-prompt').textContent = prompt;
+  // 다른 세션이 보낸 메시지로 시작한 턴: 말풍선 위에 「↙ 보낸 세션」(글자는 CSS attr 로 — HTML 로 넣지 않음)
+  const sender = (s.lastPrompt ? s.lastPromptFrom : last?.from)?.name ?? '';
+  $('#now-prompt').classList.toggle('peer', Boolean(sender));
+  $('#now-prompt').dataset.from = sender ? `↙ ${sender}` : '';
   const card = document.querySelector('.now-card');
   card.classList.toggle('working', s.status === 'working');
   card.classList.toggle('waiting', s.status === 'waiting');

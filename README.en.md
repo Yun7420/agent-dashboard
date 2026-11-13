@@ -142,7 +142,7 @@ A session already running in a terminal has no official way to receive input fro
 - Drag the left edge to **resize** (double-click = default width); the width is remembered
 - **Now** tab: last request + **current answer** + **file diffs** + **commands** (✓/✕, output, "show all" for long ones)
 - While working, **■ Stop** on the answer card stops the current task only (sends Esc); the session and conversation stay
-- **History** tab: past prompts and answers, search, "load more"
+- **History** tab: past prompts and answers, search, "load more". Turns started by a message from another session (SendMessage) are split out and shown as a **dashed bubble labelled "↙ sender"** (same in the Now tab and global search)
 - **What I did today**: the calendar button at the top → per session: prompts, edited files, command count and **commit titles** (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts)
 - **Search all history**: the magnifier at the top (or the `/` key) searches prompts and answers across all sessions → picking a result opens that session's History tab with the same query
 - Answers render **bold** · `code` · headings · **tables** (`| head |` + `|---|`) · **lists** (`-` · `1.`, one nesting level) · **quotes** (`>`) · **code blocks** (```). Wide tables and long code scroll horizontally inside the block

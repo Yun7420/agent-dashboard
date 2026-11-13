@@ -86,3 +86,8 @@ test('화면에서 추정: 기록에 없을 때 승인 창 머리 아래 줄을 
   assert.deepEqual(guessFromScreen(' Edit file\n ╭────╮\n │ src/a.js │\n\n Do you want to make this edit?\n ❯ 1. Yes').input, { file_path: 'src/a.js' });
   assert.equal(guessFromScreen('평범한 화면\n> '), null);
 });
+
+test('pendingTool: 다른 세션이 보낸 메시지로 새 턴이 시작돼도 그 전 호출은 버린다', () => {
+  const peerLine = { type: 'user', isMeta: true, turnOrigin: 'peer', origin: { kind: 'peer', name: '예시', body: '예시 지시' }, message: { content: '<cross-session-message from="x" from-name="예시">예시 지시</cross-session-message>' } };
+  assert.equal(pendingToolOf([use('a', 'Bash', { command: 'ls' }), peerLine]), null);
+});

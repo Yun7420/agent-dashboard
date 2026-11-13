@@ -29,7 +29,7 @@ async function runSearch() {
   $('#gs-meta').textContent = results.length ? `${results.length}개${results.length === 100 ? ' (최신 100개까지)' : ''}` : '찾은 기록이 없어요';
   $('#gs-list').innerHTML = results.map((r) => `
     <button type="button" class="gs-item" data-key="${esc(r.key)}">
-      <span class="gs-head"><b>${esc(r.title)}</b><span>${esc(r.project ?? '')}</span><span>${r.where === 'prompt' ? '요청' : '답변'}</span><span>${new Date(r.at).toLocaleString('ko-KR')}</span></span>
+      <span class="gs-head"><b>${esc(r.title)}</b><span>${esc(r.project ?? '')}</span><span class="${r.from ? 'gs-peer' : ''}">${r.where === 'reply' ? '답변' : r.from ? `↙ ${esc(r.from.name)}` : '요청'}</span><span>${new Date(r.at).toLocaleString('ko-KR')}</span></span>
       <span class="gs-snip">${mark(r.snippet, q)}</span>
     </button>`).join('');
 }

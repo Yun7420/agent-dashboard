@@ -245,6 +245,7 @@ async function buildState(windowHours) {
       background: proc?.live?.background ?? false,
       lastPrompt: d.lastPrompt,
       lastPromptAt: d.lastPromptAt,
+      lastPromptFrom: d.lastPromptFrom ?? null,
       lastText: d.lastText,
       lastTool: d.lastTool,
       model: d.model ?? null,
@@ -410,7 +411,7 @@ async function searchHistory(q) {
       const ip = h.prompt.toLowerCase().indexOf(needle);
       const ir = (h.reply || '').toLowerCase().indexOf(needle);
       if (ip < 0 && ir < 0) continue;
-      out.push({ key: s.key, title: s.title, project: s.project, at: h.at, where: ip >= 0 ? 'prompt' : 'reply', snippet: ip >= 0 ? snippet(h.prompt, ip) : snippet(h.reply, ir) });
+      out.push({ key: s.key, title: s.title, project: s.project, at: h.at, where: ip >= 0 ? 'prompt' : 'reply', from: h.from ?? null, snippet: ip >= 0 ? snippet(h.prompt, ip) : snippet(h.reply, ir) });
     }
   }
   return out.sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 100);

@@ -117,7 +117,7 @@ function renderHistory() {
   $('#log-list').innerHTML = hist.items.map((h) => `
     <div class="commit">
       <div class="m"><span class="sha">#${h.n}</span><span>${new Date(h.at).toLocaleString('ko-KR')}</span><span class="tools">도구 ${h.tools}회</span></div>
-      ${foldable('p', h.prompt)}
+      ${h.from ? `<div class="who peer">↙ ${esc(h.from.name)}</div>${foldable('p peer', h.prompt)}` : foldable('p', h.prompt)}
       ${h.reply ? `<div class="who">CLAUDE</div>${foldable('r', h.reply)}` : ''}
     </div>`).join('') + more || '<div class="commit"><span class="m">프롬프트 없음</span></div>';
 }

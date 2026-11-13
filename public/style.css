@@ -258,6 +258,9 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 #now-view[hidden] { display: none; }
 .now-prompt { flex: none; align-self: flex-end; max-width: 88%; background: var(--accent-soft); border: 1px solid rgba(139, 124, 246, .28); border-radius: 12px 12px 4px 12px; padding: 8px 12px; font-size: 13px; color: #dcd6ff; white-space: pre-wrap; word-break: break-word; max-height: 7.5em; overflow: auto; }
 .now-prompt:empty { display: none; }
+/* 다른 세션이 보낸 메시지로 시작한 턴: 사람 요청과 구별되게 점선 말풍선 + 「↙ 보낸 세션」 */
+.now-prompt.peer { background: transparent; border: 1px dashed rgba(169, 155, 255, .55); color: var(--dim); }
+.now-prompt.peer::before { content: attr(data-from); display: block; margin-bottom: 2px; font-size: 11px; font-weight: 700; color: #a99bff; }
 .now-card { flex: 1 1 0; min-height: 0; overflow-y: auto; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; }
 .now-card.working { border-color: rgba(245, 185, 66, .45); box-shadow: 0 0 0 3px rgba(245, 185, 66, .08); }
 .now-card.waiting { border-color: rgba(251, 111, 146, .5); }
@@ -318,11 +321,15 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 .commit .m .tools { margin-left: auto; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 0 8px; }
 .commit .who { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--claude); margin: 12px 0 4px; }
 .commit .p { background: var(--accent-soft); border: 1px solid rgba(139, 124, 246, .28); border-radius: 12px 12px 12px 4px; padding: 9px 13px; white-space: pre-wrap; word-break: break-word; }
+.commit .p.peer { background: transparent; border: 1px dashed rgba(169, 155, 255, .55); color: var(--dim); }
+.commit .who.peer { color: #a99bff; margin-top: 0; }
+.gs-head .gs-peer { color: #a99bff; }
 .commit .r { color: #cdd0e6; font-size: 13px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; padding: 0 2px; }
 .fold { position: relative; }
 .fold.closed { max-height: 9.4em; overflow: hidden; }
 .fold.closed::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2.6em; background: linear-gradient(transparent, var(--fade, var(--surface))); pointer-events: none; }
 .commit .p.fold { --fade: #1a1a33; }
+.commit .p.peer.fold { --fade: var(--surface); }
 .more { display: inline-block; margin-top: 8px; background: transparent; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--accent); padding: 2px 12px; font-size: 11px; }
 .more:hover { border-color: var(--accent) !important; background: var(--accent-soft) !important; }
 .md b { color: var(--text); }

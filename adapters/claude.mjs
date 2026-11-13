@@ -68,6 +68,24 @@ function promptText(d) {
   return cmd ? `${cmd[1]} ${cmd[2]}`.trim() : t;
 }
 
+// 새 턴의 시작: 사람이 친 요청, 또는 다른 세션이 SendMessage 로 보낸 메시지.
+// peer 메시지는 isMeta 로 남아 promptText 에서 빠지지만 실제로는 새 턴을 연다 → 따로 나누지 않으면 그 답변이 앞 턴 답변에 붙는다.
+// from = null(사람) 또는 { kind: 'peer', name }
+function peerPrompt(d) {
+  if (d.type !== 'user' || d.isSidechain || (d.origin?.kind !== 'peer' && d.turnOrigin !== 'peer')) return null;
+  const c = d.message?.content;
+  const raw = typeof c === 'string' ? c : Array.isArray(c) ? c.filter((x) => x.type === 'text').map((x) => x.text).join('\n') : '';
+  const wrap = raw.match(/<cross-session-message\b[^>]*>([\s\S]*?)<\/cross-session-message>/);
+  const body = (d.origin?.body ?? wrap?.[1] ?? raw).trim();
+  if (!body) return null;
+  const name = d.origin?.name ?? raw.match(/from-name="([^"]*)"/)?.[1] ?? '다른 세션';
+  return { prompt: body, from: { kind: 'peer', name } };
+}
+function turnStart(d) {
+  const p = promptText(d);
+  return p ? { prompt: p, from: null } : peerPrompt(d);
+}
+
 // 세션끼리 주고받은 메시지(SendMessage). 받는 쪽 기록에
 //   <cross-session-message from="uds:/tmp/cc-socks/<보낸 PID>.sock" from-name="<보낸 세션 이름>">본문</cross-session-message>
 // 로 남는다. 큰 파일을 매번 다 읽지 않게, 읽은 위치(offset)부터 새로 붙은 부분만 읽는다.
@@ -159,7 +177,7 @@ function slimInput(input = {}) {
 }
 function trackPending(d, pending) {
   if (d.isSidechain) return;
-  if (promptText(d)) return void pending.clear(); // 새 요청이 왔으면 그 전 도구 호출은 끝났거나 취소된 것
+  if (turnStart(d)) return void pending.clear(); // 새 요청(사람 · 다른 세션)이 왔으면 그 전 도구 호출은 끝났거나 취소된 것
   for (const c of Array.isArray(d.message?.content) ? d.message.content : []) {
     if (d.type === 'assistant' && c.type === 'tool_use') pending.set(c.id, { name: c.name, input: slimInput(c.input) });
     if (d.type === 'user' && c.type === 'tool_result') pending.delete(c.tool_use_id);
@@ -238,7 +256,7 @@ export default {
   cwdKey: encodeCwd,
 
   async describe(s) {
-    let cwd = null, currentDir = null, aiTitle = null, titlePrompt = null, lastPrompt = null, lastPromptAt = null;
+    let cwd = null, currentDir = null, aiTitle = null, titlePrompt = null, lastPrompt = null, lastPromptAt = null, lastPromptFrom = null;
     let lastText = null, lastTool = null, turnState = 'idle', lastAt = null, model = null, contextUsed = null;
     let changes = { edits: [], commands: [] };
     const pending = new Map();
@@ -249,11 +267,12 @@ export default {
       if (d.cwd) currentDir = d.cwd;
       if (d.type === 'ai-title') aiTitle = d.aiTitle;
       if (d.timestamp) lastAt = d.timestamp;
-      const p = promptText(d);
-      if (p) {
-        lastPrompt = p;
+      const t = turnStart(d);
+      if (t) {
+        lastPrompt = t.prompt;
         lastPromptAt = d.timestamp;
-        if (!p.startsWith('/')) titlePrompt = p;
+        lastPromptFrom = t.from; // 다른 세션이 보낸 메시지로 시작한 턴이면 { kind: 'peer', name }
+        if (!t.from && !t.prompt.startsWith('/')) titlePrompt = t.prompt; // 제목은 사람이 친 요청으로만
         turnState = 'working';
         changes = { edits: [], commands: [] }; // 새 요청이 오면 이번 턴 변경 목록을 새로 시작
       } else if (d.type === 'user' && Array.isArray(d.message?.content) && !d.isSidechain) {
@@ -296,6 +315,7 @@ export default {
       named: Boolean(custom),
       lastPrompt: clip(lastPrompt, 300),
       lastPromptAt,
+      lastPromptFrom,
       lastText: clip(lastText, 8000),
       lastTool,
       pendingTool: [...pending.values()].at(-1) ?? null,
@@ -377,9 +397,9 @@ export default {
         if (!line.includes('"type":"user"') && !line.includes('"type":"assistant"')) return;
         const d = parse(line);
         if (!d) return;
-        const p = promptText(d);
-        if (p) {
-          h.cur = { at: d.timestamp, prompt: clip(p, 20000), tools: 0, reply: '' };
+        const t = turnStart(d);
+        if (t) {
+          h.cur = { at: d.timestamp, prompt: clip(t.prompt, 20000), tools: 0, reply: '', from: t.from };
           h.items.push(h.cur);
         } else if (h.cur && d.type === 'assistant' && !d.isSidechain) {
           for (const c of d.message?.content ?? []) {
@@ -401,6 +421,7 @@ export default {
     for await (const d of readJsonLines(s.file, ['"type":"user"', '"type":"assistant"'])) {
       const t = Date.parse(d.timestamp);
       if (!(t >= fromMs && t < toMs) || d.isSidechain) continue;
+      // 요청 수는 사람이 친 요청만 센다(다른 세션이 보낸 메시지로 시작한 턴은 빼고)
       if (promptText(d)) {
         sum.prompts += 1;
         sum.firstAt ??= d.timestamp;
@@ -431,9 +452,9 @@ export default {
     const items = [];
     let cur = null;
     for await (const d of readJsonLines(s.file, ['"type":"user"', '"type":"assistant"'])) {
-      const p = promptText(d);
-      if (p) {
-        cur = { at: d.timestamp, prompt: clip(p, 20000), tools: 0, reply: '' };
+      const t = turnStart(d);
+      if (t) {
+        cur = { at: d.timestamp, prompt: clip(t.prompt, 20000), tools: 0, reply: '', from: t.from };
         items.push(cur);
       } else if (cur && d.type === 'assistant' && !d.isSidechain) {
         for (const c of d.message?.content ?? []) {
