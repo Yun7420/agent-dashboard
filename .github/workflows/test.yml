@@ -1,0 +1,29 @@
+# 테스트 자동 실행: main 에 push 하거나 PR 이 오면 npm test(node --test)만 돌린다.
+# 외부 패키지가 없어 npm install 은 하지 않고, 비밀값은 쓰지 않으며 저장소는 읽기만 한다.
+# 대시보드는 macOS 용이라 macOS 에서도 돌린다(알림 osascript 테스트는 macOS 에서만 돈다). 리눅스는 가짜 bin 으로 같은 테스트를 돈다
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test
