@@ -6,8 +6,9 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { preBootSnapshot, restoreSessions } from '../lib/restore.mjs';
 import * as tmux from '../lib/tmux.mjs';
+import { dirOf } from '../lib/paths.mjs';
 
-const root = path.dirname(path.dirname(new URL(import.meta.url).pathname));
+const root = path.dirname(dirOf(import.meta.url)); // bin/ 의 부모 = 저장소(공백 · 한글 폴더에서도 맞게)
 const snap = preBootSnapshot();
 if (!snap?.entries.length) {
   console.log('재시동 전에 저장된 세션 목록이 없어요. (대시보드가 켜져 있는 동안 tmux 로 떠 있던 Claude 세션만 저장돼요)');

@@ -20,6 +20,7 @@ import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions, isT
 import { summarizeTool, guessFromScreen } from './lib/approval.mjs';
 import { createLru } from './lib/lru.mjs';
 import { tightenFiles } from './lib/perms.mjs';
+import { HOME, DATA_DIR, dirOf, isInside, allInside, tildify } from './lib/paths.mjs';
 import { createRecorder, readRange, pruneLimits, validRange } from './lib/limits.mjs';
 import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNotifier } from './lib/notify.mjs';
 import { pageHistory, pageParams } from './lib/paging.mjs';
@@ -33,13 +34,14 @@ const DEMO = process.env.DEMO === '1'; // 가짜 데이터로 화면만 보여 �
 const exec = promisify(execFile);
 const PORT = Number(process.env.PORT ?? 4545);
 let TOKEN_CREATED_NOW = false; // 이번 실행에서 열쇠를 처음 만들었는지 (안내 문구에 씀)
+const ROOT = dirOf(import.meta.url); // 저장소(패키지) 폴더 — 공백 · 한글 폴더에서도 맞게(lib/paths.mjs)
+const TOKEN_FILE = path.join(ROOT, '.dashboard-token');
 const TOKEN = loadToken();
 const ALLOWED_HOSTS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`]);
 const SCAN_MS = 2000;
 const WORKING_GRACE_MS = 8000; // 기록이 막 바뀐 세션은 작업 중으로 본다
 const STALE_MS = 15 * 60_000; // 15분 넘게 기록이 없으면 작업 중이 아니라 대기로 본다
-const HOME = os.homedir();
-const PUBLIC_DIR = path.join(path.dirname(new URL(import.meta.url).pathname), 'public');
+const PUBLIC_DIR = path.join(ROOT, 'public');
 let dialogTick = 0;
 const dialogSeen = new Set(); // 선택창이 떠 있던 세션은 매번 확인(닫히는 걸 바로 알도록)
 // 승인 감지 신호가 엇갈린 기록(세션 · 종류마다 한 번만). 환경 점검의 「승인 감지」 줄과 활동 로그에 보인다
@@ -60,10 +62,9 @@ const byId = Object.fromEntries(adapters.map((a) => [a.id, a]));
 
 // 토큰은 .dashboard-token 파일(본인만 읽기 가능)에 보관해 서버를 다시 켜도 열려 있던 탭이 그대로 동작하게 한다.
 function loadToken() {
-  const dir = path.dirname(new URL(import.meta.url).pathname);
-  const file = path.join(dir, '.dashboard-token');
+  const file = TOKEN_FILE;
   // 예전 이름(.deck-token)으로 만들어 둔 토큰이 있으면 이름만 바꿔 그대로 쓴다(열려 있던 탭이 끊기지 않게)
-  const legacy = path.join(dir, '.deck-token');
+  const legacy = path.join(ROOT, '.deck-token');
   if (!fs.existsSync(file) && fs.existsSync(legacy)) fs.renameSync(legacy, file);
   try {
     const saved = fs.readFileSync(file, 'utf8').trim();
@@ -481,9 +482,8 @@ function contextInfo(d) {
 
 // ---------- 계정 사용 한도 (상태줄 다리, 사용자가 켰을 때만) ----------
 // Claude Code 는 사용 한도·정확한 대화 창 정보를 상태줄 스크립트에만 넘긴다. bin/statusline.mjs 가 그걸 파일로 남긴다.
-const USAGE_DIR = path.join(HOME, '.agent-dashboard');
-const STATUS_DIR = path.join(USAGE_DIR, 'status');
-const BRIDGE = path.join(path.dirname(new URL(import.meta.url).pathname), 'bin', 'statusline.mjs');
+const STATUS_DIR = path.join(DATA_DIR, 'status');
+const BRIDGE = path.join(ROOT, 'bin', 'statusline.mjs');
 const isBridge = (sl) => typeof sl?.command === 'string' && sl.command.includes('agent-dashboard') && sl.command.includes('statusline.mjs');
 
 function readSettings() {
@@ -504,11 +504,11 @@ function usageEnabled() {
 function enableUsage() {
   const settings = readSettings();
   if (isBridge(settings.statusLine)) return '이미 켜져 있어요';
-  fs.mkdirSync(USAGE_DIR, { recursive: true, mode: 0o700 });
-  const backup = path.join(USAGE_DIR, `settings.backup.${Date.now()}.json`);
+  fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
+  const backup = path.join(DATA_DIR, `settings.backup.${Date.now()}.json`);
   fs.copyFileSync(SETTINGS, backup); // 켜기 전 설정 백업
   fs.chmodSync(backup, 0o600); // 복사는 원본 권한(보통 644)을 따라가므로 다른 파일처럼 본인만 읽게
-  const originalFile = path.join(USAGE_DIR, 'statusline-original.json');
+  const originalFile = path.join(DATA_DIR, 'statusline-original.json');
   if (settings.statusLine) fs.writeFileSync(originalFile, JSON.stringify(settings.statusLine), { mode: 0o600 }); // 원래 상태줄은 이어서 보여 준다
   else fs.rmSync(originalFile, { force: true });
   const node = fs.realpathSync(process.execPath); // 셸 PATH 와 상관없이 실행되게 실제 node 경로
@@ -520,7 +520,7 @@ function enableUsage() {
 function disableUsage() {
   const settings = readSettings();
   if (!isBridge(settings.statusLine)) return '이미 꺼져 있어요';
-  const originalFile = path.join(USAGE_DIR, 'statusline-original.json');
+  const originalFile = path.join(DATA_DIR, 'statusline-original.json');
   let original = null;
   try {
     original = JSON.parse(fs.readFileSync(originalFile, 'utf8'));
@@ -632,7 +632,7 @@ async function handleCommand(action, body) {
     if (s.status === 'waiting') return [409, '승인을 기다리는 중이라 보내지 않았어요. 먼저 승인/거절하세요'];
     if (!text) return [400, '빈 메시지'];
     // 첨부 경로가 업로드 폴더 밖을 가리키지 않게 (화면에서 만든 경로만 받는다)
-    for (const f of body.files ?? []) if (!path.resolve(String(f)).startsWith(UPLOAD_DIR)) return [400, '잘못된 첨부 경로'];
+    if (body.files != null && !allInside(UPLOAD_DIR, body.files)) return [400, '잘못된 첨부 경로'];
     if (text.length > 20000) return [400, '메시지가 너무 길어요'];
     await tmux.sendText(s.tmux.target, text);
     return [200, 'ok'];
@@ -704,13 +704,13 @@ async function handleCommand(action, body) {
     // 지금 목록에 있는 세션의 작업 폴더만 연다(아무 경로나 열지 않게)
     const dir = path.resolve(String(body.dir ?? ''));
     const known = (latest?.sessions ?? []).some((s) => s.cwd && path.resolve(s.cwd) === dir);
-    if (!known || !dir.startsWith(HOME) || !fs.existsSync(dir)) return [400, '목록에 있는 세션의 폴더만 열 수 있어요'];
+    if (!known || !isInside(HOME, dir) || !fs.existsSync(dir)) return [400, '목록에 있는 세션의 폴더만 열 수 있어요'];
     try {
       await openDir(dir, String(body.app ?? ''));
     } catch (e) {
       return [500, `열지 못했어요: ${e.message}`];
     }
-    return [200, `${dir.replace(HOME, '~')} 를 열었어요`];
+    return [200, `${tildify(dir)} 를 열었어요`];
   }
   if (action === 'restore') {
     // 재시동 전에 떠 있던 세션을 --resume 으로 한 번에 다시 띄운다(저장된 목록에 있는 것만)
@@ -736,7 +736,7 @@ async function handleCommand(action, body) {
   }
   if (action === 'spawn') {
     const cwd = path.resolve(String(body.cwd ?? '').replace(/^~(?=$|\/)/, HOME));
-    if (!cwd.startsWith(HOME) || !fs.existsSync(cwd) || !fs.statSync(cwd).isDirectory()) return [400, '홈 폴더 아래에 있는 폴더만 열 수 있어요'];
+    if (!isInside(HOME, cwd) || !fs.existsSync(cwd) || !fs.statSync(cwd).isDirectory()) return [400, '홈 폴더 아래에 있는 폴더만 열 수 있어요'];
     const name = String(body.name ?? '').trim().slice(0, 60);
     const sessionId = crypto.randomUUID();
     const slug = (name || path.basename(cwd)).replace(/[^a-zA-Z0-9가-힣_-]+/g, '-').slice(0, 30) || 'session';
@@ -818,15 +818,14 @@ async function checkEnv() {
     { name: '사용 한도 연동', level: usageEnabled() ? 'ok' : 'info', detail: usageEnabled() ? '켜짐 — 5시간·주간 한도와 정확한 대화 창 사용량을 보여 줘요' : '꺼짐 — 헤더의 「사용 한도 보기」로 켤 수 있어요(Claude 상태줄 설정에 등록)' },
     { name: 'Gemini CLI', level: 'info', detail: gemini.ok || dir('.gemini') ? '설치돼 있지만 아직 연동 전이에요(어댑터 추가 필요)' : '설치 안 됨 · 아직 지원 전' },
   ];
-  const tokenFile = path.join(path.dirname(new URL(import.meta.url).pathname), '.dashboard-token');
-  const token = { createdNow: TOKEN_CREATED_NOW, path: tokenFile.replace(HOME, '~'), createdAt: fs.statSync(tokenFile).birthtime.toISOString() };
+  const token = { createdNow: TOKEN_CREATED_NOW, path: tildify(TOKEN_FILE), createdAt: fs.statSync(TOKEN_FILE).birthtime.toISOString() };
   envCache = { checkedAt: new Date().toISOString(), host: os.hostname(), items, token, editors: await detectEditors() };
   return envCache;
 }
 
 // ---------- macOS 알림 (브라우저 탭을 닫아도) ----------
 // 켜기/끄기 · 소리는 ~/.agent-dashboard/notify.json(600). 데모 모드에선 파일을 건드리지 않고 메모리에만 두고, 실제 알림도 보내지 않는다
-const NOTIFY_FILE = path.join(HOME, '.agent-dashboard', 'notify.json');
+const NOTIFY_FILE = path.join(DATA_DIR, 'notify.json');
 const MAC_NOTIFY = process.platform === 'darwin' && !DEMO;
 let notifySettings = DEMO ? { mac: false, sound: 'Glass' } : loadSettings(NOTIFY_FILE);
 const notifier = createNotifier();
@@ -846,17 +845,17 @@ function notifyTick(sessions) {
   if (n && notifySettings.mac) sendMacNotification(n.title, n.body);
 }
 // 계정 한도 추이: 머리 표시와 같은 값(usageState)이 바뀔 때만 ~/.agent-dashboard/limits/ 하루 파일에 한 줄(600). 데모는 읽지도 쓰지도 않는다
-const LIMITS_DIR = path.join(HOME, '.agent-dashboard', 'limits');
+const LIMITS_DIR = path.join(DATA_DIR, 'limits');
 const limitsRecorder = DEMO ? null : createRecorder({ dir: LIMITS_DIR });
 
 // 복구 단추: 최근 7일 안에 떠 있던 Claude 세션(tmux 밖 포함)을 기억(recent.json, 600). 데모는 파일을 읽지도 쓰지도 않는다
-const recent = DEMO ? null : createRecent({ file: path.join(HOME, '.agent-dashboard', 'recent.json') });
+const recent = DEMO ? null : createRecent({ file: path.join(DATA_DIR, 'recent.json') });
 let restoring = false; // 한 번에 하나의 복구만(같은 세션을 두 번 띄우지 않게)
 const liveIdSet = () => new Set((latest?.sessions ?? []).filter((s) => s.status !== 'ended').map((s) => s.id));
 // 복구 후보 + 방금 다시 띄운 세션의 상태(폴더 신뢰 확인 창이 떴는지 — 대신 누르지 않고 안내만)
 async function recentInfo() {
   if (DEMO) return demo.demoRecent();
-  const items = recent.candidates(liveIdSet()).map((e) => ({ ...e, cwd: e.cwd.replace(HOME, '~') }));
+  const items = recent.candidates(liveIdSet()).map((e) => ({ ...e, cwd: tildify(e.cwd) }));
   const launched = [];
   for (const l of recent.launchedList()) {
     const screen = await tmux.capture(l.tmuxSession, 30).catch(() => null);
@@ -907,7 +906,7 @@ async function tick() {
 }
 
 // 첨부 파일: 본문을 그대로 받아 ~/.agent-dashboard/uploads/<날짜>/ 에 저장하고 경로를 돌려준다(세션에는 경로를 보낸다)
-const UPLOAD_DIR = path.join(HOME, '.agent-dashboard', 'uploads');
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
 const UPLOAD_MAX = 25 * 1024 * 1024;
 const UPLOAD_KEEP_DAYS = 14;
 
@@ -1138,8 +1137,7 @@ async function handle(req, res) {
 
   // 화면 파일: public 폴더 안의 「일반 파일」만. 폴더(/js 등)를 스트림으로 열면 EISDIR 로 프로세스가 죽었다(토큰 없이 아무 사이트나 부를 수 있는 경로)
   const file = path.join(PUBLIC_DIR, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname));
-  const inside = file.startsWith(PUBLIC_DIR + path.sep); // 「public-other」 같은 옆 폴더는 안 됨
-  if (!inside || !fs.statSync(file, { throwIfNoEntry: false })?.isFile()) {
+  if (!isInside(PUBLIC_DIR, file) || !fs.statSync(file, { throwIfNoEntry: false })?.isFile()) { // 「public-other」 같은 옆 폴더는 안 됨
     res.writeHead(404).end();
     return;
   }
@@ -1172,7 +1170,7 @@ server.listen(PORT, '127.0.0.1', () => {
   tick();
   if (!DEMO) {
     // 예전에 644 로 만들어진 로그 · 설정 백업도 본인만 읽게(lib/perms.mjs). 링크는 따라가지 않는다
-    try { const fixed = tightenFiles(USAGE_DIR); if (fixed.length) console.log(`권한 정리(600): ${fixed.length}개`); } catch (e) { console.error('권한 정리 실패:', e.message); }
+    try { const fixed = tightenFiles(DATA_DIR); if (fixed.length) console.log(`권한 정리(600): ${fixed.length}개`); } catch (e) { console.error('권한 정리 실패:', e.message); }
     try { pruneUploads(); } catch (e) { console.error('첨부 정리 실패:', e.message); }
     try { pruneLimits(LIMITS_DIR); } catch (e) { console.error('한도 기록 정리 실패:', e.message); }
     setInterval(() => { try { pruneUploads(); } catch {} try { pruneLimits(LIMITS_DIR); } catch {} }, 6 * 3600_000);

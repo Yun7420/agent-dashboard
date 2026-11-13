@@ -9,6 +9,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 
+// lib/paths.mjs 의 DATA_DIR 와 같은 곳. Claude Code 가 상태줄마다 이 파일만 따로 실행하므로 다른 파일을 불러오지 않는다
 const DATA = path.join(os.homedir(), '.agent-dashboard');
 const STATUS_DIR = path.join(DATA, 'status');
 
