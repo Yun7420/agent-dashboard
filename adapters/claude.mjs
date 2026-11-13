@@ -233,6 +233,48 @@ export function pendingToolOf(records) {
   return [...pending.values()].at(-1) ?? null;
 }
 
+// ---------- 떠 있는 세션 공식 목록 ----------
+// 빠른 길: claude 가 세션마다 남기는 ~/.claude/sessions/<PID>.json 을 직접 읽는다(claude agents 실행 160ms → 파일 읽기 1ms).
+// 폴더를 읽었으면 빈 목록이어도 그대로 돌려준다 — 예전엔 빈 목록이면 아래로 내려가, 떠 있는 세션이 없을 때 2초마다 claude 를 실행했다.
+// 폴더가 없는 옛 버전만 `claude agents --json` 을 쓰고, 그 결과(실패 포함)는 30초 기억 · 실행 중이면 같은 Promise 를 나눠 쓴다
+export function createLiveSessions({ dir = path.join(os.homedir(), '.claude', 'sessions'), run = exec, now = Date.now, ttlMs = 30_000, alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } } } = {}) {
+  let cached = null; // { at, value }
+  let pending = null;
+  const fromCommand = async () => {
+    try {
+      const { stdout } = await run('claude', ['agents', '--json'], { timeout: 5000 });
+      return JSON.parse(stdout).map((a) => ({ pid: a.pid, sessionId: a.sessionId, status: LIVE_STATUS[a.status] ?? 'idle', waitingFor: a.waitingFor ?? null, name: a.name ?? null, background: a.kind !== 'interactive', startedAt: a.startedAt }));
+    } catch {
+      return null;
+    }
+  };
+  return async function liveSessions() {
+    let files;
+    try {
+      files = (await fsp.readdir(dir)).filter((f) => /^\d+\.json$/.test(f));
+    } catch {
+      files = null; // 폴더가 없는 버전
+    }
+    if (files) {
+      const out = [];
+      for (const f of files) {
+        const a = await readJsonOrNull(path.join(dir, f));
+        if (!a?.pid || !a.sessionId || !alive(a.pid)) continue; // 살아 있는 프로세스만
+        out.push({ pid: a.pid, sessionId: a.sessionId, status: LIVE_STATUS[a.status] ?? 'idle', waitingFor: a.waitingFor ?? null, name: a.name ?? null, background: a.kind && a.kind !== 'interactive', startedAt: a.startedAt });
+      }
+      return out;
+    }
+    if (cached && now() - cached.at < ttlMs) return cached.value;
+    pending ??= fromCommand().then((value) => {
+      cached = { at: now(), value };
+      pending = null;
+      return value;
+    });
+    return pending;
+  };
+}
+const liveSessions = createLiveSessions();
+
 // ---------- 세션 상태(describe): 마지막 턴부터, 새로 붙은 줄만 ----------
 // 예전엔 끝 256KB 만 읽어서, 마지막 요청 뒤에 큰 출력(스크린샷 · 긴 로그)이 쌓이면 요청 · 이번 턴 변경 목록을 잃었다.
 // 처음 한 번은 뒤에서부터 256KB → 512KB → … 넓혀 가며 마지막 턴 시작 줄을 찾고(상한 8MB), 그 뒤로는 파일별 상태에 새 줄만 더한다.
@@ -397,43 +439,9 @@ export default {
     return out;
   },
 
-  // 공식 목록(`claude agents --json`): 떠 있는 세션의 PID·세션 ID·상태(busy/idle/waiting)를 정확히 준다.
-  // 이게 되면 ps·lsof 추정 대신 이걸 쓴다. 실패하면 null → 서버가 추정 방식으로 돌아간다.
-  async liveSessions() {
-    // 빠른 길: claude 가 세션마다 남기는 ~/.claude/sessions/<PID>.json 을 직접 읽는다 (claude agents 실행 160ms → 파일 읽기 1ms)
-    try {
-      const dir = path.join(os.homedir(), '.claude', 'sessions');
-      const files = (await fsp.readdir(dir)).filter((f) => /^\d+\.json$/.test(f));
-      const out = [];
-      for (const f of files) {
-        const a = await readJsonOrNull(path.join(dir, f));
-        if (!a?.pid || !a.sessionId) continue;
-        try {
-          process.kill(a.pid, 0); // 살아 있는 프로세스만
-        } catch {
-          continue;
-        }
-        out.push({ pid: a.pid, sessionId: a.sessionId, status: LIVE_STATUS[a.status] ?? 'idle', waitingFor: a.waitingFor ?? null, name: a.name ?? null, background: a.kind && a.kind !== 'interactive', startedAt: a.startedAt });
-      }
-      if (out.length) return out;
-    } catch {
-      /* 폴더가 없는 버전이면 아래 공식 명령으로 */
-    }
-    try {
-      const { stdout } = await exec('claude', ['agents', '--json'], { timeout: 5000 });
-      return JSON.parse(stdout).map((a) => ({
-        pid: a.pid,
-        sessionId: a.sessionId,
-        status: LIVE_STATUS[a.status] ?? 'idle',
-        waitingFor: a.waitingFor ?? null,
-        name: a.name ?? null,
-        background: a.kind !== 'interactive',
-        startedAt: a.startedAt,
-      }));
-    } catch {
-      return null;
-    }
-  },
+  // 공식 목록: 떠 있는 세션의 PID · 세션 ID · 상태(busy/idle/waiting)를 정확히 준다(createLiveSessions 위).
+  // 이게 되면 ps · lsof 추정 대신 이걸 쓴다. 실패하면 null → 서버가 추정 방식으로 돌아간다.
+  liveSessions: () => liveSessions(),
 
   // 프로세스(작업 폴더)와 세션 파일을 잇는 열쇠
   cwdKey: encodeCwd,
