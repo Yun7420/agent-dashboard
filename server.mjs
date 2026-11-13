@@ -19,6 +19,7 @@ import * as tmux from './lib/tmux.mjs';
 import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions } from './lib/dialog.mjs';
 import { summarizeTool, guessFromScreen } from './lib/approval.mjs';
 import { createLru } from './lib/lru.mjs';
+import { tightenFiles } from './lib/perms.mjs';
 import { pageHistory, pageParams } from './lib/paging.mjs';
 import { thinTrend, drops } from './lib/usage.mjs';
 import * as demo from './lib/demo.mjs';
@@ -501,7 +502,9 @@ function enableUsage() {
   const settings = readSettings();
   if (isBridge(settings.statusLine)) return '이미 켜져 있어요';
   fs.mkdirSync(USAGE_DIR, { recursive: true, mode: 0o700 });
-  fs.copyFileSync(SETTINGS, path.join(USAGE_DIR, `settings.backup.${Date.now()}.json`)); // 켜기 전 설정 백업
+  const backup = path.join(USAGE_DIR, `settings.backup.${Date.now()}.json`);
+  fs.copyFileSync(SETTINGS, backup); // 켜기 전 설정 백업
+  fs.chmodSync(backup, 0o600); // 복사는 원본 권한(보통 644)을 따라가므로 다른 파일처럼 본인만 읽게
   const originalFile = path.join(USAGE_DIR, 'statusline-original.json');
   if (settings.statusLine) fs.writeFileSync(originalFile, JSON.stringify(settings.statusLine), { mode: 0o600 }); // 원래 상태줄은 이어서 보여 준다
   else fs.rmSync(originalFile, { force: true });
@@ -1031,6 +1034,8 @@ server.listen(PORT, '127.0.0.1', () => {
   checkEnv();
   tick();
   if (!DEMO) {
+    // 예전에 644 로 만들어진 로그 · 설정 백업도 본인만 읽게(lib/perms.mjs). 링크는 따라가지 않는다
+    try { const fixed = tightenFiles(USAGE_DIR); if (fixed.length) console.log(`권한 정리(600): ${fixed.length}개`); } catch (e) { console.error('권한 정리 실패:', e.message); }
     try { pruneUploads(); } catch (e) { console.error('첨부 정리 실패:', e.message); }
     setInterval(() => { try { pruneUploads(); } catch {} }, 6 * 3600_000);
   }
