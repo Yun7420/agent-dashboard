@@ -247,6 +247,7 @@ async function buildState(windowHours) {
       lastPrompt: d.lastPrompt,
       lastPromptAt: d.lastPromptAt,
       lastPromptFrom: d.lastPromptFrom ?? null,
+      turnClipped: d.turnClipped ?? false, // 마지막 턴 시작이 기록 끝에서 8MB 넘게 앞이라 못 읽음
       lastText: d.lastText,
       lastTool: d.lastTool,
       model: d.model ?? null,

@@ -191,6 +191,82 @@ export function pendingToolOf(records) {
   return [...pending.values()].at(-1) ?? null;
 }
 
+// ---------- 세션 상태(describe): 마지막 턴부터, 새로 붙은 줄만 ----------
+// 예전엔 끝 256KB 만 읽어서, 마지막 요청 뒤에 큰 출력(스크린샷 · 긴 로그)이 쌓이면 요청 · 이번 턴 변경 목록을 잃었다.
+// 처음 한 번은 뒤에서부터 256KB → 512KB → … 넓혀 가며 마지막 턴 시작 줄을 찾고(상한 8MB), 그 뒤로는 파일별 상태에 새 줄만 더한다.
+const TAIL = 256 * 1024;
+const TURN_CAP = 8 * 1024 * 1024; // 이보다 앞에서 시작한 턴은 끝 8MB 만 본다(turnClipped 로 알림)
+const describeState = createLru({ max: 300, ttlMs: 30 * 60_000 }); // file → { offset, clipped, st }
+export const describeStats = { reads: 0, scans: 0 }; // 테스트용: 파일을 몇 번 읽었는지
+
+async function findTurnStart(file, size) {
+  describeStats.scans += 1;
+  const fh = await fsp.open(file, 'r');
+  try {
+    for (let win = TAIL; ; win *= 2) {
+      const from = Math.max(0, size - Math.min(win, TURN_CAP));
+      const buf = Buffer.alloc(size - from);
+      await fh.read(buf, 0, buf.length, from);
+      const nl0 = buf.indexOf(10);
+      const first = from === 0 ? 0 : nl0 < 0 ? buf.length : nl0 + 1; // 잘린 첫 줄은 건너뜀
+      let turn = -1;
+      for (let pos = first; pos < buf.length; ) {
+        let nl = buf.indexOf(10, pos);
+        if (nl < 0) nl = buf.length;
+        const line = buf.toString('utf8', pos, nl);
+        if (line.includes('"type":"user"') && turnStart(parse(line) ?? {})) turn = pos;
+        pos = nl + 1;
+      }
+      // 끝 256KB(예전과 같은 범위)는 늘 읽고, 턴 시작이 그보다 앞이면 거기부터
+      if (turn >= 0) return { start: from + (win === TAIL ? first : turn), clipped: false };
+      if (from === 0) return { start: 0, clipped: false };
+      if (win >= TURN_CAP) return { start: from + first, clipped: true };
+    }
+  } finally {
+    await fh.close();
+  }
+}
+
+const newDescribeState = () => ({
+  currentDir: null, aiTitle: null, titlePrompt: null, lastPrompt: null, lastPromptAt: null, lastPromptFrom: null,
+  lastText: null, lastTool: null, turnState: 'idle', lastAt: null, model: null, contextUsed: null,
+  changes: { edits: [], commands: [] }, pending: new Map(),
+});
+function applyLine(st, d) {
+  trackPending(d, st.pending);
+  if (d.cwd) st.currentDir = d.cwd;
+  if (d.type === 'ai-title') st.aiTitle = d.aiTitle;
+  if (d.timestamp) st.lastAt = d.timestamp;
+  const t = turnStart(d);
+  if (t) {
+    st.lastPrompt = t.prompt;
+    st.lastPromptAt = d.timestamp;
+    st.lastPromptFrom = t.from; // 다른 세션이 보낸 메시지로 시작한 턴이면 { kind: 'peer', name }
+    if (!t.from && !t.prompt.startsWith('/')) st.titlePrompt = t.prompt; // 제목은 사람이 친 요청으로만
+    st.turnState = 'working';
+    st.changes = { edits: [], commands: [] }; // 새 요청이 오면 이번 턴 변경 목록을 새로 시작
+  } else if (d.type === 'user' && Array.isArray(d.message?.content) && !d.isSidechain) {
+    st.turnState = 'working'; // 도구 결과가 막 돌아옴 → 다음 응답 생성 중
+    attachResult(d, st.changes);
+  } else if (d.type === 'assistant' && !d.isSidechain) {
+    if (d.message?.model && !d.message.model.startsWith('<')) st.model = d.message.model;
+    // 이번 답변을 만들 때 읽은 토큰 = 지금 대화 창에 들어 있는 양
+    const u = d.message?.usage;
+    if (u) st.contextUsed = (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
+    for (const c of d.message?.content ?? []) {
+      if (c.type === 'tool_use') {
+        st.lastTool = c.name;
+        collectChange(c, d.timestamp, st.changes);
+      }
+      if (c.type === 'text' && c.text?.trim()) st.lastText = c.text.trim();
+    }
+    st.turnState = d.message?.stop_reason === 'end_turn' ? 'idle' : 'working';
+  }
+  // 아주 긴 턴에서도 기억이 끝없이 늘지 않게(화면에는 마지막 40 · 20개만 보낸다)
+  if (st.changes.edits.length > 200) st.changes.edits = st.changes.edits.slice(-80);
+  if (st.changes.commands.length > 100) st.changes.commands = st.changes.commands.slice(-40);
+}
+
 export default {
   id: 'claude',
   label: 'Claude Code',
@@ -257,43 +333,24 @@ export default {
   cwdKey: encodeCwd,
 
   async describe(s) {
-    let cwd = null, currentDir = null, aiTitle = null, titlePrompt = null, lastPrompt = null, lastPromptAt = null, lastPromptFrom = null;
-    let lastText = null, lastTool = null, turnState = 'idle', lastAt = null, model = null, contextUsed = null;
-    let changes = { edits: [], commands: [] };
-    const pending = new Map();
-    for (const l of await readTailLines(s.file)) {
-      const d = parse(l);
-      if (!d) continue;
-      trackPending(d, pending);
-      if (d.cwd) currentDir = d.cwd;
-      if (d.type === 'ai-title') aiTitle = d.aiTitle;
-      if (d.timestamp) lastAt = d.timestamp;
-      const t = turnStart(d);
-      if (t) {
-        lastPrompt = t.prompt;
-        lastPromptAt = d.timestamp;
-        lastPromptFrom = t.from; // 다른 세션이 보낸 메시지로 시작한 턴이면 { kind: 'peer', name }
-        if (!t.from && !t.prompt.startsWith('/')) titlePrompt = t.prompt; // 제목은 사람이 친 요청으로만
-        turnState = 'working';
-        changes = { edits: [], commands: [] }; // 새 요청이 오면 이번 턴 변경 목록을 새로 시작
-      } else if (d.type === 'user' && Array.isArray(d.message?.content) && !d.isSidechain) {
-        turnState = 'working'; // 도구 결과가 막 돌아옴 → 다음 응답 생성 중
-        attachResult(d, changes);
-      } else if (d.type === 'assistant' && !d.isSidechain) {
-        if (d.message?.model && !d.message.model.startsWith('<')) model = d.message.model;
-        // 이번 답변을 만들 때 읽은 토큰 = 지금 대화 창에 들어 있는 양
-        const u = d.message?.usage;
-        if (u) contextUsed = (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
-        for (const c of d.message?.content ?? []) {
-          if (c.type === 'tool_use') {
-            lastTool = c.name;
-            collectChange(c, d.timestamp, changes);
-          }
-          if (c.type === 'text' && c.text?.trim()) lastText = c.text.trim();
-        }
-        turnState = d.message?.stop_reason === 'end_turn' ? 'idle' : 'working';
-      }
+    // 파일별 상태를 기억하고 새로 붙은 줄만 반영한다. 처음엔 마지막 턴 시작(사람 요청 · 다른 세션 메시지)부터 읽는다
+    let c = describeState.get(s.file);
+    if (!c || s.size < c.offset) {
+      const found = await findTurnStart(s.file, s.size);
+      c = { offset: found.start, clipped: found.clipped, st: newDescribeState() };
     }
+    const end = await completeLineEnd(s.file, c.offset, s.size);
+    if (end > c.offset) {
+      describeStats.reads += 1;
+      await readNew(s.file, c.offset, end, (line) => {
+        const d = parse(line);
+        if (d) applyLine(c.st, d);
+      });
+      c.offset = end;
+    }
+    describeState.set(s.file, c);
+    const { currentDir, aiTitle, titlePrompt, lastPrompt, lastPromptAt, lastPromptFrom, lastText, lastTool, turnState, lastAt, model, contextUsed, changes, pending } = c.st;
+    let cwd = null;
     // 프로젝트는 세션을 시작한 폴더로 묶는다(중간에 cd 해도 흔들리지 않게). 바뀌지 않는 값이라 파일당 한 번만 읽는다.
     cwd = startCwd.get(s.file) ?? null;
     if (cwd == null) {
@@ -325,6 +382,7 @@ export default {
       model,
       contextUsed,
       changes: { edits: changes.edits.slice(-40), commands: changes.commands.slice(-20) },
+      turnClipped: c.clipped && !lastPromptAt, // 마지막 턴 시작이 끝에서 8MB 넘게 앞이라 못 찾음
       subagents: await this.subagents(sessionDir),
     };
   },
