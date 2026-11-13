@@ -1,5 +1,15 @@
 #!/usr/bin/env node
 // 가짜 ps: 정해 둔 프로세스 목록(pid ppid etime command)
+// FAKE_PS_FIRST_DELAY_MS: 첫 호출만 늦게 답한다 — 서버 시작 틱이 늦어 /events 가 먼저 답하는 순간(명령이 볼 상태는 아직 없음)을 매번 만든다
+import fs from 'node:fs';
+import path from 'node:path';
 import { record, answer } from './_fake.mjs';
 record('ps', process.argv.slice(2));
+const delay = Number(process.env.FAKE_PS_FIRST_DELAY_MS ?? 0);
+if (delay) {
+  try {
+    fs.writeFileSync(path.join(process.env.FAKE_DIR, 'ps-first'), '', { flag: 'wx' }); // 첫 호출만 만들 수 있다
+    await new Promise((r) => setTimeout(r, delay));
+  } catch {}
+}
 process.stdout.write(answer('ps.txt'));

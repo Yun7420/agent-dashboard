@@ -84,17 +84,21 @@ async function firstState() {
 
 before(async () => {
   setupHome();
-  const env = { ...process.env, DASHBOARD_TEST: '1', DASHBOARD_HOME: HOME, DASHBOARD_TOKEN_FILE: TOKEN_FILE, PORT: String(PORT), PATH: `${FAKE_BIN}:${process.env.PATH}`, FAKE_LOG, FAKE_DIR, FAKE_NEW_DELAY_MS: '400' };
+  const env = { ...process.env, DASHBOARD_TEST: '1', DASHBOARD_HOME: HOME, DASHBOARD_TOKEN_FILE: TOKEN_FILE, PORT: String(PORT), PATH: `${FAKE_BIN}:${process.env.PATH}`, FAKE_LOG, FAKE_DIR, FAKE_NEW_DELAY_MS: '400', FAKE_PS_FIRST_DELAY_MS: '1500' };
   delete env.DEMO;
   srv = spawn(process.execPath, ['server.mjs'], { cwd: ROOT, env, stdio: 'ignore' });
-  // 두 세션이 tmux 창과 함께 보일 때까지(첫 상태)
-  for (let i = 0; i < 100; i++) {
+  // 두 세션이 tmux 창과 함께 보이고(첫 상태), 명령이 보는 상태(latest)도 만들어질 때까지.
+  // /events 는 latest 가 없으면 따로 상태를 만들어 보내서, 첫 상태만 기다리면 명령이 아직 503 일 수 있다(예전엔 409 로 흔들림)
+  let ready = false;
+  for (let i = 0; i < 150 && !ready; i++) {
     try {
       const st = await firstState();
-      if (st.sessions?.filter((s) => s.tmux).length === 2) break;
+      const recent = JSON.parse((await req('/api/recent', { headers: H })).text);
+      ready = st.sessions?.filter((s) => s.tmux).length === 2 && recent.loading === false;
     } catch {}
-    await new Promise((r) => setTimeout(r, 100));
+    if (!ready) await new Promise((r) => setTimeout(r, 100));
   }
+  assert.ok(ready, '시험 서버가 15초 안에 첫 상태를 만들지 못했다');
 });
 after(() => {
   srv?.kill(); // 이 테스트가 띄운 서버만

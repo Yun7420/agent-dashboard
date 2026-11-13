@@ -45,6 +45,12 @@ test('tmux 가 필요한 명령: 세션이 없거나 tmux 밖이면 명령마다
   assert.deepEqual(await run('model', { key: 'claude:a', model: 'gpt' }), [400, '알 수 없는 모델']);
 });
 
+test('tmux 가 필요한 명령: 첫 상태를 만들기 전이면 409(tmux 밖) 대신 503(읽는 중), tmux 를 부르지 않는다', async () => {
+  const { run, calls } = setup({ sessions: [], hasState: false });
+  for (const a of ['send', 'approve', 'stop', 'close']) assert.deepEqual(await run(a, { key: 'claude:a', text: 'x', choice: '1' }), [503, '세션 목록을 읽는 중이에요. 잠시 뒤에 다시 눌러 주세요'], a);
+  assert.deepEqual(calls, []);
+});
+
 test('send · approve · stop · close · model: 상태 검사 뒤 tmux 에 보낸다', async () => {
   const w = setup({ sessions: [S('waiting')] });
   assert.deepEqual(await w.run('send', { key: 'claude:a', text: 'x' }), [409, '승인을 기다리는 중이라 보내지 않았어요. 먼저 승인/거절하세요']);
