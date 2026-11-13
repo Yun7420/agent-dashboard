@@ -24,6 +24,7 @@ import { readBody, saveUpload } from './lib/body.mjs';
 import { createLock } from './lib/lock.mjs';
 import { fileCache } from './lib/filecache.mjs';
 import { pruneStatusFiles } from './lib/status.mjs';
+import { SettingsError, updateText, isBridge, enableStatusLine, disableStatusLine, modelOf, restoreModelText } from './lib/claude-settings.mjs';
 import { sendText, sendJson, friendly } from './lib/respond.mjs';
 import { isObject, validDate, KEY_RE, WINDOW_HOURS } from './lib/validate.mjs';
 import { MODELS, newSessionArgs } from './lib/spawn.mjs';
@@ -495,51 +496,22 @@ function contextInfo(d) {
 // Claude Code 는 사용 한도·정확한 대화 창 정보를 상태줄 스크립트에만 넘긴다. bin/statusline.mjs 가 그걸 파일로 남긴다.
 const STATUS_DIR = path.join(DATA_DIR, 'status');
 const BRIDGE = path.join(ROOT, 'bin', 'statusline.mjs');
-const isBridge = (sl) => typeof sl?.command === 'string' && sl.command.includes('agent-dashboard') && sl.command.includes('statusline.mjs');
 
-function readSettings() {
-  return JSON.parse(fs.readFileSync(SETTINGS, 'utf8'));
-}
-function writeSettings(obj) {
-  fs.writeFileSync(SETTINGS, `${JSON.stringify(obj, null, 2)}\n`);
-  fileCache.forget(SETTINGS); // 바로 다음 틱에 바뀐 값이 보이게
-}
-
-// 틱마다 불리므로 캐시(lib/filecache.mjs)로 — 고치는 쪽(enableUsage · disableUsage)은 readSettings 로 새로 읽는다
-const usageEnabled = () => isBridge(fileCache.json(SETTINGS)?.statusLine);
-
+// 켜기/끄기는 lib/claude-settings.mjs(쓰기 직전 다시 읽기 · 원자적 쓰기 · 링크 거절 · 깨진 JSON 이면 멈춤)
 function enableUsage() {
-  const settings = readSettings();
-  if (isBridge(settings.statusLine)) return '이미 켜져 있어요';
-  fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
-  const backup = path.join(DATA_DIR, `settings.backup.${Date.now()}.json`);
-  fs.copyFileSync(SETTINGS, backup); // 켜기 전 설정 백업
-  fs.chmodSync(backup, 0o600); // 복사는 원본 권한(보통 644)을 따라가므로 다른 파일처럼 본인만 읽게
-  const originalFile = path.join(DATA_DIR, 'statusline-original.json');
-  if (settings.statusLine) fs.writeFileSync(originalFile, JSON.stringify(settings.statusLine), { mode: 0o600 }); // 원래 상태줄은 이어서 보여 준다
-  else fs.rmSync(originalFile, { force: true });
   const node = fs.realpathSync(process.execPath); // 셸 PATH 와 상관없이 실행되게 실제 node 경로
-  settings.statusLine = { type: 'command', command: `"${node}" "${BRIDGE}"`, padding: 0 };
-  writeSettings(settings);
-  return '켰어요';
+  const msg = enableStatusLine(SETTINGS, { dataDir: DATA_DIR, command: `"${node}" "${BRIDGE}"` });
+  fileCache.forget(SETTINGS); // 바로 다음 틱에 바뀐 값이 보이게
+  return msg;
+}
+function disableUsage() {
+  const msg = disableStatusLine(SETTINGS, { dataDir: DATA_DIR });
+  fileCache.forget(SETTINGS);
+  return msg;
 }
 
-function disableUsage() {
-  const settings = readSettings();
-  if (!isBridge(settings.statusLine)) return '이미 꺼져 있어요';
-  const originalFile = path.join(DATA_DIR, 'statusline-original.json');
-  let original = null;
-  try {
-    original = JSON.parse(fs.readFileSync(originalFile, 'utf8'));
-  } catch {
-    /* 원래 상태줄 없음 */
-  }
-  if (original) settings.statusLine = original;
-  else delete settings.statusLine;
-  writeSettings(settings);
-  fs.rmSync(originalFile, { force: true });
-  return '껐어요';
-}
+// 틱마다 불리므로 캐시(lib/filecache.mjs)로 — 고치는 쪽은 lib/claude-settings 가 디스크에서 새로 읽는다
+const usageEnabled = () => isBridge(fileCache.json(SETTINGS)?.statusLine);
 
 // 세션별 마지막 상태줄 입력 (계정 한도는 가장 최근 것 하나로 충분)
 function readStatusFiles() {
@@ -577,7 +549,6 @@ function usageState(status) {
 // ---------- 사용자 기본 모델 보존 ----------
 // ~/.claude/settings.json 의 "model" 한 줄만 다룬다(다른 설정·서식은 건드리지 않는다).
 const SETTINGS = path.join(HOME, '.claude', 'settings.json');
-const MODEL_LINE = /^(\s*)"model"\s*:\s*"([^"]*)"(,?)\s*$/m;
 
 // fresh: 고치기 직전(/model 보내기 전)엔 캐시 없이 새로 읽는다. 틱 안(대화 창 크기 추정)에선 캐시
 function readDefaultModel({ fresh = false } = {}) {
@@ -588,40 +559,23 @@ function readDefaultModel({ fresh = false } = {}) {
     /* 없음 */
   }
   if (text == null) return { exists: false, value: null };
-  const m = text.match(MODEL_LINE);
-  return { exists: true, value: m ? m[2] : null };
+  return { exists: true, value: modelOf(text) };
 }
 
+// /model 이 바꿔 저장한 기본 모델을 원래대로. Claude 가 아직 안 썼으면(값이 그대로면) 잠깐 더 지켜본다.
+// 쓰기는 lib/claude-settings 의 updateText(쓰기 직전 다시 읽기 · 원자적 · 링크 거절 · 결과가 깨진 JSON 이면 쓰지 않음)
 function restoreDefaultModel(before, tries = 0) {
   if (!before.exists) return;
   setTimeout(() => {
-    let text;
+    let r;
     try {
-      text = fs.readFileSync(SETTINGS, 'utf8');
-    } catch {
-      return;
+      r = updateText(SETTINGS, (text) => restoreModelText(text, before.value));
+    } catch (e) {
+      return void console.error(`[model] 기본 모델 복구를 건너뛰었어요: ${e.message}`);
     }
-    const m = text.match(MODEL_LINE);
-    const now = m ? m[2] : null;
-    if (now === before.value) {
-      if (tries < 6) restoreDefaultModel(before, tries + 1); // Claude 가 아직 안 썼을 수 있어 잠깐 더 지켜본다
-      return;
-    }
-    let next;
-    if (before.value === null) {
-      // 원래 "model" 줄이 없었으면 Claude 가 새로 넣은 줄을 지운다
-      next = text.replace(/^\s*"model"\s*:\s*"[^"]*",?\s*\n/m, '');
-    } else {
-      next = text.replace(MODEL_LINE, (_, sp, _v, comma) => `${sp}"model": "${before.value}"${comma}`);
-    }
-    try {
-      JSON.parse(next); // 깨진 JSON 은 절대 쓰지 않는다
-      fs.writeFileSync(SETTINGS, next);
-      fileCache.forget(SETTINGS);
-      console.log(`[model] 기본 모델을 ${before.value ?? '(설정 없음)'} 으로 되돌렸어요`);
-    } catch {
-      console.error('[model] 기본 모델 복구를 건너뛰었어요(설정 파일 형식 확인 필요)');
-    }
+    fileCache.forget(SETTINGS);
+    if (r.written) console.log(`[model] 기본 모델을 ${before.value ?? '(설정 없음)'} 으로 되돌렸어요`);
+    else if (tries < 6) restoreDefaultModel(before, tries + 1);
   }, 700);
 }
 
@@ -709,6 +663,7 @@ async function handleCommand(action, body) {
     try {
       return [200, action === 'usage-on' ? enableUsage() : disableUsage()];
     } catch (e) {
+      if (e instanceof SettingsError) { console.error('[설정]', e.message); return [409, e.message]; } // 링크 · 깨진 JSON · 계속 바뀜 — 사용자가 고칠 수 있는 상황
       return friendly(e, '설정 파일(~/.claude/settings.json)을 바꾸지 못했어요');
     }
   }
