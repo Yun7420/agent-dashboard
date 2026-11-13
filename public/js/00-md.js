@@ -83,3 +83,7 @@ function md(s) {
   }
   return out.map((p, k) => p.html + (!p.block && k < out.length - 1 ? '\n' : '')).join('');
 }
+
+// 같은 원문이면 지난번 결과를 그대로 — 지금 탭은 1초마다 다시 그려서, 답변(최대 2만 자)을 매번 바꾸지 않게(06-now.js)
+let mdLast = { src: null, html: '' };
+const mdOnce = (s) => (s === mdLast.src ? mdLast.html : (mdLast = { src: s, html: md(s) }).html);

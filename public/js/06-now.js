@@ -45,8 +45,8 @@ function renderNow(s) {
   if (working && s.lastText && !reply.includes(s.lastText.slice(0, 200))) reply = reply ? `${reply}\n\n${s.lastText}` : s.lastText;
   const el = $('#now-reply');
   el.classList.toggle('empty', !reply);
-  const html = reply ? md(reply) : working ? '<span class="spinner"></span>답변을 만들고 있어요…' : '아직 답변이 없어요';
-  if (el.dataset.src !== html) { el.innerHTML = html; el.dataset.src = html; } // 1초마다 다시 그려도 스크롤·선택이 튀지 않게
+  const html = reply ? mdOnce(reply) : working ? '<span class="spinner"></span>답변을 만들고 있어요…' : '아직 답변이 없어요';
+  setHtml(el, html); // 1초마다 다시 그려도 스크롤·선택이 튀지 않게
   const stateHtml = working
     ? `<span class="spinner" style="width:12px;height:12px"></span><span style="color:#f3d79c">${sentAt && s.status === 'idle' ? '전달됐어요 · 응답 기다리는 중' : `작업 중${s.lastTool ? ' · ' + esc(s.lastTool) : ''}`}</span>`
     : s.status === 'waiting' ? `<span class="dot-s waiting"></span><span style="color:var(--waiting)">승인 필요</span>`

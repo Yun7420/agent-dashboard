@@ -41,5 +41,5 @@ function connect() {
   };
 }
 connect();
-setInterval(() => state && renderList(), 30000); // "n분 전" 갱신
+setInterval(updateAgo, 30000); // 목록의 「N분 전」 글자만 갱신(카드는 그대로)
 window.addEventListener('resize', () => { view.init = false; renderGraph(); });

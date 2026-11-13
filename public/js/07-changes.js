@@ -23,7 +23,7 @@ let closedCmds = false; // 실행한 명령은 기본 펼침 — 사용자가 �
 function renderChanges(s) {
   const ch = s.changes;
   const box = $('#now-changes');
-  if (!ch || (!ch.edits.length && !ch.commands.length)) { if (box.innerHTML) box.innerHTML = ''; return; }
+  if (!ch || (!ch.edits.length && !ch.commands.length)) { setHtml(box, ''); box.dataset.sig = ''; return; } // 비울 때도 기억을 맞춰, 같은 변경이 다시 와도 그리게
   const sig = `${s.key}|${s.status}|${ch.commands.filter((c) => c.done).length}|${ch.edits.length}|${ch.commands.length}|${ch.edits.at(-1)?.at ?? ''}|${ch.commands.at(-1)?.at ?? ''}|${[...openFiles].join(',')}|${[...fullCmds].join(',')}|${closedCmds}`;
   if (box.dataset.sig === sig) return;
   box.dataset.sig = sig;
@@ -67,7 +67,7 @@ function renderChanges(s) {
     const errs = ch.commands.filter((c) => c.error).length;
     html += `<details class="chg-cmds" data-f="__cmds" ${open}><summary>실행한 명령 ${ch.commands.length}개${errs ? ` · <span class="del">실패 ${errs}</span>` : ''}</summary>${items}</details>`;
   }
-  if (box.dataset.src !== html) { box.innerHTML = html; box.dataset.src = html; }
+  setHtml(box, html);
 }
 $('#now-changes').addEventListener('click', (e) => {
   const b = e.target.closest('.cmd-more');
@@ -115,9 +115,7 @@ function renderApproveCard(t) {
     t.main ? `<pre class="ac-main${t.main.length > 300 || t.main.split('\n').length > 6 ? ' fold closed' : ''}">${esc(t.main)}</pre>` : ''}${
     t.main.length > 300 || t.main.split('\n').length > 6 ? '<button class="more" type="button" data-ac-more>전체 보기 ▾</button>' : ''}${
     t.desc ? `<div class="ac-desc">${esc(t.desc)}</div>` : ''}`;
-  if (card.dataset.src === html) return; // 2초마다 다시 그려도 펼친 상태가 접히지 않게
-  card.dataset.src = html;
-  card.innerHTML = html;
+  if (!setHtml(card, html)) return; // 2초마다 다시 그려도 펼친 상태가 접히지 않게
   card.hidden = !t;
   card.classList.toggle('risky', Boolean(t?.risks.length));
 }
@@ -181,7 +179,7 @@ async function renderApproval(s) {
     }).join('') +
     `<button data-choice="esc" class="danger" title="키 Esc">거절 (Esc)</button>` +
     (options.length ? '' : `<span style="color:var(--faint);align-self:center">번호 없는 선택창 →</span><button data-choice="up">↑</button><button data-choice="down">↓</button><button data-choice="enter" class="primary">Enter (❯ 표시된 항목 선택)</button>`);
-  if ($('#approve-btns').dataset.src !== btnHtml) { $('#approve-btns').innerHTML = btnHtml; $('#approve-btns').dataset.src = btnHtml; }
+  setHtml($('#approve-btns'), btnHtml);
   paneTimer = setTimeout(() => { const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 2000);
 }
 $('#approve-btns').addEventListener('click', async (e) => {
@@ -189,7 +187,7 @@ $('#approve-btns').addEventListener('click', async (e) => {
   if (!b || !selected) return;
   $('#approve-btns').querySelectorAll('button').forEach((x) => (x.disabled = true));
   // 성공 · 실패 모두 단추를 새로 그린다 — 실패 때 그대로 두면 다음 갱신에서 같은 HTML 이라 다시 그리지 않아 단추가 잠긴 채 남았다(1~9 키도)
-  const redraw = (ms) => setTimeout(() => { $('#approve-btns').dataset.src = ''; const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, ms);
+  const redraw = (ms) => setTimeout(() => { forget($('#approve-btns')); const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, ms);
   try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice }); if (b.dataset.choice === 'esc') toast('거절했어요'); redraw(350); }
   catch (err) { toast(err.message); redraw(0); }
 });

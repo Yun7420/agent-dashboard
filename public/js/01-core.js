@@ -70,6 +70,17 @@ let historyTotal = 0; // 기록 전체 개수(기록 탭 숫자)
 let lastSelected = null;
 let kbKey = null; // 키보드(j/k)로 고른 세션 — 패널이 닫혀 있을 때 목록에 테두리로 표시(19-keys.js)
 
+// 바뀐 곳만 다시 그리기: 요소마다 마지막으로 넣은 HTML 을 변수(WeakMap)에 기억해 같으면 건너뛴다.
+// 예전엔 data-src 속성에 HTML 을 통째로 넣어 비교해, 답변 · 조직도 SVG 만큼 같은 글자가 DOM 에 한 벌 더 있었다(데모에서 약 17KB)
+const drawn = new WeakMap();
+function setHtml(el, html) {
+  if (drawn.get(el) === html) return false;
+  el.innerHTML = html;
+  drawn.set(el, html);
+  return true;
+}
+const forget = (el) => drawn.delete(el); // 다음 번엔 꼭 다시 그리게
+
 function ago(iso) {
   if (!iso) return '';
   const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);

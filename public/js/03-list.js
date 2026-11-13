@@ -24,7 +24,7 @@ function renderList() {
         <span class="ini"><span class="dot-s ${s.status} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${esc(initials(s.title))}</span>
         <div class="row"><div class="title">${esc(s.title)}</div><span class="status ${s.status}"><span class="dot-s ${s.status} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${STATUS_KO[s.status]}</span></div>
         <button class="x" data-close="${esc(s.key)}" title="${s.status === 'ended' ? '목록에서 숨기기' : '세션 종료'}" aria-label="${esc(s.title)} ${s.status === 'ended' ? '목록에서 숨기기' : '세션 종료'}">✕</button>
-        <div class="sub"><span class="badge tool ${s.tool}">${esc(s.toolLabel)}</span>${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span class="proj">${esc(s.project)}</span><span class="ago">· ${ago(s.lastAt)}</span>${s.subagents?.length ? `<span class="ago">· 서브 ${s.subagents.length}</span>` : ''}</div>
+        <div class="sub"><span class="badge tool ${s.tool}">${esc(s.toolLabel)}</span>${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span class="proj">${esc(s.project)}</span><span class="ago" data-key="${esc(s.key)}"></span>${s.subagents?.length ? `<span class="ago">· 서브 ${s.subagents.length}</span>` : ''}</div>
         ${s.context && s.status !== 'ended' ? `<div class="ctx" title="대화 창 사용량 ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)}${s.context.estimated ? ' (창 크기 추정)' : ''}"><div class="ctx-bar ${ctxLevel(s.context.percent)}" style="width:${s.context.percent}%"></div></div>` : ''}
       </div>`;
     }
@@ -33,16 +33,22 @@ function renderList() {
   const noRecords = !state.sessions.length && envData?.tools?.claudeRecords === false;
   const emptyHint = noRecords ? '<div class="group-h empty-hint">아직 Claude Code 세션 기록이 없어요 — 터미널에서 claude 를 한 번 실행하면 여기에 보여요</div>' : '<div class="group-h">떠 있는 세션이 없어요</div>';
   const listHtml = (live.length ? '' : emptyHint) + html;
-  if (list.dataset.src !== listHtml) {
-    // 다시 그리면 요소가 바뀌어 키보드 위치(포커스)가 사라진다 → 같은 카드(또는 그 ✕)로 돌려놓는다
-    const f = document.activeElement?.closest?.('#list .card');
-    const onX = Boolean(document.activeElement?.closest?.('#list .card .x'));
-    list.innerHTML = listHtml;
-    list.dataset.src = listHtml;
-    if (f) {
-      const again = [...list.querySelectorAll('.card')].find((c) => c.dataset.key === f.dataset.key);
-      (onX ? again?.querySelector('.x') : again)?.focus({ preventScroll: true });
-    }
+  // 다시 그리면 요소가 바뀌어 키보드 위치(포커스)가 사라진다 → 같은 카드(또는 그 ✕)로 돌려놓는다
+  const f = document.activeElement?.closest?.('#list .card');
+  const onX = Boolean(document.activeElement?.closest?.('#list .card .x'));
+  if (setHtml(list, listHtml) && f) {
+    const again = [...list.querySelectorAll('.card')].find((c) => c.dataset.key === f.dataset.key);
+    (onX ? again?.querySelector('.x') : again)?.focus({ preventScroll: true });
+  }
+  updateAgo();
+}
+// 「N초 전」은 카드 HTML 에 넣지 않고 따로 채운다 — 넣으면 시간 글자만 바뀌어도 갱신마다 목록 전체를 다시 그렸다(포커스 · 호버도 날아감)
+function updateAgo() {
+  if (!state) return;
+  const at = new Map(state.sessions.map((s) => [s.key, s.lastAt]));
+  for (const el of document.querySelectorAll('#list .ago[data-key]')) {
+    const t = `· ${ago(at.get(el.dataset.key))}`;
+    if (el.textContent !== t) el.textContent = t;
   }
 }
 // 카드에서 Enter · Space = 그 세션 열기(카드 안 ✕ 단추는 단추 몫)

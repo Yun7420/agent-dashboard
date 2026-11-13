@@ -114,7 +114,7 @@ function renderGraph() {
   };
   walk(tree);
   const svgHtml = edges + nodes + drawLinks(tree);
-  if (vp.dataset.src !== svgHtml) { vp.innerHTML = svgHtml; vp.dataset.src = svgHtml; }
+  setHtml(vp, svgHtml);
   if (!view.init) autoFit(tree);
   applyView();
 }

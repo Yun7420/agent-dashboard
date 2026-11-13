@@ -35,7 +35,7 @@ async function loadTrend(key) {
 function renderTrend(s) {
   const html = trendHtml(s);
   const el = $('#now-trend');
-  if (el.dataset.src !== html) { el.innerHTML = html; el.dataset.src = html; }
+  setHtml(el, html);
 }
 function trendHtml(s) {
   if (trend.key !== s.key || !trend.data) return '';
