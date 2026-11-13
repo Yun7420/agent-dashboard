@@ -194,6 +194,7 @@ A session already running in a terminal has no official way to receive input fro
 - Attachments outside `~/.agent-dashboard/uploads/` are rejected, and attachments are **deleted automatically after 14 days**.
 - The `~/.agent-dashboard` folder is yours only (700), and the files in it (log, settings backups, restore list) are readable only by you (600). On start the server also tightens older files that were created wider (symlinks are not followed).
 - Reading the session list and history also requires the same token as commands (so other accounts or programs on the same Mac can't read your conversations).
+- Every response carries `X-Frame-Options: DENY`, `frame-ancestors 'none'` and `nosniff`, so another website can't load this page in a hidden iframe and trick you into clicking approve.
 - Permission modes follow your own Claude settings. The dashboard never uses permission-skipping flags.
 
 ## How it works

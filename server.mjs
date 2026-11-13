@@ -983,8 +983,14 @@ const authorized = (req, url) => {
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 
+// 모든 응답(화면 · API · SSE · 403/404/500)에 붙는 보안 헤더. 응답마다 따로 쓰면 빠지는 경로가 생기므로 요청을 받는 맨 앞에서 한 번.
+// - 다른 사이트가 이 화면을 iframe 으로 띄워(토큰이 든 채로) 승인 단추를 누르게 속이는 클릭재킹을 막는다(X-Frame-Options · frame-ancestors)
+// - 브라우저가 Content-Type 을 짐작해 다른 종류로 실행하지 않게 한다(nosniff)
+const SECURITY_HEADERS = { 'X-Frame-Options': 'DENY', 'Content-Security-Policy': "frame-ancestors 'none'", 'X-Content-Type-Options': 'nosniff' };
+
 // 처리 안 된 오류는 500 + 짧은 한국어 문장으로 돌려주고 자세한 내용은 로그로만(요청 하나 때문에 서버 전체가 죽지 않게)
 const server = http.createServer((req, res) => {
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v); // writeHead 의 헤더와 합쳐진다
   handle(req, res).catch((e) => {
     console.error('[요청 오류]', req.method, req.url, e?.stack ?? e);
     if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' }).end('서버에서 문제가 생겼어요. 잠시 뒤 다시 해 주세요');

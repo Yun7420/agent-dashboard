@@ -173,3 +173,47 @@ test('포트 충돌: 안내 문구를 찍고 종료 코드 1', async () => {
   assert.match(out, new RegExp(`${PORT} 포트를 이미 쓰고 있어요 — PORT=${PORT + 1} npm start`));
   assert.equal(await req('/'), 200); // 원래 서버는 그대로
 });
+
+// 응답 머리(헤더)까지 받는다 — 보안 헤더가 모든 종류의 응답에 붙는지
+const headOf = (p, { method = 'GET', headers = {}, body } = {}) =>
+  new Promise((resolve, reject) => {
+    const r = http.request({ host: '127.0.0.1', port: PORT, path: p, method, headers: { host: `127.0.0.1:${PORT}`, ...headers } }, (res) => {
+      res.destroy();
+      resolve({ status: res.statusCode, h: res.headers });
+    });
+    r.on('error', reject);
+    if (body) r.write(body);
+    r.end();
+  });
+const SECURE = (h) => h['x-frame-options'] === 'DENY' && h['content-security-policy'] === "frame-ancestors 'none'" && h['x-content-type-options'] === 'nosniff';
+
+test('보안 헤더(클릭재킹 · nosniff): 화면 · API 200/403 · SSE · 404 · Host 403 · 500 모두에 붙는다', async () => {
+  const T = { 'x-dashboard-token': TOKEN };
+  const cases = [
+    ['/', {}, 200],
+    ['/js/01-core.js', {}, 200],
+    ['/style.css', {}, 200],
+    ['/api/perf', { headers: T }, 200],
+    ['/api/perf', {}, 403],
+    ['/api/limits?range=30d', { headers: T }, 400],
+    [`/events?token=${TOKEN}`, {}, 200],
+    ['/no-such-file.js', {}, 404],
+    ['/', { headers: { host: 'evil.example:4699' } }, 403],
+    ['/api/cmd/send', { method: 'POST', headers: { ...T, 'content-type': 'application/json' }, body: '{' }, 400],
+  ];
+  for (const [p, opt, want] of cases) {
+    const { status, h } = await headOf(p, opt);
+    assert.equal(status, want, p);
+    assert.ok(SECURE(h), `${p} ${status} → ${JSON.stringify(h)}`);
+  }
+  const res500 = await new Promise((resolve) => {
+    const s = net.connect(PORT, '127.0.0.1', () => s.write(`GET http://[ HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n`));
+    let got = '';
+    s.on('data', (d) => (got += d));
+    s.on('close', () => resolve(got));
+    s.setTimeout(3000, () => s.destroy());
+  });
+  assert.match(res500, / 500 /);
+  assert.match(res500, /X-Frame-Options: DENY/i);
+  assert.match(res500, /X-Content-Type-Options: nosniff/i);
+});
