@@ -31,11 +31,16 @@ const apiJson = async (path) => JSON.parse(await api(path));
 // 403 이면 토큰이 바뀐 것 → 안내하고 멈춤, 그 밖(서버가 아직 켜지는 중 등)은 잠시 뒤 다시 연결. 연결 중(CONNECTING)이면 브라우저가 알아서 다시 시도
 const sseOnError = (readyState, CLOSED = 2) => (readyState === CLOSED ? 'probe' : 'wait');
 const probeVerdict = (status) => (status === 403 ? 'gone' : 'reconnect');
-// 흐르는 점선: 움직일 선이 있고 탭이 보일 때만 125ms 마다 2px 씩(점선 주기 7·11 의 공배수로 되감아 끊김 없이)
+// 흐르는 점선: 움직일 선이 있고 탭이 보일 때만 125ms 마다 2px 씩(점선 주기 7·11 의 공배수로 되감아 끊김 없이).
+// 「동작 줄이기」(prefers-reduced-motion)를 켠 사람에겐 멈춘다 — 매 틱 지금 설정을 보므로 설정을 바꾸면 바로 따라간다
+const reduceMotion = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+// 순수 판정(test/a11y.test.mjs): 다음 위치, 움직이지 않으면 null
+const flowStep = (offset, { hidden, reduce, moving }) => (hidden || reduce || !moving ? null : (offset - 2) % 154);
 let flowOffset = 0;
 setInterval(() => {
-  if (document.hidden || !document.querySelector('.edge.working:not(.stack), .link.recent')) return;
-  flowOffset = (flowOffset - 2) % 154;
+  const next = flowStep(flowOffset, { hidden: document.hidden, reduce: reduceMotion.matches, moving: Boolean(document.querySelector('.edge.working:not(.stack), .link.recent')) });
+  if (next == null) return;
+  flowOffset = next;
   $('#graph').style.setProperty('--flow', flowOffset);
 }, 125);
 function toast(msg) {

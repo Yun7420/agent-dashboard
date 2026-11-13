@@ -7,7 +7,7 @@ function ignoreKey(e, active, modalOpen) {
   if (modalOpen || e.isComposing || e.keyCode === 229 || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return true;
   const tag = active?.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable) return true;
-  if (e.key === 'Enter' && (tag === 'BUTTON' || tag === 'A')) return true; // 단추에 포커스가 있으면 Enter 는 그 단추 몫
+  if (e.key === 'Enter' && (tag === 'BUTTON' || tag === 'A' || active?.getAttribute?.('role') === 'button')) return true; // 단추(세션 카드 포함)에 포커스가 있으면 Enter 는 그 단추 몫
   return false;
 }
 
@@ -33,11 +33,14 @@ let armed = null;
 function moveCursor(dir) {
   const cards = [...document.querySelectorAll('#list .card[data-key]')]; // 화면에 그려진 순서 = 정렬 · 접힌 종료 세션까지 반영
   const open = $('#drawer').classList.contains('open');
-  const next = nextKey(cards.map((c) => c.dataset.key), open ? selected : kbKey ?? selected, dir);
+  const focused = document.activeElement?.closest?.('#list .card')?.dataset.key; // Tab 으로 카드에 있으면 거기서부터
+  const next = nextKey(cards.map((c) => c.dataset.key), focused ?? (open ? selected : kbKey ?? selected), dir);
   if (!next) return;
   kbKey = next;
   cards.forEach((c) => c.classList.toggle('kb', c.dataset.key === next));
-  cards.find((c) => c.dataset.key === next)?.scrollIntoView({ block: 'nearest' });
+  const card = cards.find((c) => c.dataset.key === next);
+  card?.scrollIntoView({ block: 'nearest' });
+  if (document.activeElement?.closest?.('#list .card')) card?.focus({ preventScroll: true }); // 카드에 포커스가 있었으면 함께 옮긴다
   if (open && next !== selected) select(next); // 패널이 열려 있으면 바로 그 세션으로
 }
 // 승인 창이 떠 있는 고른 세션에서만: 화면에 보이는 단추를 그대로 누른다(승인 API · 잠금 · 다시 그리기는 단추 처리 그대로)

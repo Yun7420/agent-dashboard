@@ -44,7 +44,7 @@
   </span>
   <button id="help" class="ghost icon-btn" title="환경 점검 · 사용 안내" aria-label="도움말"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
   <button id="new-session" class="primary" title="새 세션" aria-label="새 세션">+<span> 새 세션</span></button>
-  <span id="conn"><span class="dot-s"></span>연결 중…</span>
+  <span id="conn" role="status"><span class="dot-s"></span>연결 중…</span>
 </header>
 <aside>
   <div class="sort-bar">
@@ -77,9 +77,9 @@
           <button type="button" class="ghost icon-btn sm" id="d-info-btn" aria-label="세션 정보"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></button>
           <div class="info-pop" id="d-meta"></div>
         </span>
-        <div class="tabs" role="tablist">
-          <button type="button" class="tab on" data-tab="now">지금</button>
-          <button type="button" class="tab" data-tab="log">기록 <span id="log-count"></span></button>
+        <div class="tabs" role="tablist" aria-label="세션 패널 보기">
+          <button type="button" class="tab on" data-tab="now" id="tab-now" role="tab" aria-selected="true" aria-controls="now-view">지금</button>
+          <button type="button" class="tab" data-tab="log" id="tab-log" role="tab" aria-selected="false" aria-controls="log-view" tabindex="-1">기록 <span id="log-count"></span></button>
         </div>
         <span class="grow"></span>
         <select id="d-model" title="모델 바꾸기 (tmux 세션만)">
@@ -88,18 +88,18 @@
           <option value="sonnet">Sonnet</option>
           <option value="haiku">Haiku</option>
         </select>
-        <button type="button" class="ghost icon-btn sm" id="wide" title="넓게 보기 / 기본 폭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+        <button type="button" class="ghost icon-btn sm" id="wide" title="넓게 보기 / 기본 폭" aria-label="패널 넓게 보기 / 기본 폭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
         <span class="info-wrap">
           <button type="button" class="ghost icon-btn sm" id="more-btn" aria-label="더 보기"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
           <div class="menu-pop" id="more-menu">
             <button type="button" class="danger" id="end-session">세션 종료</button>
           </div>
         </span>
-        <button class="ghost icon-btn sm" id="close" title="패널 접기 (세션은 그대로)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button class="ghost icon-btn sm" id="close" title="패널 접기 (세션은 그대로)" aria-label="패널 접기"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
       </div>
       <div class="ctx-line" id="d-ctx"></div>
     </div>
-    <div id="now-view">
+    <div id="now-view" role="tabpanel" aria-labelledby="tab-now">
       <div class="now-prompt" id="now-prompt"></div>
       <div class="now-card">
         <div class="now-head"><span class="who-now">CLAUDE</span><span id="now-state"></span><span id="now-time" class="now-time"></span><button type="button" class="stop-btn" id="stop" title="지금 하던 작업 멈추기 (세션은 그대로)" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>멈추기</button></div>
@@ -108,7 +108,7 @@
       </div>
       <div id="now-trend"></div>
     </div>
-    <div id="log-view" hidden>
+    <div id="log-view" role="tabpanel" aria-labelledby="tab-log" hidden>
       <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="d-search" placeholder="프롬프트 검색" /></div>
       <div id="log-list"></div>
     </div>

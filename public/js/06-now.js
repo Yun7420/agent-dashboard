@@ -3,12 +3,26 @@
 let drawerTab = 'now';
 function setTab(tab) {
   drawerTab = tab;
-  document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+  document.querySelectorAll('.tab').forEach((b) => {
+    const on = b.dataset.tab === tab;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', String(on));
+    b.tabIndex = on ? 0 : -1; // 탭 묶음은 Tab 한 번으로 들어가고, 안에서는 ← → 로 옮긴다
+  });
   $('#now-view').hidden = tab !== 'now';
   $('#log-view').hidden = tab !== 'log';
   if (tab === 'log') renderHistory();
 }
 document.querySelector('.tabs').addEventListener('click', (e) => { const b = e.target.closest('.tab'); if (b) setTab(b.dataset.tab); });
+document.querySelector('.tabs').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  e.preventDefault();
+  const tabs = [...document.querySelectorAll('.tab')];
+  const i = tabs.findIndex((b) => b.dataset.tab === drawerTab);
+  const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
+  setTab(next.dataset.tab);
+  next.focus();
+});
 
 // 지금 탭: 마지막 요청은 작게, 현재 답변은 크게
 function renderNow(s) {

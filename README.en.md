@@ -279,7 +279,7 @@ agent-dashboard/
 │  ├─ index.html       # structure (the server injects the token here only)
 │  ├─ style.css        # styles
 │  └─ js/00-md.js ~ 19-keys.js   # behavior, one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
-└─ test/               # node --test, 36 files · fake-bin (fake tmux · claude · ps · lsof)
+└─ test/               # node --test, 37 files · fake-bin (fake tmux · claude · ps · lsof)
 ```
 
 ### Adding another agent
@@ -301,7 +301,7 @@ Shows the UI with fake data (Project1, Lead Manager, …). No commands are execu
 npm test
 ```
 
-Uses Node's built-in test runner (`node --test`), nothing to install. 218 tests (2026-11-13): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
+Uses Node's built-in test runner (`node --test`), nothing to install. 220 tests (2026-11-13): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
 - Test servers briefly use ports 4694 and 4696–4699. Instead of real sessions and tmux they use a temporary home folder and the fake commands in `test/fake-bin` (tmux · claude · ps · lsof), so your `~/.claude` and `~/.agent-dashboard` are never touched.
 - GitHub Actions runs `npm test` on every push to main and every PR, on Ubuntu · macOS × Node 18 · 20 · 22 · 24 (badge above). The macOS notification (osascript) test runs only on macOS.
 

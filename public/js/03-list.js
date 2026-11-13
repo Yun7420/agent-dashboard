@@ -19,10 +19,11 @@ function renderList() {
     if (!items.length) continue;
     if (label && label !== '__ended') html += `<div class="group-h">${label} · ${items.length}</div>`;
     for (const s of items) {
-      html += `<div class="card ${s.status} ${selected === s.key ? 'sel' : ''} ${kbKey === s.key ? 'kb' : ''}" data-key="${esc(s.key)}" title="${esc(s.title)} · ${STATUS_KO[s.status]}" ${manual && s.status !== 'ended' ? 'draggable="true"' : ''}>
+      // 카드는 Tab 으로 닿고 Enter · Space 로 연다(아래 keydown). 안의 닫기(✕) 단추는 따로 Tab 으로 닿는다
+      html += `<div class="card ${s.status} ${selected === s.key ? 'sel' : ''} ${kbKey === s.key ? 'kb' : ''}" data-key="${esc(s.key)}" title="${esc(s.title)} · ${STATUS_KO[s.status]}" tabindex="0" role="button" aria-label="${esc(s.title)} · ${STATUS_KO[s.status]}${selected === s.key ? ' · 열림' : ''}" ${manual && s.status !== 'ended' ? 'draggable="true"' : ''}>
         <span class="ini"><span class="dot-s ${s.status} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${esc(initials(s.title))}</span>
         <div class="row"><div class="title">${esc(s.title)}</div><span class="status ${s.status}"><span class="dot-s ${s.status} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${STATUS_KO[s.status]}</span></div>
-        <button class="x" data-close="${esc(s.key)}" title="${s.status === 'ended' ? '목록에서 숨기기' : '세션 종료'}">✕</button>
+        <button class="x" data-close="${esc(s.key)}" title="${s.status === 'ended' ? '목록에서 숨기기' : '세션 종료'}" aria-label="${esc(s.title)} ${s.status === 'ended' ? '목록에서 숨기기' : '세션 종료'}">✕</button>
         <div class="sub"><span class="badge tool ${s.tool}">${esc(s.toolLabel)}</span>${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span class="proj">${esc(s.project)}</span><span class="ago">· ${ago(s.lastAt)}</span>${s.subagents?.length ? `<span class="ago">· 서브 ${s.subagents.length}</span>` : ''}</div>
         ${s.context && s.status !== 'ended' ? `<div class="ctx" title="대화 창 사용량 ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)}${s.context.estimated ? ' (창 크기 추정)' : ''}"><div class="ctx-bar ${ctxLevel(s.context.percent)}" style="width:${s.context.percent}%"></div></div>` : ''}
       </div>`;
@@ -32,8 +33,26 @@ function renderList() {
   const noRecords = !state.sessions.length && envData?.tools?.claudeRecords === false;
   const emptyHint = noRecords ? '<div class="group-h empty-hint">아직 Claude Code 세션 기록이 없어요 — 터미널에서 claude 를 한 번 실행하면 여기에 보여요</div>' : '<div class="group-h">떠 있는 세션이 없어요</div>';
   const listHtml = (live.length ? '' : emptyHint) + html;
-  if (list.dataset.src !== listHtml) { list.innerHTML = listHtml; list.dataset.src = listHtml; }
+  if (list.dataset.src !== listHtml) {
+    // 다시 그리면 요소가 바뀌어 키보드 위치(포커스)가 사라진다 → 같은 카드(또는 그 ✕)로 돌려놓는다
+    const f = document.activeElement?.closest?.('#list .card');
+    const onX = Boolean(document.activeElement?.closest?.('#list .card .x'));
+    list.innerHTML = listHtml;
+    list.dataset.src = listHtml;
+    if (f) {
+      const again = [...list.querySelectorAll('.card')].find((c) => c.dataset.key === f.dataset.key);
+      (onX ? again?.querySelector('.x') : again)?.focus({ preventScroll: true });
+    }
+  }
 }
+// 카드에서 Enter · Space = 그 세션 열기(카드 안 ✕ 단추는 단추 몫)
+$('#list').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const card = e.target.closest?.('.card');
+  if (!card || e.target !== card) return;
+  e.preventDefault();
+  select(card.dataset.key);
+});
 
 let dragKey = null;
 $('#list').addEventListener('dragstart', (e) => {

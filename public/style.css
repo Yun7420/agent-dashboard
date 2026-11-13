@@ -8,7 +8,7 @@
   --border-strong: rgba(255, 255, 255, .13);
   --text: #eceefa;
   --dim: #a0a5c0;
-  --faint: #626887;
+  --faint: #7980a6; /* 배경 대비 5.12 · surface-2 4.53(작은 글자 4.5:1 이상). 예전 #626887 은 3.62 · 3.20 */
   --accent: #8b7cf6;
   --accent-strong: #6c54f0; /* 주 버튼(새 세션·보내기) — 배경 위에서 또렷하게 */
   --accent-soft: rgba(139, 124, 246, .14);
@@ -166,7 +166,8 @@ kbd { font: 11px var(--mono); padding: 0 5px; border: 1px solid var(--border-str
 .ctx-chip { display: inline-flex; align-items: center; gap: 6px; }
 .ctx-chip .mini { width: 46px; height: 4px; border-radius: 3px; background: rgba(255, 255, 255, .08); overflow: hidden; }
 .card .x { position: absolute; right: 8px; bottom: 8px; width: 24px; height: 24px; padding: 0; border-radius: 8px; font-size: 11px; line-height: 22px; color: var(--faint); background: var(--surface-3); border: 1px solid var(--border); opacity: 0; }
-.card:hover .x { opacity: 1; }
+.card:hover .x, .card:focus-within .x { opacity: 1; } /* 키보드로 카드 · ✕ 에 닿으면 보이게 */
+.card:focus-visible, .card .x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .card .x:hover { color: var(--waiting); border-color: rgba(251, 111, 146, .5); background: rgba(251, 111, 146, .1); }
 .badge { display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 6px; font-size: 11px; font-weight: 600; flex: none; }
 .tool.claude { background: rgba(224, 138, 104, .14); color: var(--claude); }
@@ -599,3 +600,13 @@ footer .h #updated { color: var(--faint); font-weight: 400; font-variant-numeric
 /* 토큰이 바뀜(403): 토스트처럼 사라지지 않는 고정 안내 — 이 탭으로는 더 이상 명령이 통하지 않아서(01-core.js 의 tokenGone) */
 #token-gone { position: fixed; top: 68px; left: 50%; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(251, 111, 146, .5); background: #2a1420; color: #ffd9e3; font-size: 13px; box-shadow: 0 8px 24px rgba(0, 0, 0, .4); }
 #token-gone[hidden] { display: none; }
+
+/* 「동작 줄이기」를 켠 사람: 깜빡임 · 도는 표시 · 녹음 깜빡임 · 화면 전환 효과를 멈춘다(흐르는 점선은 01-core.js 가 멈춤) */
+@media (prefers-reduced-motion: reduce) {
+  .pulse, .spinner, #mic.rec { animation: none !important; }
+  *, *::before, *::after { transition-duration: 0s !important; scroll-behavior: auto !important; }
+}
+/* 휴대폰 너비 승인 창: 위험 카드 → 터미널 화면 → 단추 순서는 그대로, 단추 줄만 상자 아래에 붙여 첫 화면에 보이게 */
+@media (max-width: 600px) {
+  #drawer.approving #approval .btns { position: sticky; bottom: -12px; z-index: 2; margin: 0 -14px -12px; padding: 8px 14px 12px; background: linear-gradient(rgba(251, 111, 146, .06), rgba(251, 111, 146, .06)), var(--surface); border-top: 1px solid rgba(251, 111, 146, .25); }
+}
