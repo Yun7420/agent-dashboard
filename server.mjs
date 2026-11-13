@@ -42,7 +42,7 @@ import { portInUseMessage } from './lib/launch.mjs';
 import { createRecorder, readRange, pruneLimits, validRange } from './lib/limits.mjs';
 import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNotifier } from './lib/notify.mjs';
 import { pageHistory, pageParams } from './lib/paging.mjs';
-import { thinTrend, drops } from './lib/usage.mjs';
+import { thinTrend } from './lib/usage.mjs';
 import * as demo from './lib/demo.mjs';
 import { saveSnapshot, restoreCandidates, restoreSessions, modelAlias, defaultAlias } from './lib/restore.mjs';
 import { createRecent, liveEntries, KEEP_DAYS as RECENT_DAYS } from './lib/recent.mjs';
@@ -114,8 +114,8 @@ async function contextTrend(key) {
   if (!adapter?.contextTrend) return { supported: false, points: [], drops: 0, total: 0 };
   const { s } = await findScanned(key);
   if (!s) return { supported: true, points: [], drops: 0, total: 0 };
-  const all = await adapter.contextTrend(s);
-  return { supported: true, points: thinTrend(all, TREND_MAX), drops: drops(all), total: all.length };
+  const t = await adapter.contextTrend(s); // { points, total, drops } — total · drops 는 어댑터가 줄이기 전 전체로 센 값
+  return { supported: true, points: thinTrend(t.points, TREND_MAX), drops: t.drops, total: t.total };
 }
 
 // 전체 기록 검색: 목록에 있는 세션(켜져 있는 것 + 기간 안에 끝난 것)의 프롬프트 · 답변에서 찾는다. 최신순 100개

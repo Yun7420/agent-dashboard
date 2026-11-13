@@ -11,7 +11,7 @@ import { clip, joinReply, parse, readHeadLines, readJsonLines, readJsonOrNull, r
 import { createLru } from '../lib/lru.mjs';
 import { CLAUDE_DIR } from '../lib/paths.mjs';
 import { createSerial } from '../lib/serial.mjs';
-import { usageOf, contextOf, addUsage, emptyTokens } from '../lib/usage.mjs';
+import { usageOf, contextOf, addUsage, emptyTokens, thinTrend, DROP } from '../lib/usage.mjs';
 
 
 const ROOT = path.join(CLAUDE_DIR, 'projects');
@@ -132,6 +132,8 @@ async function readNew(file, start, end, onLine) {
 // 기록 전체(요청 · 답변): 가장 큰 세션(375MB 파일, 요청 301개)도 응답 0.5MB 정도 → 최근 30개면 15MB 안쪽.
 // 목록 세션 수(보통 10~30개)보다 작으면 전체 검색 때마다 처음부터 다시 읽게 되므로 30. 비워진 뒤엔 처음부터 다시 읽는다
 const historyCache = createLru({ max: 30, ttlMs: 30 * 60_000 }); // file → { offset, items, cur }
+const subagentCache = createLru({ max: 2000, ttlMs: 30 * 60_000 }); // 서브에이전트 파일 → { mtimeMs, size, meta, endTurn }
+export const subagentStats = { reads: 0 }; // 테스트용: 메타 · 끝을 몇 번 읽었는지
 const startCwd = createLru({ max: 500, ttlMs: 24 * 3600_000 }); // file → 세션을 시작한 폴더(짧은 글자라 넉넉히)
 
 // 증분 캐시(peers · history · describe)는 같은 파일이면 한 번에 하나씩 읽는다(lib/serial.mjs).
@@ -143,6 +145,10 @@ async function sizeNow(s, offset) {
   if (s.size >= offset) return s.size;
   return (await statOrNull(s.file))?.size ?? s.size;
 }
+
+// 같은 경로에 다른 파일이 들어왔나(지우고 새로 쓰기 · 옮기기). 크기가 줄지 않으면 예전 위치부터 남의 줄을 이어 읽게 되므로
+// 파일 번호(inode)가 바뀌면 처음부터 다시 읽는다. scan 이 준 ino 가 없으면(테스트 · 다른 호출) 크기 검사만
+const replaced = (c, s) => Boolean(c && s.ino != null && c.ino != null && c.ino !== s.ino);
 
 // 마지막 줄이 아직 쓰이는 중일 수 있어, 마지막 줄바꿈 위치까지만 읽는다
 async function completeLineEnd(file, from, size) {
@@ -332,8 +338,9 @@ function applyLine(st, d) {
   } else if (d.type === 'assistant' && !d.isSidechain) {
     if (d.message?.model && !d.message.model.startsWith('<')) st.model = d.message.model;
     // 이번 답변을 만들 때 읽은 토큰 = 지금 대화 창에 들어 있는 양
-    const u = d.message?.usage;
-    if (u) st.contextUsed = (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
+    // 합성 응답(model <synthetic> · 중단 · API 오류)은 usage 가 모두 0 이라 건너뛴다 — 대화 창이 0% 로 보이지 않게(usageOf 가 null)
+    const u = usageOf(d);
+    if (u) st.contextUsed = contextOf(u);
     for (const c of d.message?.content ?? []) {
       if (c.type === 'tool_use') {
         st.lastTool = c.name;
@@ -351,8 +358,9 @@ function applyLine(st, d) {
 // 세션 사이 메시지: 새로 붙은 줄만 읽어 peerCache 에 더한다(같은 파일은 serial 로 한 번에 하나)
 async function readPeers(s) {
   let c = peerCache.get(s.file);
+  if (replaced(c, s)) c = null;
   const size = await sizeNow(s, c?.offset ?? 0);
-  if (!c || size < c.offset) c = { offset: 0, msgs: [], names: new Set() };
+  if (!c || size < c.offset) c = { offset: 0, ino: s.ino ?? null, msgs: [], names: new Set() };
   // 마지막 줄이 아직 쓰이는 중일 수 있어, 줄바꿈까지만 읽고 나머지는 다음 번에
   const end = await completeLineEnd(s.file, c.offset, size);
   if (end > c.offset) {
@@ -379,11 +387,15 @@ async function readPeers(s) {
 }
 
 // 기록 전체(요청 · 답변): 새로 붙은 줄만 읽어 historyCache 에 더한다(같은 파일은 serial 로 한 번에 하나)
+const SEEN_MAX = 1000, SEEN_KEEP = 200; // 응답 id 기억(중복 줄 거르기용)
+const TREND_KEEP = 2000; // 대화 창 추이 점: 두 배를 넘으면 이만큼으로 줄인다(가장 긴 실제 세션 3,549개 · 화면엔 120개)
 async function readHistory(s) {
   let h = historyCache.get(s.file);
-  // trend = 응답마다 [시각ms, 대화 창 토큰] — 기록을 읽는 김에 같이 모은다(같은 응답이 여러 줄이면 한 번만)
+  if (replaced(h, s)) h = null;
+  // trend = 응답마다 [시각ms, 대화 창 토큰] — 기록을 읽는 김에 같이 모은다(같은 응답이 여러 줄이면 한 번만).
+  // total · drops 는 줄이기 전 전체 기준으로 따로 센다(점을 줄여도 「응답 수 · 자동 요약 횟수」는 그대로)
   const size = await sizeNow(s, h?.offset ?? 0);
-  if (!h || size < h.offset) h = { offset: 0, items: [], cur: null, trend: [], seen: new Set() };
+  if (!h || size < h.offset) h = { offset: 0, ino: s.ino ?? null, items: [], cur: null, trend: [], total: 0, drops: 0, last: null, seen: new Set() };
   const end = await completeLineEnd(s.file, h.offset, size);
   if (end > h.offset) {
     await readNew(s.file, h.offset, end, (line) => {
@@ -393,7 +405,14 @@ async function readHistory(s) {
       const u = d.isSidechain ? null : usageOf(d);
       if (u && (!u.id || !h.seen.has(u.id)) && Date.parse(d.timestamp)) {
         if (u.id) h.seen.add(u.id);
-        h.trend.push([Date.parse(d.timestamp), contextOf(u)]);
+        // 같은 응답의 줄들은 붙어서 나오니 최근 id 만 기억하면 된다(긴 세션에서 끝없이 늘지 않게)
+        if (h.seen.size > SEEN_MAX) h.seen = new Set([...h.seen].slice(-SEEN_KEEP));
+        const p = [Date.parse(d.timestamp), contextOf(u)];
+        h.total += 1;
+        if (h.last && p[1] < h.last[1] * DROP) h.drops += 1;
+        h.last = p;
+        h.trend.push(p);
+        if (h.trend.length > TREND_KEEP * 2) h.trend = thinTrend(h.trend, TREND_KEEP); // 떨어진 곳은 남기고 줄인다
       }
       const t = turnStart(d);
       if (t) {
@@ -430,7 +449,7 @@ export default {
         if (!f.endsWith('.jsonl')) continue;
         const file = path.join(ROOT, dir, f);
         const st = await statOrNull(file);
-        if (st) out.push({ id: f.slice(0, -6), file, mtimeMs: st.mtimeMs, birthtimeMs: st.birthtimeMs, size: st.size, cwdKey: dir });
+        if (st) out.push({ id: f.slice(0, -6), file, mtimeMs: st.mtimeMs, birthtimeMs: st.birthtimeMs, size: st.size, ino: st.ino, cwdKey: dir });
       }
     }
     return out;
@@ -447,10 +466,11 @@ export default {
     // 파일별 상태를 기억하고 새로 붙은 줄만 반영한다. 처음엔 마지막 턴 시작(사람 요청 · 다른 세션 메시지)부터 읽는다
     const c = await serial(`describe|${s.file}`, async () => {
       let c = describeState.get(s.file);
+      if (replaced(c, s)) c = null;
       const size = await sizeNow(s, c?.offset ?? 0);
       if (!c || size < c.offset) {
         const found = await findTurnStart(s.file, size);
-        c = { offset: found.start, clipped: found.clipped, st: newDescribeState() };
+        c = { offset: found.start, ino: s.ino ?? null, clipped: found.clipped, st: newDescribeState() };
       }
       const end = await completeLineEnd(s.file, c.offset, size);
       if (end > c.offset) {
@@ -510,12 +530,21 @@ export default {
       const file = path.join(dir, f);
       const st = await statOrNull(file);
       if (!st) continue;
-      const meta = (await readJsonOrNull(file.replace(/\.jsonl$/, '.meta.json'))) ?? {};
-      let done = false;
-      for (const l of await readTailLines(file, 32 * 1024).catch(() => [])) {
-        const d = parse(l);
-        if (d?.type === 'assistant') done = d.message?.stop_reason === 'end_turn';
+      // 메타 · 끝 32KB 읽기는 파일이 바뀌었을 때만(상태 조립이 2초마다 부른다)
+      let hit = subagentCache.get(file);
+      if (!hit || hit.mtimeMs !== st.mtimeMs || hit.size !== st.size) {
+        const meta = (await readJsonOrNull(file.replace(/\.jsonl$/, '.meta.json'))) ?? {};
+        let endTurn = false;
+        for (const l of await readTailLines(file, 32 * 1024).catch(() => [])) {
+          const d = parse(l);
+          if (d?.type === 'assistant') endTurn = d.message?.stop_reason === 'end_turn';
+        }
+        hit = { mtimeMs: st.mtimeMs, size: st.size, meta, endTurn };
+        subagentStats.reads += 1;
+        subagentCache.set(file, hit);
       }
+      const { meta } = hit;
+      let done = hit.endTurn;
       // 마지막이 도구 결과로 끝나 end_turn 이 안 남는 경우가 있어, 2분 넘게 기록이 없으면 끝난 것으로 본다
       if (Date.now() - st.mtimeMs > 120_000) done = true;
       out.push({ id: f.replace(/^agent-|\.jsonl$/g, ''), type: meta.agentType ?? 'subagent', description: meta.description ?? '', mtimeMs: st.mtimeMs, done });
@@ -532,9 +561,11 @@ export default {
   },
 
   // 대화 창 사용 추이(history 와 같은 캐시 · 증분 읽기)
+  // 돌려주는 값: { points: [[시각ms, 토큰]…](길면 줄인 것), total: 응답 수, drops: 자동 요약으로 떨어진 횟수 }
   async contextTrend(s) {
     await this.history(s);
-    return historyCache.get(s.file)?.trend ?? [];
+    const h = historyCache.get(s.file);
+    return { points: h?.trend ?? [], total: h?.total ?? 0, drops: h?.drops ?? 0 };
   },
 
   // 하루(fromMs ~ toMs) 동안 한 일: 요청 수 · 고친 파일 · 실행한 명령 수 · 커밋. 기록 전체를 한 번 훑는다.

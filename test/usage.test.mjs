@@ -72,6 +72,8 @@ test('세션 추이: 응답마다 한 점(중복 제외), 자동 요약 뒤 떨�
     { type: 'assistant', timestamp: at(12), message: { id: 'n', content: [] } }, // usage 없음
   ]);
   const t = await claude.contextTrend(s);
-  assert.deepEqual(t.map((p) => p[1]), [101001, 182001, 20501]);
-  assert.equal(drops(t), 1);
+  assert.deepEqual(t.points.map((p) => p[1]), [101001, 182001, 20501]);
+  assert.equal(t.total, 3);
+  assert.equal(t.drops, 1);
+  assert.equal(drops(t.points), 1); // 어댑터가 센 값과 점으로 다시 센 값이 같다(줄이지 않았을 때)
 });
