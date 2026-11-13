@@ -596,3 +596,6 @@ footer .h #updated { color: var(--faint); font-weight: 400; font-variant-numeric
 .day-commits span { color: var(--faint); font-family: var(--mono); font-size: 11px; }
 .day-files { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .day-files span { font-family: var(--mono); font-size: 11px; color: var(--dim); background: var(--surface-3); border-radius: 6px; padding: 1px 7px; }
+/* 토큰이 바뀜(403): 토스트처럼 사라지지 않는 고정 안내 — 이 탭으로는 더 이상 명령이 통하지 않아서(01-core.js 의 tokenGone) */
+#token-gone { position: fixed; top: 68px; left: 50%; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(251, 111, 146, .5); background: #2a1420; color: #ffd9e3; font-size: 13px; box-shadow: 0 8px 24px rgba(0, 0, 0, .4); }
+#token-gone[hidden] { display: none; }

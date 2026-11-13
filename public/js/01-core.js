@@ -2,17 +2,35 @@
 // 비밀 토큰은 서버가 index.html 을 줄 때만 끼워 넣는다(이 파일은 토큰 없이 받을 수 있으므로 여기엔 두지 않음)
 const TOKEN = window.DASHBOARD_TOKEN;
 const $ = (s) => document.querySelector(s);
+
+// 서버 요청은 모두 이 길로: 403 = 토큰이 바뀜(토큰 파일을 지우고 서버를 다시 켬 등) → 고정 안내를 한 번 띄우고 오류로 끝낸다.
+// 예전엔 직접 fetch 하던 곳(기록 · 검색 · 오늘 한 일 등)이 403 을 「없음」으로 바꿔, 열린 탭이 고장 난 줄 모르고 빈 결과를 믿었다
+const TOKEN_GONE_MSG = '보안 토큰이 바뀌었어요 — 새로고침(⌘+R)해 주세요';
+let tokenGoneShown = false;
+function tokenGone() {
+  if (tokenGoneShown) return;
+  tokenGoneShown = true;
+  const el = $('#token-gone');
+  if (el) el.hidden = false;
+}
+async function apiFetch(path, { method = 'GET', headers = {}, body } = {}) {
+  const res = await fetch(path, { method, headers: { 'X-Dashboard-Token': TOKEN, ...headers }, body });
+  if (res.status === 403) { tokenGone(); throw new Error(TOKEN_GONE_MSG); }
+  return res;
+}
 async function api(path, body) {
-  const res = await fetch(path, {
-    method: body ? 'POST' : 'GET',
-    headers: { 'X-Dashboard-Token': TOKEN, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const res = await apiFetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
   const text = await res.text();
-  if (res.status === 403) throw new Error('보안 토큰이 바뀌었어요. 페이지를 새로고침(⌘+R)해 주세요');
   if (!res.ok) throw new Error(text || res.statusText);
   return text;
 }
+const apiJson = async (path) => JSON.parse(await api(path));
+
+// 실시간 연결(SSE)이 끊겼을 때 할 일 — 순수 판정(test/live-ui.test.mjs).
+// 브라우저는 서버가 200 이 아닌 답(403 등)을 주면 다시 시도를 멈춘다(CLOSED). 그때만 /api/perf 로 이유를 확인한다:
+// 403 이면 토큰이 바뀐 것 → 안내하고 멈춤, 그 밖(서버가 아직 켜지는 중 등)은 잠시 뒤 다시 연결. 연결 중(CONNECTING)이면 브라우저가 알아서 다시 시도
+const sseOnError = (readyState, CLOSED = 2) => (readyState === CLOSED ? 'probe' : 'wait');
+const probeVerdict = (status) => (status === 403 ? 'gone' : 'reconnect');
 // 흐르는 점선: 움직일 선이 있고 탭이 보일 때만 125ms 마다 2px 씩(점선 주기 7·11 의 공배수로 되감아 끊김 없이)
 let flowOffset = 0;
 setInterval(() => {

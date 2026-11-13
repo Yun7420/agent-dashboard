@@ -139,7 +139,7 @@ async function renderApproval(s) {
   let focus = '';
   const seq = ++paneSeq;
   try {
-    const res = await fetch(`/api/pane?key=${encodeURIComponent(s.key)}`, { headers: { 'X-Dashboard-Token': TOKEN } });
+    const res = await apiFetch(`/api/pane?key=${encodeURIComponent(s.key)}`);
     text = await res.text();
     focus = decodeURIComponent(res.headers.get('X-Focus-Tab') || '');
     if (!res.ok) throw new Error(text || res.statusText);
@@ -188,8 +188,10 @@ $('#approve-btns').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-choice]');
   if (!b || !selected) return;
   $('#approve-btns').querySelectorAll('button').forEach((x) => (x.disabled = true));
-  try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice }); if (b.dataset.choice === 'esc') toast('거절했어요'); setTimeout(() => { $('#approve-btns').dataset.src = ''; const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 350); }
-  catch (err) { toast(err.message); }
+  // 성공 · 실패 모두 단추를 새로 그린다 — 실패 때 그대로 두면 다음 갱신에서 같은 HTML 이라 다시 그리지 않아 단추가 잠긴 채 남았다(1~9 키도)
+  const redraw = (ms) => setTimeout(() => { $('#approve-btns').dataset.src = ''; const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, ms);
+  try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice }); if (b.dataset.choice === 'esc') toast('거절했어요'); redraw(350); }
+  catch (err) { toast(err.message); redraw(0); }
 });
 
 // 🎤 음성 입력 — 버튼을 눌렀을 때만 듣는다. 크롬 음성 인식은 소리를 구글 서버로 보내 글자로 바꾼다.

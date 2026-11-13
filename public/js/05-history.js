@@ -1,10 +1,11 @@
 // 오른쪽 서랍: 프롬프트 기록(깃 로그처럼)
 // ---------- 오른쪽 서랍: 프롬프트 기록(깃 로그처럼) ----------
 // 기록은 서버에서 80개씩 받는다(검색어가 있으면 서버가 거른 결과). 기록 탭에 보이는 묶음 = hist
-const hist = { seq: 0, key: null, q: '', items: [], total: 0, next: null };
+const hist = { seq: 0, key: null, q: '', items: [], total: 0, next: null, error: null };
+// 실패하면 빈 목록 + 이유(error) — 「프롬프트 없음」으로 보이지 않게 기록 탭이 이유를 보여 준다
 const fetchHistory = (key, { offset = 0, limit = 80, q = '' } = {}) =>
-  fetch(`/api/history?key=${encodeURIComponent(key)}&offset=${offset}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ''}`, { headers: { 'X-Dashboard-Token': TOKEN } })
-    .then((r) => r.json()).catch(() => ({ items: [], total: 0, nextOffset: null }));
+  apiJson(`/api/history?key=${encodeURIComponent(key)}&offset=${offset}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ''}`)
+    .catch((e) => ({ items: [], total: 0, nextOffset: null, error: e.message }));
 // more = 다음 묶음을 뒤에 붙이기. 다시 받을 때는 지금까지 펼쳐 본 만큼(최대 200)을 한 번에 → 새 요청이 맨 위에 붙어도 펼친 게 줄지 않게
 async function loadHistory(key, more = false) {
   const seq = ++hist.seq;
@@ -14,7 +15,7 @@ async function loadHistory(key, more = false) {
   const limit = more ? 80 : Math.min(200, Math.max(80, same ? hist.items.length : 0));
   const [r, base] = await Promise.all([fetchHistory(key, { offset, limit, q }), !more && q ? fetchHistory(key, { limit: 1 }) : null]);
   if (seq !== hist.seq || selected !== key) return false; // 그사이 다른 세션 · 검색어로 바뀌었으면 늦게 온 응답은 버린다
-  Object.assign(hist, { key, q, items: more ? hist.items.concat(r.items) : r.items, total: r.total, next: r.nextOffset });
+  Object.assign(hist, { key, q, items: more ? hist.items.concat(r.items) : r.items, total: r.total, next: r.nextOffset, error: r.error ?? null });
   const b = q ? base : more ? null : r; // 지금 탭 · 탭 숫자는 검색과 상관없는 전체 기준
   if (b) { promptLog = b.items; historyTotal = b.total; }
   return true;
@@ -24,7 +25,7 @@ async function loadHistory(key, more = false) {
 const trend = { seq: 0, key: null, data: null };
 async function loadTrend(key) {
   const seq = ++trend.seq;
-  const data = await fetch(`/api/trend?key=${encodeURIComponent(key)}`, { headers: { 'X-Dashboard-Token': TOKEN } }).then((r) => r.json()).catch(() => null);
+  const data = await apiJson(`/api/trend?key=${encodeURIComponent(key)}`).catch(() => null);
   if (seq !== trend.seq || selected !== key) return; // 그사이 다른 세션을 골랐으면 버린다
   Object.assign(trend, { key, data });
   const s = state.sessions.find((x) => x.key === key);

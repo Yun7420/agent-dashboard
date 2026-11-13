@@ -2,9 +2,10 @@
 // ---------- 연동 중 화면 · 환경 점검 ----------
 const LV_ICON = { ok: '✓', warn: '!', error: '✕', info: 'i' };
 let envData = null;
+let envError = '';
 async function loadEnv(refresh = false) {
-  try { envData = await fetch(`/api/env${refresh ? '?refresh' : ''}`, { headers: { 'X-Dashboard-Token': TOKEN } }).then((r) => r.json()); }
-  catch { envData = null; }
+  try { envData = await apiJson(`/api/env${refresh ? '?refresh' : ''}`); envError = ''; }
+  catch (e) { envData = null; envError = e.message; }
   $('#bs-3')?.classList.add('done');
   renderEnv();
   applyTools();
@@ -27,7 +28,7 @@ function applyTools() {
   if (state) renderList();
 }
 function renderEnv() {
-  if (!envData) { $('#env-list').innerHTML = '<div class="env-row"><span class="lv error">✕</span><span class="nm">점검 실패</span><span class="dt">서버에 연결하지 못했어요</span></div>'; return; }
+  if (!envData) { $('#env-list').innerHTML = `<div class="env-row"><span class="lv error">✕</span><span class="nm">점검 실패</span><span class="dt">${esc(envError || '서버에 연결하지 못했어요')}</span></div>`; return; }
   $('#env-host').textContent = `${envData.host.replace(/\.local$/, '')} · ${new Date(envData.checkedAt).toLocaleString('ko-KR')} 점검`;
   const tk = envData.token;
   if (tk) $('#token-status').innerHTML = tk.createdNow

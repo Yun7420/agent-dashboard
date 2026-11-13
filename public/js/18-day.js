@@ -15,7 +15,9 @@ async function loadDay(date) {
   document.querySelectorAll('#day-dlg [data-day]').forEach((b) => b.classList.toggle('on', (b.dataset.day === '0' && date === today) || (b.dataset.day === '-1' && date === yest)));
   $('#day-total').textContent = '기록을 읽는 중… (처음엔 몇 초 걸릴 수 있어요)';
   $('#day-list').innerHTML = '';
-  const items = await fetch(`/api/day?date=${date}`, { headers: { 'X-Dashboard-Token': TOKEN } }).then((r) => r.json()).catch(() => []);
+  let items;
+  try { items = await apiJson(`/api/day?date=${date}`); }
+  catch (e) { if (day.date === date) { day.items = []; $('#day-total').textContent = `읽지 못했어요 — ${e.message}`; } return; } // 「기록이 없어요」와 구분
   if (day.date !== date) return; // 그 사이 다른 날을 골랐으면 버린다
   day.items = items;
   const sum = (k) => items.reduce((n, x) => n + (Array.isArray(x[k]) ? x[k].length : x[k]), 0);

@@ -24,7 +24,9 @@ async function runSearch() {
   const seq = ++gs.seq;
   if (q.length < 2) { $('#gs-meta').textContent = ''; $('#gs-list').innerHTML = ''; return; }
   $('#gs-meta').textContent = '찾는 중…';
-  const results = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { headers: { 'X-Dashboard-Token': TOKEN } }).then((r) => r.json()).catch(() => []);
+  let results;
+  try { results = await apiJson(`/api/search?q=${encodeURIComponent(q)}`); }
+  catch (e) { if (seq === gs.seq) { $('#gs-meta').textContent = `찾지 못했어요 — ${e.message}`; $('#gs-list').innerHTML = ''; } return; } // 「찾은 기록이 없어요」와 구분
   if (seq !== gs.seq) return; // 더 최근 검색이 있으면 버린다
   $('#gs-meta').textContent = results.length ? `${results.length}개${results.length === 100 ? ' (최신 100개까지)' : ''}` : '찾은 기록이 없어요';
   $('#gs-list').innerHTML = results.map((r) => `

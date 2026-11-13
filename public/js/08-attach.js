@@ -11,7 +11,7 @@ async function addFiles(files) {
     attachments.push(a);
     renderAttachments();
     try {
-      const res = await fetch(`/api/upload?name=${encodeURIComponent(a.name)}`, { method: 'POST', headers: { 'X-Dashboard-Token': TOKEN }, body: f });
+      const res = await apiFetch(`/api/upload?name=${encodeURIComponent(a.name)}`, { method: 'POST', body: f });
       if (!res.ok) throw new Error((await res.text()) || '업로드 실패');
       a.path = (await res.json()).path;
       a.uploading = false;

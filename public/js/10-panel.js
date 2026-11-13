@@ -112,6 +112,7 @@ $('#log-list').addEventListener('click', (e) => {
 function renderHistory() {
   if (drawerTab !== 'log') return; // 지금 탭에선 그리지 않는다 — 기록 탭을 열 때 그린다
   if (hist.key !== selected) { $('#log-list').innerHTML = '<div class="commit"><span class="m">기록 읽는 중…</span></div>'; return; }
+  if (hist.error && !hist.items.length) { $('#log-list').innerHTML = `<div class="commit"><span class="m">기록을 읽지 못했어요 — ${esc(hist.error)}</span></div>`; return; }
   const left = hist.total - hist.items.length;
   const more = hist.next != null ? `<div class="commit" style="text-align:center"><button class="more" type="button" id="hist-more">이전 기록 ${Math.min(80, left)}개 더 보기 (${left}개 남음)</button></div>` : '';
   $('#log-list').innerHTML = hist.items.map((h) => `
