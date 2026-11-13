@@ -47,7 +47,8 @@ before(async () => {
   srv = spawn(process.execPath, [path.join(ROOT, 'server.mjs')], { cwd: ROOT, env });
   srv.stdout.on('data', (d) => (log += d));
   srv.stderr.on('data', (d) => (log += d));
-  for (let i = 0; i < 100 && !/tmux 가 없어요/.test(log); i++) await new Promise((r) => setTimeout(r, 100)); // 첫 환경 점검이 끝날 때까지
+  // 첫 환경 점검이 끝날 때까지 — 안내 줄은 따로따로 찍혀 몇 ms 차로 도착할 수 있어 마지막 줄(기록 없음)까지 기다린다(CI macOS · Node 20 에서 한 번 어긋남)
+  for (let i = 0; i < 100 && !(/tmux 가 없어요/.test(log) && /기록이 없어요/.test(log)); i++) await new Promise((r) => setTimeout(r, 100));
 });
 after(async () => {
   // 이 테스트가 띄운 서버만. 끝날 때까지 기다린 뒤 임시 홈을 지운다 — 바로 지우면 꺼지는 중인 서버가 쓴 파일 때문에 ENOTEMPTY(CI 에서 겪음)
