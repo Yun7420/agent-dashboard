@@ -20,6 +20,7 @@ import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions, isT
 import { summarizeTool, guessFromScreen } from './lib/approval.mjs';
 import { createLru } from './lib/lru.mjs';
 import { tightenFiles } from './lib/perms.mjs';
+import { MODELS, newSessionArgs } from './lib/spawn.mjs';
 import { HOME, DATA_DIR, dirOf, isInside, allInside, tildify } from './lib/paths.mjs';
 import { createRecorder, readRange, pruneLimits, validRange } from './lib/limits.mjs';
 import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNotifier } from './lib/notify.mjs';
@@ -57,7 +58,6 @@ function noteMismatch(s, kind) {
   dialogIssues.set(id, { at: new Date().toISOString(), key: s.key, title: s.title, kind });
   console.log(`[승인 감지] ${s.title}: ${MISMATCH_KO[kind]}`);
 }
-const MODELS = new Set(['opus', 'sonnet', 'haiku']); // Claude Code 모델 별칭 — 항상 그 계열의 최신 모델로 연결된다
 const byId = Object.fromEntries(adapters.map((a) => [a.id, a]));
 
 // 토큰은 .dashboard-token 파일(본인만 읽기 가능)에 보관해 서버를 다시 켜도 열려 있던 탭이 그대로 동작하게 한다.
@@ -741,11 +741,7 @@ async function handleCommand(action, body) {
     const name = String(body.name ?? '').trim().slice(0, 60);
     const sessionId = crypto.randomUUID();
     const slug = (name || path.basename(cwd)).replace(/[^a-zA-Z0-9가-힣_-]+/g, '-').slice(0, 30) || 'session';
-    const command = ['claude', '--session-id', sessionId]; // 권한 모드는 기본값 그대로 — 건너뛰기 옵션을 쓰지 않는다
-    if (name) command.push('--name', name);
-    if (MODELS.has(String(body.model ?? ''))) command.push('--model', body.model);
-    const prompt = String(body.prompt ?? '').trim();
-    if (prompt) command.push(prompt);
+    const command = newSessionArgs({ sessionId, name, model: String(body.model ?? ''), prompt: String(body.prompt ?? '').trim() }); // 프롬프트는 -- 뒤(lib/spawn.mjs)
     await tmux.newSession({ name: `dash-${slug}-${sessionId.slice(0, 4)}`, cwd, command });
     if (name) spawnedNames.set(`claude:${sessionId}`, name);
     return [200, JSON.stringify({ key: `claude:${sessionId}` })];

@@ -196,6 +196,7 @@ A session already running in a terminal has no official way to receive input fro
 - Reading the session list and history also requires the same token as commands (so other accounts or programs on the same Mac can't read your conversations).
 - Every response carries `X-Frame-Options: DENY`, `frame-ancestors 'none'` and `nosniff`, so another website can't load this page in a hidden iframe and trick you into clicking approve.
 - Permission modes follow your own Claude settings. The dashboard never uses permission-skipping flags.
+- A new session's first prompt is passed after `--`, so text starting with `-` (e.g. `--permission-mode …`) is never read as a claude option.
 
 ## How it works
 
