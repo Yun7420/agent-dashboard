@@ -909,7 +909,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (url.pathname === '/api/perf') {
     const sorted = [...tickMs].sort((a, b) => a - b);
-    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ticks: tickMs.length, medianMs: sorted[sorted.length >> 1] ?? null, maxMs: sorted.at(-1) ?? null, payloadKB: Math.round(lastJson.length / 1024) }));
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ticks: tickMs.length, medianMs: sorted[sorted.length >> 1] ?? null, maxMs: sorted.at(-1) ?? null, payloadKB: Math.round(lastJson.length / 1024), heapMB: Math.round(process.memoryUsage().heapUsed / 1048576), rssMB: Math.round(process.memoryUsage().rss / 1048576) }));
     return;
   }
   if (url.pathname === '/api/window') {
