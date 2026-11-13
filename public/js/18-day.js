@@ -2,6 +2,9 @@
 const day = { date: null, items: [] };
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const shortPath = (f) => f.split('/').slice(-2).join('/');
+// 토큰: 메인 대화 + 서브에이전트. 돈으로는 바꾸지 않는다(요금표 · 요금제마다 달라서)
+const tokTotal = (x) => (x.tokens?.total ?? 0) + (x.subTokens?.total ?? 0);
+const tokParts = (x) => `입력 ${fmtTok(x.tokens.input)} · 출력 ${fmtTok(x.tokens.output)} · 캐시 읽기 ${fmtTok(x.tokens.cacheRead)} · 캐시 쓰기 ${fmtTok(x.tokens.cacheWrite)}${x.subTokens?.total ? ` · 서브에이전트 ${fmtTok(x.subTokens.total)}` : ''}`;
 const hm = (iso) => (iso ? new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }) : '');
 
 async function loadDay(date) {
@@ -16,11 +19,13 @@ async function loadDay(date) {
   if (day.date !== date) return; // 그 사이 다른 날을 골랐으면 버린다
   day.items = items;
   const sum = (k) => items.reduce((n, x) => n + (Array.isArray(x[k]) ? x[k].length : x[k]), 0);
-  $('#day-total').textContent = items.length ? `세션 ${items.length}개 · 요청 ${sum('prompts')}번 · 고친 파일 ${sum('files')}개 · 명령 ${sum('commands')}번 · 커밋 ${sum('commits')}개` : '이날 남은 기록이 없어요';
+  const tokens = items.reduce((n, x) => n + tokTotal(x), 0);
+  $('#day-total').textContent = items.length ? `세션 ${items.length}개 · 요청 ${sum('prompts')}번 · 고친 파일 ${sum('files')}개 · 명령 ${sum('commands')}번 · 커밋 ${sum('commits')}개 · 토큰 ${fmtTok(tokens)}(Claude Code 기준)` : '이날 남은 기록이 없어요';
   $('#day-list').innerHTML = items.map((x) => `
     <div class="day-item">
       <div class="day-head"><button type="button" class="link" data-open="${esc(x.key)}">${esc(x.title)}</button><span>${esc(x.project ?? '')}</span><span>${hm(x.firstAt)}~${hm(x.lastAt)}</span>
-        <span class="grow"></span><span>요청 ${x.prompts} · 명령 ${x.commands}</span></div>
+        <span class="grow"></span><span>요청 ${x.prompts} · 명령 ${x.commands}${tokTotal(x) ? ` · 토큰 ${fmtTok(tokTotal(x))}` : ''}</span></div>
+      ${tokTotal(x) ? `<div class="day-tokens"><b>토큰 ${fmtTok(tokTotal(x))}</b> — ${tokParts(x)}</div>` : ''}
       ${x.commits.length ? `<ul class="day-commits">${x.commits.map((c) => `<li><span>${hm(c.at)}</span> ${esc(c.message)}</li>`).join('')}</ul>` : ''}
       ${x.files.length ? `<div class="day-files">${x.files.slice(0, 12).map((f) => `<span title="${esc(f.file)}">${esc(shortPath(f.file))}${f.edits > 1 ? ` ×${f.edits}` : ''}</span>`).join('')}${x.files.length > 12 ? `<span>외 ${x.files.length - 12}개</span>` : ''}</div>` : ''}
     </div>`).join('');
@@ -31,6 +36,7 @@ function dayMarkdown() {
   for (const x of day.items) {
     lines.push(`### ${x.title}${x.project ? ` (${x.project})` : ''}`);
     lines.push(`- 요청 ${x.prompts}번 · 명령 ${x.commands}번 · 고친 파일 ${x.files.length}개`);
+    if (tokTotal(x)) lines.push(`- 토큰 ${fmtTok(tokTotal(x))} (${tokParts(x)})`);
     for (const c of x.commits) lines.push(`- 커밋: ${c.message}`);
     if (x.files.length) lines.push(`- 파일: ${x.files.slice(0, 12).map((f) => shortPath(f.file)).join(', ')}${x.files.length > 12 ? ` 외 ${x.files.length - 12}개` : ''}`);
     lines.push('');

@@ -45,6 +45,7 @@ function renderNow(s) {
   $('#log-count').textContent = historyTotal || '';
   $('#stop').hidden = !(s.status === 'working' && s.tmux);
   renderChanges(s);
+  renderTrend(s);
   const ch = s.changes;
   document.querySelector('.now-card').classList.toggle('has-changes', Boolean(ch && (ch.edits.length || ch.commands.length)));
 }

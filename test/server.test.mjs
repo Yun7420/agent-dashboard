@@ -95,3 +95,11 @@ test('기록 API: 나눠 보내기 · 검색어 거르기 (데모 기록 132개)
   assert.ok(found.items.every((h) => h.reply.includes('새 알림 2건')));
   assert.equal(await req('/api/history?key=claude:demo-ops&offset=0&limit=80'), 403); // 토큰 없이는 그대로 막힘
 });
+
+test('대화 창 추이 API: 토큰 필요, 데모는 점 · 자동 요약 수를 돌려준다', async () => {
+  assert.equal(await req('/api/trend?key=claude:demo-fe'), 403);
+  const t = await (await fetch(`http://127.0.0.1:${PORT}/api/trend?key=claude:demo-fe`, { headers: { 'x-dashboard-token': TOKEN } })).json();
+  assert.equal(t.supported, true);
+  assert.ok(t.points.length >= 2 && t.points.length <= 120);
+  assert.equal(t.drops, 1);
+});

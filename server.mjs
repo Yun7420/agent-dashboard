@@ -20,6 +20,7 @@ import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions } fr
 import { summarizeTool, guessFromScreen } from './lib/approval.mjs';
 import { createLru } from './lib/lru.mjs';
 import { pageHistory, pageParams } from './lib/paging.mjs';
+import { thinTrend, drops } from './lib/usage.mjs';
 import * as demo from './lib/demo.mjs';
 import { saveSnapshot, restoreCandidates, restoreSessions } from './lib/restore.mjs';
 
@@ -395,6 +396,20 @@ async function promptHistory(key) {
   return items;
 }
 
+// 세션 대화 창 사용 추이: 응답마다 [시각ms, 대화 창 토큰]을 최대 120개로 줄여 보낸다(사용률 % 는 화면이 세션의 창 크기로 나눔).
+// Claude Code 기록에만 응답별 usage 가 있다 → 다른 도구는 supported: false
+const TREND_MAX = 120;
+async function contextTrend(key) {
+  if (DEMO) return demo.demoTrend(key);
+  const [tool, ...rest] = key.split(':');
+  const adapter = byId[tool];
+  if (!adapter?.contextTrend) return { supported: false, points: [], drops: 0, total: 0 };
+  const s = (await adapter.scan()).find((x) => x.id === rest.join(':'));
+  if (!s) return { supported: true, points: [], drops: 0, total: 0 };
+  const all = await adapter.contextTrend(s);
+  return { supported: true, points: thinTrend(all, TREND_MAX), drops: drops(all), total: all.length };
+}
+
 // 전체 기록 검색: 목록에 있는 세션(켜져 있는 것 + 기간 안에 끝난 것)의 프롬프트 · 답변에서 찾는다. 최신순 100개
 async function searchHistory(q) {
   const needle = String(q ?? '').trim().toLowerCase();
@@ -435,7 +450,7 @@ async function daySummary(date) {
       summary = await adapter.daySummary(s, fromMs, toMs).catch(() => null);
       dayCache.set(ck, { size: s.size, summary });
     }
-    if (!summary || (!summary.prompts && !summary.files.length && !summary.commands)) continue;
+    if (!summary || (!summary.prompts && !summary.files.length && !summary.commands && !summary.tokens?.total)) continue;
     const key = `claude:${s.id}`;
     const live = latest?.sessions.find((x) => x.key === key);
     const d = live ?? (await adapter.describe(s).catch(() => ({})));
@@ -941,6 +956,11 @@ const server = http.createServer(async (req, res) => {
     } catch (e) {
       res.writeHead(500).end(e.message);
     }
+    return;
+  }
+  if (url.pathname === '/api/trend') {
+    const trend = await contextTrend(url.searchParams.get('key') ?? '').catch(() => ({ supported: true, points: [], drops: 0, total: 0 }));
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(trend));
     return;
   }
   if (url.pathname === '/api/day') {

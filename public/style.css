@@ -243,6 +243,15 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 .badge-model { background: rgba(139, 124, 246, .14); color: #c8bfff; }
 #drawer .info-pop { flex-wrap: wrap; align-items: center; gap: 8px 10px; color: var(--faint); font-size: 12px; }
 #drawer .info-pop .path { font-family: var(--mono); font-size: 11px; color: var(--dim); word-break: break-all; }
+/* 대화 창 추이(지금 탭 아래): 응답마다 사용률 선, 점선 = 80%, 노란 점 = 자동 요약으로 떨어진 곳 */
+#now-trend { flex: none; min-width: 0; }
+#now-trend:empty { display: none; }
+.trend-h, .trend-f { font-size: 11px; color: var(--faint); }
+.trend-f { display: flex; justify-content: space-between; }
+.trend svg { display: block; width: 100%; height: 48px; margin: 4px 0 2px; background: rgba(0, 0, 0, .2); border-radius: 6px; overflow: visible; }
+.trend .tr-line { fill: none; stroke: var(--accent); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+.trend .tr-80 { stroke: rgba(245, 185, 66, .45); stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.trend .tr-drop { fill: var(--working); }
 #drawer .now { margin-top: 12px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; max-height: 160px; overflow: auto; resize: vertical; }
 #drawer .search { position: relative; margin-top: 10px; }
 #drawer .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--faint); }
@@ -521,6 +530,8 @@ footer .h #updated { color: var(--faint); font-weight: 400; font-variant-numeric
 .day-head .grow { flex: 1; }
 .day-head .link { background: none; border: none; padding: 0; height: auto; color: var(--text); font-size: 13.5px; font-weight: 700; cursor: pointer; }
 .day-head .link:hover { color: var(--accent); }
+.day-tokens { margin-top: 6px; font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.day-tokens b { color: var(--dim); font-weight: 600; }
 .day-commits { margin: 8px 0 0; padding-left: 16px; font-size: 12.5px; color: var(--text); line-height: 1.7; }
 .day-commits span { color: var(--faint); font-family: var(--mono); font-size: 11px; }
 .day-files { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }

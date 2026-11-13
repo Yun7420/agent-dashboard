@@ -20,6 +20,39 @@ async function loadHistory(key, more = false) {
   return true;
 }
 
+// 대화 창 사용 추이: 응답마다의 대화 창 토큰을 세션의 창 크기(상태줄 값 → 없으면 모델 추정, 서버 contextInfo 와 같은 값)로 나눠 작은 선 그래프로
+const trend = { seq: 0, key: null, data: null };
+async function loadTrend(key) {
+  const seq = ++trend.seq;
+  const data = await fetch(`/api/trend?key=${encodeURIComponent(key)}`, { headers: { 'X-Dashboard-Token': TOKEN } }).then((r) => r.json()).catch(() => null);
+  if (seq !== trend.seq || selected !== key) return; // 그사이 다른 세션을 골랐으면 버린다
+  Object.assign(trend, { key, data });
+  const s = state.sessions.find((x) => x.key === key);
+  if (s) renderTrend(s);
+}
+// 지금 탭 아래(모든 화면 너비에서 보이게). 2초마다 불려도 바뀐 게 없으면 그대로
+function renderTrend(s) {
+  const html = trendHtml(s);
+  const el = $('#now-trend');
+  if (el.dataset.src !== html) { el.innerHTML = html; el.dataset.src = html; }
+}
+function trendHtml(s) {
+  if (trend.key !== s.key || !trend.data) return '';
+  const { supported, points, drops, total } = trend.data;
+  if (!supported) return '<div class="trend-note">대화 창 추이는 Claude Code 기록 기준이에요</div>';
+  const win = s.context?.window;
+  if (!win || points.length < 2) return '';
+  const W = 280, H = 48, t0 = points[0][0], t1 = points.at(-1)[0] || t0 + 1;
+  const x = (t) => ((t - t0) / Math.max(1, t1 - t0)) * W;
+  const y = (v) => H - Math.min(1, v / win) * H;
+  const line = points.map(([t, v]) => `${x(t).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  // 앞 점보다 절반 넘게 줄어든 곳 = 자동 요약(compact)
+  const dots = points.map(([t, v], i) => (i && v < points[i - 1][1] * 0.5 ? `<circle cx="${x(t).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" class="tr-drop"><title>자동 요약 ${new Date(t).toLocaleTimeString('ko-KR', { hour12: false })}</title></circle>` : '')).join('');
+  return `<div class="trend"><div class="trend-h">대화 창 추이 · 응답 ${total}개${drops ? ` · 자동 요약 ${drops}번` : ''}</div>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="대화 창 사용률 추이"><line x1="0" x2="${W}" y1="${y(win * 0.8)}" y2="${y(win * 0.8)}" class="tr-80"/><polyline points="${line}" class="tr-line"/>${dots}</svg>
+    <div class="trend-f"><span>${new Date(t0).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span><span>점선 80%</span><span>${new Date(t1).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span></div></div>`;
+}
+
 async function select(key) {
   selected = key;
   kbKey = key; // 클릭으로 고른 세션에서 j/k 가 이어지게
@@ -32,6 +65,7 @@ async function select(key) {
   renderDrawerHead(s);
   if (drawerTab === 'log') $('#log-list').innerHTML = '<div class="commit"><span class="m">기록 읽는 중…</span></div>';
   if (s.orphan) { Object.assign(hist, { key, q: '', items: [], total: 0, next: null }); $('#log-list').innerHTML = '<div class="commit"><span class="m">아직 기록 파일이 없는 세션이에요</span></div>'; return; }
+  loadTrend(key);
   if (!(await loadHistory(key))) return;
   renderHistory();
   const cur = state.sessions.find((x) => x.key === key);

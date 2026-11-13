@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import readline from 'node:readline';
 import { clip, parse, readHeadLines, readJsonLines, readJsonOrNull, readTailLines, statOrNull } from '../lib/util.mjs';
 import { createLru } from '../lib/lru.mjs';
+import { usageOf, contextOf, addUsage, emptyTokens } from '../lib/usage.mjs';
 
 // 한 턴의 답변은 도구 호출 사이사이에 글이 여러 덩어리로 나뉜다. 마지막 덩어리만 남기면
 // 앞의 설명이 사라지므로 이어 붙인다(너무 길면 앞쪽을 남긴다).
@@ -390,13 +391,19 @@ export default {
 
   async history(s) {
     let h = historyCache.get(s.file);
-    if (!h || s.size < h.offset) h = { offset: 0, items: [], cur: null };
+    // trend = 응답마다 [시각ms, 대화 창 토큰] — 기록을 읽는 김에 같이 모은다(같은 응답이 여러 줄이면 한 번만)
+    if (!h || s.size < h.offset) h = { offset: 0, items: [], cur: null, trend: [], seen: new Set() };
     const end = await completeLineEnd(s.file, h.offset, s.size);
     if (end > h.offset) {
       await readNew(s.file, h.offset, end, (line) => {
         if (!line.includes('"type":"user"') && !line.includes('"type":"assistant"')) return;
         const d = parse(line);
         if (!d) return;
+        const u = d.isSidechain ? null : usageOf(d);
+        if (u && (!u.id || !h.seen.has(u.id)) && Date.parse(d.timestamp)) {
+          if (u.id) h.seen.add(u.id);
+          h.trend.push([Date.parse(d.timestamp), contextOf(u)]);
+        }
         const t = turnStart(d);
         if (t) {
           h.cur = { at: d.timestamp, prompt: clip(t.prompt, 20000), tools: 0, reply: '', from: t.from };
@@ -414,13 +421,22 @@ export default {
     return h.items;
   },
 
+  // 대화 창 사용 추이(history 와 같은 캐시 · 증분 읽기)
+  async contextTrend(s) {
+    await this.history(s);
+    return historyCache.get(s.file)?.trend ?? [];
+  },
+
   // 하루(fromMs ~ toMs) 동안 한 일: 요청 수 · 고친 파일 · 실행한 명령 수 · 커밋. 기록 전체를 한 번 훑는다.
   async daySummary(s, fromMs, toMs) {
-    const sum = { prompts: 0, files: new Map(), commands: 0, commits: [], firstAt: null, lastAt: null };
+    // tokens = 메인 대화, subTokens = 이 세션의 서브에이전트(별도 파일). 같은 응답이 여러 줄이면 한 번만(lib/usage.mjs)
+    const sum = { prompts: 0, files: new Map(), commands: 0, commits: [], firstAt: null, lastAt: null, tokens: emptyTokens(), subTokens: emptyTokens() };
     const commitIds = new Map();
+    const seen = new Set();
     for await (const d of readJsonLines(s.file, ['"type":"user"', '"type":"assistant"'])) {
       const t = Date.parse(d.timestamp);
       if (!(t >= fromMs && t < toMs) || d.isSidechain) continue;
+      addUsage(sum.tokens, seen, usageOf(d));
       // 요청 수는 사람이 친 요청만 센다(다른 세션이 보낸 메시지로 시작한 턴은 빼고)
       if (promptText(d)) {
         sum.prompts += 1;
@@ -443,6 +459,13 @@ export default {
           }
           if (sum.commits.at(-1)?.id === c.id) commitIds.set(c.id, true);
         }
+      }
+    }
+    const subDir = path.join(path.dirname(s.file), path.basename(s.file, '.jsonl'), 'subagents');
+    for (const f of (await fsp.readdir(subDir).catch(() => [])).filter((x) => x.endsWith('.jsonl'))) {
+      for await (const d of readJsonLines(path.join(subDir, f), ['"type":"assistant"'])) {
+        const t = Date.parse(d.timestamp);
+        if (t >= fromMs && t < toMs) addUsage(sum.subTokens, seen, usageOf(d));
       }
     }
     return { ...sum, files: [...sum.files].map(([file, edits]) => ({ file, edits })), commits: sum.commits.filter((x) => !x.failed).map(({ at, message }) => ({ at, message })) };
