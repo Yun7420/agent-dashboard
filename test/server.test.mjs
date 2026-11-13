@@ -120,3 +120,12 @@ test('알림 설정 API: 토큰 없거나 다른 Origin 이면 403, 소리는 �
   assert.equal(await req('/api/notify/test', { method: 'POST', headers: H, body: '{}' }), 200); // 데모라 실제로는 보내지 않음
   assert.equal(fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null, before);
 });
+
+test('한도 추이 API: 토큰 없으면 403, range 는 24h · 7d 만(그 밖은 400)', async () => {
+  const H = { 'x-dashboard-token': TOKEN };
+  assert.equal(await req('/api/limits?range=24h'), 403);
+  assert.equal(await req('/api/limits?range=24h', { headers: { ...H, origin: 'http://evil.example' } }), 403);
+  assert.equal(await req('/api/limits?range=24h', { headers: H }), 200);
+  assert.equal(await req('/api/limits?range=7d', { headers: H }), 200);
+  for (const r of ['30d', '__proto__', '../x']) assert.equal(await req(`/api/limits?range=${encodeURIComponent(r)}`, { headers: H }), 400, r);
+});

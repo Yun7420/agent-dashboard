@@ -226,6 +226,24 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 .menu-pop { right: 0; padding: 6px; }
 .menu-pop.show { display: block; }
 .menu-pop button { width: 100%; white-space: nowrap; font-size: 13px; }
+/* 머리 한도 표시 → 계정 한도 추이(5시간 · 주간 두 선, 리셋 지점) */
+#limits-pop { width: 360px; padding: 12px 14px; display: none; flex-direction: column; gap: 8px; z-index: 20; left: 0; right: auto; }
+#limits-pop.show { display: flex; }
+#limits-pop .lp-head, #limits-pop .lp-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+#limits-pop .lp-range { display: inline-flex; gap: 4px; }
+#limits-pop button { width: auto; height: 26px; padding: 0 10px; font-size: 12px; }
+#limits-pop .lp-range button.on { background: var(--surface-2); color: var(--text); border: 1px solid var(--border-strong); }
+#limits-pop .lp-key { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--faint); }
+#limits-pop .lp-key i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-left: 4px; }
+#limits-pop .k5 { background: var(--accent); } #limits-pop .k7 { background: var(--working); } #limits-pop .kr { background: none; border-left: 1px dashed var(--dim); width: 1px !important; height: 10px !important; }
+#limits-chart svg { display: block; width: 100%; height: 120px; background: rgba(0, 0, 0, .2); border-radius: 6px; overflow: visible; }
+#limits-chart .lc-grid { stroke: rgba(255, 255, 255, .07); vector-effect: non-scaling-stroke; }
+#limits-chart .lc-5h { fill: none; stroke: var(--accent); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+#limits-chart .lc-7d { fill: none; stroke: var(--working); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+#limits-chart .lc-r5 { stroke: rgba(255, 255, 255, .22); stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+#limits-chart .lc-r7 { stroke: var(--working); stroke-dasharray: 4 3; opacity: .7; vector-effect: non-scaling-stroke; }
+#limits-chart .lc-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--faint); margin-top: 3px; }
+#limits-chart .lc-note { font-size: 12px; color: var(--dim); padding: 18px 0; text-align: center; }
 /* 종 단추 → 알림 설정(브라우저 · macOS · 소리) */
 #notify-menu { width: 300px; padding: 12px 14px; display: none; flex-direction: column; gap: 10px; z-index: 20; }
 #notify-menu.show { display: flex; }
@@ -507,9 +525,14 @@ footer .h #updated { color: var(--faint); font-weight: 400; font-variant-numeric
   #drawer { top: 0; right: 0; bottom: 0; width: 100%; border-radius: 0; border: none; }
   .hint { display: none; }
 }
-/* 휴대폰 크기: 사용 한도 막대는 글자가 줄바꿈되며 가로로 넘쳐서 숨긴다(도움말 창에서 볼 수 있음) */
+/* 휴대폰 크기: 사용 한도는 막대 · 주간을 빼고 짧게(줄바꿈되며 가로로 넘치지 않게) */
 @media (max-width: 600px) {
-  .usage-pill { display: none; }
+  /* 사용 한도는 「5시간 %」 만 짧게 남겨 누르면 추이를 볼 수 있게 */
+  .usage-pill { padding: 0 10px; gap: 6px; white-space: nowrap; flex: none; }
+  .brand h1, #new-session { white-space: nowrap; }
+  .brand h1 { display: none; } /* 로고만 남겨 머리 단추가 줄바꿈되지 않게 */
+  .usage-pill .badge, .usage-pill .bar, .usage-pill .rs, .usage-pill .u + .u { display: none; }
+  #limits-pop { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; }
   #new-session { padding: 0 12px; }
   body, body.aside-folded { grid-template-columns: 56px 1fr; }
   /* 패널 머리: 이름 · 탭 · ⋯ · 닫기만 남겨 오른쪽 단추가 잘리지 않게 */

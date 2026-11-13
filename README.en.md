@@ -46,7 +46,7 @@ Agent Dashboard puts all of this on one screen.
 | 📂 | **Open the folder** | Click a project box to open that folder in VS Code · Cursor or reveal it in Finder — no hunting for the folder when you want to check what changed |
 | ■ | **Stop · close** | Stop only what a session is doing (the conversation stays), or close a session from the dashboard |
 | 📝 | **Live code diff** | Files changed in the current request with +/− counts and red/green diffs; commands with ✓ pass / ✕ fail and output |
-| 🧠 | **Model · usage** | Start sessions with Opus · Sonnet · Haiku, switch a running session's model, context usage, Claude account 5-hour/weekly limits |
+| 🧠 | **Model · usage** | Start sessions with Opus · Sonnet · Haiku, switch a running session's model, context usage, Claude account 5-hour/weekly limits and their trend |
 | 🔔 | **Notifications** | Alert when approval is needed or a task over 1 minute finishes — browser notifications, or **macOS notifications that arrive even with the tab closed** (choose a sound); pending approvals in the tab title |
 | 🛡️ | **Local-only security** | 127.0.0.1 only, Host/Origin checks, a secret token generated per machine |
 
@@ -179,6 +179,7 @@ A session already running in a terminal has no official way to receive input fro
 - **Account usage limits (5-hour · weekly)** — turn on with **Show usage limits** in the header. Claude Code only passes this to the status line, so turning it on registers a status line (`bin/statusline.mjs`) in `~/.claude/settings.json`.
   - Every Claude session gets one line at the bottom: `model · context % · 5-hour limit %` (if you already had a status line, it keeps showing yours).
   - Your previous settings are backed up to `~/.agent-dashboard/` and **restored exactly** when you turn it off. While on, context usage becomes exact instead of estimated.
+  - While on, click the limits in the header to open a **limits trend chart** (last 24 hours · 7 days, 5-hour and weekly lines, reset points). A line with time · % · reset times is appended to `~/.agent-dashboard/limits/<date>.jsonl` only when values change (at most once a minute, readable only by you), and files older than 30 days are deleted. Settings are under "Settings…" below the chart.
 
 ## Security
 

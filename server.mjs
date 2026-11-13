@@ -20,6 +20,7 @@ import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions } fr
 import { summarizeTool, guessFromScreen } from './lib/approval.mjs';
 import { createLru } from './lib/lru.mjs';
 import { tightenFiles } from './lib/perms.mjs';
+import { createRecorder, readRange, pruneLimits, validRange } from './lib/limits.mjs';
 import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNotifier } from './lib/notify.mjs';
 import { pageHistory, pageParams } from './lib/paging.mjs';
 import { thinTrend, drops } from './lib/usage.mjs';
@@ -826,6 +827,10 @@ function notifyTick(sessions) {
   const n = notifier.take();
   if (n && notifySettings.mac) sendMacNotification(n.title, n.body);
 }
+// 계정 한도 추이: 머리 표시와 같은 값(usageState)이 바뀔 때만 ~/.agent-dashboard/limits/ 하루 파일에 한 줄(600). 데모는 읽지도 쓰지도 않는다
+const LIMITS_DIR = path.join(HOME, '.agent-dashboard', 'limits');
+const limitsRecorder = DEMO ? null : createRecorder({ dir: LIMITS_DIR });
+
 const notifyInfo = () => ({ ...notifySettings, sounds: SOUNDS, supported: MAC_NOTIFY, demo: DEMO });
 
 // ---------- HTTP (SSE 로 2초마다 바뀐 상태만 보냄) ----------
@@ -842,6 +847,9 @@ async function tick() {
     tickMs.push(Math.round(performance.now() - t0));
     if (tickMs.length > 30) tickMs.shift();
     notifyTick(latest.sessions);
+    if (limitsRecorder) {
+      try { limitsRecorder.observe(latest.usage); } catch (e) { console.error('한도 기록 실패:', e.message); }
+    }
     // 바뀐 게 있을 때만, 각 부분을 한 번씩만 문자열로 만들어 보낸다
     // 재시동 복구: 떠 있는 tmux 세션 목록을 저장하고, 재시동 전 목록 중 지금 없는 세션을 알려 준다
     if (!DEMO) {
@@ -990,6 +998,14 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ sent, supported: MAC_NOTIFY }));
     return;
   }
+  // 계정 한도 추이: ?range=24h|7d → { points: [[ms, 5시간 %, 주간 %]], resets: [{ t, kind }] }
+  if (url.pathname === '/api/limits') {
+    const range = url.searchParams.get('range') ?? '24h';
+    if (!validRange(range)) return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('range 는 24h 또는 7d');
+    const data = DEMO ? demo.demoLimits(range) : readRange(LIMITS_DIR, range);
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(data));
+    return;
+  }
   if (url.pathname === '/api/perf') {
     const sorted = [...tickMs].sort((a, b) => a - b);
     res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ticks: tickMs.length, medianMs: sorted[sorted.length >> 1] ?? null, maxMs: sorted.at(-1) ?? null, payloadKB: Math.round(lastJson.length / 1024), heapMB: Math.round(process.memoryUsage().heapUsed / 1048576), rssMB: Math.round(process.memoryUsage().rss / 1048576) }));
@@ -1089,6 +1105,7 @@ server.listen(PORT, '127.0.0.1', () => {
     // 예전에 644 로 만들어진 로그 · 설정 백업도 본인만 읽게(lib/perms.mjs). 링크는 따라가지 않는다
     try { const fixed = tightenFiles(USAGE_DIR); if (fixed.length) console.log(`권한 정리(600): ${fixed.length}개`); } catch (e) { console.error('권한 정리 실패:', e.message); }
     try { pruneUploads(); } catch (e) { console.error('첨부 정리 실패:', e.message); }
-    setInterval(() => { try { pruneUploads(); } catch {} }, 6 * 3600_000);
+    try { pruneLimits(LIMITS_DIR); } catch (e) { console.error('한도 기록 정리 실패:', e.message); }
+    setInterval(() => { try { pruneUploads(); } catch {} try { pruneLimits(LIMITS_DIR); } catch {} }, 6 * 3600_000);
   }
 });

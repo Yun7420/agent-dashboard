@@ -73,6 +73,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape' || document.querySelector('dialog[open]')) return;
   if ($('#dir-menu').classList.contains('show')) { $('#dir-menu').classList.remove('show'); return; }
   if ($('#notify-menu').classList.contains('show')) { $('#notify-menu').classList.remove('show'); return; }
+  if ($('#limits-pop').classList.contains('show')) { $('#limits-pop').classList.remove('show'); return; }
   if ($('#more-menu').classList.contains('show') || $('#d-meta').classList.contains('show')) { $('#more-menu').classList.remove('show'); $('#d-meta').classList.remove('show'); return; }
   if (document.activeElement === $('#msg') && $('#msg').value) return; // 입력 중인 글이 있으면 패널을 닫지 않는다
   if ($('#drawer').classList.contains('open')) $('#close').click();

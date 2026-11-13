@@ -19,7 +19,14 @@
     <span class="stat"><span class="dot-s ended"></span>종료 <em id="c-ended">0</em></span>
   </div>
   <span class="spacer"></span>
-  <button id="usage" class="usage-pill" title="Claude 계정 사용 한도"></button>
+  <span class="info-wrap">
+    <button id="usage" class="usage-pill" title="Claude 계정 사용 한도"></button>
+    <div class="menu-pop" id="limits-pop">
+      <div class="lp-head"><b>계정 한도 추이</b><span class="lp-range"><button type="button" class="ghost on" data-range="24h">24시간</button><button type="button" class="ghost" data-range="7d">7일</button></span></div>
+      <div id="limits-chart"></div>
+      <div class="lp-foot"><span class="lp-key"><i class="k5"></i>5시간 <i class="k7"></i>주간 <i class="kr"></i>리셋</span><button type="button" class="ghost" id="limits-setup">설정…</button></div>
+    </div>
+  </span>
   <button id="day-btn" class="ghost icon-btn" title="오늘 한 일" aria-label="오늘 한 일"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16M9 16l2 2 4-4"/></svg></button>
   <button id="search-btn" class="ghost icon-btn" title="전체 기록 검색 ( / )" aria-label="전체 기록 검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
   <span class="info-wrap">
