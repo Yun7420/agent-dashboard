@@ -10,13 +10,11 @@ import http from 'node:http';
 import { performance } from 'node:perf_hooks';
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import crypto from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { adapters } from './adapters/index.mjs';
 import * as tmux from './lib/tmux.mjs';
-import { MISMATCH_KO, isTrustPrompt } from './lib/dialog.mjs';
+import { isTrustPrompt } from './lib/dialog.mjs';
 import { createLru } from './lib/lru.mjs';
 import { tightenFiles } from './lib/perms.mjs';
 import { readBody, saveUpload } from './lib/body.mjs';
@@ -24,6 +22,9 @@ import { createLock } from './lib/lock.mjs';
 import { createCommands } from './lib/commands.mjs';
 import { createProcesses } from './lib/procs.mjs';
 import { createStateBuilder } from './lib/state.mjs';
+import { createEnvCheck } from './lib/env.mjs';
+import { detectEditors, openDir } from './lib/open-dir.mjs';
+import { UPLOAD_DIR, UPLOAD_MAX, pruneUploads } from './lib/uploads.mjs';
 import { fileCache } from './lib/filecache.mjs';
 import { pruneStatusFiles } from './lib/status.mjs';
 import { updateText, isBridge, enableStatusLine, disableStatusLine, modelOf, restoreModelText } from './lib/claude-settings.mjs';
@@ -40,7 +41,6 @@ import { createRecent, liveEntries, KEEP_DAYS as RECENT_DAYS } from './lib/recen
 
 const DEMO = process.env.DEMO === '1'; // 가짜 데이터로 화면만 보여 주는 모드(스크린샷용)
 
-const exec = promisify(execFile);
 const PORT = Number(process.env.PORT ?? 4545);
 let TOKEN_CREATED_NOW = false; // 이번 실행에서 열쇠를 처음 만들었는지 (안내 문구에 씀)
 const ROOT = dirOf(import.meta.url); // 저장소(패키지) 폴더 — 공백 · 한글 폴더에서도 맞게(lib/paths.mjs)
@@ -271,78 +271,17 @@ function findSession(key) {
   return latest?.sessions.find((s) => s.key === key) ?? null;
 }
 
-// ---------- 환경 점검 (처음 켤 때 화면에 보여 줌) ----------
-
-async function probe(cmd, args) {
-  try {
-    const { stdout, stderr } = await exec(cmd, args, { timeout: 5000 });
-    return { ok: true, out: (stdout || stderr).trim().split('\n')[0] };
-  } catch {
-    return { ok: false, out: '' };
-  }
-}
-
-// ---------- 폴더를 에디터·Finder 로 열기 ----------
-// macOS 는 앱이 설치돼 있으면 open -a 로, 그 밖에는 명령(code·cursor)이 있으면 그걸로 연다.
-const EDITORS = [
-  { id: 'vscode', label: 'VS Code', app: 'Visual Studio Code', cmd: 'code' },
-  { id: 'cursor', label: 'Cursor', app: 'Cursor', cmd: 'cursor' },
-];
-// macOS 앱이 /Applications 나 ~/Applications 에 깔려 있는가
-const appInstalled = (e) => os.platform() === 'darwin' && ['/Applications', path.join(HOME, 'Applications')].some((d) => fs.existsSync(path.join(d, `${e.app}.app`)));
-async function detectEditors() {
-  const found = [];
-  for (const e of EDITORS) {
-    const appOk = appInstalled(e);
-    const cmdOk = !appOk && (await probe('which', [e.cmd])).ok;
-    if (appOk || cmdOk) found.push({ id: e.id, label: e.label });
-  }
-  found.push({ id: 'finder', label: os.platform() === 'darwin' ? 'Finder' : '파일 관리자' });
-  return found;
-}
-async function openDir(dir, id) {
-  const e = EDITORS.find((x) => x.id === id);
-  if (id === 'finder') return exec(os.platform() === 'darwin' ? 'open' : 'xdg-open', [dir]);
-  if (!e) throw new Error('알 수 없는 앱');
-  if (appInstalled(e)) return exec('open', ['-a', e.app, dir]);
-  return exec(e.cmd, [dir]);
-}
-
-let envCache = null;
-function dialogEnvItem() {
-  const list = [...dialogIssues.values()];
-  if (!list.length) return { name: '승인 감지', level: 'ok', detail: '화면 안내 문구 · 선택지 · 공식 상태가 서로 맞아요' };
-  const last = list.at(-1);
-  const when = new Date(last.at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
-  return { name: '승인 감지', level: 'warn', detail: `${when} · ${last.title} — ${MISMATCH_KO[last.kind]}${list.length > 1 ? ` (외 ${list.length - 1}건)` : ''}. Claude Code 화면 문구가 바뀌었을 수 있어요` };
-}
-async function checkEnv() {
-  if (DEMO) return (envCache = demo.DEMO_ENV);
-  const platform = os.platform();
-  const nodeMajor = Number(process.versions.node.split('.')[0]);
-  const [claude, agents, tmuxV, codex, gemini] = await Promise.all([
-    probe('claude', ['--version']),
-    probe('claude', ['agents', '--json']),
-    probe('tmux', ['-V']),
-    probe('codex', ['--version']),
-    probe('gemini', ['--version']),
-  ]);
-  const dir = (p) => fs.existsSync(path.join(HOME, p));
-  // level: ok(정상) · warn(일부 기능 제한) · error(동작 안 함) · info(참고)
-  const items = [
-    { name: '운영체제', level: platform === 'darwin' ? 'ok' : platform === 'linux' ? 'warn' : 'error', detail: platform === 'darwin' ? 'macOS' : platform === 'linux' ? 'Linux — 대부분 동작하지만 macOS 기준으로 만들었어요' : `${platform} — 지원하지 않아요(macOS 전용)` },
-    { name: 'Node.js', level: nodeMajor >= 18 ? 'ok' : 'error', detail: process.version },
-    { name: 'Claude Code', level: claude.ok ? 'ok' : dir('.claude/projects') ? 'warn' : 'error', detail: claude.ok ? claude.out : '명령을 찾지 못했어요 — 기록 파일만 읽어서 보여 줘요' },
-    { name: '정확한 상태 감지', level: agents.ok ? 'ok' : 'warn', detail: agents.ok ? 'claude agents 지원 — 작업 중·대기·승인 필요를 정확히 구분해요' : 'Claude Code 를 최신으로 올리면(brew upgrade claude-code) 승인 필요 감지가 켜져요' },
-    { name: 'tmux', level: tmuxV.ok ? 'ok' : 'warn', detail: tmuxV.ok ? `${tmuxV.out} — 채팅·승인·새 세션 가능` : '없어요 — 보기만 돼요. brew install tmux 로 설치하면 채팅·승인이 켜져요' },
-    { name: 'Codex', level: codex.ok ? 'ok' : 'info', detail: codex.ok ? codex.out : dir('.codex/sessions') ? '명령은 없지만 예전 기록은 읽어요' : '설치 안 됨 (쓰면 자동으로 잡혀요)' },
-    { name: '사용 한도 연동', level: usageEnabled() ? 'ok' : 'info', detail: usageEnabled() ? '켜짐 — 5시간·주간 한도와 정확한 대화 창 사용량을 보여 줘요' : '꺼짐 — 헤더의 「사용 한도 보기」로 켤 수 있어요(Claude 상태줄 설정에 등록)' },
-    { name: 'Gemini CLI', level: 'info', detail: gemini.ok || dir('.gemini') ? '설치돼 있지만 아직 연동 전이에요(어댑터 추가 필요)' : '설치 안 됨 · 아직 지원 전' },
-  ];
-  const token = { createdNow: TOKEN_CREATED_NOW, path: tildify(TOKEN_FILE), createdAt: fs.statSync(TOKEN_FILE).birthtime.toISOString() };
-  envCache = { checkedAt: new Date().toISOString(), host: os.hostname(), items, token, editors: await detectEditors() };
-  return envCache;
-}
+// ---------- 환경 점검 · 폴더 열기 ----------
+// 환경 점검은 lib/env.mjs, 에디터 · Finder 로 열기는 lib/open-dir.mjs
+const env = createEnvCheck({
+  demo: DEMO,
+  demoEnv: demo.DEMO_ENV,
+  usageEnabled: () => usageEnabled(),
+  tokenInfo: () => ({ createdNow: TOKEN_CREATED_NOW, path: tildify(TOKEN_FILE), createdAt: fs.statSync(TOKEN_FILE).birthtime.toISOString() }),
+  detectEditors,
+  dialogIssues,
+});
+const { checkEnv, dialogEnvItem } = env;
 
 // ---------- macOS 알림 (브라우저 탭을 닫아도) ----------
 // 켜기/끄기 · 소리는 ~/.agent-dashboard/notify.json(600). 데모 모드에선 파일을 건드리지 않고 메모리에만 두고, 실제 알림도 보내지 않는다
@@ -425,30 +364,6 @@ async function tick() {
   } finally {
     setTimeout(tick, SCAN_MS);
   }
-}
-
-// 첨부 파일: 본문을 그대로 받아 ~/.agent-dashboard/uploads/<날짜>/ 에 저장하고 경로를 돌려준다(세션에는 경로를 보낸다)
-const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
-const UPLOAD_MAX = 25 * 1024 * 1024;
-const UPLOAD_KEEP_DAYS = 14;
-
-// 첨부는 세션에 경로만 넘기고 나면 다시 쓸 일이 없다 → 오래된 것은 지운다(스크린샷에 민감한 화면이 섞이기 쉬움)
-function pruneUploads() {
-  const cutoff = Date.now() - UPLOAD_KEEP_DAYS * 86400_000;
-  let removed = 0;
-  for (const day of fs.existsSync(UPLOAD_DIR) ? fs.readdirSync(UPLOAD_DIR) : []) {
-    const dir = path.join(UPLOAD_DIR, day);
-    if (!fs.statSync(dir).isDirectory()) continue;
-    for (const f of fs.readdirSync(dir)) {
-      const file = path.join(dir, f);
-      if (fs.statSync(file).mtimeMs < cutoff) {
-        fs.rmSync(file, { force: true });
-        removed += 1;
-      }
-    }
-    if (!fs.readdirSync(dir).length) fs.rmdirSync(dir);
-  }
-  if (removed) console.log(`첨부 ${removed}개 정리(${UPLOAD_KEEP_DAYS}일 지남)`);
 }
 
 // 본문 읽기 · 첨부 저장은 lib/body.mjs. 실패 응답: 끊긴 요청(499)은 보낼 곳이 없어 소켓만 닫고,
@@ -568,9 +483,9 @@ async function openEvents(req, res) {
 }
 
 async function getEnv(req, res, url) {
-  const env = url.searchParams.has('refresh') || !envCache ? await checkEnv() : envCache;
+  const e = url.searchParams.has('refresh') || !env.cached() ? await checkEnv() : env.cached();
   // 「승인 감지」 줄은 서버가 켜진 뒤 쌓인 기록이라 캐시 없이 매번 붙인다
-  sendJson(res, 200, { ...env, items: [...env.items, dialogEnvItem()] });
+  sendJson(res, 200, { ...e, items: [...e.items, dialogEnvItem()] });
 }
 
 // 알림 설정: GET 은 지금 값, POST { mac?, sound? } 는 바꾸기(소리는 허용 목록만)
