@@ -50,7 +50,7 @@ docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 1. `docs/ROADMAP.md` 의 해당 항목과 관련 파일을 읽는다
 2. 구현 — 기존 구역 · 이름 · 주석 스타일을 따른다
 3. `npm test` 전부 통과 + 새 동작은 테스트 추가(가능하면 "되돌리면 실패하는지"도 확인)
-4. 화면이 바뀌면 **데모 모드로 확인**: `DEMO=1 PORT=4646 node server.mjs` → 헤드리스 Playwright 로 스크린샷(창 띄우지 않기), 콘솔 오류 0. 시험이 끝나면 4646 서버를 반드시 끈다
+4. 화면이 바뀌면 **데모 모드로 확인**: `DEMO=1 PORT=4646 node server.mjs` → 헤드리스 Playwright 로 스크린샷(창 띄우지 않기), 콘솔 오류 0. 시험이 끝나면 4646 서버를 반드시 끈다(띄울 때 적어 둔 PID 로만 — 아래 「프로세스 끄기 사고」)
 5. 서버 코드를 바꿨으면 실제 대시보드를 다시 켠다: 실행기(`bin/run.sh`)가 자동 재시작하므로 `pgrep -lf "^node server.mjs$"` 가 1줄인지 확인하고 `kill $(pgrep -f "^node server.mjs$")` 후 몇 초 뒤 `http://localhost:4545` 200 확인. 화면 파일만 바꿨으면 새로고침이면 됨
 6. 커밋: 제목 한 줄(한국어, 무엇을) + 본문 2~4줄(왜 · 어떻게 확인) + 마지막 줄 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` → `git push origin main`. 항목 하나 = 커밋 하나 이상, 중간중간 커밋
 7. `docs/ROADMAP.md` 에 `[x]` 와 커밋 해시 · 한 줄 요약
