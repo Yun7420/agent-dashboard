@@ -217,3 +217,28 @@ test('보안 헤더(클릭재킹 · nosniff): 화면 · API 200/403 · SSE · 40
   assert.match(res500, /X-Frame-Options: DENY/i);
   assert.match(res500, /X-Content-Type-Options: nosniff/i);
 });
+
+test('요청 본문: 너무 크면 413 한국어 문장 후 소켓을 닫고, 중간에 끊긴 요청 뒤에도 서버는 정상', async () => {
+  const big = 'x'.repeat(300_000);
+  const head = `POST /api/cmd/send HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-Dashboard-Token: ${TOKEN}\r\nContent-Type: application/json\r\nContent-Length: ${big.length}\r\n\r\n`;
+  const r = await new Promise((resolve) => {
+    const s = net.connect(PORT, '127.0.0.1', () => { s.write(head); s.write(big, () => {}); });
+    let got = '';
+    s.on('data', (d) => (got += d));
+    s.on('error', () => {}); // 서버가 닫은 뒤 남은 쓰기는 실패해도 된다
+    s.on('close', () => resolve({ got, closed: true }));
+    s.setTimeout(3000, () => { s.destroy(); resolve({ got, closed: false }); });
+  });
+  assert.match(r.got, / 413 /);
+  assert.match(r.got, /요청이 너무 커요/);
+  assert.equal(r.closed, true);
+  // 본문을 약속(Content-Length)보다 적게 보내고 끊기
+  await new Promise((resolve) => {
+    const s = net.connect(PORT, '127.0.0.1', () => {
+      s.write(`POST /api/cmd/send HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-Dashboard-Token: ${TOKEN}\r\nContent-Length: 1000\r\n\r\n{"key":`);
+      setTimeout(() => { s.destroy(); resolve(); }, 100);
+    });
+  });
+  assert.equal(await req('/'), 200);
+  assert.equal(await req('/api/perf', { headers: { 'x-dashboard-token': TOKEN } }), 200);
+});

@@ -20,6 +20,8 @@ import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions, isT
 import { summarizeTool, guessFromScreen } from './lib/approval.mjs';
 import { createLru } from './lib/lru.mjs';
 import { tightenFiles } from './lib/perms.mjs';
+import { readBody, saveUpload } from './lib/body.mjs';
+import { createLock } from './lib/lock.mjs';
 import { MODELS, newSessionArgs } from './lib/spawn.mjs';
 import { HOME, DATA_DIR, dirOf, isInside, allInside, tildify } from './lib/paths.mjs';
 import { createRecorder, readRange, pruneLimits, validRange } from './lib/limits.mjs';
@@ -713,27 +715,33 @@ async function handleCommand(action, body) {
     return [200, `${tildify(dir)} 를 열었어요`];
   }
   if (action === 'restore') {
-    // 재시동 전에 떠 있던 세션을 --resume 으로 한 번에 다시 띄운다(저장된 목록에 있는 것만)
+    // 재시동 전에 떠 있던 세션을 --resume 으로 한 번에 다시 띄운다(저장된 목록에 있는 것만).
+    // 복구 단추와 같은 잠금 · 같은 「방금 띄운 것」 목록을 써서, 두 경로가 겹쳐도 같은 세션을 두 번 띄우지 않는다
     if (!latest) return [503, '세션 목록을 읽는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
-    const done = await restoreSessions(restoreCandidates(liveIdSet()));
+    const r = await restoreLock.run(async () => {
+      const launched = recent.launchedIds();
+      const done = await restoreSessions(restoreCandidates(liveIdSet()).filter((e) => !launched.has(e.id)));
+      for (const d of done) recent.noteLaunched(d.id, { title: d.title, tmuxSession: d.tmuxSession });
+      return done;
+    });
+    if (r.busy) return [409, '다시 여는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
     lastJson = '';
-    return [200, done.length ? `세션 ${done.length}개를 다시 열었어요. 몇 초 뒤 목록에 나타나요` : '다시 열 세션이 없어요'];
+    return [200, r.value.length ? `세션 ${r.value.length}개를 다시 열었어요. 몇 초 뒤 목록에 나타나요` : '다시 열 세션이 없어요'];
   }
   if (action === 'recent-restore') {
     // 복구 단추: 브라우저는 ID 목록만 보낸다. 폴더 · 이름 · 모델은 기억해 둔 목록(recent.json)에서만 꺼내고, 지금 떠 있는 것은 뺀다
-    if (restoring) return [409, '다시 여는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
     if (!latest) return [503, '세션 목록을 읽는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
+    if (restoreLock.busy) return [409, '다시 여는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
     const entries = recent.pick(body, liveIdSet());
     if (!entries.length) return [400, '다시 열 세션이 없어요(이미 떠 있거나 목록에 없는 세션)'];
-    restoring = true;
-    try {
+    const r = await restoreLock.run(async () => {
       const done = await restoreSessions(entries);
       for (const d of done) recent.noteLaunched(d.id, { title: d.title, tmuxSession: d.tmuxSession });
-      lastJson = '';
-      return [200, done.length ? `세션 ${done.length}개를 다시 열었어요. 몇 초 뒤 목록에 나타나요` : '다시 열 수 있는 세션이 없어요(폴더가 없거나 홈 밖)'];
-    } finally {
-      restoring = false;
-    }
+      return done;
+    });
+    if (r.busy) return [409, '다시 여는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
+    lastJson = '';
+    return [200, r.value.length ? `세션 ${r.value.length}개를 다시 열었어요. 몇 초 뒤 목록에 나타나요` : '다시 열 수 있는 세션이 없어요(폴더가 없거나 홈 밖)'];
   }
   if (action === 'spawn') {
     const cwd = path.resolve(String(body.cwd ?? '').replace(/^~(?=$|\/)/, HOME));
@@ -847,7 +855,7 @@ const limitsRecorder = DEMO ? null : createRecorder({ dir: LIMITS_DIR });
 
 // 복구 단추: 최근 7일 안에 떠 있던 Claude 세션(tmux 밖 포함)을 기억(recent.json, 600). 데모는 파일을 읽지도 쓰지도 않는다
 const recent = DEMO ? null : createRecent({ file: path.join(DATA_DIR, 'recent.json') });
-let restoring = false; // 한 번에 하나의 복구만(같은 세션을 두 번 띄우지 않게)
+const restoreLock = createLock(); // 재시동 배너 · 복구 단추가 같이 쓰는 잠금 — 한 번에 하나의 복구만(같은 세션을 두 번 띄우지 않게)
 // 아직 첫 상태를 만들기 전(서버를 켠 직후)이면 null — 복구는 「무엇이 떠 있는지」를 알 때만 한다
 const liveIdSet = () => (latest ? new Set(latest.sessions.filter((s) => s.status !== 'ended').map((s) => s.id)) : null);
 // 복구 후보 + 방금 다시 띄운 세션의 상태(폴더 신뢰 확인 창이 떴는지 — 대신 누르지 않고 안내만)
@@ -927,45 +935,14 @@ function pruneUploads() {
   if (removed) console.log(`첨부 ${removed}개 정리(${UPLOAD_KEEP_DAYS}일 지남)`);
 }
 
-function saveUpload(req, rawName) {
-  return new Promise((resolve, reject) => {
-    const safe = path.basename(String(rawName || 'file')).replace(/[^\w.가-힣-]+/g, '_').slice(-80) || 'file';
-    const day = new Date().toISOString().slice(0, 10);
-    const dir = path.join(UPLOAD_DIR, day);
-    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-    const file = path.join(dir, `${crypto.randomBytes(3).toString('hex')}-${safe}`);
-    const chunks = [];
-    let size = 0;
-    req.on('data', (c) => {
-      size += c.length;
-      if (size > UPLOAD_MAX) {
-        reject(new Error('파일이 너무 커요(최대 25MB)'));
-        req.destroy();
-      } else chunks.push(c);
-    });
-    req.on('end', () => {
-      if (size > UPLOAD_MAX) return;
-      fs.writeFileSync(file, Buffer.concat(chunks), { mode: 0o600 });
-      resolve({ path: file, name: safe, size });
-    });
-    req.on('error', reject);
-  });
-}
-
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', (c) => {
-      data += c;
-      if (data.length > 100_000) reject(new Error('too large'));
-    });
-    req.on('end', () => {
-      try {
-        resolve(JSON.parse(data || '{}'));
-      } catch (e) {
-        reject(e);
-      }
-    });
+// 본문 읽기 · 첨부 저장은 lib/body.mjs. 실패 응답: 끊긴 요청(499)은 보낼 곳이 없어 소켓만 닫고,
+// 너무 큰 본문(413)은 문장을 보낸 뒤 소켓을 닫아 나머지를 받지 않는다
+function bodyFail(req, res, e) {
+  const status = e?.status ?? 500;
+  if (status >= 500 && status !== 499) console.error('[본문]', e?.cause?.message ?? e?.message);
+  if (status === 499 || res.headersSent) return void res.destroy();
+  res.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8', ...(status === 413 ? { Connection: 'close' } : {}) }).end(e?.message ?? '요청을 처리하지 못했어요', () => {
+    if (status === 413) req.destroy();
   });
 }
 
@@ -1025,8 +1002,8 @@ async function handle(req, res) {
       let body;
       try {
         body = await readBody(req);
-      } catch {
-        return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('요청 형식이 잘못됐어요');
+      } catch (e) {
+        return bodyFail(req, res, e);
       }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('요청 형식이 잘못됐어요');
       if ('sound' in body && !validSound(body.sound)) return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('고를 수 없는 소리예요');
@@ -1112,10 +1089,10 @@ async function handle(req, res) {
   if (url.pathname === '/api/upload' && req.method === 'POST') {
     if (DEMO) return void res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ path: `/Users/me/.agent-dashboard/uploads/${url.searchParams.get('name')}`, name: url.searchParams.get('name'), size: 0 }));
     try {
-      const saved = await saveUpload(req, url.searchParams.get('name'));
+      const saved = await saveUpload(req, url.searchParams.get('name'), { dir: UPLOAD_DIR, max: UPLOAD_MAX });
       res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(saved));
     } catch (e) {
-      res.writeHead(413).end(e.message);
+      bodyFail(req, res, e); // 너무 큼 413 · 끊김 · 디스크 오류 500 을 구분
     }
     return;
   }
@@ -1123,8 +1100,8 @@ async function handle(req, res) {
     let body;
     try {
       body = await readBody(req);
-    } catch {
-      return void res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('요청 형식이 잘못됐어요');
+    } catch (e) {
+      return bodyFail(req, res, e);
     }
     try {
       const [code, msg] = await handleCommand(url.pathname.slice('/api/cmd/'.length), body);
