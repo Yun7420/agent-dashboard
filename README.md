@@ -254,6 +254,8 @@ agent-dashboard/
 └─ test/               # node --test 28개 파일 · fake-bin(가짜 tmux · claude · ps · lsof)
 ```
 
+파일마다 하는 일 · 요청 하나가 지나가는 길 · 보안 검사 위치는 [코드 지도(docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)에 있어요.
+
 ### 새 에이전트 붙이기
 
 `adapters/` 에 같은 모양의 파일을 하나 만들고 `adapters/index.mjs` 에 한 줄 추가하면 돼요. 모양은 `adapters/index.mjs` 주석 참고.
