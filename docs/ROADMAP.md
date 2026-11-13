@@ -3,6 +3,7 @@
 > 2026-11-12 정리. 하나씩 끝내고 실제로 써 본 뒤 다음으로 넘어간다. 끝난 항목은 `[x]` 와 커밋 해시를 적는다.
 
 ## 0. 기반
+- [x] npx 준비 C3(사용자 승인): 상태줄 다리를 ~/.agent-dashboard/bin 복사본으로 등록 — 경로 글자 검사(409) · 링크 거절 · 시작 때 최신으로 맞춤 · 옛 경로 등록을 새 경로로. 실제 전환 나머지 설정 해시 같음 `0fb2f16`
 - [x] npx 준비 C2(사용자 승인): package.json bin(agent-dashboard) · files(배포 64개 · 139KB) · 없는 도구 안내(tmux · Claude Code · 다른 OS) · tmux 없으면 단추 끔 · 기록 없으면 시작 안내. private · 버전 그대로 `1ec29f9`
 - [x] npx 준비 C1(사용자 승인 · 보안): 토큰을 ~/.agent-dashboard/token(600)으로 — 링크 거절 · 동시 생성 한 값 · 옛 .dashboard-token 한 번 옮기고 삭제 · 데모는 demo-token. 실제 전환 해시 같음 · 열린 탭 그대로 `b096f23`
 - [x] 시험 전용 서버(사용자 승인 D) — 임시 홈(DASHBOARD_HOME) · 임시 토큰(DASHBOARD_TOKEN_FILE, 시험 모드에서만) · test/fake-bin 가짜 명령으로 실제 모드 시험 8개(명령 인자 · 잠금 · 경로 검사 · 업로드 · 403) `5ec47bf`
