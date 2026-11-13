@@ -20,7 +20,7 @@ Claude Code · Codex · zero dependencies · everything stays on your machine
 
 **Roadmap** — ✅ Stage 1: vanilla JS, built fast and used for real · 🔄 Stage 2: split files (done) · clean up (in progress), still zero dependencies · ⏳ Stage 3: move to React
 
-![Demo — approving a prompt and watching live diffs](docs/images/demo.gif)
+![Demo — an approval card with a risk warning, live diffs of a working session, the usage-limit trend and the restore dialog](docs/images/demo.gif)
 
 ![Overview — session list, org chart, account usage limits, activity log](docs/images/overview.png)
 
