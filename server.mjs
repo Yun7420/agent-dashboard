@@ -35,7 +35,7 @@ import { pruneStatusFiles } from './lib/status.mjs';
 import { updateText, isBridge, enableStatusLine, disableStatusLine, modelOf, restoreModelText } from './lib/claude-settings.mjs';
 import { sendText, sendJson, friendly } from './lib/respond.mjs';
 import { isObject, validDate, KEY_RE, WINDOW_HOURS } from './lib/validate.mjs';
-import { HOME, DATA_DIR, dirOf, isInside, tildify } from './lib/paths.mjs';
+import { CLAUDE_DIR, DATA_DIR, dirOf, isInside, tildify, tokenFileFor } from './lib/paths.mjs';
 import { createRecorder, readRange, pruneLimits, validRange } from './lib/limits.mjs';
 import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNotifier } from './lib/notify.mjs';
 import { pageHistory, pageParams } from './lib/paging.mjs';
@@ -49,7 +49,7 @@ const DEMO = process.env.DEMO === '1'; // 가짜 데이터로 화면만 보여 �
 const PORT = Number(process.env.PORT ?? 4545);
 let TOKEN_CREATED_NOW = false; // 이번 실행에서 열쇠를 처음 만들었는지 (안내 문구에 씀)
 const ROOT = dirOf(import.meta.url); // 저장소(패키지) 폴더 — 공백 · 한글 폴더에서도 맞게(lib/paths.mjs)
-const TOKEN_FILE = path.join(ROOT, '.dashboard-token');
+const TOKEN_FILE = tokenFileFor(ROOT); // 평소엔 저장소 폴더의 .dashboard-token(시험 모드만 바꿀 수 있음 — lib/paths.mjs)
 const TOKEN = loadToken();
 const ALLOWED_HOSTS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`]);
 const SCAN_MS = 2000;
@@ -237,7 +237,7 @@ function usageState(status) {
 
 // ---------- 사용자 기본 모델 보존 ----------
 // ~/.claude/settings.json 의 "model" 한 줄만 다룬다(다른 설정·서식은 건드리지 않는다).
-const SETTINGS = path.join(HOME, '.claude', 'settings.json');
+const SETTINGS = path.join(CLAUDE_DIR, 'settings.json');
 
 // fresh: 고치기 직전(/model 보내기 전)엔 캐시 없이 새로 읽는다. 틱 안(대화 창 크기 추정)에선 캐시
 function readDefaultModel({ fresh = false } = {}) {

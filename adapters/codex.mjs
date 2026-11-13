@@ -3,10 +3,10 @@
 
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import os from 'node:os';
+import { CODEX_DIR } from '../lib/paths.mjs';
 import { clip, parse, readHeadLines, readJsonLines, readTailLines, statOrNull } from '../lib/util.mjs';
 
-const ROOT = path.join(os.homedir(), '.codex', 'sessions');
+const ROOT = path.join(CODEX_DIR, 'sessions');
 
 async function walk(dir, depth, out) {
   const entries = await fsp.readdir(dir, { withFileTypes: true }).catch(() => []);

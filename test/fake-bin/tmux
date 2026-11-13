@@ -1,0 +1,11 @@
+#!/usr/bin/env node
+// 가짜 tmux: list-panes · capture-pane 은 정해 둔 답, 나머지(send-keys · load-buffer · paste-buffer · new-session)는 기록만
+import { record, answer, readStdin } from './_fake.mjs';
+const args = process.argv.slice(2);
+const sub = args[0];
+if (sub === 'load-buffer') record('tmux', args, { stdin: readStdin() });
+else record('tmux', args);
+if (sub === '-V') process.stdout.write('tmux 3.4\n');
+else if (sub === 'list-panes') process.stdout.write(answer('panes.txt'));
+else if (sub === 'capture-pane') process.stdout.write(answer('screen.txt', '> '));
+else if (sub === 'new-session') await new Promise((r) => setTimeout(r, Number(process.env.FAKE_NEW_DELAY_MS ?? 0)));

@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+// 가짜 ps: 정해 둔 프로세스 목록(pid ppid etime command)
+import { record, answer } from './_fake.mjs';
+record('ps', process.argv.slice(2));
+process.stdout.write(answer('ps.txt'));

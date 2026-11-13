@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+// 가짜 claude: --version · agents --json 만 답하고 나머지는 기록만(세션을 띄우지 않음)
+import { record } from './_fake.mjs';
+const args = process.argv.slice(2);
+record('claude', args);
+if (args[0] === '--version') process.stdout.write('9.9.9 (Claude Code · 시험용 가짜)\n');
+else if (args[0] === 'agents') process.stdout.write('[]\n');

@@ -5,11 +5,11 @@ import fsp from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
-import os from 'node:os';
 import fs from 'node:fs';
 import readline from 'node:readline';
 import { clip, parse, readHeadLines, readJsonLines, readJsonOrNull, readTailLines, statOrNull } from '../lib/util.mjs';
 import { createLru } from '../lib/lru.mjs';
+import { CLAUDE_DIR } from '../lib/paths.mjs';
 import { createSerial } from '../lib/serial.mjs';
 import { usageOf, contextOf, addUsage, emptyTokens } from '../lib/usage.mjs';
 
@@ -17,7 +17,7 @@ import { usageOf, contextOf, addUsage, emptyTokens } from '../lib/usage.mjs';
 // 앞의 설명이 사라지므로 이어 붙인다(너무 길면 앞쪽을 남긴다).
 const joinReply = (prev, text) => clip(prev ? `${prev}\n\n${text.trim()}` : text.trim(), 20000);
 
-const ROOT = path.join(os.homedir(), '.claude', 'projects');
+const ROOT = path.join(CLAUDE_DIR, 'projects');
 const exec = promisify(execFile);
 // shell = 응답은 끝났지만 백그라운드 명령(테스트·빌드 등)이 아직 도는 중 → 화면에선 "백그라운드 작업 중"
 const LIVE_STATUS = { busy: 'working', idle: 'idle', waiting: 'waiting', shell: 'background' };
@@ -237,7 +237,7 @@ export function pendingToolOf(records) {
 // 빠른 길: claude 가 세션마다 남기는 ~/.claude/sessions/<PID>.json 을 직접 읽는다(claude agents 실행 160ms → 파일 읽기 1ms).
 // 폴더를 읽었으면 빈 목록이어도 그대로 돌려준다 — 예전엔 빈 목록이면 아래로 내려가, 떠 있는 세션이 없을 때 2초마다 claude 를 실행했다.
 // 폴더가 없는 옛 버전만 `claude agents --json` 을 쓰고, 그 결과(실패 포함)는 30초 기억 · 실행 중이면 같은 Promise 를 나눠 쓴다
-export function createLiveSessions({ dir = path.join(os.homedir(), '.claude', 'sessions'), run = exec, now = Date.now, ttlMs = 30_000, alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } } } = {}) {
+export function createLiveSessions({ dir = path.join(CLAUDE_DIR, 'sessions'), run = exec, now = Date.now, ttlMs = 30_000, alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } } } = {}) {
   let cached = null; // { at, value }
   let pending = null;
   const fromCommand = async () => {
