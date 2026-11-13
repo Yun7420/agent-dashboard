@@ -361,7 +361,6 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 .cmd-out { margin: 6px 0 0; padding: 6px 8px; border-radius: 6px; background: var(--surface-2); color: var(--faint); font: 11px/1.45 var(--mono); white-space: pre-wrap; word-break: break-all; max-height: 4.5em; overflow: hidden; }
 .cmd-out.err { color: #ffc4d2; background: rgba(251, 111, 146, .08); }
 .chg-cmds code { display: block; white-space: pre-wrap; word-break: break-all; padding: 6px 10px; margin-top: 4px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); color: #d5d8f0; font-size: 12px; }
-.chg-cmds .ds { color: var(--faint); font-size: 11px; margin: 6px 0 0 2px; }
 #now-state { display: inline-flex; align-items: center; gap: 6px; }
 #drawer.approving #now-view { display: none; } /* 승인 창이 곧 "지금" — 승인과 입력창만 보이게 */
 .commit { padding: 16px; border-bottom: 1px solid var(--border); }
@@ -395,7 +394,6 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 .md blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--border-strong); color: var(--dim); }
 .md pre { margin: 0; max-width: 100%; overflow-x: auto; padding: 9px 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font: 12px/1.55 var(--mono); color: #d5d8f0; white-space: pre; }
 .md pre code { background: none; padding: 0; border-radius: 0; color: inherit; font: inherit; }
-#d-now .lbl { color: var(--accent); font-weight: 600; }
 
 #busy { display: none !important; align-items: center; gap: 10px; margin: 0 14px 10px; padding: 9px 12px; border-radius: 12px; background: rgba(245, 185, 66, .07); border: 1px solid rgba(245, 185, 66, .25); color: #f3d79c; font-size: 13px; }
 #busy[hidden] { display: none; }

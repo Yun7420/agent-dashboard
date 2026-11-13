@@ -1,5 +1,4 @@
 // 활동 로그 · 왼쪽 목록 접기
-// ---------- 활동 로그 접기 ----------
 // ---------- 왼쪽 목록 접기 ----------
 function initials(title) {
   const words = String(title).replace(/\(.*?\)/g, ' ').trim().split(/[\s_-]+/).filter(Boolean);
@@ -17,6 +16,7 @@ $('#aside-fold').addEventListener('click', () => { pref.asideFolded = !pref.asid
 applyAsideFold();
 narrowScreen.addEventListener('change', () => { applyAsideFold(); view.init = false; setTimeout(() => { applyDrawerWidth(); renderGraph(); }, 0); });
 
+// ---------- 활동 로그 접기 ----------
 function applyFold() {
   document.querySelector('footer').classList.toggle('folded', Boolean(pref.eventsFolded));
   document.body.style.gridTemplateRows = pref.eventsFolded ? '60px 1fr 44px' : '';

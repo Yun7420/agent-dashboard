@@ -81,6 +81,13 @@ function setHtml(el, html) {
 }
 const forget = (el) => drawn.delete(el); // 다음 번엔 꼭 다시 그리게
 
+// 화면에 보일 때만 홈 폴더를 ~ 로 줄인다. 홈은 서버가 상태에 넣어 준다(state.home) — 예전엔 /Users/이름 정규식이라 리눅스(/home/이름)는 안 줄었다.
+// 옆 폴더(/Users/me-other)는 줄이지 않는다(서버 lib/paths.mjs 의 tildify 와 같은 규칙)
+function tilde(p, home = state?.home) {
+  if (!p || !home) return p;
+  return p === home ? '~' : p.startsWith(home.endsWith('/') ? home : `${home}/`) ? `~/${p.slice(home.replace(/\/$/, '').length + 1)}` : p;
+}
+
 function ago(iso) {
   if (!iso) return '';
   const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);

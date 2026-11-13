@@ -1,5 +1,4 @@
 // 이번 턴에 바꾼 파일 · 실행한 명령
-// ---------- 이번 턴에 바꾼 파일 · 실행한 명령 ----------
 // 줄 단위 diff (작은 덩어리라 단순 LCS 로 충분)
 function lineDiff(a, b) {
   const x = a.split('\n'), y = b.split('\n');
@@ -43,7 +42,7 @@ function renderChanges(s) {
       body += lines.map(([t, l]) => `<div class="l ${t}">${t === 'a' ? '+' : t === 'r' ? '-' : ' '} ${esc(l)}</div>`).join('');
     });
     total.a += a; total.r += r;
-    const short = file.replace(/^\/Users\/[^/]+/, '~');
+    const short = tilde(file);
     const name = short.split('/').pop();
     const dir = short.slice(0, -name.length);
     return `<details class="chg-file" data-f="${esc(file)}" ${openFiles.has(file) ? 'open' : ''}><summary title="${esc(file)}"><span class="fn">${esc(name)}</span><span class="dir">${esc(dir)}</span><span class="tl">${list.length}회</span><span class="n"><span class="add">+${a}</span> <span class="del">−${r}</span></span></summary><div class="diff">${body}</div></details>`;

@@ -1,5 +1,4 @@
 // 가운데 조직도
-// ---------- 가운데 조직도 ----------
 // 트리: 이 컴퓨터 → 도구 → 프로젝트 → 세션 → 서브에이전트
 function buildTree() {
   const root = { kind: 'root', label: state.host.replace(/\.local$/, ''), sub: 'THIS MAC', children: [] };
@@ -106,7 +105,7 @@ function renderGraph() {
     const cls = ['node', n.dir ? 'proj' : '', n.kind === 'sub' ? 'sub' : '', n.more ? 'more' : '', n.kind === 'group' || n.kind === 'root' ? 'group' : '', n.status || '', n.key && n.key === selected ? 'sel' : ''].join(' ');
     const max = Math.floor((n.w - 14) / 7.4); // 12px 고정폭 글자 기준
     const subMax = Math.floor((n.w - 12) / 6.4); // 10px
-    nodes += `<g class="${cls}" ${n.key ? `data-key="${esc(n.key)}"` : ''} ${n.toggle ? `data-toggle="${esc(n.toggle)}"` : ''} ${n.dir ? `data-dir="${esc(n.dir)}"` : ''} transform="translate(${n.x},${n.y})">
+    nodes += `<g class="${esc(cls)}" ${n.key ? `data-key="${esc(n.key)}"` : ''} ${n.toggle ? `data-toggle="${esc(n.toggle)}"` : ''} ${n.dir ? `data-dir="${esc(n.dir)}"` : ''} transform="translate(${n.x},${n.y})">
       <rect width="${n.w}" height="${n.h}" rx="10"/>
       <text x="${n.w / 2}" y="${n.h / 2 - 4}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
       <text class="t2" x="${n.w / 2}" y="${n.h / 2 + 13}" text-anchor="middle">${esc(fit(String(n.sub || '').toUpperCase(), subMax))}</text>

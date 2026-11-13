@@ -1,5 +1,4 @@
 // 연동 중 화면 · 환경 점검
-// ---------- 연동 중 화면 · 환경 점검 ----------
 const LV_ICON = { ok: '✓', warn: '!', error: '✕', info: 'i' };
 let envData = null;
 let envError = '';
@@ -38,7 +37,7 @@ function renderEnv() {
   if (tk) $('#token-status').innerHTML = tk.createdNow
     ? `<span class="new">✓ 이 컴퓨터용 열쇠를 방금 만들었어요</span> · <code>${esc(tk.path)}</code>`
     : `✓ 이 컴퓨터용 열쇠가 준비돼 있어요 (${new Date(tk.createdAt).toLocaleDateString('ko-KR')} 생성) · <code>${esc(tk.path)}</code>`;
-  $('#env-list').innerHTML = envData.items.map((it) => `<div class="env-row"><span class="lv ${it.level}">${LV_ICON[it.level]}</span><span class="nm">${esc(it.name)}</span><span class="dt">${esc(it.detail)}</span></div>`).join('');
+  $('#env-list').innerHTML = envData.items.map((it) => `<div class="env-row"><span class="lv ${esc(it.level)}">${LV_ICON[it.level]}</span><span class="nm">${esc(it.name)}</span><span class="dt">${esc(it.detail)}</span></div>`).join('');
 }
 function openWelcome() { renderEnv(); $('#welcome').showModal(); }
 $('#help').addEventListener('click', openWelcome);

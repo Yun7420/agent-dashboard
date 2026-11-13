@@ -15,6 +15,7 @@
 5. [보안 검사는 어디서 일어나나](#5-보안-검사는-어디서-일어나나)
 6. [테스트 지도](#6-테스트-지도)
 7. [겪은 일에서 배운 점](#7-겪은-일에서-배운-점)
+8. [주말에 같이 볼 것](#8-주말에-같이-볼-것)
 
 ---
 
@@ -159,19 +160,19 @@
 | 파일 | 하는 일 |
 |---|---|
 | `00-md.js` | 답변 마크다운 일부만 그리기(`md`) · 글자 안전하게 바꾸기(`esc`) |
-| `01-core.js` | 공통: 토큰(`TOKEN`) · 서버 요청(`api`) · 토스트(`toast`) · 설정 저장(`savePref`) |
+| `01-core.js` | 공통: 토큰(`TOKEN`) · 서버 요청 한 길(`apiFetch` · `api` · `apiJson`, 403 이면 `tokenGone`) · 바뀐 곳만 그리기(`setHtml`) · 토스트(`toast`) · 설정 저장(`savePref`) · 오래된 설정 정리(`prunePrefs`) |
 | `02-activity.js` | 아래 활동 로그(`logEvents` · `logLinks`) |
-| `03-list.js` | 왼쪽 세션 목록(`renderList`) |
+| `03-list.js` | 왼쪽 세션 목록(`renderList`) · 「N초 전」만 따로 갱신(`updateAgo`) |
 | `04-graph.js` | 가운데 조직도(`renderGraph` · `layout`) |
 | `05-history.js` | 오른쪽 서랍: 세션 고르기(`select`) · 기록 읽기(`loadHistory`) · 대화 창 추이(`renderTrend`) |
 | `06-now.js` | 지금 탭(`renderNow`) · 탭 바꾸기(`setTab`) |
 | `07-changes.js` | 바꾼 파일 diff(`renderChanges`) · 승인 카드와 단추(`renderApproveCard` · `renderApproval`) |
-| `08-attach.js` | 첨부 · 보내기(`addFiles` · `sendMsg`) |
+| `08-attach.js` | 세션별 임시 글 · 첨부(`useDraft` · `pruneDrafts`) · 첨부 · 보내기(`addFiles` · `sendMsg`) |
 | `09-usage.js` | 머리의 계정 한도(`renderUsage`) · 한도 추이 그래프(`renderLimits`) |
 | `10-panel.js` | 패널 머리 메뉴 · 폭 · 폴더 열기 메뉴(`openDirMenu`) |
 | `11-controls.js` | 전체 다시 그리기(`render`) |
 | `12-env.js` | 환경 점검 화면(`renderEnv`) · 없는 도구면 단추 끄기(`applyTools`) |
-| `13-collapse.js` | 활동 로그 · 왼쪽 목록 접기(`applyFold` · `applyAsideFold`) |
+| `13-collapse.js` | 활동 로그 · 왼쪽 목록 접기(`applyFold` · `applyAsideFold`) · 이니셜(`initials`, 03-list 가 씀) |
 | `14-notify.js` | 알림 판단 · 설정(`notifyChanges` · `saveNotifyCfg`) |
 | `15-restore.js` | 재시동 배너(`renderRestore`) · 복구 창(`loadRecent` · `renderRecent`) |
 | `16-live.js` | 서버와 실시간 연결(`connect`) |
@@ -181,7 +182,7 @@
 
 ### test
 
-37개 파일, 220개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+38개 파일, 223개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -232,12 +233,19 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 
 ```
 16-live.js:connect  — EventSource('/events?token=…')
- └─ onmessage(새 상태)
-     ├─ 14-notify.js:notifyChanges    (알림 판단)
-     ├─ 02-activity.js:logEvents       (활동 로그)
-     ├─ state = 새 상태
-     ├─ 15-restore.js:renderRestore    (재시동 배너)
-     └─ 11-controls.js:render          (목록 · 조직도 · 패널 다시 그리기)
+ ├─ onmessage(새 상태)
+ │   ├─ 14-notify.js:notifyChanges    (알림 판단 · 탭 제목 숫자)
+ │   ├─ 02-activity.js:logEvents       (활동 로그 — 상태 변화)
+ │   ├─ 02-activity.js:logLinks        (활동 로그 — 세션 사이 메시지)
+ │   ├─ state = 새 상태
+ │   ├─ 08-attach.js:pruneDrafts       (끝난 세션의 임시 글 · 첨부 정리)
+ │   ├─ 01-core.js:prunePrefs          (오래 못 본 세션 열쇠 정리)
+ │   ├─ 15-restore.js:renderRestore    (재시동 배너)
+ │   ├─ 12-env.js:finishBoot           (처음 한 번: 연동 중 화면 닫기 · 환경 점검)
+ │   ├─ 「갱신 시각」 글자
+ │   ├─ 11-controls.js:render          (목록 · 조직도 · 패널 다시 그리기 — 바뀐 곳만)
+ │   └─ 05-history.js:select           (막 띄운 세션이 나타났거나, 고른 세션에 새 요청이 오면)
+ └─ onerror                            (서버가 꺼짐 → 「재연결 중…」, 멈췄으면 /api/perf 로 403 인지 확인)
 ```
 
 ---
@@ -387,5 +395,30 @@ GitHub Actions(`.github/workflows/test.yml`)가 push · PR 마다 Ubuntu · macO
 - **지키는 곳:** `lib/paths.mjs:isInside` · `allInside` · `dirOf` 하나로 모았어요. `test/paths.test.mjs` 와 `test/live-server.test.mjs` 의 `uploads-x` 시험이 지켜요.
 
 ---
+
+## 8. 주말에 같이 볼 것
+
+### 앞 번호 파일이 뒤 번호 파일을 부르는 곳
+
+화면 js 는 번호 순서대로 불러오고 「뒤 파일이 앞 파일 것을 쓴다」가 규칙인데, 아래는 거꾸로예요(파일 → 부르는 이름 → 정의된 파일).
+지금은 모두 **불러오기가 끝난 뒤**(서버 상태가 오거나 · 사용자가 누를 때) 부르기 때문에 동작해요.
+
+| 파일 | 부르는 이름 → 정의된 파일 |
+|---|---|
+| `03-list.js` | `renderGraph` · `view`(const) → 04, `select` → 05, `fmtTok` · `ctxLevel`(const) → 08, `envData`(let) → 12, `initials` → 13 |
+| `05-history.js` | `drawerTab`(let) · `setTab` · `renderNow` → 06, `openFiles`(const) · `fullCmds`(const) · `closedCmds`(let) · `renderBusy` · `renderApproval` → 07, `useDraft` · `canSend`(let) · `updateSendState` · `fmtTok` · `ctxLevel`(const) · `modelName` → 08, `renderHistory` → 10 |
+| `06-now.js` | `renderChanges` · `sentAt`(let) → 07, `renderHistory` → 10 |
+| `07-changes.js` | `updateSendState` → 08 |
+| `09-usage.js` | `loadEnv` → 12 |
+| `10-panel.js` | `envData`(let) → 12 |
+
+- **TDZ 위험**(let · const 는 정의한 줄이 실행되기 전에 쓰면 ReferenceError): 위의 let · const 12곳은 누가 **불러오는 도중에** 그 함수를 부르게 바꾸면 화면이 바로 멈춰요. `function` 은 끌어올려져(hoisting) 이 문제가 없어요.
+- 목록은 스크립트로 뽑고(지역 변수 · 객체 키처럼 이름만 같은 것은 손으로 뺐어요) 2026-11-13 기준이에요.
+
+### 같이 정할 것(보류 중)
+
+- **공용 도우미를 `01-core.js` 로 옮기기** — `fmtTok` · `ctxLevel` · `modelName` · `initials` 와 상태 변수(`drawerTab` · `canSend` · `sentAt` …)를 앞으로 모으면 위 표가 대부분 사라져요. 주말 코드 읽기 뒤에 정하기로 했어요.
+- **`07-changes.js` 나누기** — 바꾼 파일 · 명령 / 승인 창 / 음성 입력이 한 파일에 있어요. 승인 선택지 읽기(`renderApproval` 안)를 순수 함수로 떼어 node 로 시험하는 것도 함께.
+- **세션 카드 안 단추 구조** — 카드(role=button) 안에 ✕ 단추가 들어가 있어요(ARIA 권장과 어긋남). 카드의 이름을 진짜 단추로 바꾸는 쪽이 맞아요.
 
 다 읽었다면, 다음엔 `lib/state.mjs:buildState` 를 처음부터 끝까지 따라가 보세요. 이 문서의 2 · 3 · 4절이 한 함수 안에서 모두 이어져 있어요.

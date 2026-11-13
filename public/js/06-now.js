@@ -1,5 +1,4 @@
 // 패널 탭: 지금(현재 답변) / 기록
-// ---------- 패널 탭: 지금(현재 답변) / 기록 ----------
 let drawerTab = 'now';
 function setTab(tab) {
   drawerTab = tab;
@@ -51,7 +50,7 @@ function renderNow(s) {
     ? `<span class="spinner" style="width:12px;height:12px"></span><span style="color:#f3d79c">${sentAt && s.status === 'idle' ? '전달됐어요 · 응답 기다리는 중' : `작업 중${s.lastTool ? ' · ' + esc(s.lastTool) : ''}`}</span>`
     : s.status === 'waiting' ? `<span class="dot-s waiting"></span><span style="color:var(--waiting)">승인 필요</span>`
     : s.status === 'background' ? `<span class="dot-s background pulse"></span><span style="color:#e9c77a">백그라운드 작업 중</span>`
-    : `<span class="dot-s ${s.status}"></span>${STATUS_KO[s.status]}`;
+    : `<span class="dot-s ${esc(s.status)}"></span>${STATUS_KO[s.status] ?? esc(s.status)}`;
   if ($('#now-state').innerHTML !== stateHtml) $('#now-state').innerHTML = stateHtml;
   const from = working ? (sentAt && s.status === 'idle' ? sentAt : Date.parse(s.lastPromptAt || s.lastAt)) : Date.parse(s.lastAt);
   const sec = Math.max(0, Math.floor((Date.now() - from) / 1000));

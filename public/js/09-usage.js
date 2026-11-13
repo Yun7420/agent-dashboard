@@ -1,5 +1,4 @@
 // 계정 사용 한도
-// ---------- 계정 사용 한도 ----------
 function resetIn(iso) {
   if (!iso) return '';
   const t = typeof iso === 'number' ? iso * 1000 : Date.parse(iso);

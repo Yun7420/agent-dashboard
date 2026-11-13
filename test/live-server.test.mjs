@@ -118,6 +118,7 @@ test('시험 서버: 임시 홈의 가짜 세션 2개가 tmux 창과 함께 보�
   assert.equal(byId[ID[0]].tmux.target, '%1');
   assert.equal(byId[ID[1]].status, 'waiting');
   assert.equal(byId[ID[1]].cwd, CWD);
+  assert.equal(st.home, HOME); // 화면이 경로를 ~ 로 줄일 때 쓴다(public/js/01-core.js 의 tilde)
   assert.ok(fakeLog().some((x) => x.cmd === 'ps') && fakeLog().some((x) => x.cmd === 'tmux'));
 });
 

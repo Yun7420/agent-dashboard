@@ -1,5 +1,4 @@
 // 컨트롤
-// ---------- 컨트롤 ----------
 // 종료된 세션 구역: 펼치기·접기와 기간은 목록 안에서 (목록은 다시 그려지므로 이벤트는 위임)
 $('#list').addEventListener('click', (e) => {
   if (!e.target.closest('#ended-toggle')) return;

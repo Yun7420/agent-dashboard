@@ -354,7 +354,7 @@ async function tick() {
     const json = sJ + lJ + uJ + rJ;
     if (json !== lastJson) {
       lastJson = json;
-      const msg = `data: {"generatedAt":${JSON.stringify(latest.generatedAt)},"host":${JSON.stringify(latest.host)},"windowHours":${latest.windowHours},"tools":${JSON.stringify(latest.tools)},"sessions":${sJ},"links":${lJ},"usage":${uJ},"restore":${rJ}}\n\n`;
+      const msg = `data: {"generatedAt":${JSON.stringify(latest.generatedAt)},"host":${JSON.stringify(latest.host)},"home":${JSON.stringify(latest.home)},"windowHours":${latest.windowHours},"tools":${JSON.stringify(latest.tools)},"sessions":${sJ},"links":${lJ},"usage":${uJ},"restore":${rJ}}\n\n`;
       for (const res of clients) res.write(msg);
     }
   } catch (e) {

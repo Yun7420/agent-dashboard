@@ -1,5 +1,4 @@
 // 패널 머리: 정보 · 메뉴 · 폭
-// ---------- 패널 머리: 정보·메뉴·폭 ----------
 $('#d-info-btn').addEventListener('click', (e) => { e.stopPropagation(); $('#d-meta').classList.toggle('show'); });
 $('#more-btn').addEventListener('click', (e) => { e.stopPropagation(); $('#more-menu').classList.toggle('show'); });
 document.addEventListener('click', (e) => {
@@ -150,7 +149,7 @@ document.addEventListener('click', (e) => {
 function openDirMenu(dir, x, y) {
   const m = $('#dir-menu');
   const apps = envData?.editors?.length ? envData.editors : [{ id: 'finder', label: 'Finder' }];
-  m.innerHTML = `<div class="dm-path" title="${esc(dir)}">${esc(dir.replace(/^\/Users\/[^/]+/, '~'))}</div>` +
+  m.innerHTML = `<div class="dm-path" title="${esc(dir)}">${esc(tilde(dir))}</div>` +
     apps.map((a) => `<button type="button" data-open-app="${esc(a.id)}">${a.id === 'finder' ? `${esc(a.label)}에서 보기` : `${esc(a.label)}로 열기`}</button>`).join('');
   m.dataset.dir = dir;
   m.classList.add('show');

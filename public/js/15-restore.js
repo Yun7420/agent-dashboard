@@ -1,5 +1,4 @@
-// 재시동 복구
-// ---------- 재시동 복구: 재시동 전에 떠 있던 세션을 한 번에 다시 열기 ----------
+// 재시동 복구: 재시동 전에 떠 있던 세션을 한 번에 다시 열기
 function renderRestore() {
   const items = state?.restore ?? [];
   const box = $('#restore');

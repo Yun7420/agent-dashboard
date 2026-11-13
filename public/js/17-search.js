@@ -13,10 +13,13 @@ document.addEventListener('keydown', (e) => {
   openSearch();
 });
 
+// 검색어 강조: 원문에서 대소문자를 가리지 않고 찾은 그 자리 · 그 길이로 자른 뒤 조각마다 esc.
+// 예전엔 esc 한 글자를 toLowerCase 길이로 잘라, 소문자로 바꾸면 길이가 바뀌는 글자(İ 등)나 & 가 섞이면 강조가 어긋났다
 const mark = (text, q) => {
-  const safe = esc(text);
-  const i = safe.toLowerCase().indexOf(esc(q).toLowerCase());
-  return i < 0 ? safe : `${safe.slice(0, i)}<mark>${safe.slice(i, i + esc(q).length)}</mark>${safe.slice(i + esc(q).length)}`;
+  const m = String(text ?? '').match(new RegExp(String(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
+  if (!m) return esc(text);
+  const i = m.index, j = i + m[0].length;
+  return `${esc(text.slice(0, i))}<mark>${esc(m[0])}</mark>${esc(text.slice(j))}`;
 };
 
 async function runSearch() {
