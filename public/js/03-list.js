@@ -19,7 +19,7 @@ function renderList() {
     if (!items.length) continue;
     if (label && label !== '__ended') html += `<div class="group-h">${label} · ${items.length}</div>`;
     for (const s of items) {
-      html += `<div class="card ${s.status} ${selected === s.key ? 'sel' : ''}" data-key="${esc(s.key)}" title="${esc(s.title)} · ${STATUS_KO[s.status]}" ${manual && s.status !== 'ended' ? 'draggable="true"' : ''}>
+      html += `<div class="card ${s.status} ${selected === s.key ? 'sel' : ''} ${kbKey === s.key ? 'kb' : ''}" data-key="${esc(s.key)}" title="${esc(s.title)} · ${STATUS_KO[s.status]}" ${manual && s.status !== 'ended' ? 'draggable="true"' : ''}>
         <span class="ini"><span class="dot-s ${s.status} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${esc(initials(s.title))}</span>
         <div class="row"><div class="title">${esc(s.title)}</div><span class="status ${s.status}"><span class="dot-s ${s.status} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${STATUS_KO[s.status]}</span></div>
         <button class="x" data-close="${esc(s.key)}" title="${s.status === 'ended' ? '목록에서 숨기기' : '세션 종료'}">✕</button>

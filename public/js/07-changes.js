@@ -177,9 +177,9 @@ async function renderApproval(s) {
       const picked = /✔\s*$/.test(o.label);
       const label = o.label.replace(/\s*✔\s*$/, '');
       const cls = picked ? 'primary' : /^no\b|아니/i.test(label) ? 'danger' : '';
-      return `<button data-choice="${o.n}" class="${cls}" ${picked ? 'title="지금 고른 답"' : ''}>${picked ? '✓ ' : ''}${esc(o.n)}. ${esc(label)}</button>`;
+      return `<button data-choice="${o.n}" class="${cls}" title="${picked ? '지금 고른 답 · ' : ''}키 ${o.n}">${picked ? '✓ ' : ''}${esc(o.n)}. ${esc(label)}</button>`;
     }).join('') +
-    `<button data-choice="esc" class="danger">거절 (Esc)</button>` +
+    `<button data-choice="esc" class="danger" title="키 Esc">거절 (Esc)</button>` +
     (options.length ? '' : `<span style="color:var(--faint);align-self:center">번호 없는 선택창 →</span><button data-choice="up">↑</button><button data-choice="down">↓</button><button data-choice="enter" class="primary">Enter (❯ 표시된 항목 선택)</button>`);
   if ($('#approve-btns').dataset.src !== btnHtml) { $('#approve-btns').innerHTML = btnHtml; $('#approve-btns').dataset.src = btnHtml; }
   paneTimer = setTimeout(() => { const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 2000);

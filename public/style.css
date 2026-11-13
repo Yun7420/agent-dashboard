@@ -137,6 +137,10 @@ body.aside-folded #ended-window { display: none; }
 .card.sel { border-color: rgba(139, 124, 246, .55) !important; }
 .card.waiting:not(.sel) { border-color: rgba(251, 111, 146, .45) !important; }
 .card.sel { background: var(--accent-soft); border-color: rgba(139, 124, 246, .45); }
+/* 키보드(j/k)로 고른 카드 · 위험 요청에서 숫자를 한 번 누른 단추(한 번 더 누르면 허락) */
+.card.kb:not(.sel) { outline: 2px dashed rgba(139, 124, 246, .6); outline-offset: -2px; }
+#approve-btns button.kb-arm { outline: 2px solid var(--working); outline-offset: 2px; box-shadow: 0 0 0 6px rgba(245, 185, 66, .18); }
+kbd { font: 11px var(--mono); padding: 0 5px; border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 4px; background: var(--surface-3); color: var(--text); }
 .card[draggable="true"] { cursor: grab; }
 .card.dragging { opacity: .35; }
 .card.drop-before { box-shadow: 0 -2px 0 var(--accent); }

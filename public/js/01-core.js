@@ -45,6 +45,7 @@ let selected = null;
 let promptLog = []; // 기록 첫 묶음(최신이 위, 검색과 상관없이) — 지금 탭의 마지막 요청용
 let historyTotal = 0; // 기록 전체 개수(기록 탭 숫자)
 let lastSelected = null;
+let kbKey = null; // 키보드(j/k)로 고른 세션 — 패널이 닫혀 있을 때 목록에 테두리로 표시(19-keys.js)
 
 function ago(iso) {
   if (!iso) return '';

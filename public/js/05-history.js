@@ -22,6 +22,7 @@ async function loadHistory(key, more = false) {
 
 async function select(key) {
   selected = key;
+  kbKey = key; // 클릭으로 고른 세션에서 j/k 가 이어지게
   renderList();
   renderGraph();
   const s = state.sessions.find((x) => x.key === key);

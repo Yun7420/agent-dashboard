@@ -145,6 +145,17 @@ A session already running in a terminal has no official way to receive input fro
 - **History** tab: past prompts and answers, search, "load more". Turns started by a message from another session (SendMessage) are split out and shown as a **dashed bubble labelled "↙ sender"** (same in the Now tab and global search)
 - **What I did today**: the calendar button at the top → per session: prompts, edited files, command count and **commit titles** (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts)
 - **Search all history**: the magnifier at the top (or the `/` key) searches prompts and answers across all sessions → picking a result opens that session's History tab with the same query
+- **Keyboard shortcuts** (also listed under the ? help)
+
+  | Key | Action |
+  |---|---|
+  | `j` / `k` | Next / previous session (in list order, stops at the ends). If the panel is open, it switches to that session |
+  | `g` · `Enter` | Open the chosen session's panel |
+  | `/` | Search all history |
+  | `1`–`9` | Pick that numbered option in an approval prompt. **For requests flagged as risky, press the same number again within 2 seconds** |
+  | `Esc` | Reject if an approval prompt is shown, otherwise close popups / the panel |
+
+  Shortcuts are off while typing, during Korean IME composition, with Ctrl/⌘/Alt, on key repeat, and while a dialog (search etc.) is open.
 - Answers render **bold** · `code` · headings · **tables** (`| head |` + `|---|`) · **lists** (`-` · `1.`, one nesting level) · **quotes** (`>`) · **code blocks** (```). Wide tables and long code scroll horizontally inside the block
 - Input: **Enter** to send · Shift+Enter for a new line · 🎤 voice · 📎 attach (drag & drop or ⌘V, up to 25MB)
 - Needs approval: a **"what you're allowing" card** on top (run command · edit/write file · web · MCP · question — the full command, or the file path relative to the session folder, flagged if outside it), then the real terminal screen and option buttons. For `rm -rf` · `sudo` · `git push --force` · `git reset --hard` · `curl | sh` · `chmod 777` · files outside the folder · `.env`/key files the card turns **amber** with a one-line reason. **Check what you're allowing before you click.** The approval view fills the panel with the input pinned at the bottom, and keeps your scroll position while you read.
