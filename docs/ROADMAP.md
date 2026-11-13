@@ -3,6 +3,7 @@
 > 2026-11-12 정리. 하나씩 끝내고 실제로 써 본 뒤 다음으로 넘어간다. 끝난 항목은 `[x]` 와 커밋 해시를 적는다.
 
 ## 0. 기반
+- [x] npx 준비 C1(사용자 승인 · 보안): 토큰을 ~/.agent-dashboard/token(600)으로 — 링크 거절 · 동시 생성 한 값 · 옛 .dashboard-token 한 번 옮기고 삭제 · 데모는 demo-token. 실제 전환 해시 같음 · 열린 탭 그대로 `b096f23`
 - [x] 시험 전용 서버(사용자 승인 D) — 임시 홈(DASHBOARD_HOME) · 임시 토큰(DASHBOARD_TOKEN_FILE, 시험 모드에서만) · test/fake-bin 가짜 명령으로 실제 모드 시험 8개(명령 인자 · 잠금 · 경로 검사 · 업로드 · 403) `5ec47bf`
 - [x] server.mjs 큰 구조 나누기(사용자 승인 A) — 1141 → 649줄. 경로 표 `9155dfd` · 명령 lib/commands `1282da1` · 상태 lib/state + lib/procs `7820a71` · 환경 점검 · 폴더 열기 · 첨부 lib/env · open-dir · uploads `d551a64`. 덩어리마다 데모 응답 스냅숏 66개 같음 · 실제 모드 상태 비교 같음
 - [x] 설정 쓰기(사용자 승인 B): ~/.claude/settings.json 을 쓰기 직전 다시 읽고 바꿀 키만 · 임시 파일 → fsync → rename · 권한 유지 · 링크 거절 · 깨진 JSON 이면 멈춤 `0be60e5`
