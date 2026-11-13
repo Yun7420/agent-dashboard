@@ -134,6 +134,7 @@ body.aside-folded .ended-toggle b { font-size: 11px; }
 body.aside-folded .ended-toggle .chev { display: none; }
 body.aside-folded #ended-window { display: none; }
 .group-h { padding: 12px 8px 6px; color: var(--faint); font-size: 11px; font-weight: 600; letter-spacing: .04em; }
+.group-h.empty-hint { font-size: 12px; font-weight: 400; letter-spacing: 0; line-height: 1.6; color: var(--dim); white-space: normal; } /* 처음 설치 — 기록 폴더 없음 */
 .card { position: relative; padding: 10px 12px 10px; margin: 4px 0; border-radius: var(--radius); border: 1px solid transparent; cursor: pointer; transition: background .15s, border-color .15s; }
 .card { background: rgba(255, 255, 255, .025); border-color: rgba(255, 255, 255, .06) !important; }
 .card:hover { background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .12) !important; }

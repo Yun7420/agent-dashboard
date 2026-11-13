@@ -5,6 +5,19 @@
   "license": "MIT",
   "description": "내 컴퓨터에 떠 있는 AI 코딩 에이전트(Claude Code·Codex) 세션을 한 화면에서 보는 로컬 대시보드",
   "type": "module",
+  "bin": {
+    "agent-dashboard": "bin/agent-dashboard.mjs"
+  },
+  "files": [
+    "server.mjs",
+    "adapters/",
+    "lib/",
+    "public/",
+    "bin/",
+    "README.md",
+    "README.en.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "node server.mjs",
     "restore": "node bin/restore.mjs",

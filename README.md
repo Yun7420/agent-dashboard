@@ -58,6 +58,8 @@ Agent Dashboard는 이걸 한 화면에 모읍니다.
 
 ### 준비물
 
+필요한 것: **macOS · Node 18+ · tmux · Claude Code**. 없는 게 있어도 서버는 켜지고, 시작 로그와 환경 점검에 한국어로 안내해요. tmux 가 없으면 보기만 되고 새 세션 · 복구 · 닫기 단추가 꺼져요(단추에 마우스를 올리면 이유가 보여요). Claude Code 기록이 아직 없으면 목록에 시작 방법을 보여 줘요.
+
 | 항목 | 필요 | 설치 |
 |---|---|---|
 | macOS | 필수 | Linux 는 대부분 동작, Windows 는 미지원 |
@@ -72,6 +74,8 @@ git clone https://github.com/Yun7420/agent-dashboard.git
 cd agent-dashboard
 npm start          # → 브라우저에서 http://localhost:4545
 ```
+
+같은 일을 `node bin/agent-dashboard.mjs` 로도 할 수 있어요(`--help` 로 도움말). 나중에 npm 으로 내놓을 때 쓸 실행 명령이에요.
 
 처음 켜면 **환경 점검표**와 사용 안내가 떠요. 빠진 게 있으면 해결 방법이 같이 나와요(다시 보기: 오른쪽 위 **?**).
 

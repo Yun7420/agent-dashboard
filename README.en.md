@@ -58,6 +58,8 @@ Agent Dashboard puts all of this on one screen.
 
 ### Requirements
 
+You need: **macOS · Node 18+ · tmux · Claude Code**. If something is missing the server still starts and explains it in the startup log and the environment check. Without tmux it's view-only and the New session · Restore · Close buttons are disabled (hover to see why). If there are no Claude Code transcripts yet, the list shows how to get started.
+
 | | Required | Install |
 |---|---|---|
 | macOS | yes | Linux mostly works, Windows is not supported |
@@ -72,6 +74,8 @@ git clone https://github.com/Yun7420/agent-dashboard.git
 cd agent-dashboard
 npm start          # → open http://localhost:4545
 ```
+
+You can also run `node bin/agent-dashboard.mjs` (see `--help`); it's the command a future npm release will use.
 
 On first launch you'll see an **environment check** and a short guide, with fixes for anything missing (open it again with **?** in the top right).
 

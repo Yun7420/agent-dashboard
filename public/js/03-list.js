@@ -28,7 +28,10 @@ function renderList() {
       </div>`;
     }
   }
-  const listHtml = (live.length ? '' : '<div class="group-h">떠 있는 세션이 없어요</div>') + html;
+  // 기록 폴더가 아예 없으면(처음 설치) 「떠 있는 세션이 없어요」 대신 무엇을 하면 되는지 안내
+  const noRecords = !state.sessions.length && envData?.tools?.claudeRecords === false;
+  const emptyHint = noRecords ? '<div class="group-h empty-hint">아직 Claude Code 세션 기록이 없어요 — 터미널에서 claude 를 한 번 실행하면 여기에 보여요</div>' : '<div class="group-h">떠 있는 세션이 없어요</div>';
+  const listHtml = (live.length ? '' : emptyHint) + html;
   if (list.dataset.src !== listHtml) { list.innerHTML = listHtml; list.dataset.src = listHtml; }
 }
 

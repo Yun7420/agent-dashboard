@@ -27,7 +27,7 @@ import { createLock } from './lib/lock.mjs';
 import { createCommands } from './lib/commands.mjs';
 import { createProcesses } from './lib/procs.mjs';
 import { createStateBuilder } from './lib/state.mjs';
-import { createEnvCheck } from './lib/env.mjs';
+import { createEnvCheck, startupNotices } from './lib/env.mjs';
 import { detectEditors, openDir } from './lib/open-dir.mjs';
 import { UPLOAD_DIR, UPLOAD_MAX, pruneUploads } from './lib/uploads.mjs';
 import { fileCache } from './lib/filecache.mjs';
@@ -619,7 +619,8 @@ server.on('error', (e) => {
 
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}`);
-  checkEnv().catch((e) => console.error('[환경 점검]', e.message)); // 시작 때 실패해도 서버는 계속(화면에서 다시 점검 가능)
+  // 없는 도구(tmux · Claude Code) · 다른 OS 는 로그에 한국어로 안내만 하고 서버는 계속(보기 전용으로라도)
+  checkEnv().then((e) => { if (!DEMO) for (const line of startupNotices(e)) console.log(line); }).catch((e) => console.error('[환경 점검]', e.message)); // 시작 때 실패해도 서버는 계속(화면에서 다시 점검 가능)
   tick();
   if (!DEMO) {
     // 예전에 644 로 만들어진 로그 · 설정 백업도 본인만 읽게(lib/perms.mjs). 링크는 따라가지 않는다

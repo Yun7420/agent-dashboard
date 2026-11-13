@@ -7,7 +7,24 @@ async function loadEnv(refresh = false) {
   catch { envData = null; }
   $('#bs-3')?.classList.add('done');
   renderEnv();
+  applyTools();
   return envData;
+}
+// 없는 도구에 맞춰 화면을 바꾼다: tmux 가 없으면 tmux 가 필요한 단추를 끄고 이유를 title 로(보내기 · 승인은 tmux 세션이 없어 이미 꺼짐),
+// Claude Code 기록 폴더가 없으면 빈 목록 대신 안내(03-list.js)
+const NO_TMUX = 'tmux 가 필요해요 — brew install tmux 뒤 다시 켜 주세요. 지금은 보기만 할 수 있어요';
+const TMUX_BUTTONS = ['#new-session', '#recent-btn', '#end-session'];
+function applyTools() {
+  const noTmux = envData?.tools?.tmux === false;
+  document.body.classList.toggle('no-tmux', noTmux);
+  for (const sel of TMUX_BUTTONS) {
+    const b = $(sel);
+    if (!b) continue;
+    b.dataset.title ??= b.title;
+    b.disabled = noTmux;
+    b.title = noTmux ? NO_TMUX : b.dataset.title;
+  }
+  if (state) renderList();
 }
 function renderEnv() {
   if (!envData) { $('#env-list').innerHTML = '<div class="env-row"><span class="lv error">✕</span><span class="nm">점검 실패</span><span class="dt">서버에 연결하지 못했어요</span></div>'; return; }
