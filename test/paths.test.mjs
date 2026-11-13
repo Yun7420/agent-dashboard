@@ -60,7 +60,7 @@ test('공백 · 한글 폴더에서 띄워도 화면 파일이 열린다', async
     for (let i = 0; i < 50 && code !== 200; i++) { code = await get('/').catch(() => 0); if (code !== 200) await new Promise((r) => setTimeout(r, 100)); }
     assert.equal(code, 200);
     assert.equal(await get('/js/01-core.js'), 200);
-    assert.ok(fs.existsSync(path.join(dir, '.dashboard-token'))); // 토큰도 그 폴더에(예전엔 %20 경로라 엉뚱한 곳)
+    assert.ok(!fs.existsSync(path.join(dir, '.dashboard-token'))); // 토큰은 이제 저장소 폴더가 아니라 ~/.agent-dashboard(데모는 demo-token)
   } finally {
     srv.kill(); // 이 테스트가 띄운 서버만 끈다
   }

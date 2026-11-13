@@ -187,10 +187,12 @@ test('평소 실행에서는 DASHBOARD_HOME · DASHBOARD_TOKEN_FILE 를 무시(D
   const probe = (extra) => {
     const env = { ...process.env, DASHBOARD_HOME: '/tmp/가짜-홈', DASHBOARD_TOKEN_FILE: '/tmp/가짜-토큰', ...extra };
     for (const k of Object.keys(extra)) if (extra[k] === undefined) delete env[k];
-    return JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', "import * as p from './lib/paths.mjs'; console.log(JSON.stringify({ test: p.TEST_MODE, home: p.HOME, token: p.tokenFileFor('/repo') }))"], { cwd: ROOT, env, encoding: 'utf8' }));
+    return JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', "import * as p from './lib/paths.mjs'; console.log(JSON.stringify({ test: p.TEST_MODE, home: p.HOME, token: p.tokenFiles('/repo') }))"], { cwd: ROOT, env, encoding: 'utf8' }));
   };
-  assert.deepEqual(probe({ DASHBOARD_TEST: undefined, DEMO: undefined }), { test: false, home: os.homedir(), token: '/repo/.dashboard-token' });
-  assert.deepEqual(probe({ DASHBOARD_TEST: '0', DEMO: undefined }), { test: false, home: os.homedir(), token: '/repo/.dashboard-token' });
-  assert.deepEqual(probe({ DASHBOARD_TEST: '1', DEMO: '1' }), { test: false, home: os.homedir(), token: '/repo/.dashboard-token' });
-  assert.deepEqual(probe({ DASHBOARD_TEST: '1', DEMO: undefined }), { test: true, home: '/tmp/가짜-홈', token: '/tmp/가짜-토큰' });
+  const data = path.join(os.homedir(), '.agent-dashboard');
+  const normal = { file: path.join(data, 'token'), legacy: ['/repo/.dashboard-token', '/repo/.deck-token'] };
+  assert.deepEqual(probe({ DASHBOARD_TEST: undefined, DEMO: undefined }), { test: false, home: os.homedir(), token: normal });
+  assert.deepEqual(probe({ DASHBOARD_TEST: '0', DEMO: undefined }), { test: false, home: os.homedir(), token: normal });
+  assert.deepEqual(probe({ DASHBOARD_TEST: '1', DEMO: '1' }), { test: false, home: os.homedir(), token: { file: path.join(data, 'demo-token'), legacy: [] } });
+  assert.deepEqual(probe({ DASHBOARD_TEST: '1', DEMO: undefined }), { test: true, home: '/tmp/가짜-홈', token: { file: '/tmp/가짜-토큰', legacy: [] } });
 });

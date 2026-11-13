@@ -35,7 +35,8 @@ import { pruneStatusFiles } from './lib/status.mjs';
 import { updateText, isBridge, enableStatusLine, disableStatusLine, modelOf, restoreModelText } from './lib/claude-settings.mjs';
 import { sendText, sendJson, friendly } from './lib/respond.mjs';
 import { isObject, validDate, KEY_RE, WINDOW_HOURS } from './lib/validate.mjs';
-import { CLAUDE_DIR, DATA_DIR, dirOf, isInside, tildify, tokenFileFor } from './lib/paths.mjs';
+import { CLAUDE_DIR, DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
+import { loadToken } from './lib/token.mjs';
 import { createRecorder, readRange, pruneLimits, validRange } from './lib/limits.mjs';
 import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNotifier } from './lib/notify.mjs';
 import { pageHistory, pageParams } from './lib/paging.mjs';
@@ -47,32 +48,15 @@ import { createRecent, liveEntries, KEEP_DAYS as RECENT_DAYS } from './lib/recen
 const DEMO = process.env.DEMO === '1'; // 가짜 데이터로 화면만 보여 주는 모드(스크린샷용)
 
 const PORT = Number(process.env.PORT ?? 4545);
-let TOKEN_CREATED_NOW = false; // 이번 실행에서 열쇠를 처음 만들었는지 (안내 문구에 씀)
 const ROOT = dirOf(import.meta.url); // 저장소(패키지) 폴더 — 공백 · 한글 폴더에서도 맞게(lib/paths.mjs)
-const TOKEN_FILE = tokenFileFor(ROOT); // 평소엔 저장소 폴더의 .dashboard-token(시험 모드만 바꿀 수 있음 — lib/paths.mjs)
-const TOKEN = loadToken();
+// 토큰은 ~/.agent-dashboard/token(600)에 보관해 서버를 다시 켜도 열려 있던 탭이 그대로 동작하게 한다(lib/token.mjs · 자리는 lib/paths.mjs)
+const { file: TOKEN_FILE, legacy: TOKEN_LEGACY } = tokenFiles(ROOT);
+const { token: TOKEN, createdNow: TOKEN_CREATED_NOW, migrated: TOKEN_MIGRATED } = loadToken({ file: TOKEN_FILE, legacy: TOKEN_LEGACY });
+if (TOKEN_MIGRATED) console.log(`토큰을 새 자리로 옮겼어요 → ${TOKEN_FILE} (저장소 폴더의 옛 파일은 지움)`);
 const ALLOWED_HOSTS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`]);
 const SCAN_MS = 2000;
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const byId = Object.fromEntries(adapters.map((a) => [a.id, a]));
-
-// 토큰은 .dashboard-token 파일(본인만 읽기 가능)에 보관해 서버를 다시 켜도 열려 있던 탭이 그대로 동작하게 한다.
-function loadToken() {
-  const file = TOKEN_FILE;
-  // 예전 이름(.deck-token)으로 만들어 둔 토큰이 있으면 이름만 바꿔 그대로 쓴다(열려 있던 탭이 끊기지 않게)
-  const legacy = path.join(ROOT, '.deck-token');
-  if (!fs.existsSync(file) && fs.existsSync(legacy)) fs.renameSync(legacy, file);
-  try {
-    const saved = fs.readFileSync(file, 'utf8').trim();
-    if (/^[0-9a-f]{48}$/.test(saved)) return saved;
-  } catch {
-    /* 처음 실행 */
-  }
-  const token = crypto.randomBytes(24).toString('hex');
-  fs.writeFileSync(file, token, { mode: 0o600 });
-  TOKEN_CREATED_NOW = true;
-  return token;
-}
 
 // ---------- 세션 상태 ----------
 // 프로세스 목록(lib/procs.mjs)과 상태 조립(lib/state.mjs). 상태 조립에 필요한 것만 이름 붙여 넘긴다

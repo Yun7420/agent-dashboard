@@ -6,6 +6,7 @@ import path from 'node:path';
 import http from 'node:http';
 import net from 'node:net';
 import { fileURLToPath } from 'node:url';
+import { DEMO_TOKEN_FILE } from '../lib/paths.mjs';
 
 // 데모 모드 서버를 따로 띄워 보안 검사를 시험한다(실제 세션은 건드리지 않음)
 const PORT = 4699;
@@ -31,7 +32,7 @@ before(async () => {
     try { if ((await req('/')) === 200) break; } catch {}
     await new Promise((r) => setTimeout(r, 100));
   }
-  TOKEN = fs.readFileSync(path.join(ROOT, '.dashboard-token'), 'utf8').trim();
+  TOKEN = fs.readFileSync(DEMO_TOKEN_FILE, 'utf8').trim(); // 데모는 따로 ~/.agent-dashboard/demo-token(lib/paths.mjs)
 });
 after(() => srv?.kill());
 

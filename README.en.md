@@ -189,8 +189,9 @@ A session already running in a terminal has no official way to receive input fro
 ## Security
 
 - **`127.0.0.1` only** — requests whose Host isn't localhost are rejected (blocks DNS rebinding). Prompts and code paths are visible, so don't share the address.
-- **`.dashboard-token`** — a secret token just for this dashboard. It's generated per machine on first run (readable only by you), and **commands** like send, approve and close are accepted **only with this token**. Any website can send requests to localhost from your browser, so this stops a malicious page from sneaking commands in.
-  - Don't share or commit it (it's in `.gitignore`). If it leaks, delete the file and restart to get a new one.
+- **`~/.agent-dashboard/token`** — a secret token just for this dashboard. It's generated per machine on first run (readable only by you, 600), and **commands** like send, approve and close are accepted **only with this token**. Any website can send requests to localhost from your browser, so this stops a malicious page from sneaking commands in.
+  - Don't share it. If it leaks, delete the file and restart to get a new one.
+  - Older versions kept it in `.dashboard-token` inside the repo folder. On first start the value is moved to the new place once and the old file is deleted (open tabs keep working). A token file that is a symlink is never used.
 - Attachments outside `~/.agent-dashboard/uploads/` are rejected, and attachments are **deleted automatically after 14 days**.
 - The `~/.agent-dashboard` folder is yours only (700), and the files in it (log, settings backups, restore list) are readable only by you (600). On start the server also tightens older files that were created wider (symlinks are not followed).
 - Reading the session list and history also requires the same token as commands (so other accounts or programs on the same Mac can't read your conversations).
