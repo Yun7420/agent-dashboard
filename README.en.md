@@ -20,9 +20,9 @@ Claude Code · Codex · zero dependencies · everything stays on your machine
 
 **Roadmap** — ✅ Stage 1: vanilla JS, built fast and used for real · 🔄 Stage 2: split files (done) · clean up (in progress), still zero dependencies · ⏳ Stage 3: move to React
 
-![Demo — an approval card with a risk warning, live diffs of a working session, the usage-limit trend and the restore dialog](docs/images/demo.gif)
+![Demo — an approval card with a risk warning, live diffs of a working session, the usage-limit trend and the restore dialog](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/demo.gif)
 
-![Overview — session list, org chart, account usage limits, activity log](docs/images/overview.png)
+![Overview — session list, org chart, account usage limits, activity log](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/overview.png)
 
 <sub>Project and session names in the screenshots are sample data from demo mode.</sub>
 
@@ -54,9 +54,9 @@ Agent Dashboard puts all of this on one screen.
 | 🔔 | **Notifications** | Alert when approval is needed or a task over 1 minute finishes — browser notifications, or **macOS notifications that arrive even with the tab closed** (choose a sound); pending approvals in the tab title |
 | 🛡️ | **Local-only security** | 127.0.0.1 only, Host/Origin checks, a secret token generated per machine (`~/.agent-dashboard/token`), no framing (clickjacking), path checks for attachments and folders |
 
-![Session panel — current answer, file diffs, commands](docs/images/session-panel.png)
+![Session panel — current answer, file diffs, commands](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/session-panel.png)
 
-![Approval — "what you're allowing" card (amber when risky) + the real terminal screen + option buttons](docs/images/approval.png)
+![Approval — "what you're allowing" card (amber when risky) + the real terminal screen + option buttons](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/approval.png)
 
 ## Getting started
 
@@ -113,6 +113,33 @@ Even without a restart, if sessions stopped unexpectedly, click the **restore bu
 - Sessions that are running now aren't listed (no duplicates). Sessions you closed on purpose with "Close session" are grouped separately and not selected by default.
 - If the folder trust prompt appears, the dashboard doesn't answer it for you; it only tells you "trust confirmation needed".
 - The list lives in `~/.agent-dashboard/recent.json` (readable only by you). The page sends only the chosen session IDs; folders and names come only from the server's saved list.
+
+### What's in the data folder
+
+Everything the dashboard writes lives in `~/.agent-dashboard/` (it never writes into the repo or package folder). The folder is yours only (700) and the files are readable only by you (600).
+
+| Name | What | Mode |
+|---|---|---|
+| `token` | secret token. Delete it and restart to get a new one | 600 |
+| `demo-token` | token for demo mode only | 600 |
+| `server.log` | server output written by the runner (`run`) | 600 |
+| `restore.json` · `restore-prev.json` | restore-after-reboot lists (now · before the reboot) | 600 |
+| `recent.json` | sessions from the last 7 days, for the restore button | 600 |
+| `notify.json` | notification settings | 600 |
+| `settings.backup.<time>.json` · `statusline-original.json` | backup of `~/.claude/settings.json` before turning on usage limits · your original status line | 600 |
+| `bin/statusline.mjs` | copy of the usage-limit status-line bridge | folder 700 · file 600 |
+| `status/` | values the bridge writes per session (old ones are cleaned up) | folder 700 · files 600 |
+| `limits/` | account limit history (per day, kept 30 days) | folder 700 · files 600 |
+| `uploads/` | attachments (per day, deleted after 14 days) | folder 700 · files 600 |
+
+### Stopping and uninstalling
+
+1. **Stop the server** — if you started it with `npm start`, press Ctrl+C in that terminal. If you used the runner (`run`), press Ctrl+C in its window (the server stops too). To stop the whole tmux `dashboard` session: `tmux kill-session -t dashboard`.
+2. **Turn off usage limits** — if it's on, do this **before deleting anything**: click the limits display in the header → "설정…" (Settings) → **끄기** (Turn off). This puts the status line in `~/.claude/settings.json` back the way it was.
+3. **Delete the data folder** — `rm -rf ~/.agent-dashboard`
+4. If you cloned the repo, delete that folder and you're done.
+
+> ⚠️ If you jump to step 3 with usage limits still on, `~/.claude/settings.json` keeps a status-line entry that runs `~/.agent-dashboard/bin/statusline.mjs`. That file is gone, so the status line in your Claude sessions goes blank or shows an error. Start the dashboard again and do step 2, or remove `statusLine` from settings.json yourself.
 
 ## To chat and approve: start sessions in tmux
 
@@ -239,7 +266,7 @@ agent-dashboard/
 ├─ adapters/           # per-tool differences only — claude.mjs · codex.mjs · index.mjs
 ├─ lib/                # one job per file
 │  ├─ state · procs · tmux · dialog · approval     build state · process list · tmux control · prompt detection · "what you're allowing" card
-│  ├─ commands · spawn · open-dir · env           commands (chat · approve · new session …) · new-session args · open folder · environment check
+│  ├─ commands · spawn · open-dir · env · launch  commands (chat · approve · new session …) · new-session args · open folder · environment check · hints matching how you started it
 │  ├─ body · uploads · respond · validate         request bodies · attachments · response shapes · input checks
 │  ├─ token · paths · perms                       secret token · paths (inside-folder checks) · file permissions
 │  ├─ claude-settings · bridge · status · limits · usage   usage limits (status-line bridge · limit history · token totals)
@@ -251,7 +278,7 @@ agent-dashboard/
 │  ├─ index.html       # structure (the server injects the token here only)
 │  ├─ style.css        # styles
 │  └─ js/00-md.js ~ 19-keys.js   # behavior, one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
-└─ test/               # node --test, 28 files · fake-bin (fake tmux · claude · ps · lsof)
+└─ test/               # node --test, 29 files · fake-bin (fake tmux · claude · ps · lsof)
 ```
 
 ### Adding another agent
@@ -273,9 +300,9 @@ Shows the UI with fake data (Project1, Lead Manager, …). No commands are execu
 npm test
 ```
 
-Uses Node's built-in test runner (`node --test`), nothing to install. 184 tests (2026-11-13): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
+Uses Node's built-in test runner (`node --test`), nothing to install. 187 tests (2026-11-13): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
 - Test servers briefly use ports 4694 and 4696–4699. Instead of real sessions and tmux they use a temporary home folder and the fake commands in `test/fake-bin` (tmux · claude · ps · lsof), so your `~/.claude` and `~/.agent-dashboard` are never touched.
-- GitHub Actions runs `npm test` on every push to main and every PR, on Ubuntu · macOS × Node 18 · 20 · 22 (badge above). The macOS notification (osascript) test runs only on macOS.
+- GitHub Actions runs `npm test` on every push to main and every PR, on Ubuntu · macOS × Node 18 · 20 · 22 · 24 (badge above). The macOS notification (osascript) test runs only on macOS.
 
 ## Supported environment and limits
 

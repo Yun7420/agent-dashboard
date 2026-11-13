@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url))); // bin/ 의 부모 = 저장소(패키지) 폴더
-const { version } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const { name, version, homepage } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const HELP = `Agent Dashboard ${version} — 내 Mac 에 떠 있는 AI 코딩 세션(Claude Code · Codex)을 한 화면에서 보는 로컬 대시보드
 
 사용법
@@ -18,9 +18,14 @@ const HELP = `Agent Dashboard ${version} — 내 Mac 에 떠 있는 AI 코딩 �
   agent-dashboard --version  버전
 
 필요한 것: macOS · Node 18 이상 · tmux(채팅 · 승인 · 새 세션) · Claude Code
-설명서: ${path.join(root, 'README.md')}`;
+설명서: ${homepage}`; // npx 로 받으면 패키지 폴더는 캐시 안 긴 경로라 GitHub 주소로
 
 const [cmd] = process.argv.slice(2);
+// 포트 충돌 안내에 쓸 「다시 켤 명령」 — 사용자가 켠 방법 그대로(lib/launch.mjs). 실행기의 자식 서버도 이 환경을 받는다
+if (cmd === undefined || cmd === 'start' || cmd === 'run') {
+  const { startCommand } = await import('../lib/launch.mjs');
+  process.env.DASHBOARD_START_CMD = startCommand({ env: process.env, argv1: process.argv[1], pkgName: name, sub: cmd ?? 'start' });
+}
 if (cmd === '--help' || cmd === '-h' || cmd === 'help') console.log(HELP);
 else if (cmd === '--version' || cmd === '-v') console.log(version);
 else if (cmd === undefined || cmd === 'start') await import('../server.mjs');

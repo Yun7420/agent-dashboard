@@ -99,6 +99,7 @@
 | `lib/spawn.mjs` | 새 세션 claude 인자(`newSessionArgs`). 첫 프롬프트는 `--` 뒤에 |
 | `lib/open-dir.mjs` | 폴더를 VS Code · Cursor · Finder 로 열기(`openDir`), 설치된 앱 찾기(`detectEditors`) |
 | `lib/env.mjs` | 환경 점검(`createEnvCheck`) · 시작 로그 안내(`startupNotices`) |
+| `lib/launch.mjs` | 켠 방법(npx · 설치된 명령 · 저장소)에 맞는 다시 켜기 명령(`startCommand`) · 포트 충돌 안내(`portInUseMessage`) |
 | `lib/lock.mjs` | 한 번에 하나만(`createLock`) — 복구를 두 번 눌러도 한 번만 |
 
 ### lib — 요청 · 응답
@@ -180,7 +181,7 @@
 
 ### test
 
-28개 파일, 184개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+29개 파일, 187개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -349,7 +350,7 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 - 예: 가짜 `ps` 의 첫 호출을 늦추는 `FAKE_PS_FIRST_DELAY_MS` 로 「경쟁 순간」을 매번 만들어요. 운에 맡기지 않아요.
 - 경쟁(두 일이 거의 같은 순간에 일어나 순서가 바뀌는 문제)은 매번 재현되지 않을 수 있어요. 그럴 땐 재현 못 했다고 솔직히 적어요.
 
-GitHub Actions(`.github/workflows/test.yml`)가 push · PR 마다 Ubuntu · macOS × Node 18 · 20 · 22 에서 `npm test` 를 돌려요.
+GitHub Actions(`.github/workflows/test.yml`)가 push · PR 마다 Ubuntu · macOS × Node 18 · 20 · 22 · 24 에서 `npm test` 를 돌려요.
 
 ---
 

@@ -20,9 +20,9 @@ Claude Code · Codex 지원 · 설치할 패키지 없음 · 모든 처리는 �
 
 **📝 개발 일기** — [#1 AI 코딩 세션 6개를 한 화면에서: 하루 만에 만들고, 하루 종일 고친 이야기](https://velog.io/@yun7420/AI-세션-대시보드-개발-일기-1-AI-코딩-세션-6개를-한-화면에서-하루-만에-만들고-하루-종일-고친-이야기) (velog · [티스토리](https://hsy742010.tistory.com/entry/AI-세션-대시보드-개발-일기-1-AI-코딩-세션-6개를-한-화면에서-하루-만에-만들고-하루-종일-고친-이야기))
 
-![데모 — 위험 경고가 붙은 승인 카드, 작업 중 세션의 바뀐 코드, 계정 한도 추이, 꺼진 세션 복구 창](docs/images/demo.gif)
+![데모 — 위험 경고가 붙은 승인 카드, 작업 중 세션의 바뀐 코드, 계정 한도 추이, 꺼진 세션 복구 창](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/demo.gif)
 
-![전체 화면 — 세션 목록, 조직도, 계정 사용 한도, 활동 로그](docs/images/overview.png)
+![전체 화면 — 세션 목록, 조직도, 계정 사용 한도, 활동 로그](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/overview.png)
 
 <sub>화면의 프로젝트·세션 이름은 데모 모드의 예시 데이터예요.</sub>
 
@@ -54,9 +54,9 @@ Agent Dashboard는 이걸 한 화면에 모읍니다.
 | 🔔 | **알림** | 승인이 필요하거나 1분 넘게 걸린 작업이 끝나면 알림 — 브라우저 알림, 또는 **탭을 닫아도 오는 macOS 알림**(소리 선택). 탭 제목에 승인 대기 수 |
 | 🛡️ | **로컬 전용 보안** | 127.0.0.1 전용, Host·Origin 검사, 컴퓨터마다 자동 생성되는 비밀 열쇠(`~/.agent-dashboard/token`), 화면 끼워 넣기(클릭재킹) 금지, 첨부 · 폴더 경로 검사 |
 
-![세션 패널 — 현재 답변, 바꾼 파일 diff, 실행한 명령](docs/images/session-panel.png)
+![세션 패널 — 현재 답변, 바꾼 파일 diff, 실행한 명령](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/session-panel.png)
 
-![승인 요청 — 허락할 내용 카드(위험하면 경고) + 터미널 화면 그대로 + 선택지 버튼](docs/images/approval.png)
+![승인 요청 — 허락할 내용 카드(위험하면 경고) + 터미널 화면 그대로 + 선택지 버튼](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/approval.png)
 
 ## 시작하기
 
@@ -113,6 +113,33 @@ node bin/agent-dashboard.mjs restore   # 같은 일(대시보드는 run 실행�
 - 지금 떠 있는 세션은 목록에 없어요(두 번 띄우지 않게). 대시보드의 「세션 닫기」로 일부러 닫은 세션은 따로 묶고 기본으로 고르지 않아요.
 - 폴더 신뢰 확인 창이 뜨면 대신 누르지 않고 "신뢰 확인이 필요해요"라고만 알려 줘요.
 - 기억은 `~/.agent-dashboard/recent.json`(본인만 읽기). 화면은 고른 세션 ID 만 보내고, 폴더 · 이름은 서버가 기억해 둔 목록에서만 꺼내요.
+
+### 데이터 폴더에 무엇이 있나
+
+대시보드가 쓰는 파일은 모두 `~/.agent-dashboard/` 한 곳에 있어요(저장소 · 패키지 폴더에는 쓰지 않아요). 폴더는 본인만 열 수 있고(700), 파일은 본인만 읽어요(600).
+
+| 이름 | 무엇 | 권한 |
+|---|---|---|
+| `token` | 비밀 열쇠. 지우고 다시 켜면 새로 만들어요 | 600 |
+| `demo-token` | 데모 모드 전용 열쇠 | 600 |
+| `server.log` | 실행기(`run`)가 남기는 서버 출력 | 600 |
+| `restore.json` · `restore-prev.json` | 재시동 복구 목록(지금 · 재시동 전) | 600 |
+| `recent.json` | 복구 단추용 최근 7일 세션 기억 | 600 |
+| `notify.json` | 알림 설정 | 600 |
+| `settings.backup.<시각>.json` · `statusline-original.json` | 사용 한도를 켜기 전 `~/.claude/settings.json` 백업 · 원래 상태줄 | 600 |
+| `bin/statusline.mjs` | 사용 한도 상태줄 다리 복사본 | 폴더 700 · 파일 600 |
+| `status/` | 상태줄 다리가 세션마다 남기는 값(오래된 것은 정리) | 폴더 700 · 파일 600 |
+| `limits/` | 계정 한도 추이(날짜별, 30일 보관) | 폴더 700 · 파일 600 |
+| `uploads/` | 첨부 파일(날짜별, 14일 지나면 삭제) | 폴더 700 · 파일 600 |
+
+### 끄기 · 지우기
+
+1. **서버 끄기** — `npm start` 로 켰다면 그 터미널에서 Ctrl+C. 실행기(`run`)로 켰다면 그 창에서 Ctrl+C(서버도 함께 꺼져요). tmux `dashboard` 세션째 끄려면 `tmux kill-session -t dashboard`.
+2. **사용 한도 보기 끄기** — 켜 두었다면 **지우기 전에 먼저** 꺼요: 머리의 한도 표시 → 「설정…」 → **끄기**. `~/.claude/settings.json` 의 상태줄 등록을 켜기 전으로 되돌려요.
+3. **데이터 폴더 지우기** — `rm -rf ~/.agent-dashboard`
+4. 저장소로 받았다면 그 폴더를 지우면 끝이에요.
+
+> ⚠️ 사용 한도 보기를 켠 채 3번부터 하면 `~/.claude/settings.json` 에 상태줄 등록(`~/.agent-dashboard/bin/statusline.mjs` 를 부르는 명령)이 남아요. 그 파일이 없어져서 Claude 세션의 상태줄이 비거나 오류가 나요. 그때는 대시보드를 다시 켜서 2번을 하거나, settings.json 의 `statusLine` 을 직접 지워 주세요.
 
 ## 채팅·승인하려면: 세션을 tmux 로 띄우기
 
@@ -239,7 +266,7 @@ agent-dashboard/
 ├─ adapters/           # 도구별 차이만 여기 — claude.mjs · codex.mjs · index.mjs
 ├─ lib/                # 구역별 일(파일 하나 = 한 가지 일)
 │  ├─ state · procs · tmux · dialog · approval     상태 조립 · 프로세스 목록 · tmux 조작 · 선택창 감지 · 허락할 내용 카드
-│  ├─ commands · spawn · open-dir · env           명령(채팅 · 승인 · 새 세션 …) · 새 세션 인자 · 폴더 열기 · 환경 점검
+│  ├─ commands · spawn · open-dir · env · launch  명령(채팅 · 승인 · 새 세션 …) · 새 세션 인자 · 폴더 열기 · 환경 점검 · 켠 방법에 맞는 안내
 │  ├─ body · uploads · respond · validate         요청 본문 · 첨부 · 응답 모양 · 입력 검사
 │  ├─ token · paths · perms                       비밀 열쇠 · 경로(폴더 안 검사) · 파일 권한
 │  ├─ claude-settings · bridge · status · limits · usage   사용 한도(상태줄 다리 · 한도 기록 · 토큰 합계)
@@ -251,7 +278,7 @@ agent-dashboard/
 │  ├─ index.html       # 뼈대(토큰은 서버가 여기에만 끼워 넣음)
 │  ├─ style.css        # 모양
 │  └─ js/00-md.js ~ 19-keys.js   # 동작 — 구역별(목록 · 조직도 · 기록 · 첨부 · 알림 · 복구 · 검색 · 오늘 한 일 · 단축키 …), 번호 순서대로 불러옴
-└─ test/               # node --test 28개 파일 · fake-bin(가짜 tmux · claude · ps · lsof)
+└─ test/               # node --test 29개 파일 · fake-bin(가짜 tmux · claude · ps · lsof)
 ```
 
 파일마다 하는 일 · 요청 하나가 지나가는 길 · 보안 검사 위치는 [코드 지도(docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)에 있어요.
@@ -274,9 +301,9 @@ DEMO=1 PORT=4646 npm start
 npm test
 ```
 
-Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없어요. 테스트 184개(2026-11-13): 기록 읽기 · 선택창 감지 · 승인 카드 위험 판별 · 보안 검사(토큰 · Host · Origin · 경로 · 파일 권한) · 명령 · 복구 · 실행기 등.
+Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없어요. 테스트 187개(2026-11-13): 기록 읽기 · 선택창 감지 · 승인 카드 위험 판별 · 보안 검사(토큰 · Host · Origin · 경로 · 파일 권한) · 명령 · 복구 · 실행기 등.
 - 시험 서버는 4694 · 4696~4699 포트를 잠깐 써요. 진짜 세션 · tmux 대신 임시 홈 폴더와 `test/fake-bin` 의 가짜 명령(tmux · claude · ps · lsof)을 써서, 내 `~/.claude` · `~/.agent-dashboard` 는 건드리지 않아요.
-- GitHub Actions 가 main 에 push 하거나 PR 이 올 때마다 Ubuntu · macOS × Node 18 · 20 · 22 에서 `npm test` 를 돌려요(위 배지). macOS 알림(osascript) 테스트는 macOS 에서만 돌아요.
+- GitHub Actions 가 main 에 push 하거나 PR 이 올 때마다 Ubuntu · macOS × Node 18 · 20 · 22 · 24 에서 `npm test` 를 돌려요(위 배지). macOS 알림(osascript) 테스트는 macOS 에서만 돌아요.
 
 ## 지원 환경과 한계
 

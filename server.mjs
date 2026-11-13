@@ -38,6 +38,7 @@ import { sendText, sendJson, friendly } from './lib/respond.mjs';
 import { isObject, validDate, KEY_RE, WINDOW_HOURS } from './lib/validate.mjs';
 import { CLAUDE_DIR, DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
 import { loadToken } from './lib/token.mjs';
+import { portInUseMessage } from './lib/launch.mjs';
 import { createRecorder, readRange, pruneLimits, validRange } from './lib/limits.mjs';
 import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNotifier } from './lib/notify.mjs';
 import { pageHistory, pageParams } from './lib/paging.mjs';
@@ -618,7 +619,7 @@ process.on('unhandledRejection', (e) => console.error('[처리 안 된 거절]',
 
 // 포트가 이미 쓰이면 오류 덩어리 대신 안내를 찍고 끝낸다(다음 포트로 자동으로 넘어가는 건 하지 않음)
 server.on('error', (e) => {
-  if (e.code === 'EADDRINUSE') console.error(`${PORT} 포트를 이미 쓰고 있어요 — PORT=${PORT + 1} npm start 처럼 다른 포트로 켜 주세요`);
+  if (e.code === 'EADDRINUSE') console.error(portInUseMessage(PORT, process.env.DASHBOARD_START_CMD || 'npm start')); // 켠 방법에 맞는 예시(lib/launch.mjs)
   else console.error('서버를 열지 못했어요:', e.message);
   process.exit(1);
 });
