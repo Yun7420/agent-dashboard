@@ -100,8 +100,13 @@ before(async () => {
   }
   assert.ok(ready, '시험 서버가 15초 안에 첫 상태를 만들지 못했다');
 });
-after(() => {
-  srv?.kill(); // 이 테스트가 띄운 서버만
+after(async () => {
+  // 이 테스트가 띄운 서버만. 끝날 때까지 기다린 뒤 임시 홈을 지운다 — 바로 지우면 꺼지는 중인 서버가 쓴 파일 때문에 ENOTEMPTY(CI 에서 겪음)
+  if (srv && srv.exitCode === null && srv.signalCode === null) {
+    const gone = new Promise((r) => srv.once('exit', r));
+    srv.kill();
+    await gone;
+  }
   fs.rmSync(TMP, { recursive: true, force: true });
 });
 
