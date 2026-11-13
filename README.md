@@ -81,12 +81,16 @@ npm start          # → 브라우저에서 http://localhost:4545
 
 ### 계속 켜 두기 (추천)
 
-tmux 안에서 자동 재시작 실행기로 띄우면, 서버가 멈춰도 2초 뒤 다시 켜져요. 기록은 `~/.agent-dashboard/server.log`.
+tmux 안에서 자동 재시작 실행기로 띄우면, 서버가 멈춰도 2초 뒤 다시 켜져요. 기록은 `~/.agent-dashboard/server.log`(본인만 읽기).
 
 ```bash
-tmux new -d -s dashboard -c <저장소 경로> ./bin/run.sh
+tmux new -d -s dashboard -c <저장소 경로> node bin/agent-dashboard.mjs run   # 지금 쓸 수 있는 실행기
+tmux new -d -s dashboard -c <저장소 경로> ./bin/run.sh                       # 예전 방식(같은 일, 그대로 둠)
 tmux respawn-pane -k -t dashboard     # 코드를 고친 뒤 다시 켜기 (Ctrl+C 를 보내면 tmux 세션까지 꺼지니 주의)
 ```
+
+- `run` 은 1분 안에 5번 넘게 꺼지면 다시 켜는 간격을 30초로 늘리고, 포트가 이미 쓰이고 있으면 다시 켜지 않고 끝나요. Ctrl+C(SIGINT) · SIGTERM 을 받으면 서버도 함께 끝내요.
+- 배포 뒤에는 `npx agent-dashboard run` 처럼 저장소 없이 쓸 수 있게 할 예정이에요(아직 npm 에 올리지 않았어요).
 
 ### 맥을 껐다 켠 뒤: 세션 한 번에 복구
 
@@ -94,7 +98,10 @@ tmux respawn-pane -k -t dashboard     # 코드를 고친 뒤 다시 켜기 (Ctrl
 
 ```bash
 npm run restore    # 재시동 전 세션들을 tmux 로 다시 띄우고, 대시보드도 켜요
+node bin/agent-dashboard.mjs restore   # 같은 일(대시보드는 run 실행기로 켜요). 배포 뒤에는 npx agent-dashboard restore
 ```
+
+띄우기만 하고 아무것도 끄지 않아요. 이미 떠 있는 세션은 다시 띄우지 않아요.
 
 대시보드를 먼저 켰다면 목록 맨 위에 **"재시동 전에 떠 있던 세션 N개 · 모두 다시 열기"** 가 떠요. 모델은 기본 설정을 따르고, 따로 고른 모델(Sonnet·Haiku)만 그대로 붙여요. 30일이 지난 대화는 Claude Code 가 기록을 지워서 이어 열 수 없어요.
 
