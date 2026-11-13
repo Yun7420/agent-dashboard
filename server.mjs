@@ -22,6 +22,8 @@ import { createLru } from './lib/lru.mjs';
 import { tightenFiles } from './lib/perms.mjs';
 import { readBody, saveUpload } from './lib/body.mjs';
 import { createLock } from './lib/lock.mjs';
+import { fileCache } from './lib/filecache.mjs';
+import { pruneStatusFiles } from './lib/status.mjs';
 import { sendText, sendJson, friendly } from './lib/respond.mjs';
 import { isObject, validDate, KEY_RE, WINDOW_HOURS } from './lib/validate.mjs';
 import { MODELS, newSessionArgs } from './lib/spawn.mjs';
@@ -500,15 +502,11 @@ function readSettings() {
 }
 function writeSettings(obj) {
   fs.writeFileSync(SETTINGS, `${JSON.stringify(obj, null, 2)}\n`);
+  fileCache.forget(SETTINGS); // 바로 다음 틱에 바뀐 값이 보이게
 }
 
-function usageEnabled() {
-  try {
-    return isBridge(readSettings().statusLine);
-  } catch {
-    return false;
-  }
-}
+// 틱마다 불리므로 캐시(lib/filecache.mjs)로 — 고치는 쪽(enableUsage · disableUsage)은 readSettings 로 새로 읽는다
+const usageEnabled = () => isBridge(fileCache.json(SETTINGS)?.statusLine);
 
 function enableUsage() {
   const settings = readSettings();
@@ -553,15 +551,15 @@ function readStatusFiles() {
   } catch {
     return { bySession, account };
   }
-  for (const f of files) {
-    try {
-      const d = JSON.parse(fs.readFileSync(path.join(STATUS_DIR, f), 'utf8'));
-      if (d.session_id) bySession.set(d.session_id, d);
-      if (d.rate_limits && (!account || d.savedAt > account.savedAt)) account = d;
-    } catch {
-      /* 쓰는 도중인 파일은 다음 번에 */
-    }
+  // 바뀐 파일만 다시 읽는다(mtime 캐시). 쓰는 도중이라 깨진 파일은 null → 다음 번에
+  const paths = new Set(files.map((f) => path.join(STATUS_DIR, f)));
+  for (const file of paths) {
+    const d = fileCache.json(file);
+    if (!d) continue;
+    if (d.session_id) bySession.set(d.session_id, d);
+    if (d.rate_limits && (!account || d.savedAt > account.savedAt)) account = d;
   }
+  fileCache.keep(STATUS_DIR, paths);
   return { bySession, account };
 }
 
@@ -581,13 +579,17 @@ function usageState(status) {
 const SETTINGS = path.join(HOME, '.claude', 'settings.json');
 const MODEL_LINE = /^(\s*)"model"\s*:\s*"([^"]*)"(,?)\s*$/m;
 
-function readDefaultModel() {
+// fresh: 고치기 직전(/model 보내기 전)엔 캐시 없이 새로 읽는다. 틱 안(대화 창 크기 추정)에선 캐시
+function readDefaultModel({ fresh = false } = {}) {
+  let text = null;
   try {
-    const m = fs.readFileSync(SETTINGS, 'utf8').match(MODEL_LINE);
-    return { exists: true, value: m ? m[2] : null };
+    text = fresh ? fs.readFileSync(SETTINGS, 'utf8') : fileCache.text(SETTINGS);
   } catch {
-    return { exists: false, value: null };
+    /* 없음 */
   }
+  if (text == null) return { exists: false, value: null };
+  const m = text.match(MODEL_LINE);
+  return { exists: true, value: m ? m[2] : null };
 }
 
 function restoreDefaultModel(before, tries = 0) {
@@ -615,6 +617,7 @@ function restoreDefaultModel(before, tries = 0) {
     try {
       JSON.parse(next); // 깨진 JSON 은 절대 쓰지 않는다
       fs.writeFileSync(SETTINGS, next);
+      fileCache.forget(SETTINGS);
       console.log(`[model] 기본 모델을 ${before.value ?? '(설정 없음)'} 으로 되돌렸어요`);
     } catch {
       console.error('[model] 기본 모델 복구를 건너뛰었어요(설정 파일 형식 확인 필요)');
@@ -696,7 +699,7 @@ async function handleCommand(action, body) {
     if (!s?.tmux) return [409, 'tmux 로 띄운 세션만 여기서 모델을 바꿀 수 있어요'];
     if (s.status === 'waiting') return [409, '선택 창이 떠 있어요. 먼저 승인/거절하세요'];
     // /model 은 "앞으로 새 세션의 기본 모델"까지 바꿔 저장한다. 이 세션만 바꾸려는 것이므로 기본값은 원래대로 되돌린다.
-    const before = readDefaultModel();
+    const before = readDefaultModel({ fresh: true });
     await tmux.sendKey(s.tmux.target, 'Escape');
     await tmux.sendText(s.tmux.target, `/model ${model}`);
     restoreDefaultModel(before);
@@ -1177,6 +1180,7 @@ server.listen(PORT, '127.0.0.1', () => {
     try { const fixed = tightenFiles(DATA_DIR); if (fixed.length) console.log(`권한 정리(600): ${fixed.length}개`); } catch (e) { console.error('권한 정리 실패:', e.message); }
     try { pruneUploads(); } catch (e) { console.error('첨부 정리 실패:', e.message); }
     try { pruneLimits(LIMITS_DIR); } catch (e) { console.error('한도 기록 정리 실패:', e.message); }
-    setInterval(() => { try { pruneUploads(); } catch {} try { pruneLimits(LIMITS_DIR); } catch {} }, 6 * 3600_000);
+    try { pruneStatusFiles(STATUS_DIR); } catch (e) { console.error('상태줄 기록 정리 실패:', e.message); }
+    setInterval(() => { try { pruneUploads(); } catch {} try { pruneLimits(LIMITS_DIR); } catch {} try { pruneStatusFiles(STATUS_DIR); } catch {} }, 6 * 3600_000);
   }
 });
