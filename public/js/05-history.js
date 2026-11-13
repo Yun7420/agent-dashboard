@@ -62,7 +62,7 @@ async function select(key) {
   const s = state.sessions.find((x) => x.key === key);
   if (!s) return;
   if (!$('#drawer').classList.contains('open')) { $('#drawer').classList.add('open'); view.init = false; renderGraph(); }
-  if (key !== lastSelected) { setTab('now'); promptLog = []; historyTotal = 0; hist.key = null; hist.items = []; lastSelected = key; delete $('#pane').dataset.seen; openFiles.clear(); fullCmds.clear(); closedCmds = false; }
+  if (key !== lastSelected) { useDraft(key); setTab('now'); promptLog = []; historyTotal = 0; hist.key = null; hist.items = []; lastSelected = key; delete $('#pane').dataset.seen; openFiles.clear(); fullCmds.clear(); closedCmds = false; }
   renderDrawerHead(s);
   if (drawerTab === 'log') $('#log-list').innerHTML = '<div class="commit"><span class="m">기록 읽는 중…</span></div>';
   if (s.orphan) { Object.assign(hist, { key, q: '', items: [], total: 0, next: null }); $('#log-list').innerHTML = '<div class="commit"><span class="m">아직 기록 파일이 없는 세션이에요</span></div>'; return; }

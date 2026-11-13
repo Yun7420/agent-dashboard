@@ -30,6 +30,7 @@ function connect() {
     logEvents(next.sessions);
     logLinks(next.links || [], next.sessions);
     state = next;
+    pruneDrafts(next.sessions); // 끝난 · 사라진 세션의 임시 글 · 첨부 정리(08-attach.js)
     renderRestore();
     finishBoot();
     $('#updated').textContent = `갱신 ${new Date(next.generatedAt).toLocaleTimeString('ko-KR', { hour12: false })}`;
