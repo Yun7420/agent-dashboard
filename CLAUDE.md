@@ -30,7 +30,7 @@
   2. Host 검사(`localhost:포트` · `127.0.0.1:포트` 외 403) — DNS 리바인딩
   3. Origin 검사 — 내 브라우저에서 연 외부 사이트의 요청
   4. 토큰 — `/events` 와 `/api/*` 전부. 헤더 `X-Dashboard-Token`, SSE 는 `?token=`. 토큰은 서버가 `index.html` 에만 끼워 넣는다(`window.DASHBOARD_TOKEN`). **js 파일에 토큰을 두지 않는다**
-  5. 파일 권한 — `.dashboard-token` 600, `~/.agent-dashboard` 700 / 경로 검사 — 첨부는 uploads 폴더 안만, 폴더 열기는 목록의 세션 폴더만
+  5. 파일 권한 — 토큰 `~/.agent-dashboard/token` 600(링크 거절 · 예전 저장소의 `.dashboard-token` 은 처음 켤 때 옮기고 지움 · 데모는 `demo-token`), `~/.agent-dashboard` 700 / 경로 검사 — 첨부는 uploads 폴더 안만, 폴더 열기는 목록의 세션 폴더만
   6. 첨부는 14일 지나면 자동 삭제
 - 다른 기기에서 접속하게 만드는 일(로그인 · Tailscale · 클라우드)은 **사용자와 정하기 전에 하지 않는다.** 이 Mac 에서만 쓰는 동안 로그인 화면은 필요 없다는 결론(2026-11-12).
 - 사용자가 코드를 **주말에 직접 읽으며 배운다** — 파일은 작고 구역이 분명하게, 주석은 "왜"를 한국어로 짧게. 큰 리팩터링은 먼저 제안.
@@ -38,11 +38,22 @@
 
 ## 구조
 ```
-server.mjs            HTTP · SSE 서버, 상태 조립, 명령(채팅 · 승인 · 종료 · 새 세션), 보안 검사, 검색 · 오늘 한 일 API
+server.mjs            서버 켜기 · 요청 입구의 보안 검사(Host · Origin · 토큰) · 경로 표(ROUTES) · 2초 틱(상태 → SSE) · 구역 잇기
 adapters/             도구별 차이(claude.mjs · codex.mjs). 새 에이전트 = 어댑터 파일 하나
-lib/                  tmux · 기록 읽기 util · dialog(선택창 감지) · restore(재시동 복구) · demo(데모 데이터)
-public/index.html     뼈대 / style.css 모양 / js/00-md.js ~ 18-day.js 동작(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다)
-test/                 node --test (기록 파싱 · 선택창 감지 · 보안 · 검색 · 오늘 한 일)
+lib/                  구역별 일(모듈은 createXxx(deps) 로 필요한 것만 받는다)
+  state · procs        상태 조립(세션 · 메시지 · 한도) · ps/lsof/tmux 목록
+  commands             명령(채팅 · 승인 · 멈춤 · 닫기 · 모델 · 복구 · 새 세션)
+  env · open-dir       환경 점검 · 폴더를 에디터로 열기
+  body · uploads       요청 본문 · 첨부 저장/정리
+  claude-settings · bridge   ~/.claude/settings.json 원자적 쓰기(상태줄 · 기본 모델) · 상태줄 다리 복사본
+  token                토큰 파일(~/.agent-dashboard/token)
+  recent · restore · restore-cli · runner   복구 단추 · 재시동 복구 · 실행기(run)
+  notify · limits · usage · status   알림 · 한도 추이 · 토큰 사용량 · 상태줄 파일 정리
+  respond · validate · paths · filecache · lru · serial · lock   응답 모양 · 입력 검사 · 경로 · 캐시 · 차례 · 잠금
+  tmux · dialog · approval · spawn · demo · util   tmux 조작 · 선택창 감지 · 승인 카드 · 새 세션 인자 · 데모 · 기록 읽기
+bin/                  agent-dashboard.mjs(실행 명령: start · run · restore) · run.sh(예전 실행기) · restore.mjs(npm run restore) · statusline.mjs(상태줄 다리 원본)
+public/               index.html 뼈대 · style.css · js/00-md.js ~ 19-keys.js(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다)
+test/                 node --test (lib 단위 + 데모 서버로 보안 · 응답 모양 + 시험 서버(가짜 tmux · 임시 홈)로 실제 모드)
 docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 ```
 
@@ -51,7 +62,7 @@ docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 2. 구현 — 기존 구역 · 이름 · 주석 스타일을 따른다
 3. `npm test` 전부 통과 + 새 동작은 테스트 추가(가능하면 "되돌리면 실패하는지"도 확인)
 4. 화면이 바뀌면 **데모 모드로 확인**: `DEMO=1 PORT=4646 node server.mjs` → 헤드리스 Playwright 로 스크린샷(창 띄우지 않기), 콘솔 오류 0. 시험이 끝나면 4646 서버를 반드시 끈다(띄울 때 적어 둔 PID 로만 — 아래 「프로세스 끄기 사고」)
-5. 서버 코드를 바꿨으면 실제 대시보드를 다시 켠다: 실행기(`bin/run.sh`)가 자동 재시작하므로 `pgrep -lf "^node server.mjs$"` 가 1줄인지 확인하고 `kill $(pgrep -f "^node server.mjs$")` 후 몇 초 뒤 `http://localhost:4545` 200 확인. 화면 파일만 바꿨으면 새로고침이면 됨
+5. 서버 코드를 바꿨으면 실제 대시보드를 다시 켠다: 실행기(tmux dashboard 의 `bin/run.sh` 또는 `node bin/agent-dashboard.mjs run`)가 자동 재시작하므로 `pgrep -lf "^node server.mjs$"` 가 1줄인지 확인하고 `kill $(pgrep -f "^node server.mjs$")` 후 몇 초 뒤 `http://localhost:4545` 200 확인. 화면 파일만 바꿨으면 새로고침이면 됨
 6. 커밋: 제목 한 줄(한국어, 무엇을) + 본문 2~4줄(왜 · 어떻게 확인) + 마지막 줄 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` → `git push origin main`. 항목 하나 = 커밋 하나 이상, 중간중간 커밋
 7. `docs/ROADMAP.md` 에 `[x]` 와 커밋 해시 · 한 줄 요약
 8. README(한국어 · 영어 둘 다)에 사용자에게 보이는 변화가 있으면 반영
