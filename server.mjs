@@ -16,19 +16,19 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { adapters } from './adapters/index.mjs';
 import * as tmux from './lib/tmux.mjs';
-import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, parseOptions, isTrustPrompt } from './lib/dialog.mjs';
+import { hasDialog, detectDialog, dialogMismatch, MISMATCH_KO, isTrustPrompt } from './lib/dialog.mjs';
 import { summarizeTool, guessFromScreen } from './lib/approval.mjs';
 import { createLru } from './lib/lru.mjs';
 import { tightenFiles } from './lib/perms.mjs';
 import { readBody, saveUpload } from './lib/body.mjs';
 import { createLock } from './lib/lock.mjs';
+import { createCommands } from './lib/commands.mjs';
 import { fileCache } from './lib/filecache.mjs';
 import { pruneStatusFiles } from './lib/status.mjs';
-import { SettingsError, updateText, isBridge, enableStatusLine, disableStatusLine, modelOf, restoreModelText } from './lib/claude-settings.mjs';
+import { updateText, isBridge, enableStatusLine, disableStatusLine, modelOf, restoreModelText } from './lib/claude-settings.mjs';
 import { sendText, sendJson, friendly } from './lib/respond.mjs';
 import { isObject, validDate, KEY_RE, WINDOW_HOURS } from './lib/validate.mjs';
-import { MODELS, newSessionArgs } from './lib/spawn.mjs';
-import { HOME, DATA_DIR, dirOf, isInside, allInside, tildify } from './lib/paths.mjs';
+import { HOME, DATA_DIR, dirOf, isInside, tildify } from './lib/paths.mjs';
 import { createRecorder, readRange, pruneLimits, validRange } from './lib/limits.mjs';
 import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNotifier } from './lib/notify.mjs';
 import { pageHistory, pageParams } from './lib/paging.mjs';
@@ -588,140 +588,6 @@ function findSession(key) {
   return latest?.sessions.find((s) => s.key === key) ?? null;
 }
 
-async function handleCommand(action, body) {
-  if (DEMO && action === 'recent-restore') return [200, demo.demoRecentRestore(body)];
-  if (DEMO) return [200, action === 'spawn' ? JSON.stringify({ key: 'claude:demo-lead' }) : '데모 모드라 실제로 실행하지 않았어요'];
-  if (action === 'send') {
-    const s = findSession(body.key);
-    const text = String(body.text ?? '').trim();
-    if (!s?.tmux) return [409, 'tmux 로 띄운 세션에만 보낼 수 있어요'];
-    if (s.status === 'waiting') return [409, '승인을 기다리는 중이라 보내지 않았어요. 먼저 승인/거절하세요'];
-    if (!text) return [400, '빈 메시지'];
-    // 첨부 경로가 업로드 폴더 밖을 가리키지 않게 (화면에서 만든 경로만 받는다)
-    if (body.files != null && !allInside(UPLOAD_DIR, body.files)) return [400, '잘못된 첨부 경로'];
-    if (text.length > 20000) return [400, '메시지가 너무 길어요'];
-    await tmux.sendText(s.tmux.target, text);
-    return [200, 'ok'];
-  }
-  if (action === 'approve') {
-    const s = findSession(body.key);
-    if (!s?.tmux) return [409, 'tmux 로 띄운 세션만 여기서 승인할 수 있어요'];
-    if (s.status !== 'waiting') return [409, '지금은 승인 요청이 없어요'];
-    const choice = String(body.choice ?? '');
-    const KEYS = { esc: 'Escape', up: 'Up', down: 'Down', enter: 'Enter', left: 'Left', right: 'Right' };
-    if (KEYS[choice]) await tmux.sendKey(s.tmux.target, KEYS[choice]);
-    else if (/^[1-9]$/.test(choice)) {
-      // 오른쪽에 미리보기가 붙은 질문 창은 숫자 키를 받지 않는다(↑/↓ + Enter 만).
-      // 그 경우엔 지금 커서(❯) 위치에서 고른 번호까지 화살표로 옮긴 뒤 Enter 를 보낸다.
-      const screen = await tmux.capture(s.tmux.target, 60).catch(() => '');
-      const { preview, cursor: cur } = parseOptions(screen);
-      if (preview && cur) {
-        const diff = Number(choice) - cur;
-        for (let k = 0; k < Math.abs(diff); k++) {
-          await tmux.sendKey(s.tmux.target, diff > 0 ? 'Down' : 'Up');
-          await new Promise((r) => setTimeout(r, 60));
-        }
-        await tmux.sendKey(s.tmux.target, 'Enter');
-      } else await tmux.sendKey(s.tmux.target, choice);
-    } else return [400, '알 수 없는 선택'];
-    return [200, 'ok'];
-  }
-  if (action === 'stop') {
-    // 작업 멈추기: Claude Code 의 "중단" 키(Esc)를 보낸다. 세션은 그대로 두고 지금 하던 응답·도구 실행만 멈춘다.
-    const s = findSession(body.key);
-    if (!s?.tmux) return [409, 'tmux 로 띄운 세션만 여기서 멈출 수 있어요'];
-    if (s.status !== 'working') return [409, '지금 작업 중이 아니에요'];
-    await tmux.sendKey(s.tmux.target, 'Escape');
-    return [200, 'ok'];
-  }
-  if (action === 'close') {
-    // 정상 종료: 사람이 치듯 /exit 를 보낸다. 대화 기록은 남아 --resume 으로 다시 열 수 있다.
-    // 루프 같은 백그라운드 작업이 있으면 Claude 가 확인 창을 띄우고, 그건 승인 패널에서 고른다.
-    const s = findSession(body.key);
-    if (!s?.tmux) return [409, 'tmux 로 띄운 세션만 여기서 닫을 수 있어요'];
-    if (s.status === 'waiting') return [409, '선택 창이 떠 있어요. 먼저 승인/거절하세요'];
-    await tmux.sendKey(s.tmux.target, 'Escape'); // 입력 중이던 글자·자동완성 정리
-    await tmux.sendText(s.tmux.target, '/exit');
-    recent?.markClosed(s.id); // 복구 목록에선 「직접 닫은 세션」으로 따로 보인다
-    return [200, 'ok'];
-  }
-  if (action === 'model') {
-    // 떠 있는 세션의 모델 바꾸기: 사람이 치듯 /model <별칭> 을 보낸다
-    const s = findSession(body.key);
-    const model = String(body.model ?? '');
-    if (!MODELS.has(model)) return [400, '알 수 없는 모델'];
-    if (!s?.tmux) return [409, 'tmux 로 띄운 세션만 여기서 모델을 바꿀 수 있어요'];
-    if (s.status === 'waiting') return [409, '선택 창이 떠 있어요. 먼저 승인/거절하세요'];
-    // /model 은 "앞으로 새 세션의 기본 모델"까지 바꿔 저장한다. 이 세션만 바꾸려는 것이므로 기본값은 원래대로 되돌린다.
-    const before = readDefaultModel({ fresh: true });
-    await tmux.sendKey(s.tmux.target, 'Escape');
-    await tmux.sendText(s.tmux.target, `/model ${model}`);
-    restoreDefaultModel(before);
-    return [200, 'ok'];
-  }
-  if (action === 'usage-on' || action === 'usage-off') {
-    try {
-      return [200, action === 'usage-on' ? enableUsage() : disableUsage()];
-    } catch (e) {
-      if (e instanceof SettingsError) { console.error('[설정]', e.message); return [409, e.message]; } // 링크 · 깨진 JSON · 계속 바뀜 — 사용자가 고칠 수 있는 상황
-      return friendly(e, '설정 파일(~/.claude/settings.json)을 바꾸지 못했어요');
-    }
-  }
-  if (action === 'open-dir') {
-    // 지금 목록에 있는 세션의 작업 폴더만 연다(아무 경로나 열지 않게)
-    const dir = path.resolve(String(body.dir ?? ''));
-    const known = (latest?.sessions ?? []).some((s) => s.cwd && path.resolve(s.cwd) === dir);
-    if (!known || !isInside(HOME, dir) || !fs.existsSync(dir)) return [400, '목록에 있는 세션의 폴더만 열 수 있어요'];
-    try {
-      await openDir(dir, String(body.app ?? ''));
-    } catch (e) {
-      return friendly(e, '폴더를 열지 못했어요');
-    }
-    return [200, `${tildify(dir)} 를 열었어요`];
-  }
-  if (action === 'restore') {
-    // 재시동 전에 떠 있던 세션을 --resume 으로 한 번에 다시 띄운다(저장된 목록에 있는 것만).
-    // 복구 단추와 같은 잠금 · 같은 「방금 띄운 것」 목록을 써서, 두 경로가 겹쳐도 같은 세션을 두 번 띄우지 않는다
-    if (!latest) return [503, '세션 목록을 읽는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
-    const r = await restoreLock.run(async () => {
-      const launched = recent.launchedIds();
-      const done = await restoreSessions(restoreCandidates(liveIdSet()).filter((e) => !launched.has(e.id)));
-      for (const d of done) recent.noteLaunched(d.id, { title: d.title, tmuxSession: d.tmuxSession });
-      return done;
-    });
-    if (r.busy) return [409, '다시 여는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
-    lastJson = '';
-    return [200, r.value.length ? `세션 ${r.value.length}개를 다시 열었어요. 몇 초 뒤 목록에 나타나요` : '다시 열 세션이 없어요'];
-  }
-  if (action === 'recent-restore') {
-    // 복구 단추: 브라우저는 ID 목록만 보낸다. 폴더 · 이름 · 모델은 기억해 둔 목록(recent.json)에서만 꺼내고, 지금 떠 있는 것은 뺀다
-    if (!latest) return [503, '세션 목록을 읽는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
-    if (restoreLock.busy) return [409, '다시 여는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
-    const entries = recent.pick(body, liveIdSet());
-    if (!entries.length) return [400, '다시 열 세션이 없어요(이미 떠 있거나 목록에 없는 세션)'];
-    const r = await restoreLock.run(async () => {
-      const done = await restoreSessions(entries);
-      for (const d of done) recent.noteLaunched(d.id, { title: d.title, tmuxSession: d.tmuxSession });
-      return done;
-    });
-    if (r.busy) return [409, '다시 여는 중이에요. 잠시 뒤에 다시 눌러 주세요'];
-    lastJson = '';
-    return [200, r.value.length ? `세션 ${r.value.length}개를 다시 열었어요. 몇 초 뒤 목록에 나타나요` : '다시 열 수 있는 세션이 없어요(폴더가 없거나 홈 밖)'];
-  }
-  if (action === 'spawn') {
-    const cwd = path.resolve(String(body.cwd ?? '').replace(/^~(?=$|\/)/, HOME));
-    if (!isInside(HOME, cwd) || !fs.existsSync(cwd) || !fs.statSync(cwd).isDirectory()) return [400, '홈 폴더 아래에 있는 폴더만 열 수 있어요'];
-    const name = String(body.name ?? '').trim().slice(0, 60);
-    const sessionId = crypto.randomUUID();
-    const slug = (name || path.basename(cwd)).replace(/[^a-zA-Z0-9가-힣_-]+/g, '-').slice(0, 30) || 'session';
-    const command = newSessionArgs({ sessionId, name, model: String(body.model ?? ''), prompt: String(body.prompt ?? '').trim() }); // 프롬프트는 -- 뒤(lib/spawn.mjs)
-    await tmux.newSession({ name: `dash-${slug}-${sessionId.slice(0, 4)}`, cwd, command });
-    if (name) spawnedNames.set(`claude:${sessionId}`, name);
-    return [200, JSON.stringify({ key: `claude:${sessionId}` })];
-  }
-  return [404, '알 수 없는 명령이에요'];
-}
-
 // ---------- 환경 점검 (처음 켤 때 화면에 보여 줌) ----------
 
 async function probe(cmd, args) {
@@ -955,6 +821,29 @@ async function handle(req, res) {
   const route = ROUTES.find((r) => (r.prefix ? url.pathname.startsWith(r.prefix) : url.pathname === r.path) && (!r.method || r.method === req.method));
   return route ? route.handler(req, res, url) : serveStatic(res, url);
 }
+
+// 명령 처리(/api/cmd/<이름>)는 lib/commands.mjs — 필요한 것만 이름 붙여 넘긴다
+const handleCommand = createCommands({
+  demo: DEMO,
+  demoRecentRestore: demo.demoRecentRestore,
+  tmux,
+  findSession,
+  sessions: () => latest?.sessions ?? [],
+  hasState: () => Boolean(latest),
+  liveIdSet,
+  uploadDir: UPLOAD_DIR,
+  readDefaultModel,
+  restoreDefaultModel,
+  enableUsage,
+  disableUsage,
+  openDir,
+  recent,
+  restoreLock,
+  restoreSessions,
+  restoreCandidates,
+  spawnedNames,
+  onChanged: () => (lastJson = ''),
+});
 
 // ---------- 경로 표: 주소 → 처리 함수 ----------
 // method 가 적힌 경로는 그 방식만 받고(다른 방식은 화면 파일 쪽으로 떨어져 404), 없으면 방식을 가리지 않는다.
