@@ -182,7 +182,7 @@
 
 ### test
 
-38개 파일, 223개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+39개 파일, 228개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -333,11 +333,12 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 | `test/token.test.mjs` · `perms.test.mjs` · `paths.test.mjs` | 토큰 파일 · 권한 600/700 · 폴더 안 검사 |
 | `test/body.test.mjs` | 본문 상한 413 · 끊긴 요청 · `.part` 안 남김 |
 | `test/claude-settings.test.mjs` · `bridge.test.mjs` | 설정 파일을 깨뜨리지 않고 고치기, 링크 거절 |
+| `test/uploads.test.mjs` | 첨부 14일 정리: 날짜 폴더 안 폴더 · 링크에도 멈추거나 밖을 지우지 않기 |
 | 그 밖 | `md` · `keys` · `limits` · `notify` · `paging` · `recent` · `respond` · `spawn` · `usage` · `filecache` · `live` |
 
 ### 데모 서버 테스트 — 진짜 서버를 데모 모드로
 
-`test/server.test.mjs` 가 `DEMO=1` 로 서버를 4699 포트에 띄워요. 보안 층(Host · Origin · 토큰 · 보안 헤더 · 화면 파일 경로)이 실제 HTTP 에서 막히는지 봐요. 데모는 명령을 실행하지 않아서 안전해요.
+`test/server.test.mjs` 가 `DEMO=1` 로 서버를 4699 포트에 띄워요(HOME 은 임시 폴더 — 데모도 `demo-token` 을 만들어서). 보안 층(Host · Origin · 토큰 · 보안 헤더 · 화면 파일 경로)이 실제 HTTP 에서 막히는지, 그리고 내 화면이 쓰는 주소(`localhost:포트` Host · 같은 출처 Origin)는 열리는지 봐요. 데모는 명령을 실행하지 않아서 안전해요.
 
 ### 시험 서버 테스트 — 「실제 모드」를 가짜 세상에서
 
