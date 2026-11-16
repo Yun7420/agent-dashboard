@@ -72,11 +72,11 @@ let kbKey = null; // 키보드(j/k)로 고른 세션 — 패널이 닫혀 있을
 // 여러 파일이 같이 쓰는 화면 상태는 여기(맨 앞)에 둔다. let · const 는 선언한 줄이 실행되기 전에 쓰면 ReferenceError 라,
 // 뒤 번호 파일에 두면 앞 파일이 불러오는 도중에 쓰게 바뀌는 순간 화면이 멈춘다(docs/CONVENTIONS.md 「화면 번호 순서」)
 const view = { x: 0, y: 0, k: 1, init: false }; // 조직도 이동 · 확대(03-graph.js)
-let drawerTab = 'now'; // 패널 탭: 지금(현재 답변) / 기록(06-now.js 의 setTab)
-const openFiles = new Set(); // 1초마다 다시 그려도 펼친 파일은 펼친 채로(07-changes.js)
+let drawerTab = 'now'; // 패널 탭: 지금(현재 답변) / 기록(07-now.js 의 setTab)
+const openFiles = new Set(); // 1초마다 다시 그려도 펼친 파일은 펼친 채로(07-now.js)
 const fullCmds = new Set(); // "전체 보기"로 펼친 명령
 let closedCmds = false; // 실행한 명령은 기본 펼침 — 사용자가 접으면 그 세션 동안 접힌 채로
-let sentAt = null; // 방금 보낸 메시지 — 세션이 작업을 시작하기 전까지 "전달됨" 표시(07-changes.js 의 renderBusy)
+let sentAt = null; // 방금 보낸 메시지 — 세션이 작업을 시작하기 전까지 "전달됨" 표시(07-now.js 의 renderBusy)
 let canSend = false; // 지금 세션에 보낼 수 있는지(tmux·종료·승인 대기 여부, 08-attach.js 의 updateSendState)
 let envData = null; // 마지막 환경 점검 결과(09-env.js) — 목록 · 패널이 「없는 도구」 안내에 쓴다
 

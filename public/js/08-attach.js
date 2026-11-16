@@ -1,4 +1,4 @@
-// 첨부 · 입력 칸
+// 입력 칸: 세션별 임시 글 · 첨부 · 보내기 · 🎤 음성 입력
 // ---------- 세션별 임시 글 · 첨부 ----------
 // 입력 칸의 글과 첨부는 세션마다 따로 기억한다 — 세션을 바꾼 뒤 앞 세션에 쓰던 글 · 첨부를 다른 세션으로 잘못 보내지 않게.
 // 글은 새로고침해도 남도록 브라우저 저장(agent-deck 의 drafts)에 둔다(긴 글을 실수로 날리는 쪽이 더 아파서).
@@ -9,7 +9,7 @@ let draftKey = null; // 지금 입력 칸이 보여 주는 세션
 const filesOf = (key) => { if (!drafts.has(key)) drafts.set(key, []); return drafts.get(key); };
 const curFiles = () => (draftKey ? filesOf(draftKey) : []);
 const revoke = (list) => list.forEach((a) => a.url && URL.revokeObjectURL(a.url));
-// 입력 칸을 다른 세션 것으로 바꾼다(05-history.js 의 select 가 부름)
+// 입력 칸을 다른 세션 것으로 바꾼다(06-history.js 의 select 가 부름)
 function useDraft(key) {
   if (key === draftKey) return;
   draftKey = key;
@@ -131,3 +131,35 @@ $('#d-model').addEventListener('change', async (e) => {
   try { await api('/api/cmd/model', { key: selected, model }); toast(`이 세션을 ${model} 로 바꿨어요. 다음 답변부터 적용돼요 (기본 모델은 그대로)`); }
   catch (err) { toast(err.message); }
 });
+
+// 🎤 음성 입력 — 버튼을 눌렀을 때만 듣는다. 크롬 음성 인식은 소리를 구글 서버로 보내 글자로 바꾼다.
+const MIC_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>';
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+if (Recognition) {
+  $('#mic').hidden = false;
+  $('#mic').addEventListener('click', () => {
+    if (rec) { rec.stop(); return; }
+    rec = new Recognition();
+    rec.lang = 'ko-KR';
+    rec.interimResults = true;
+    rec.continuous = true;
+    const base = $('#msg').value ? $('#msg').value.replace(/\s*$/, ' ') : '';
+    let done = '';
+    rec.onresult = (e) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) done += e.results[i][0].transcript;
+        else interim += e.results[i][0].transcript;
+      }
+      $('#msg').value = base + done + interim;
+      updateSendState(); // 음성으로 채운 글도 보내기 버튼에 반영
+    };
+    rec.onerror = (e) => toast(e.error === 'not-allowed' ? '마이크 권한을 허용해 주세요' : `음성 인식 오류: ${e.error}`);
+    rec.onend = () => { rec = null; $('#mic').classList.remove('rec'); $('#mic').innerHTML = MIC_ICON; $('#msg').focus(); };
+    rec.start();
+    $('#mic').classList.add('rec');
+    $('#mic').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+    toast('듣는 중… 다 말하면 ■ 버튼을 누르세요');
+  });
+}

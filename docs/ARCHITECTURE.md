@@ -165,10 +165,10 @@
 | `02-activity.js` | 아래 활동 로그(`logEvents` · `logLinks`) |
 | `03-graph.js` | 가운데 조직도(`renderGraph` · `layout`) |
 | `04-list.js` | 왼쪽 세션 목록(`renderList`) · 「N초 전」만 따로 갱신(`updateAgo`) |
-| `05-history.js` | 오른쪽 서랍: 세션 고르기(`select`) · 기록 읽기(`loadHistory`) · 대화 창 추이(`renderTrend`) |
-| `06-now.js` | 지금 탭(`renderNow`) · 탭 바꾸기(`setTab`) |
-| `07-changes.js` | 바꾼 파일 diff(`renderChanges`) · 승인 카드와 단추(`renderApproveCard` · `renderApproval`) |
-| `08-attach.js` | 세션별 임시 글 · 첨부(`useDraft` · `pruneDrafts`) · 첨부 · 보내기(`addFiles` · `sendMsg`) |
+| `05-approval.js` | 승인 창: 「허락할 내용」 카드(`renderApproveCard`) · 터미널 화면과 선택지 단추(`renderApproval`) · 선택지 읽기(`approvalChoices`, 순수 함수) |
+| `06-history.js` | 오른쪽 서랍: 세션 고르기(`select`) · 기록 읽기(`loadHistory`) · 대화 창 추이(`renderTrend`) |
+| `07-now.js` | 지금 탭(`renderNow`) · 탭 바꾸기(`setTab`) · 바꾼 파일 diff · 실행한 명령(`renderChanges`) · 진행 표시(`renderBusy`) |
+| `08-attach.js` | 입력 칸: 세션별 임시 글 · 첨부(`useDraft` · `pruneDrafts`) · 첨부 · 보내기(`addFiles` · `sendMsg`) · 🎤 음성 입력 |
 | `09-env.js` | 환경 점검 화면(`renderEnv`) · 없는 도구면 단추 끄기(`applyTools`) |
 | `10-usage.js` | 머리의 계정 한도(`renderUsage`) · 한도 추이 그래프(`renderLimits`) |
 | `11-panel.js` | 패널 머리 메뉴 · 폭 · 폴더 열기 메뉴(`openDirMenu`) |
@@ -183,7 +183,7 @@
 
 ### test
 
-40개 파일, 238개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+41개 파일, 242개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -245,7 +245,7 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
  │   ├─ 09-env.js:finishBoot           (처음 한 번: 연동 중 화면 닫기 · 환경 점검)
  │   ├─ 「갱신 시각」 글자
  │   ├─ 12-controls.js:render          (목록 · 조직도 · 패널 다시 그리기 — 바뀐 곳만)
- │   └─ 05-history.js:select           (막 띄운 세션이 나타났거나, 고른 세션에 새 요청이 오면)
+ │   └─ 06-history.js:select           (막 띄운 세션이 나타났거나, 고른 세션에 새 요청이 오면)
  └─ onerror                            (서버가 꺼짐 → 「재연결 중…」, 멈췄으면 /api/perf 로 403 인지 확인)
 ```
 
@@ -255,7 +255,7 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 
 ### 예 ① 화면에서 승인 「1」 단추를 누른다
 
-1. **단추 클릭** — `public/js/07-changes.js` 의 승인 단추 처리에서 `api('/api/cmd/approve', { key: selected, choice: '1' })` 를 불러요.
+1. **단추 클릭** — `public/js/05-approval.js` 의 승인 단추 처리에서 `api('/api/cmd/approve', { key: selected, choice: '1' })` 를 불러요.
 2. **요청 만들기** — `public/js/01-core.js:api` 가 `fetch` 로 POST 를 보내요. 헤더에 `X-Dashboard-Token` 을 넣어요. 403 이면 「새로고침해 주세요」 토스트가 떠요.
 3. **보안 헤더** — `server.mjs` 의 `http.createServer` 콜백이 모든 응답에 `SECURITY_HEADERS` 를 먼저 붙여요.
 4. **입구 검사** — `server.mjs:handle`
@@ -335,6 +335,7 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 | `test/body.test.mjs` | 본문 상한 413 · 끊긴 요청 · `.part` 안 남김 |
 | `test/claude-settings.test.mjs` · `bridge.test.mjs` | 설정 파일을 깨뜨리지 않고 고치기, 링크 거절 |
 | `test/uploads.test.mjs` | 첨부 14일 정리: 날짜 폴더 안 폴더 · 링크에도 멈추거나 밖을 지우지 않기 |
+| `test/approval-ui.test.mjs` | 승인 창 선택지 읽기(화면): 서버 `parseOptions` 와 같은 화면에서 같은 번호 · 글자, 여러 질문 창 이전 · 다음 |
 | `test/conventions.test.mjs` | 코드 규칙(화면 번호 순서 · 파일 크기 · 모듈 경계 · 셸 안 거치기 · 직접 fetch · 토큰 자리 · 머리 주석 · 테스트 짝). 남은 위반은 허용 목록(줄어들기만) — [CONVENTIONS](CONVENTIONS.md) 3부 |
 | 그 밖 | `md` · `keys` · `limits` · `notify` · `paging` · `recent` · `respond` · `spawn` · `usage` · `filecache` · `live` |
 
@@ -405,22 +406,20 @@ GitHub Actions(`.github/workflows/test.yml`)가 push · PR 마다 Ubuntu · macO
 
 화면 js 는 번호 순서대로 불러오고 「뒤 파일이 앞 파일 것을 쓴다」가 규칙이에요([코드 규칙](CONVENTIONS.md) ④).
 
-- **let · const 는 예외 없이 0곳**이에요. let · const 는 정의한 줄이 실행되기 전에 쓰면 ReferenceError(TDZ)라서, 여러 파일이 같이 쓰는 상태는 `01-core.js` 에 모았어요(2026-11-16, 28곳 → 11곳).
-- 남은 11곳은 모두 **서로 부르는 function** 이에요. 오른쪽 서랍(05 고르기 · 06 지금 탭 · 07 변경 · 승인 · 08 입력 · 11 기록 패널)과 목록(04)이 고리처럼 서로 불러서, 번호를 어떻게 바꿔도 한쪽은 앞→뒤가 돼요. function 은 끌어올려져(hoisting) 불러오기가 끝난 뒤 부르면 안전해요.
+- **let · const 는 예외 없이 0곳**이에요. let · const 는 정의한 줄이 실행되기 전에 쓰면 ReferenceError(TDZ)라서, 여러 파일이 같이 쓰는 상태는 `01-core.js` 에 모았어요(2026-11-16, 28곳 → 11곳). `07-changes.js` 를 승인(05) · 지금 탭(07) · 입력(08)으로 나누며 8곳이 됐어요.
+- 남은 8곳은 모두 **서로 부르는 function** 이에요. 오른쪽 서랍(06 고르기 · 07 지금 탭 · 08 입력 · 11 기록 패널)과 목록(04)이 고리처럼 서로 불러서, 번호를 어떻게 바꿔도 한쪽은 앞→뒤가 돼요. function 은 끌어올려져(hoisting) 불러오기가 끝난 뒤 부르면 안전해요.
 
 | 파일 | 부르는 이름 → 정의된 파일 | 되돌아오는 길(고리) |
 |---|---|---|
-| `04-list.js` | `select` → 05 | 05 가 04 `renderList` |
-| `05-history.js` | `setTab` · `renderNow` → 06, `renderBusy` · `renderApproval` → 07, `useDraft` · `updateSendState` → 08, `renderHistory` → 11 | 06 이 05 `renderTrend`, 07 이 06 `renderNow`, 08 이 07 `renderBusy`, 11 이 05 `select` |
-| `06-now.js` | `renderChanges` → 07, `renderHistory` → 11 | 07 이 06 `renderNow`, 11 → 05 → 06 |
-| `07-changes.js` | `updateSendState` → 08 | 08 이 07 `renderBusy` |
+| `04-list.js` | `select` → 06 | 06 이 04 `renderList` |
+| `06-history.js` | `setTab` · `renderNow` · `renderBusy` → 07, `useDraft` · `updateSendState` → 08, `renderHistory` → 11 | 07 이 06 `renderTrend`, 08 이 07 `renderBusy`, 11 이 06 `select` |
+| `07-now.js` | `renderHistory` → 11 | 11 → 06 → 07 |
 
 - 이 목록은 `test/conventions.test.mjs` 가 지켜요(검사기 `test/_helpers/front-deps.mjs`). 새로 생기면 실패하고, 고친 곳은 허용 목록에서 지워야 해서 줄어들기만 해요. let · const 는 허용 목록 없이 0 이어야 해요.
 - 예전에 이 표를 「27곳 · let/const 12」로 적었는데 손으로 센 실수였어요(실제 28 · 11).
 
 ### 같이 정할 것(보류 중)
 
-- **`07-changes.js` 나누기** — 바꾼 파일 · 명령 / 승인 창 / 음성 입력이 한 파일에 있어요. 승인 선택지 읽기(`renderApproval` 안)를 순수 함수로 떼어 node 로 시험하는 것도 함께.
 - **세션 카드 안 단추 구조** — 카드(role=button) 안에 ✕ 단추가 들어가 있어요(ARIA 권장과 어긋남). 카드의 이름을 진짜 단추로 바꾸는 쪽이 맞아요.
 
 다 읽었다면, 다음엔 `lib/state.mjs:buildState` 를 처음부터 끝까지 따라가 보세요. 이 문서의 2 · 3 · 4절이 한 함수 안에서 모두 이어져 있어요.

@@ -28,17 +28,14 @@ function sameAsAllowed(found, allowed, what) {
 // 한쪽은 앞→뒤가 되는 것만, 어느 고리인지 이유를 붙여 허용한다(줄어들기만)
 const CYCLE_CALLS = {
   // 「되돌아오는 길」: 뒤 파일이 이 앞 파일을 다시 부르는 곳(그래서 번호를 바꿔도 풀리지 않음)
-  '04-list.js → select': '목록 ↔ 서랍 고르기 — 05 가 04 renderList 를 부름',
-  '05-history.js → setTab': '서랍 고르기 ↔ 지금 탭 — 06 이 05 renderTrend 를 부름',
-  '05-history.js → renderNow': '서랍 고르기 ↔ 지금 탭 — 06 이 05 renderTrend 를 부름',
-  '05-history.js → renderBusy': '서랍 고르기 → 변경 · 승인 → 지금 탭 → 서랍 — 07 이 06 renderNow, 06 이 05 renderTrend 를 부름',
-  '05-history.js → renderApproval': '서랍 고르기 → 변경 · 승인 → 지금 탭 → 서랍 — 07 이 06 renderNow, 06 이 05 renderTrend 를 부름',
-  '05-history.js → useDraft': '서랍 고르기 → 입력 → 변경 · 승인 → … → 서랍 — 08 이 07 renderBusy 를 부름',
-  '05-history.js → updateSendState': '서랍 고르기 → 입력 → 변경 · 승인 → … → 서랍 — 08 이 07 renderBusy 를 부름',
-  '05-history.js → renderHistory': '서랍 고르기 ↔ 기록 패널 — 11 이 05 select · loadHistory 를 부름',
-  '06-now.js → renderChanges': '지금 탭 ↔ 변경 · 승인 — 07 이 06 renderNow 를 부름',
-  '06-now.js → renderHistory': '지금 탭 → 기록 패널 → 서랍 고르기 → 지금 탭 — 11 이 05 select, 05 가 06 setTab 을 부름',
-  '07-changes.js → updateSendState': '변경 · 승인 ↔ 입력 — 08 이 07 renderBusy 를 부름',
+  '04-list.js → select': '목록 ↔ 서랍 고르기 — 06 이 04 renderList 를 부름',
+  '06-history.js → setTab': '서랍 고르기 ↔ 지금 탭 — 07 이 06 renderTrend 를 부름',
+  '06-history.js → renderNow': '서랍 고르기 ↔ 지금 탭 — 07 이 06 renderTrend 를 부름',
+  '06-history.js → renderBusy': '서랍 고르기 ↔ 지금 탭(진행 표시) — 07 이 06 renderTrend 를 부름',
+  '06-history.js → useDraft': '서랍 고르기 → 입력 → 지금 탭 → 서랍 — 08 이 07 renderBusy, 07 이 06 renderTrend 를 부름',
+  '06-history.js → updateSendState': '서랍 고르기 → 입력 → 지금 탭 → 서랍 — 08 이 07 renderBusy, 07 이 06 renderTrend 를 부름',
+  '06-history.js → renderHistory': '서랍 고르기 ↔ 기록 패널 — 11 이 06 select · loadHistory 를 부름',
+  '07-now.js → renderHistory': '지금 탭 → 기록 패널 → 서랍 고르기 → 지금 탭 — 11 이 06 select, 06 이 07 setTab 을 부름',
 };
 
 test('화면 번호 순서: 앞 번호 파일이 뒤 번호 파일의 let · const 를 쓰는 곳은 0(예외 없음)', () => {
@@ -77,7 +74,6 @@ const OVER = {
   'server.mjs': 648,
   'adapters/claude.mjs': 629,
   'lib/state.mjs': 320,
-  'public/js/07-changes.js': 221,
   'public/js/03-graph.js': 201,
 };
 
