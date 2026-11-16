@@ -343,12 +343,12 @@ async function tick() {
       try { limitsRecorder.observe(latest.usage); } catch (e) { console.error('한도 기록 실패:', e.message); }
     }
     // 바뀐 게 있을 때만, 각 부분을 한 번씩만 문자열로 만들어 보낸다
-    // 재시동 복구: 떠 있는 tmux 세션 목록을 저장하고, 재시동 전 목록 중 지금 없는 세션을 알려 준다
+    // 재시동 복구: 재시동 전 목록 중 지금 없는 세션을 알려 주고, 떠 있는 tmux 세션 목록을 저장한다 — 이 순서여야 첫 틱에 떠 있던 세션이 저장을 덮기 전에 재시동 전 목록을 떼어 둔다
     if (!DEMO) {
+      latest.restore = restoreCandidates(liveIdSet()).map((e) => ({ id: e.id, title: e.title, cwd: e.cwd }));
       saveSnapshot(latest.sessions);
       const def = defaultAlias();
       try { recent.observe(liveEntries(latest.sessions, (s) => { const m = modelAlias(s.model); return m === def ? null : m; })); } catch (e) { console.error('복구 목록 기억 실패:', e.message); }
-      latest.restore = restoreCandidates(liveIdSet()).map((e) => ({ id: e.id, title: e.title, cwd: e.cwd }));
     } else latest.restore = [];
     const sJ = JSON.stringify(latest.sessions), lJ = JSON.stringify(latest.links), uJ = JSON.stringify(latest.usage), rJ = JSON.stringify(latest.restore);
     const json = sJ + lJ + uJ + rJ;

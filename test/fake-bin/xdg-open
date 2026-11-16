@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+// 가짜 xdg-open: 폴더 열기(lib/open-dir.mjs)를 기록만 한다 — 시험 중에 진짜 Finder · 파일 관리자 창이 열리지 않게
+import { record } from './_fake.mjs';
+record('xdg-open', process.argv.slice(2));

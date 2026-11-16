@@ -9,59 +9,31 @@ import os from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
 import crypto from 'node:crypto';
-import { tmpDir } from './_helpers/tmp.mjs';
 import { until } from './_helpers/until.mjs';
-import { request, firstEvent } from './_helpers/http.mjs';
-import { ROOT, testEnv, startServer } from './_helpers/server.mjs';
+import { ROOT, startServer } from './_helpers/server.mjs';
+import { createLiveHome } from './_helpers/live-home.mjs';
 
 const PORT = 4697;
-const TMP = tmpDir('ad-testsrv-');
-const HOME = path.join(TMP, 'home');
-const CWD = path.join(HOME, 'proj');
-const UPLOADS = path.join(HOME, '.agent-dashboard', 'uploads');
-const FAKE_DIR = path.join(TMP, 'fake');
-const FAKE_LOG = path.join(TMP, 'fake.log');
-const TOKEN_FILE = path.join(TMP, 'token');
-const TOKEN = crypto.randomBytes(24).toString('hex');
 const ID = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
 const PID = [process.pid, process.ppid]; // 살아 있는 PID 가 필요해(공식 목록은 kill -0 으로 확인) 이 테스트와 그 부모를 쓴다
+const home = createLiveHome({
+  port: PORT,
+  sessions: ({ CWD }) => [
+    { id: ID[0], pid: PID[0], status: 'idle', pane: '%1', tmuxSession: 'sess-a', cwd: CWD, prompt: '요청 0' },
+    { id: ID[1], pid: PID[1], status: 'waiting', pane: '%2', tmuxSession: 'sess-b', cwd: CWD, prompt: '요청 1' },
+  ],
+  // 복구 단추 후보: 예전에 떠 있다 꺼진 세션 하나
+  recent: ({ CWD }) => [{ id: ID[2], title: '옛 세션', named: false, cwd: CWD, tmuxSession: 'old-a', model: null, lastSeen: Date.now() - 3600_000, closedAt: null }],
+  // 사용 한도 보기가 옛 방식(저장소의 bin/statusline.mjs 를 직접 등록)으로 켜져 있던 설치
+  settings: `${JSON.stringify({ model: 'opus[1m]', statusLine: { type: 'command', command: `"${fs.realpathSync(process.execPath)}" "${path.join(ROOT, 'bin', 'statusline.mjs')}"`, padding: 0 }, theme: 'dark' }, null, 2)}\n`,
+});
+const { HOME, CWD, UPLOADS, TOKEN, H, req, cmd, fakeLog, tmuxCalls, firstState } = home;
 let srv;
 
-const at = new Date().toISOString();
-const line = (o) => JSON.stringify(o) + '\n';
-function setupHome() {
-  const proj = path.join(HOME, '.claude', 'projects', CWD.replace(/[^a-zA-Z0-9]/g, '-'));
-  fs.mkdirSync(proj, { recursive: true });
-  fs.mkdirSync(path.join(HOME, '.claude', 'sessions'), { recursive: true });
-  fs.mkdirSync(CWD, { recursive: true });
-  fs.mkdirSync(path.join(HOME, '.agent-dashboard'), { recursive: true, mode: 0o700 });
-  fs.mkdirSync(FAKE_DIR, { recursive: true });
-  for (const [i, status] of [[0, 'idle'], [1, 'waiting']]) {
-    fs.writeFileSync(path.join(proj, `${ID[i]}.jsonl`), line({ type: 'user', cwd: CWD, timestamp: at, message: { role: 'user', content: `요청 ${i}` } }));
-    fs.writeFileSync(path.join(HOME, '.claude', 'sessions', `${PID[i]}.json`), JSON.stringify({ pid: PID[i], sessionId: ID[i], status, kind: 'interactive' }));
-  }
-  // 복구 단추 후보: 예전에 떠 있다 꺼진 세션 하나
-  fs.writeFileSync(path.join(HOME, '.agent-dashboard', 'recent.json'), JSON.stringify({ entries: [{ id: ID[2], title: '옛 세션', named: false, cwd: CWD, tmuxSession: 'old-a', model: null, lastSeen: Date.now() - 3600_000, closedAt: null }] }), { mode: 0o600 });
-  fs.writeFileSync(path.join(FAKE_DIR, 'panes.txt'), `%1\t${PID[0]}\tsess-a\n%2\t${PID[1]}\tsess-b\n`);
-  fs.writeFileSync(path.join(FAKE_DIR, 'ps.txt'), `${PID[0]} 1 01:00 claude --resume ${ID[0]}\n${PID[1]} 1 01:00 claude --resume ${ID[1]}\n`);
-  fs.writeFileSync(path.join(FAKE_DIR, 'lsof.txt'), `p${PID[0]}\nn${CWD}\np${PID[1]}\nn${CWD}\n`);
-  fs.writeFileSync(path.join(FAKE_DIR, 'screen.txt'), '> ');
-  fs.writeFileSync(TOKEN_FILE, TOKEN, { mode: 0o600 });
-  // 사용 한도 보기가 옛 방식(저장소의 bin/statusline.mjs 를 직접 등록)으로 켜져 있던 설치
-  fs.writeFileSync(path.join(HOME, '.claude', 'settings.json'), `${JSON.stringify({ model: 'opus[1m]', statusLine: { type: 'command', command: `"${fs.realpathSync(process.execPath)}" "${path.join(ROOT, 'bin', 'statusline.mjs')}"`, padding: 0 }, theme: 'dark' }, null, 2)}\n`);
-}
-
-const req = (p, opts) => request(PORT, p, opts);
-const H = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };
-const cmd = (name, body) => req(`/api/cmd/${name}`, { method: 'POST', headers: H, body: JSON.stringify(body) });
-const fakeLog = () => (fs.existsSync(FAKE_LOG) ? fs.readFileSync(FAKE_LOG, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
-const tmuxCalls = (sub) => fakeLog().filter((x) => x.cmd === 'tmux' && x.args[0] === sub);
 const files = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir, { recursive: true }).filter((f) => fs.statSync(path.join(dir, f)).isFile()) : []);
-const firstState = () => firstEvent(PORT, TOKEN);
 
 before(async () => {
-  setupHome();
-  const env = testEnv({ home: HOME, tokenFile: TOKEN_FILE, port: PORT, fakeDir: FAKE_DIR, fakeLog: FAKE_LOG, FAKE_NEW_DELAY_MS: '400', FAKE_PS_FIRST_DELAY_MS: '1500' });
+  const env = home.env({ FAKE_NEW_DELAY_MS: '400', FAKE_PS_FIRST_DELAY_MS: '1500' });
   // 두 세션이 tmux 창과 함께 보이고(첫 상태), 명령이 보는 상태(latest)도 만들어질 때까지.
   // /events 는 latest 가 없으면 따로 상태를 만들어 보내서, 첫 상태만 기다리면 명령이 아직 503 일 수 있다(예전엔 409 로 흔들림)
   srv = await startServer({ env, name: '시험 서버', ready: async () => {
