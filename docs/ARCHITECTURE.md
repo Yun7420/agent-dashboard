@@ -5,6 +5,7 @@
 - 파일 이름은 `lib/state.mjs`, 함수는 `lib/state.mjs:buildState` 처럼 「파일:함수」로 적었어요. 에디터에서 그 이름으로 찾으면 바로 나와요.
 - 줄 번호는 적지 않았어요(코드를 고치면 바뀌니까).
 - 2026-11-13 기준이에요. 파일이 늘거나 이름이 바뀌면 이 문서도 같이 고쳐 주세요.
+- 코드를 고칠 때 지키는 규칙은 [코드 규칙(CONVENTIONS.md)](CONVENTIONS.md)에 따로 있어요.
 
 ## 목차
 
@@ -182,7 +183,7 @@
 
 ### test
 
-39개 파일, 228개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+40개 파일, 236개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -334,6 +335,7 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 | `test/body.test.mjs` | 본문 상한 413 · 끊긴 요청 · `.part` 안 남김 |
 | `test/claude-settings.test.mjs` · `bridge.test.mjs` | 설정 파일을 깨뜨리지 않고 고치기, 링크 거절 |
 | `test/uploads.test.mjs` | 첨부 14일 정리: 날짜 폴더 안 폴더 · 링크에도 멈추거나 밖을 지우지 않기 |
+| `test/conventions.test.mjs` | 코드 규칙(화면 번호 순서 · 파일 크기 · 모듈 경계 · 셸 안 거치기 · 직접 fetch · 토큰 자리 · 머리 주석 · 테스트 짝). 남은 위반은 허용 목록(줄어들기만) — [CONVENTIONS](CONVENTIONS.md) 3부 |
 | 그 밖 | `md` · `keys` · `limits` · `notify` · `paging` · `recent` · `respond` · `spawn` · `usage` · `filecache` · `live` |
 
 ### 데모 서버 테스트 — 진짜 서버를 데모 모드로
@@ -413,8 +415,8 @@ GitHub Actions(`.github/workflows/test.yml`)가 push · PR 마다 Ubuntu · macO
 | `09-usage.js` | `loadEnv` → 12 |
 | `10-panel.js` | `envData`(let) → 12 |
 
-- **TDZ 위험**(let · const 는 정의한 줄이 실행되기 전에 쓰면 ReferenceError): 위의 let · const 12곳은 누가 **불러오는 도중에** 그 함수를 부르게 바꾸면 화면이 바로 멈춰요. `function` 은 끌어올려져(hoisting) 이 문제가 없어요.
-- 목록은 스크립트로 뽑고(지역 변수 · 객체 키처럼 이름만 같은 것은 손으로 뺐어요) 2026-11-13 기준이에요.
+- **TDZ 위험**(let · const 는 정의한 줄이 실행되기 전에 쓰면 ReferenceError): 위의 let · const 11곳은 누가 **불러오는 도중에** 그 함수를 부르게 바꾸면 화면이 바로 멈춰요. `function` 은 끌어올려져(hoisting) 이 문제가 없어요.
+- 목록은 `test/conventions.test.mjs` 가 지켜요(검사기 `test/_helpers/front-deps.mjs`). 새로 생기면 실패하고, 고친 곳은 허용 목록에서 지워야 해서 줄어들기만 해요. 2026-11-16 기준 28곳(예전에 27 · 12 로 적은 것은 손으로 센 실수).
 
 ### 같이 정할 것(보류 중)
 

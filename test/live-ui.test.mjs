@@ -41,13 +41,3 @@ test('api · apiJson: 403 이면 고정 안내를 한 번만 켜고 「새로고
   next = res(200, '{"items":[1]}');
   assert.deepEqual(JSON.parse(JSON.stringify(await apiJson('/api/history?key=a'))), { items: [1] });
 });
-
-test('화면 파일: 서버 요청은 apiFetch 한곳으로 — 직접 fetch 는 01-core 와 실시간 연결 확인(16-live)뿐', () => {
-  const dir = new URL('../public/js/', import.meta.url);
-  const direct = [];
-  for (const f of fs.readdirSync(dir)) {
-    const lines = fs.readFileSync(new URL(f, dir), 'utf8').split('\n');
-    lines.forEach((l, i) => { if (/(^|[^\w.])fetch\(/.test(l)) direct.push(`${f}:${i + 1}`); });
-  }
-  assert.deepEqual(direct.map((x) => x.split(':')[0]).sort(), ['01-core.js', '16-live.js']);
-});
