@@ -68,7 +68,7 @@ test('화면 번호 순서 검사기: 주석 · 글자 · 객체 키 · 지역 �
 // 서버 쪽(.mjs) 300줄 · 화면 js 200줄을 넘으면 나누기를 검토한다. 이미 넘은 파일은 지금 줄 수를 상한으로(늘지 않게)
 const LINES = { server: 300, front: 200 };
 const OVER = {
-  'server.mjs': 648,
+  'server.mjs': 468, // 2026-11-17 기록 · 사용 한도를 lib/history-api · usage-bridge 로 옮김(648 → 468)
   'adapters/claude.mjs': 542,
   'lib/state.mjs': 320,
   'public/js/03-graph.js': 201,

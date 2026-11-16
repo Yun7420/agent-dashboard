@@ -76,7 +76,7 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `server.mjs` | 서버 켜기 · 요청 입구의 보안 검사(`handle`) · 경로 표(`ROUTES`) · 2초 틱(`tick`) · 각 구역을 잇는 일 |
+| `server.mjs` | 서버 켜기 · 요청 입구의 보안 검사(`handle`) · 경로 표(`ROUTES`)와 처리 함수 · 2초 틱(`tick`) · 각 구역을 잇는 일 |
 | `adapters/index.mjs` | 쓸 어댑터 목록(`adapters`). 새 도구는 여기에 한 줄 |
 | `adapters/claude.mjs` | Claude Code 기록의 줄 해석: 세션 찾기(`scan`) · 요약(`describe`) · 기록 탭(`history`) · 세션 간 메시지(`peers`) · 오늘 한 일(`daySummary`) · 커밋 제목(`commitMessages`) |
 | `adapters/codex.mjs` | Codex 기록의 줄 해석: `scan` · `describe` · `history` 만 있어요(그래서 Codex 는 일부 기능만) |
@@ -88,6 +88,13 @@
 | `lib/state.mjs` | 상태 한 장 조립(`createStateBuilder` → `buildState`). 기록 + 프로세스 짝짓기 → 세션 카드 → 선택창 확인 → 승인 카드 → 세션 간 메시지 |
 | `lib/procs.mjs` | `ps` · `lsof` · `tmux list-panes` 결과. 무거워서 6초 동안 재사용(`createProcesses`) |
 | `lib/tmux.mjs` | tmux 다루기: 창 목록(`listPanes`) · 프로세스의 창 찾기(`findPane`) · 화면 읽기(`capture`) · 입력(`sendText` · `sendKey`) · 새 세션(`newSession`) |
+
+### lib — 기록 · 사용 한도 (화면 요청에 답하기)
+
+| 파일 | 하는 일 |
+|---|---|
+| `lib/history-api.mjs` | 세션 열쇠로 어댑터 · 기록 파일을 찾아 기록 탭(`promptHistory`) · 대화 창 추이(`contextTrend`) · 전체 기록 검색(`searchHistory`) · 오늘 한 일(`daySummary`). 크기가 같으면 다시 읽지 않는 캐시 |
+| `lib/usage-bridge.mjs` | 상태줄 다리 켜기 · 끄기 · 켜질 때 맞추기(`enableUsage` · `sync`) · 상태줄 파일 읽기(`readStatusFiles` · `usageState`) · `/model` 뒤 기본 모델 되돌리기(`restoreDefaultModel`) |
 | `lib/dialog.mjs` | 화면 맨 아래를 보고 선택창인지(`hasDialog` · `detectDialog`), 선택지와 커서 위치(`parseOptions`) |
 | `lib/approval.mjs` | 승인 창 맨 위 「허락할 내용」 카드: 종류 · 내용 · 위험 이유(`summarizeTool` · `commandRisks` · `fileRisks`) |
 | `lib/usage.mjs` | 토큰 수 세기(`usageOf` · `addUsage`) · 대화 창 추이 줄이기(`thinTrend`) |
@@ -184,7 +191,7 @@
 
 ### test
 
-46개 파일, 262개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+48개 파일, 270개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -198,13 +205,14 @@
 - 테스트에서 가짜를 넣기 쉬워요(`test/commands.test.mjs` 는 가짜 tmux 를 넣어요).
 - **바뀌는 값은 함수로** 받아요. 예를 들어 `hasState: () => Boolean(latest)` — 값을 그대로 넘기면 넘긴 순간의 값에 묶이니까, 부를 때마다 지금 값을 보게 해요.
 
-대표 네 개:
+대표 다섯 개:
 
 | 만드는 함수 | 받는 것(일부) | 돌려주는 것 |
 |---|---|---|
 | `lib/state.mjs:createStateBuilder` | `adapters` · `tmux` · `processes` · `readStatus()` · `usageState(status)` · `keepCaches(listed)` | `buildState` · `projectName` · `dialogIssues` |
 | `lib/commands.mjs:createCommands` | `tmux` · `findSession(key)` · `hasState()` · `uploadDir` · `recent` · `restoreLock` · `openDir` · `onChanged()` | 명령 하나를 처리하는 함수(서버에선 `handleCommand`) |
 | `lib/procs.mjs:createProcesses` | `adapters` · `tmux` | `processes(sig)` · `panes(sig)` · `invalidate()` |
+| `lib/history-api.mjs:createHistoryApi` | `adapters` · `sessions()` · `projectName(cwd, s)` | `promptHistory` · `contextTrend` · `searchHistory` · `daySummary` · `keepCaches` |
 | `lib/runner.mjs:createRunner` | `command` · `cwd` · `logFile` · `restartMs` · `burst` | `stop(signal)` · `done` · `pid` |
 
 ### 2초 틱: 상태를 만들어 보내는 흐름
@@ -338,7 +346,7 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 | `test/uploads.test.mjs` | 첨부 14일 정리: 날짜 폴더 안 폴더 · 링크에도 멈추거나 밖을 지우지 않기 |
 | `test/approval-ui.test.mjs` | 승인 창 선택지 읽기(화면): 서버 `parseOptions` 와 같은 화면에서 같은 번호 · 글자, 여러 질문 창 이전 · 다음 |
 | `test/conventions.test.mjs` | 코드 규칙(화면 번호 순서 · 파일 크기 · 모듈 경계 · 셸 안 거치기 · 직접 fetch · 토큰 자리 · 머리 주석 · 테스트 짝). 남은 위반은 허용 목록(줄어들기만) — [CONVENTIONS](CONVENTIONS.md) 3부 |
-| 그 밖 | `md` · `keys` · `limits` · `notify` · `paging` · `recent` · `respond` · `spawn` · `usage` · `filecache` · `live` |
+| 그 밖 | `md` · `keys` · `limits` · `notify` · `paging` · `recent` · `respond` · `spawn` · `usage` · `filecache` · `live` · `history-api` · `usage-bridge` · `tmux` · `procs` · `open-dir` · `restore-cli` |
 
 ### 데모 서버 테스트 — 진짜 서버를 데모 모드로
 

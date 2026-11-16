@@ -7,8 +7,8 @@
 // 다른 사이트는 브라우저의 같은 출처 정책 때문에 이 페이지를 읽을 수 없어 토큰을 알 수 없다.
 //
 // 이 파일: 서버 켜기 · 요청 입구의 보안 검사 · 경로 표(ROUTES) · 2초 틱(상태를 만들어 SSE 로 보냄) · 각 구역을 잇는 일.
-// 구역별 일은 lib/ 에: 상태 조립 state · 프로세스 procs · 명령 commands · 환경 점검 env · 폴더 열기 open-dir · 첨부 uploads · body,
-// 설정 파일 claude-settings · 복구 recent · restore · 알림 notify · 한도 limits · 응답 모양 respond · 입력 검사 validate.
+// 구역별 일은 lib/ 에: 상태 조립 state · 프로세스 procs · 명령 commands · 기록 · 검색 · 오늘 한 일 history-api · 사용 한도 · 기본 모델 usage-bridge ·
+// 환경 점검 env · 폴더 열기 open-dir · 첨부 uploads · body · 복구 recent · restore · 알림 notify · 한도 추이 limits · 응답 모양 respond · 입력 검사 validate.
 // lib 모듈은 createXxx(deps) 로 필요한 것만 이름 붙여 받는다(바뀌는 값은 함수로 받아 늘 지금 값을 본다).
 
 import http from 'node:http';
@@ -21,7 +21,6 @@ import { adapters } from './adapters/index.mjs';
 import { unknownStatuses } from './adapters/claude.mjs';
 import * as tmux from './lib/tmux.mjs';
 import { isTrustPrompt } from './lib/dialog.mjs';
-import { createLru } from './lib/lru.mjs';
 import { tightenFiles } from './lib/perms.mjs';
 import { readBody, saveUpload, drainRest } from './lib/body.mjs';
 import { createLock } from './lib/lock.mjs';
@@ -31,19 +30,17 @@ import { createStateBuilder } from './lib/state.mjs';
 import { createEnvCheck, startupNotices } from './lib/env.mjs';
 import { detectEditors, openDir } from './lib/open-dir.mjs';
 import { UPLOAD_DIR, UPLOAD_MAX, pruneUploads } from './lib/uploads.mjs';
-import { fileCache } from './lib/filecache.mjs';
 import { pruneStatusFiles } from './lib/status.mjs';
-import { enableBridge, disableBridge, syncBridge } from './lib/bridge.mjs';
-import { updateText, isBridge, modelOf, restoreModelText } from './lib/claude-settings.mjs';
 import { sendText, sendJson, friendly } from './lib/respond.mjs';
 import { isObject, validDate, KEY_RE, WINDOW_HOURS } from './lib/validate.mjs';
-import { CLAUDE_DIR, DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
+import { DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
 import { loadToken } from './lib/token.mjs';
 import { portInUseMessage } from './lib/launch.mjs';
 import { createRecorder, readRange, pruneLimits, validRange } from './lib/limits.mjs';
 import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNotifier } from './lib/notify.mjs';
 import { pageHistory, pageParams } from './lib/paging.mjs';
-import { thinTrend } from './lib/usage.mjs';
+import { createHistoryApi } from './lib/history-api.mjs';
+import { createUsageBridge, STATUS_DIR } from './lib/usage-bridge.mjs';
 import * as demo from './lib/demo.mjs';
 import { saveSnapshot, restoreCandidates, restoreSessions, modelAlias, defaultAlias } from './lib/restore.mjs';
 import { createRecent, liveEntries, KEEP_DAYS as RECENT_DAYS } from './lib/recent.mjs';
@@ -59,7 +56,6 @@ if (TOKEN_MIGRATED) console.log(`토큰을 새 자리로 옮겼어요 → ${TOKE
 const ALLOWED_HOSTS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`]);
 const SCAN_MS = 2000;
 const PUBLIC_DIR = path.join(ROOT, 'public');
-const byId = Object.fromEntries(adapters.map((a) => [a.id, a]));
 
 // ---------- 세션 상태 ----------
 // 프로세스 목록(lib/procs.mjs)과 상태 조립(lib/state.mjs). 상태 조립에 필요한 것만 이름 붙여 넘긴다
@@ -72,193 +68,17 @@ const { buildState, projectName, dialogIssues } = createStateBuilder({
   tmux,
   processes,
   spawnedNames,
-  readDefaultModel: () => readDefaultModel(),
-  readStatus: () => readStatusFiles(),
-  usageState: (status) => usageState(status),
-  keepCaches: (listed) => historyCache.keep(listed, 5 * 60_000),
+  readDefaultModel: () => usage.readDefaultModel(),
+  readStatus: () => usage.readStatusFiles(),
+  usageState: (status) => usage.usageState(status),
+  keepCaches: (listed) => history.keepCaches(listed),
 });
 
-// ---------- 프롬프트 기록 ----------
+// ---------- 프롬프트 기록 · 검색 · 오늘 한 일 (lib/history-api.mjs) ----------
+const history = createHistoryApi({ demo: DEMO, demoData: demo, adapters, sessions: () => latest?.sessions ?? [], projectName });
 
-// 어댑터가 따로 기억하지 않는 도구(Codex)도 매번 다시 읽지 않게. Claude 는 어댑터 배열을 그대로 가리켜 메모리를 두 번 쓰지 않는다.
-// 상한 · 만료는 어댑터 기록 캐시와 같게(최근 30개 · 30분)
-const historyCache = createLru({ max: 30, ttlMs: 30 * 60_000 }); // file → { size, items }
-
-// 세션의 요청 · 답변 전체(오래된 것부터). 화면에는 pageHistory 로 나눠 보낸다
-// 세션 열쇠(「도구:ID」) → 그 도구의 어댑터와 기록 파일. 없으면 null
-async function findScanned(key) {
-  const [tool, ...rest] = String(key).split(':');
-  const adapter = byId[tool];
-  if (!adapter) return null;
-  const id = rest.join(':');
-  const s = (await adapter.scan()).find((x) => x.id === id);
-  return s ? { adapter, s } : { adapter, s: null };
-}
-
-async function promptHistory(key) {
-  if (DEMO) return [...(demo.DEMO_HISTORY[key] ?? [])].reverse(); // 데모 데이터는 최신이 위
-  const { adapter, s } = (await findScanned(key)) ?? {};
-  if (!s) return [];
-  const hit = historyCache.get(s.file);
-  if (hit && hit.size === s.size) return hit.items;
-  const items = await adapter.history(s); // 어댑터는 새로 붙은 부분만 읽는다
-  historyCache.set(s.file, { size: s.size, items });
-  return items;
-}
-
-// 세션 대화 창 사용 추이: 응답마다 [시각ms, 대화 창 토큰]을 최대 120개로 줄여 보낸다(사용률 % 는 화면이 세션의 창 크기로 나눔).
-// Claude Code 기록에만 응답별 usage 가 있다 → 다른 도구는 supported: false
-const TREND_MAX = 120;
-async function contextTrend(key) {
-  if (DEMO) return demo.demoTrend(key);
-  const adapter = byId[String(key).split(':')[0]];
-  if (!adapter?.contextTrend) return { supported: false, points: [], drops: 0, total: 0 };
-  const { s } = await findScanned(key);
-  if (!s) return { supported: true, points: [], drops: 0, total: 0 };
-  const t = await adapter.contextTrend(s); // { points, total, drops } — total · drops 는 어댑터가 줄이기 전 전체로 센 값
-  return { supported: true, points: thinTrend(t.points, TREND_MAX), drops: t.drops, total: t.total };
-}
-
-// 전체 기록 검색: 목록에 있는 세션(켜져 있는 것 + 기간 안에 끝난 것)의 프롬프트 · 답변에서 찾는다. 최신순 100개
-async function searchHistory(q) {
-  const needle = String(q ?? '').trim().toLowerCase();
-  if (needle.length < 2) return [];
-  const snippet = (text, i) => {
-    const from = Math.max(0, i - 40);
-    return (from ? '…' : '') + text.slice(from, i + needle.length + 80).replace(/\s+/g, ' ').trim() + (i + needle.length + 80 < text.length ? '…' : '');
-  };
-  const out = [];
-  for (const s of latest?.sessions ?? []) {
-    if (s.orphan) continue;
-    const items = await promptHistory(s.key).catch(() => []);
-    for (const h of items) {
-      const ip = h.prompt.toLowerCase().indexOf(needle);
-      const ir = (h.reply || '').toLowerCase().indexOf(needle);
-      if (ip < 0 && ir < 0) continue;
-      out.push({ key: s.key, title: s.title, project: s.project, at: h.at, where: ip >= 0 ? 'prompt' : 'reply', from: h.from ?? null, snippet: ip >= 0 ? snippet(h.prompt, ip) : snippet(h.reply, ir) });
-    }
-  }
-  return out.sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 100);
-}
-
-// 하루 동안 한 일: 그날 기록이 남은 세션마다 요청 수 · 고친 파일 · 명령 수 · 커밋 (Claude Code 기록 기준)
-const dayCache = createLru({ max: 500, ttlMs: 30 * 60_000 }); // `${file}|${date}` → { size, summary } — 요약은 작지만 날짜를 넘겨 볼수록 쌓여서
-async function daySummary(date) {
-  if (!validDate(date)) return [];
-  if (DEMO) return demo.DEMO_DAY;
-  const fromMs = new Date(`${date}T00:00:00`).getTime();
-  const toMs = fromMs + 86400_000;
-  const adapter = byId.claude;
-  const files = (await adapter.scan()).filter((s) => s.mtimeMs >= fromMs && (s.birthtimeMs || 0) < toMs);
-  const out = [];
-  for (const s of files) {
-    const ck = `${s.file}|${date}`;
-    const hitDay = dayCache.get(ck);
-    let summary = hitDay?.size === s.size ? hitDay.summary : null;
-    if (!summary) {
-      summary = await adapter.daySummary(s, fromMs, toMs).catch(() => null);
-      dayCache.set(ck, { size: s.size, summary });
-    }
-    if (!summary || (!summary.prompts && !summary.files.length && !summary.commands && !summary.tokens?.total)) continue;
-    const key = `claude:${s.id}`;
-    const live = latest?.sessions.find((x) => x.key === key);
-    const d = live ?? (await adapter.describe(s).catch(() => ({})));
-    out.push({ key, title: live?.title ?? d.title ?? s.id.slice(0, 8), project: live?.project ?? projectName(d.cwd, s), ...summary });
-  }
-  return out.sort((a, b) => Date.parse(b.lastAt ?? 0) - Date.parse(a.lastAt ?? 0));
-}
-
-// ---------- 계정 사용 한도 (상태줄 다리, 사용자가 켰을 때만) ----------
-// Claude Code 는 사용 한도·정확한 대화 창 정보를 상태줄 스크립트에만 넘긴다. bin/statusline.mjs 가 그걸 파일로 남긴다.
-const STATUS_DIR = path.join(DATA_DIR, 'status');
-const SETTINGS = path.join(CLAUDE_DIR, 'settings.json'); // Claude Code 설정(상태줄 다리 등록 · 기본 모델)
-// 상태줄 다리: 패키지의 원본(BRIDGE_SRC)을 ~/.agent-dashboard/bin 으로 복사해 그 경로(BRIDGE_DST)를 등록한다(lib/bridge.mjs).
-// 옛 설치는 원본 경로가 등록돼 있어, 둘 다 「우리 다리」로 알아본다
-const BRIDGE_SRC = path.join(ROOT, 'bin', 'statusline.mjs');
-const BRIDGE_DST = path.join(DATA_DIR, 'bin', 'statusline.mjs');
-const BRIDGE_PATHS = [BRIDGE_SRC, BRIDGE_DST];
-const NODE_BIN = fs.realpathSync(process.execPath); // 셸 PATH 와 상관없이 실행되게 실제 node 경로
-
-// 켜기/끄기는 lib/claude-settings.mjs(쓰기 직전 다시 읽기 · 원자적 쓰기 · 링크 거절 · 깨진 JSON 이면 멈춤)
-const BRIDGE = { settingsFile: SETTINGS, dataDir: DATA_DIR, src: BRIDGE_SRC, dst: BRIDGE_DST, node: NODE_BIN };
-function enableUsage() {
-  const msg = enableBridge(BRIDGE);
-  fileCache.forget(SETTINGS); // 바로 다음 틱에 바뀐 값이 보이게
-  return msg;
-}
-function disableUsage() {
-  const msg = disableBridge(BRIDGE);
-  fileCache.forget(SETTINGS);
-  return msg;
-}
-
-// 틱마다 불리므로 캐시(lib/filecache.mjs)로 — 고치는 쪽은 lib/claude-settings 가 디스크에서 새로 읽는다
-const usageEnabled = () => isBridge(fileCache.json(SETTINGS)?.statusLine, BRIDGE_PATHS);
-
-// 세션별 마지막 상태줄 입력 (계정 한도는 가장 최근 것 하나로 충분)
-function readStatusFiles() {
-  const bySession = new Map();
-  let account = null;
-  let files = [];
-  try {
-    files = fs.readdirSync(STATUS_DIR).filter((f) => f.endsWith('.json'));
-  } catch {
-    return { bySession, account };
-  }
-  // 바뀐 파일만 다시 읽는다(mtime 캐시). 쓰는 도중이라 깨진 파일은 null → 다음 번에
-  const paths = new Set(files.map((f) => path.join(STATUS_DIR, f)));
-  for (const file of paths) {
-    const d = fileCache.json(file);
-    if (!d) continue;
-    if (d.session_id) bySession.set(d.session_id, d);
-    if (d.rate_limits && (!account || d.savedAt > account.savedAt)) account = d;
-  }
-  fileCache.keep(STATUS_DIR, paths);
-  return { bySession, account };
-}
-
-function usageState(status) {
-  const a = status.account;
-  const win = (w) => (w ? { percent: Math.round(w.used_percentage ?? 0), resetsAt: w.resets_at ?? null } : null);
-  return {
-    enabled: usageEnabled(),
-    updatedAt: a?.savedAt ?? null,
-    fiveHour: win(a?.rate_limits?.five_hour),
-    sevenDay: win(a?.rate_limits?.seven_day),
-  };
-}
-
-// ---------- 사용자 기본 모델 보존 ----------
-// ~/.claude/settings.json 의 "model" 한 줄만 다룬다(다른 설정·서식은 건드리지 않는다).
-
-// fresh: 고치기 직전(/model 보내기 전)엔 캐시 없이 새로 읽는다. 틱 안(대화 창 크기 추정)에선 캐시
-function readDefaultModel({ fresh = false } = {}) {
-  let text = null;
-  try {
-    text = fresh ? fs.readFileSync(SETTINGS, 'utf8') : fileCache.text(SETTINGS);
-  } catch {
-    /* 없음 */
-  }
-  if (text == null) return { exists: false, value: null };
-  return { exists: true, value: modelOf(text) };
-}
-
-// /model 이 바꿔 저장한 기본 모델을 원래대로. Claude 가 아직 안 썼으면(값이 그대로면) 잠깐 더 지켜본다.
-// 쓰기는 lib/claude-settings 의 updateText(쓰기 직전 다시 읽기 · 원자적 · 링크 거절 · 결과가 깨진 JSON 이면 쓰지 않음)
-function restoreDefaultModel(before, tries = 0) {
-  if (!before.exists) return;
-  setTimeout(() => {
-    let r;
-    try {
-      r = updateText(SETTINGS, (text) => restoreModelText(text, before.value));
-    } catch (e) {
-      return void console.error(`[model] 기본 모델 복구를 건너뛰었어요: ${e.message}`);
-    }
-    fileCache.forget(SETTINGS);
-    if (r.written) console.log(`[model] 기본 모델을 ${before.value ?? '(설정 없음)'} 으로 되돌렸어요`);
-    else if (tries < 6) restoreDefaultModel(before, tries + 1);
-  }, 700);
-}
+// ---------- 계정 사용 한도 (상태줄 다리) · 기본 모델 보존 (lib/usage-bridge.mjs) ----------
+const usage = createUsageBridge({ root: ROOT });
 
 // ---------- 명령: 채팅·승인·새 세션 ----------
 
@@ -273,7 +93,7 @@ function findSession(key) {
 const env = createEnvCheck({
   demo: DEMO,
   demoEnv: demo.DEMO_ENV,
-  usageEnabled: () => usageEnabled(),
+  usageEnabled: () => usage.usageEnabled(),
   tokenInfo: () => ({ createdNow: TOKEN_CREATED_NOW, path: tildify(TOKEN_FILE), createdAt: fs.statSync(TOKEN_FILE).birthtime.toISOString() }),
   detectEditors,
   dialogIssues,
@@ -428,10 +248,10 @@ const handleCommand = createCommands({
   hasState: () => Boolean(latest),
   liveIdSet,
   uploadDir: UPLOAD_DIR,
-  readDefaultModel,
-  restoreDefaultModel,
-  enableUsage,
-  disableUsage,
+  readDefaultModel: usage.readDefaultModel,
+  restoreDefaultModel: usage.restoreDefaultModel,
+  enableUsage: usage.enableUsage,
+  disableUsage: usage.disableUsage,
   openDir,
   recent,
   restoreLock,
@@ -456,7 +276,7 @@ const ROUTES = [
   { path: '/api/history', handler: getHistory },
   { path: '/api/trend', handler: getTrend },
   { path: '/api/day', handler: getDay },
-  { path: '/api/search', handler: async (req, res, url) => sendJson(res, 200, await searchHistory(url.searchParams.get('q'))) },
+  { path: '/api/search', handler: async (req, res, url) => sendJson(res, 200, await history.searchHistory(url.searchParams.get('q'))) },
   { path: '/api/pane', handler: getPane },
   { path: '/api/upload', method: 'POST', handler: postUpload },
   { prefix: '/api/cmd/', method: 'POST', handler: postCommand },
@@ -538,7 +358,7 @@ async function getHistory(req, res, url) {
   try {
     const key = url.searchParams.get('key') ?? '';
     if (!KEY_RE.test(key)) return void sendText(res, 400, '세션을 고르지 않았어요');
-    const items = await promptHistory(key);
+    const items = await history.promptHistory(key);
     sendJson(res, 200, pageHistory(items, pageParams(url.searchParams)));
   } catch (e) {
     sendText(res, ...friendly(e, '기록을 읽지 못했어요'));
@@ -548,13 +368,13 @@ async function getHistory(req, res, url) {
 async function getTrend(req, res, url) {
   const key = url.searchParams.get('key') ?? '';
   if (!KEY_RE.test(key)) return void sendText(res, 400, '세션을 고르지 않았어요');
-  sendJson(res, 200, await contextTrend(key).catch(() => ({ supported: true, points: [], drops: 0, total: 0 })));
+  sendJson(res, 200, await history.contextTrend(key).catch(() => ({ supported: true, points: [], drops: 0, total: 0 })));
 }
 
 async function getDay(req, res, url) {
   const date = url.searchParams.get('date') ?? '';
   if (!validDate(date)) return void sendText(res, 400, '날짜는 2026-11-13 처럼 YYYY-MM-DD 로 보내 주세요');
-  sendJson(res, 200, await daySummary(date));
+  sendJson(res, 200, await history.daySummary(date));
 }
 
 // tmux 세션 화면(색 정보로 「지금 보고 있는 질문 탭」도)
@@ -639,9 +459,9 @@ server.listen(PORT, '127.0.0.1', () => {
     try { pruneStatusFiles(STATUS_DIR); } catch (e) { console.error('상태줄 기록 정리 실패:', e.message); }
     // 사용 한도가 켜져 있으면 다리 복사본을 패키지의 최신으로 맞추고, 옛 경로 등록은 새 경로로(꺼져 있으면 아무것도 안 함)
     try {
-      const b = syncBridge(BRIDGE);
-      if (b.copied) console.log('상태줄 다리를 새 버전으로 맞췄어요 →', tildify(BRIDGE_DST));
-      if (b.migrated) { fileCache.forget(SETTINGS); console.log('상태줄 등록을 새 경로로 바꿨어요 →', tildify(BRIDGE_DST)); }
+      const b = usage.sync();
+      if (b.copied) console.log('상태줄 다리를 새 버전으로 맞췄어요 →', tildify(usage.bridgeDst));
+      if (b.migrated) console.log('상태줄 등록을 새 경로로 바꿨어요 →', tildify(usage.bridgeDst));
     } catch (e) { console.error('[상태줄 다리]', e.message); }
     setInterval(() => { try { pruneUploads(); } catch {} try { pruneLimits(LIMITS_DIR); } catch {} try { pruneStatusFiles(STATUS_DIR); } catch {} }, 6 * 3600_000);
   }

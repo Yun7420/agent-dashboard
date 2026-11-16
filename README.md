@@ -270,9 +270,9 @@ agent-dashboard/
 │  ├─ commands · spawn · open-dir · env · launch  명령(채팅 · 승인 · 새 세션 …) · 새 세션 인자 · 폴더 열기 · 환경 점검 · 켠 방법에 맞는 안내
 │  ├─ body · uploads · respond · validate         요청 본문 · 첨부 · 응답 모양 · 입력 검사
 │  ├─ token · paths · perms                       비밀 열쇠 · 경로(폴더 안 검사) · 파일 권한
-│  ├─ claude-settings · bridge · status · limits · usage   사용 한도(상태줄 다리 · 한도 기록 · 토큰 합계)
+│  ├─ usage-bridge · claude-settings · bridge · status · limits · usage   사용 한도(상태줄 다리 · 기본 모델 지키기 · 한도 기록 · 토큰 합계)
 │  ├─ recent · restore · restore-cli · runner     복구 · 재시동 복구 · 실행기
-│  ├─ history-core                                기록 읽기 공용(새로 붙은 줄만 · 턴 묶기 — 어댑터는 줄 해석만)
+│  ├─ history-core · history-api                  기록 읽기 공용(새로 붙은 줄만 · 턴 묶기 — 어댑터는 줄 해석만) · 기록 탭 · 검색 · 오늘 한 일
 │  ├─ notify · paging · filecache · lru · serial · lock · util   알림 · 기록 나눠 받기 · 캐시 · 차례 지키기
 │  └─ demo                                        데모 데이터
 ├─ bin/                # agent-dashboard.mjs(실행 명령: start · run · restore) · run.sh(예전 실행기) · restore.mjs(npm run restore) · statusline.mjs(상태줄 다리 원본)
@@ -280,7 +280,7 @@ agent-dashboard/
 │  ├─ index.html       # 뼈대(토큰은 서버가 여기에만 끼워 넣음)
 │  ├─ style.css        # 모양
 │  └─ js/00-md.js ~ 19-keys.js   # 동작 — 구역별(목록 · 조직도 · 기록 · 첨부 · 알림 · 복구 · 검색 · 오늘 한 일 · 단축키 …), 번호 순서대로 불러옴
-└─ test/               # node --test 46개 파일 · _helpers(임시 폴더 · 서버 띄우기 · 요청) · fake-bin(가짜 tmux · claude · ps · lsof · open)
+└─ test/               # node --test 48개 파일 · _helpers(임시 폴더 · 서버 띄우기 · 요청) · fake-bin(가짜 tmux · claude · ps · lsof · open)
 ```
 
 파일마다 하는 일 · 요청 하나가 지나가는 길 · 보안 검사 위치는 [코드 지도(docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)에 있어요.
@@ -303,7 +303,7 @@ DEMO=1 PORT=4646 npm start
 npm test
 ```
 
-Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없어요. 테스트 262개(2026-11-17): 기록 읽기 · 선택창 감지 · 승인 카드 위험 판별 · 보안 검사(토큰 · Host · Origin · 경로 · 파일 권한) · 명령 · 복구 · 실행기 등.
+Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없어요. 테스트 270개(2026-11-17): 기록 읽기 · 선택창 감지 · 승인 카드 위험 판별 · 보안 검사(토큰 · Host · Origin · 경로 · 파일 권한) · 명령 · 복구 · 실행기 등.
 - 시험 서버는 4692 · 4694~4699 포트를 잠깐 써요. 진짜 세션 · tmux 대신 임시 홈 폴더와 `test/fake-bin` 의 가짜 명령(tmux · claude · ps · lsof · open)을 써서, 내 `~/.claude` · `~/.agent-dashboard` 는 건드리지 않아요.
 - GitHub Actions 가 main 에 push 하거나 PR 이 올 때마다 Ubuntu · macOS × Node 18 · 20 · 22 · 24 에서 `npm test` 를 돌려요(위 배지). macOS 알림(osascript) 테스트는 macOS 에서만 돌아요.
 
