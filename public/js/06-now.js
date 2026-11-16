@@ -1,5 +1,4 @@
-// 패널 탭: 지금(현재 답변) / 기록
-let drawerTab = 'now';
+// 패널 탭: 지금(현재 답변) / 기록 — 지금 탭 drawerTab 은 01-core.js
 function setTab(tab) {
   drawerTab = tab;
   document.querySelectorAll('.tab').forEach((b) => {

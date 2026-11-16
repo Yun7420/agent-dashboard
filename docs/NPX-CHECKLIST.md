@@ -56,7 +56,7 @@
   - 지금: `lib/runner.mjs:createRunner` — 간격 늘리기 · 포트 충돌이면 멈춤 · 신호 전달 · 로그 600 (`1d4f131`)
   - 남은 일: 없음
 - [x] **tmux · Claude Code 가 없을 때 안내**
-  - 지금: `lib/env.mjs:startupNotices` · `public/js/12-env.js` 의 `applyTools`(단추 끄기) (`1ec29f9`)
+  - 지금: `lib/env.mjs:startupNotices` · `public/js/09-env.js` 의 `applyTools`(단추 끄기) (`1ec29f9`)
   - 남은 일: 없음
 - [x] **경로 공백 · 한글**
   - 지금: `lib/paths.mjs:dirOf`(`fileURLToPath`) · `isInside` (`0084945`)

@@ -22,22 +22,38 @@ function sameAsAllowed(found, allowed, what) {
   assert.deepEqual(gone, [], `고쳐진 ${what}: 허용 목록에서 지워 주세요`);
 }
 
-// ---------- 화면 번호 순서: 뒤 파일만 앞 파일을 부른다 ----------
-// 2026-11-16 기준 28곳(let · const 11곳). 공용 도우미를 01-core.js 로 모으며 0 으로 줄인다
-const BACK_REFS = [
-  '03-list.js → renderGraph', '03-list.js → view', '03-list.js → select', '03-list.js → fmtTok', '03-list.js → ctxLevel', '03-list.js → envData', '03-list.js → initials',
-  '05-history.js → drawerTab', '05-history.js → setTab', '05-history.js → renderNow', '05-history.js → openFiles', '05-history.js → fullCmds', '05-history.js → closedCmds',
-  '05-history.js → renderBusy', '05-history.js → renderApproval', '05-history.js → useDraft', '05-history.js → canSend', '05-history.js → updateSendState',
-  '05-history.js → fmtTok', '05-history.js → ctxLevel', '05-history.js → modelName', '05-history.js → renderHistory',
-  '06-now.js → renderChanges', '06-now.js → sentAt', '06-now.js → renderHistory',
-  '07-changes.js → updateSendState',
-  '09-usage.js → loadEnv',
-  '10-panel.js → envData',
-];
+// ---------- 화면 번호 순서: 뒤 파일이 앞 파일을 부른다 ----------
+// let · const 는 예외 없음 — 선언한 줄이 실행되기 전에 쓰면 ReferenceError(TDZ)라, 여러 파일이 쓰는 상태는 01-core.js 에 둔다.
+// function 은 끌어올려져(hoisting) 불러오기가 끝난 뒤 부르면 안전하다. 서로 부르는 파일(고리)이라 번호를 어떻게 바꿔도
+// 한쪽은 앞→뒤가 되는 것만, 어느 고리인지 이유를 붙여 허용한다(줄어들기만)
+const CYCLE_CALLS = {
+  // 「되돌아오는 길」: 뒤 파일이 이 앞 파일을 다시 부르는 곳(그래서 번호를 바꿔도 풀리지 않음)
+  '04-list.js → select': '목록 ↔ 서랍 고르기 — 05 가 04 renderList 를 부름',
+  '05-history.js → setTab': '서랍 고르기 ↔ 지금 탭 — 06 이 05 renderTrend 를 부름',
+  '05-history.js → renderNow': '서랍 고르기 ↔ 지금 탭 — 06 이 05 renderTrend 를 부름',
+  '05-history.js → renderBusy': '서랍 고르기 → 변경 · 승인 → 지금 탭 → 서랍 — 07 이 06 renderNow, 06 이 05 renderTrend 를 부름',
+  '05-history.js → renderApproval': '서랍 고르기 → 변경 · 승인 → 지금 탭 → 서랍 — 07 이 06 renderNow, 06 이 05 renderTrend 를 부름',
+  '05-history.js → useDraft': '서랍 고르기 → 입력 → 변경 · 승인 → … → 서랍 — 08 이 07 renderBusy 를 부름',
+  '05-history.js → updateSendState': '서랍 고르기 → 입력 → 변경 · 승인 → … → 서랍 — 08 이 07 renderBusy 를 부름',
+  '05-history.js → renderHistory': '서랍 고르기 ↔ 기록 패널 — 11 이 05 select · loadHistory 를 부름',
+  '06-now.js → renderChanges': '지금 탭 ↔ 변경 · 승인 — 07 이 06 renderNow 를 부름',
+  '06-now.js → renderHistory': '지금 탭 → 기록 패널 → 서랍 고르기 → 지금 탭 — 11 이 05 select, 05 가 06 setTab 을 부름',
+  '07-changes.js → updateSendState': '변경 · 승인 ↔ 입력 — 08 이 07 renderBusy 를 부름',
+};
 
-test('화면 번호 순서: 앞 번호 파일이 뒤 번호 파일의 이름을 새로 부르지 않는다(남은 곳은 허용 목록, 줄어들기만)', () => {
-  const found = backRefs(path.join(ROOT, 'public', 'js')).map((r) => `${r.from} → ${r.name}`);
-  sameAsAllowed(found, BACK_REFS, '앞 번호 → 뒤 번호 부르기');
+test('화면 번호 순서: 앞 번호 파일이 뒤 번호 파일의 let · const 를 쓰는 곳은 0(예외 없음)', () => {
+  const found = backRefs(path.join(ROOT, 'public', 'js')).filter((r) => r.kind !== 'function').map((r) => `${r.from} → ${r.name}(${r.to} 의 ${r.kind})`);
+  assert.deepEqual(found, [], '여러 파일이 같이 쓰는 상태는 01-core.js 로 옮겨 주세요');
+});
+
+test('화면 번호 순서: 앞 번호 파일이 뒤 번호 파일의 function 을 부르는 곳은 서로 부르는 고리만(허용 목록, 줄어들기만)', () => {
+  const found = backRefs(path.join(ROOT, 'public', 'js')).filter((r) => r.kind === 'function').map((r) => `${r.from} → ${r.name}`);
+  sameAsAllowed(found, Object.keys(CYCLE_CALLS), '앞 번호 → 뒤 번호 function 부르기');
+});
+
+test('화면 불러오기: index.html 의 <script> 는 public/js 의 NN-*.js 전부를 번호 순서대로', () => {
+  const tags = [...read('public/index.html').matchAll(/<script src="\/js\/([^"]+)"><\/script>/g)].map((m) => m[1]);
+  assert.deepEqual(tags, FRONT.map((f) => path.basename(f)));
 });
 
 test('화면 번호 순서 검사기: 주석 · 글자 · 객체 키 · 지역 이름에 속지 않고, 진짜 부르기는 잡는다', async () => {
@@ -61,8 +77,8 @@ const OVER = {
   'server.mjs': 648,
   'adapters/claude.mjs': 629,
   'lib/state.mjs': 320,
-  'public/js/07-changes.js': 224,
-  'public/js/04-graph.js': 202,
+  'public/js/07-changes.js': 221,
+  'public/js/03-graph.js': 201,
 };
 
 test('파일 크기: 서버 쪽 300줄 · 화면 js 200줄 이하, 이미 넘은 파일은 지금보다 늘지 않는다', () => {

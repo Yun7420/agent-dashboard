@@ -1,6 +1,6 @@
 // 연동 중 화면 · 환경 점검
 const LV_ICON = { ok: '✓', warn: '!', error: '✕', info: 'i' };
-let envData = null;
+// 마지막 점검 결과 envData 는 01-core.js — 목록 · 패널이 「없는 도구」 안내에 쓴다
 let envError = '';
 let envSeq = 0; // 늦게 온 응답이 새 것을 덮지 않게(시작 점검 · 다시 점검 · 사용 한도 켜고 끄기가 겹칠 수 있음)
 async function loadEnv(refresh = false) {
@@ -15,7 +15,7 @@ async function loadEnv(refresh = false) {
   return envData;
 }
 // 없는 도구에 맞춰 화면을 바꾼다: tmux 가 없으면 tmux 가 필요한 단추를 끄고 이유를 title 로(보내기 · 승인은 tmux 세션이 없어 이미 꺼짐),
-// Claude Code 기록 폴더가 없으면 빈 목록 대신 안내(03-list.js)
+// Claude Code 기록 폴더가 없으면 빈 목록 대신 안내(04-list.js)
 const NO_TMUX = 'tmux 가 필요해요 — brew install tmux 뒤 다시 켜 주세요. 지금은 보기만 할 수 있어요';
 const TMUX_BUTTONS = ['#new-session', '#recent-btn', '#end-session'];
 function applyTools() {

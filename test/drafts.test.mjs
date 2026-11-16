@@ -27,8 +27,8 @@ function load() {
     },
   });
   for (const f of ['00-md.js', '01-core.js', '08-attach.js']) vm.runInContext(fs.readFileSync(new URL(`../public/js/${f}`, import.meta.url), 'utf8'), ctx, { filename: f });
-  // 08 이 부르는 뒤 파일(07)의 것들
-  vm.runInContext('var rec = null; var sentAt = null; function renderBusy() {}; function toast() {}; canSend = true;', ctx);
+  // 08 이 부르는 07 의 것들(sentAt · canSend 는 01-core.js)
+  vm.runInContext('var rec = null; function renderBusy() {}; function toast() {}; canSend = true;', ctx);
   const run = (code) => vm.runInContext(code, ctx);
   const file = (name) => ({ name, size: 1, type: 'image/png' });
   return { els, el, stored, sent, uploads, revoked, run, file };

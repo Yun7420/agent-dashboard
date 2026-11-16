@@ -69,7 +69,7 @@
 | 3 | `adapters/index.mjs` → `adapters/codex.mjs` | 어댑터가 어떤 모양인지. codex 는 94줄이라 claude(604줄)보다 먼저 |
 | 4 | `lib/state.mjs` | 2초마다 상태 한 장을 만드는 곳. 머리 주석에 순서가 적혀 있어요 |
 | 5 | `lib/commands.mjs` | 「이름 → 처리 함수」 표. 승인 · 채팅이 여기서 tmux 로 가요 |
-| 6 | `public/js/01-core.js` → `16-live.js` → `11-controls.js` | 화면 쪽: 서버 요청(`api`) → 실시간 연결(`connect`) → 다시 그리기(`render`) |
+| 6 | `public/js/01-core.js` → `16-live.js` → `12-controls.js` | 화면 쪽: 서버 요청(`api`) → 실시간 연결(`connect`) → 다시 그리기(`render`) |
 | 7 | `test/live-server.test.mjs` | 가짜 tmux 로 서버를 통째로 시험하는 법. 위에서 읽은 것이 한꺼번에 움직여요 |
 
 ### 서버 입구
@@ -156,24 +156,24 @@
 
 ### public — 화면
 
-`index.html` 이 `js/` 파일을 **번호 순서대로** 불러요. 모두 같은 전역(한 페이지 안에서 함께 쓰는 변수 공간)을 써서, **뒤 파일이 앞 파일의 함수를 불러요.** 예를 들어 `16-live.js` 의 `connect` 는 `02-activity.js` 의 `logEvents`, `11-controls.js` 의 `render` 를 불러요.
+`index.html` 이 `js/` 파일을 **번호 순서대로** 불러요. 모두 같은 전역(한 페이지 안에서 함께 쓰는 변수 공간)을 써서, **뒤 파일이 앞 파일의 함수를 불러요.** 예를 들어 `16-live.js` 의 `connect` 는 `02-activity.js` 의 `logEvents`, `12-controls.js` 의 `render` 를 불러요. 여러 파일이 같이 쓰는 상태(`drawerTab` · `canSend` · `envData` …)와 도우미(`fmtTok` · `modelName` …)는 맨 앞 `01-core.js` 에 있어요.
 
 | 파일 | 하는 일 |
 |---|---|
 | `00-md.js` | 답변 마크다운 일부만 그리기(`md`) · 글자 안전하게 바꾸기(`esc`) |
-| `01-core.js` | 공통: 토큰(`TOKEN`) · 서버 요청 한 길(`apiFetch` · `api` · `apiJson`, 403 이면 `tokenGone`) · 바뀐 곳만 그리기(`setHtml`) · 토스트(`toast`) · 설정 저장(`savePref`) · 오래된 설정 정리(`prunePrefs`) |
+| `01-core.js` | 공통: 토큰(`TOKEN`) · 서버 요청 한 길(`apiFetch` · `api` · `apiJson`, 403 이면 `tokenGone`) · 바뀐 곳만 그리기(`setHtml`) · 토스트(`toast`) · 설정 저장(`savePref`) · 오래된 설정 정리(`prunePrefs`) · 여러 파일이 같이 쓰는 화면 상태(`view` · `drawerTab` · `openFiles` · `sentAt` · `canSend` · `envData` …) · 도우미(`fmtTok` · `ctxLevel` · `modelName` · `initials`) |
 | `02-activity.js` | 아래 활동 로그(`logEvents` · `logLinks`) |
-| `03-list.js` | 왼쪽 세션 목록(`renderList`) · 「N초 전」만 따로 갱신(`updateAgo`) |
-| `04-graph.js` | 가운데 조직도(`renderGraph` · `layout`) |
+| `03-graph.js` | 가운데 조직도(`renderGraph` · `layout`) |
+| `04-list.js` | 왼쪽 세션 목록(`renderList`) · 「N초 전」만 따로 갱신(`updateAgo`) |
 | `05-history.js` | 오른쪽 서랍: 세션 고르기(`select`) · 기록 읽기(`loadHistory`) · 대화 창 추이(`renderTrend`) |
 | `06-now.js` | 지금 탭(`renderNow`) · 탭 바꾸기(`setTab`) |
 | `07-changes.js` | 바꾼 파일 diff(`renderChanges`) · 승인 카드와 단추(`renderApproveCard` · `renderApproval`) |
 | `08-attach.js` | 세션별 임시 글 · 첨부(`useDraft` · `pruneDrafts`) · 첨부 · 보내기(`addFiles` · `sendMsg`) |
-| `09-usage.js` | 머리의 계정 한도(`renderUsage`) · 한도 추이 그래프(`renderLimits`) |
-| `10-panel.js` | 패널 머리 메뉴 · 폭 · 폴더 열기 메뉴(`openDirMenu`) |
-| `11-controls.js` | 전체 다시 그리기(`render`) |
-| `12-env.js` | 환경 점검 화면(`renderEnv`) · 없는 도구면 단추 끄기(`applyTools`) |
-| `13-collapse.js` | 활동 로그 · 왼쪽 목록 접기(`applyFold` · `applyAsideFold`) · 이니셜(`initials`, 03-list 가 씀) |
+| `09-env.js` | 환경 점검 화면(`renderEnv`) · 없는 도구면 단추 끄기(`applyTools`) |
+| `10-usage.js` | 머리의 계정 한도(`renderUsage`) · 한도 추이 그래프(`renderLimits`) |
+| `11-panel.js` | 패널 머리 메뉴 · 폭 · 폴더 열기 메뉴(`openDirMenu`) |
+| `12-controls.js` | 전체 다시 그리기(`render`) |
+| `13-collapse.js` | 활동 로그 · 왼쪽 목록 접기(`applyFold` · `applyAsideFold`) |
 | `14-notify.js` | 알림 판단 · 설정(`notifyChanges` · `saveNotifyCfg`) |
 | `15-restore.js` | 재시동 배너(`renderRestore`) · 복구 창(`loadRecent` · `renderRecent`) |
 | `16-live.js` | 서버와 실시간 연결(`connect`) |
@@ -183,7 +183,7 @@
 
 ### test
 
-40개 파일, 236개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+40개 파일, 238개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -242,9 +242,9 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
  │   ├─ 08-attach.js:pruneDrafts       (끝난 세션의 임시 글 · 첨부 정리)
  │   ├─ 01-core.js:prunePrefs          (오래 못 본 세션 열쇠 정리)
  │   ├─ 15-restore.js:renderRestore    (재시동 배너)
- │   ├─ 12-env.js:finishBoot           (처음 한 번: 연동 중 화면 닫기 · 환경 점검)
+ │   ├─ 09-env.js:finishBoot           (처음 한 번: 연동 중 화면 닫기 · 환경 점검)
  │   ├─ 「갱신 시각」 글자
- │   ├─ 11-controls.js:render          (목록 · 조직도 · 패널 다시 그리기 — 바뀐 곳만)
+ │   ├─ 12-controls.js:render          (목록 · 조직도 · 패널 다시 그리기 — 바뀐 곳만)
  │   └─ 05-history.js:select           (막 띄운 세션이 나타났거나, 고른 세션에 새 요청이 오면)
  └─ onerror                            (서버가 꺼짐 → 「재연결 중…」, 멈췄으면 /api/perf 로 403 인지 확인)
 ```
@@ -403,24 +403,23 @@ GitHub Actions(`.github/workflows/test.yml`)가 push · PR 마다 Ubuntu · macO
 
 ### 앞 번호 파일이 뒤 번호 파일을 부르는 곳
 
-화면 js 는 번호 순서대로 불러오고 「뒤 파일이 앞 파일 것을 쓴다」가 규칙인데, 아래는 거꾸로예요(파일 → 부르는 이름 → 정의된 파일).
-지금은 모두 **불러오기가 끝난 뒤**(서버 상태가 오거나 · 사용자가 누를 때) 부르기 때문에 동작해요.
+화면 js 는 번호 순서대로 불러오고 「뒤 파일이 앞 파일 것을 쓴다」가 규칙이에요([코드 규칙](CONVENTIONS.md) ④).
 
-| 파일 | 부르는 이름 → 정의된 파일 |
-|---|---|
-| `03-list.js` | `renderGraph` · `view`(const) → 04, `select` → 05, `fmtTok` · `ctxLevel`(const) → 08, `envData`(let) → 12, `initials` → 13 |
-| `05-history.js` | `drawerTab`(let) · `setTab` · `renderNow` → 06, `openFiles`(const) · `fullCmds`(const) · `closedCmds`(let) · `renderBusy` · `renderApproval` → 07, `useDraft` · `canSend`(let) · `updateSendState` · `fmtTok` · `ctxLevel`(const) · `modelName` → 08, `renderHistory` → 10 |
-| `06-now.js` | `renderChanges` · `sentAt`(let) → 07, `renderHistory` → 10 |
-| `07-changes.js` | `updateSendState` → 08 |
-| `09-usage.js` | `loadEnv` → 12 |
-| `10-panel.js` | `envData`(let) → 12 |
+- **let · const 는 예외 없이 0곳**이에요. let · const 는 정의한 줄이 실행되기 전에 쓰면 ReferenceError(TDZ)라서, 여러 파일이 같이 쓰는 상태는 `01-core.js` 에 모았어요(2026-11-16, 28곳 → 11곳).
+- 남은 11곳은 모두 **서로 부르는 function** 이에요. 오른쪽 서랍(05 고르기 · 06 지금 탭 · 07 변경 · 승인 · 08 입력 · 11 기록 패널)과 목록(04)이 고리처럼 서로 불러서, 번호를 어떻게 바꿔도 한쪽은 앞→뒤가 돼요. function 은 끌어올려져(hoisting) 불러오기가 끝난 뒤 부르면 안전해요.
 
-- **TDZ 위험**(let · const 는 정의한 줄이 실행되기 전에 쓰면 ReferenceError): 위의 let · const 11곳은 누가 **불러오는 도중에** 그 함수를 부르게 바꾸면 화면이 바로 멈춰요. `function` 은 끌어올려져(hoisting) 이 문제가 없어요.
-- 목록은 `test/conventions.test.mjs` 가 지켜요(검사기 `test/_helpers/front-deps.mjs`). 새로 생기면 실패하고, 고친 곳은 허용 목록에서 지워야 해서 줄어들기만 해요. 2026-11-16 기준 28곳(예전에 27 · 12 로 적은 것은 손으로 센 실수).
+| 파일 | 부르는 이름 → 정의된 파일 | 되돌아오는 길(고리) |
+|---|---|---|
+| `04-list.js` | `select` → 05 | 05 가 04 `renderList` |
+| `05-history.js` | `setTab` · `renderNow` → 06, `renderBusy` · `renderApproval` → 07, `useDraft` · `updateSendState` → 08, `renderHistory` → 11 | 06 이 05 `renderTrend`, 07 이 06 `renderNow`, 08 이 07 `renderBusy`, 11 이 05 `select` |
+| `06-now.js` | `renderChanges` → 07, `renderHistory` → 11 | 07 이 06 `renderNow`, 11 → 05 → 06 |
+| `07-changes.js` | `updateSendState` → 08 | 08 이 07 `renderBusy` |
+
+- 이 목록은 `test/conventions.test.mjs` 가 지켜요(검사기 `test/_helpers/front-deps.mjs`). 새로 생기면 실패하고, 고친 곳은 허용 목록에서 지워야 해서 줄어들기만 해요. let · const 는 허용 목록 없이 0 이어야 해요.
+- 예전에 이 표를 「27곳 · let/const 12」로 적었는데 손으로 센 실수였어요(실제 28 · 11).
 
 ### 같이 정할 것(보류 중)
 
-- **공용 도우미를 `01-core.js` 로 옮기기** — `fmtTok` · `ctxLevel` · `modelName` · `initials` 와 상태 변수(`drawerTab` · `canSend` · `sentAt` …)를 앞으로 모으면 위 표가 대부분 사라져요. 주말 코드 읽기 뒤에 정하기로 했어요.
 - **`07-changes.js` 나누기** — 바꾼 파일 · 명령 / 승인 창 / 음성 입력이 한 파일에 있어요. 승인 선택지 읽기(`renderApproval` 안)를 순수 함수로 떼어 node 로 시험하는 것도 함께.
 - **세션 카드 안 단추 구조** — 카드(role=button) 안에 ✕ 단추가 들어가 있어요(ARIA 권장과 어긋남). 카드의 이름을 진짜 단추로 바꾸는 쪽이 맞아요.
 

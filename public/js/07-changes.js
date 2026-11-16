@@ -16,9 +16,7 @@ function lineDiff(a, b) {
   while (j < m) out.push(['a', y[j++]]);
   return out;
 }
-const openFiles = new Set(); // 1초마다 다시 그려도 펼친 파일은 펼친 채로
-const fullCmds = new Set(); // "전체 보기"로 펼친 명령
-let closedCmds = false; // 실행한 명령은 기본 펼침 — 사용자가 접으면 그 세션 동안 접힌 채로
+// 펼친 파일 · 명령(openFiles · fullCmds · closedCmds)은 01-core.js — 세션을 고를 때(05-history.js) 비운다
 function renderChanges(s) {
   const ch = s.changes;
   const box = $('#now-changes');
@@ -85,8 +83,7 @@ $('#now-changes').addEventListener('toggle', (e) => {
   if (e.target.open) openFiles.add(f); else openFiles.delete(f);
 }, true);
 
-// 진행 표시: 선택한 세션이 일하는 동안 스피너 + 지금 쓰는 도구 + 경과 시간
-let sentAt = null; // 방금 보낸 메시지 — 세션이 작업을 시작하기 전까지 "전달됨" 표시
+// 진행 표시: 선택한 세션이 일하는 동안 스피너 + 지금 쓰는 도구 + 경과 시간(방금 보낸 시각 sentAt 은 01-core.js)
 function renderBusy(s) {
   const box = $('#busy');
   const pending = sentAt && Date.now() - sentAt < 20000 && s.status === 'idle';

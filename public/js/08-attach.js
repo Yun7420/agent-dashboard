@@ -85,7 +85,7 @@ const box = $('#composer .box');
 ['dragleave', 'drop'].forEach((ev) => box.addEventListener(ev, () => box.classList.remove('drop')));
 box.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length && !$('#msg').disabled) { e.preventDefault(); addFiles([...e.dataTransfer.files]); } });
 
-let canSend = false; // 지금 세션에 보낼 수 있는지(tmux·종료·승인 대기 여부)
+// 보낼 수 있는지(canSend)는 01-core.js — 기록 패널(05)이 세션을 고를 때도 본다
 function updateSendState() {
   syncDraftText();
   const files = curFiles();
@@ -125,19 +125,6 @@ $('#msg').addEventListener('keydown', (e) => {
   sendMsg();
 });
 
-// 토큰 수 읽기 쉽게: 625843 → 626K, 1000000 → 1M
-function fmtTok(n) {
-  if (n >= 1e6) return `${(n / 1e6).toFixed(n % 1e6 ? 1 : 0)}M`;
-  if (n >= 1e3) return `${Math.round(n / 1e3)}K`;
-  return String(n);
-}
-const ctxLevel = (p) => (p >= 85 ? 'high' : p >= 60 ? 'mid' : '');
-
-// 모델: 'claude-opus-5-5' → 'Opus 5.5'
-function modelName(id) {
-  const m = String(id).match(/claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?:-|$)/);
-  return m ? `${m[1][0].toUpperCase()}${m[1].slice(1)} ${m[2]}${m[3] ? '.' + m[3] : ''}` : id;
-}
 $('#d-model').addEventListener('change', async (e) => {
   const model = e.target.value;
   if (!selected || !model) return;

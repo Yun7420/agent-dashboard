@@ -25,7 +25,7 @@
 | 무엇 | 규칙 | 예 |
 |---|---|---|
 | 서버 쪽 파일 | `.mjs`, 소문자 낱말을 `-` 로 이음 | `lib/claude-settings.mjs` · `lib/open-dir.mjs` |
-| 화면 파일 | `public/js/NN-이름.js`, 번호 순서대로 불러옴 | `03-list.js` · `16-live.js` |
+| 화면 파일 | `public/js/NN-이름.js`, 번호 순서대로 불러옴 | `04-list.js` · `16-live.js` |
 | 테스트 | `test/<대상>.test.mjs`, 도우미는 `test/_helpers/` · `test/_*.mjs` | `test/paths.test.mjs` · `test/_history-full.mjs` |
 | 함수 · 변수 | camelCase | `buildState` · `pruneUploads` |
 | 고정값 | 대문자 + `_` | `SCAN_MS` · `ALLOWED_HOSTS` · `UPLOAD_MAX` |
@@ -81,7 +81,8 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 ### 화면(public)
 
 - **번호 순서로 불러오고, 뒤 파일이 앞 파일 것을 써요.** 모든 파일이 같은 전역을 함께 써요.
-  - 앞 파일이 뒤 파일 것을 쓰는 곳이 아직 28곳 남아 있어요(ARCHITECTURE 8절). 3부에서 「줄어들기만」 하게 지켜요.
+  - 여러 파일이 같이 쓰는 상태(`drawerTab` · `canSend` · `envData` …)와 도우미(`fmtTok` · `modelName` …)는 맨 앞 `01-core.js` 에 둬요.
+  - 앞 파일이 뒤 파일 것을 쓰는 곳: let · const 는 0곳, 서로 부르는 function 11곳만 남았어요(ARCHITECTURE 8절 · 아래 2부 ④).
 - 서버 요청은 **`01-core.js` 의 `apiFetch`(`api` · `apiJson`) 한 길**로만 해요. 403 이면 「토큰이 바뀌었어요」 안내를 한 곳에서 띄워요.
   - 예외는 `16-live.js` 의 연결 확인(`/api/perf`) 하나예요.
 - 서버에서 온 글자를 HTML 에 넣을 땐 **언제나 `esc()`** 를 거쳐요. 속성(`class="…"`) 자리도 마찬가지예요.
@@ -132,12 +133,12 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
   - `server.mjs` 648
   - `adapters/claude.mjs` 629
   - `lib/state.mjs` 320
-  - `public/js/07-changes.js` 224
-  - `public/js/04-graph.js` 202
+  - `public/js/07-changes.js` 221
+  - `public/js/03-graph.js` 201
 - 3부 테스트가 이 5개는 **지금보다 늘지 않게**, 다른 파일은 상한을 넘지 않게 지켜요.
   - `07-changes.js` 는 3단계(나누기)에서, `adapters/claude.mjs` 는 4단계(history-core)에서 줄여요.
-  - `server.mjs` 는 경로 표 · 처리 함수 묶음을 `lib/routes-*.mjs` 로 옮기는 안을 따로 제안할게요.
-- 화면 js 는 한 줄이 긴 편이라(200자 넘는 줄 60개) 줄 수만으로는 덜 정확해요. 「한 줄 160자 안쪽」도 같이 정할지 골라 주세요. 지금 기계 검사에는 넣지 않았어요.
+  - `server.mjs` 는 지금은 늘지만 않게 두고, 나누는 안은 4단계(history-core) 뒤에 따로 제안해요.
+- 한 줄 길이 기준은 이번엔 두지 않아요(2026-11-16 사용자 결정).
 
 ### ② 나누는 기준
 
@@ -152,11 +153,15 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 - 상태를 가진 모듈은 `createXxx(deps)` 를 쓰고, 머리 주석에 `deps:` 목록을 적어요. 상태가 없으면 함수를 그대로 내보내요.
 - 화면 공용 도우미(`fmtTok` · `ctxLevel` · `modelName` · `initials` …)는 `01-core.js` 에 둬요.
 
-### ④ 화면 번호 순서
+### ④ 화면 번호 순서 (2026-11-16 사용자 결정)
 
-- **뒤 번호 파일만 앞 번호 파일을 불러요.** 여러 파일이 같이 쓰는 상태(`drawerTab` · `canSend` · `sentAt` …)와 도우미는 `01-core.js` 로 모아요.
-- 앞 파일이 뒤 파일의 일을 시켜야 하면(예: 목록이 「고르기」를 부름) 이벤트나 「나중에 채우는 자리」(`hooks.select = …`)로 거꾸로 부르지 않게 해요.
-  - 어느 방식으로 할지는 2단계(01-core 모으기)에서 실제 경우를 보며 제안할게요.
+- **뒤 → 앞이 기본이에요.** 뒤 번호 파일이 앞 번호 파일 것을 불러요.
+- **let · const 는 예외 없음.** 앞 파일이 뒤 파일의 let · const 를 쓰면 안 돼요. 여러 파일이 같이 쓰는 상태 · 도우미는 `01-core.js` 에 둬요(선언한 줄이 실행되기 전에 쓰면 ReferenceError 라서).
+- **서로 부르는 function 만 이유와 함께 허용**해요. 두 파일이 서로 불러서(고리) 번호를 어떻게 바꿔도 한쪽은 앞→뒤가 되는 경우예요.
+  - `test/conventions.test.mjs` 의 허용 목록에 「되돌아오는 길」을 적어 두고, 목록은 줄어들기만 해요.
+  - function 은 끌어올려져(hoisting) 불러오기가 끝난 뒤 부르면 안전해요. 불러오는 도중(파일 맨 위 코드)에는 뒤 파일 function 을 부르지 않아요.
+- 고리가 아닌데 앞→뒤로 부르게 되면 번호를 바꿔요(2026-11-16: 조직도 03 · 목록 04, 환경 점검 09 · 한도 10 · 패널 11 · 다시 그리기 12).
+- `index.html` 의 `<script>` 는 `public/js` 의 파일 전부를 번호 순서대로 불러요(3부 테스트).
 
 ### ⑤ 모듈 경계
 
@@ -198,7 +203,9 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 
 | 검사 | 지금 허용 목록 |
 |---|---|
-| 화면 번호 순서: 앞 번호 파일이 뒤 번호 파일 이름을 새로 부르지 않음 | 28곳(let · const 11곳) — 2단계에서 0 으로 |
+| 화면 번호 순서: 앞 번호 파일이 뒤 번호 파일의 let · const 를 쓰지 않음 | 없음(예외 없음) |
+| 화면 번호 순서: 앞 번호 파일이 뒤 번호 파일의 function 을 부르는 곳은 서로 부르는 고리만 | 11곳(이유와 함께) |
+| 화면 불러오기: `index.html` 의 `<script>` 가 `public/js` 전부를 번호 순서대로 | 없음 |
 | 파일 크기: 서버 쪽 300 · 화면 js 200줄, 넘은 파일은 늘지 않음 | 5개(위 ①) |
 | 모듈 경계 | 없음 |
 | 외부 명령: `child_process` 는 `execFile` · `spawn`(+Sync) 만, `shell: true` 없음 | 없음 |

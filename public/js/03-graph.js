@@ -151,8 +151,7 @@ function drawLinks(tree) {
   return out;
 }
 
-// 이동·확대
-const view = { x: 0, y: 0, k: 1, init: false };
+// 이동·확대(지금 위치 view 는 01-core.js — 목록 · 패널 · 접기도 같이 본다)
 function bounds(n, b = { x1: Infinity, y1: Infinity, x2: -Infinity, y2: -Infinity }) {
   b.x1 = Math.min(b.x1, n.x); b.y1 = Math.min(b.y1, n.y); b.x2 = Math.max(b.x2, n.x + n.w); b.y2 = Math.max(b.y2, n.y + n.h);
   n.children.forEach((c) => bounds(c, b));

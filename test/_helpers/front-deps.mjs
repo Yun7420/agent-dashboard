@@ -73,7 +73,7 @@ export function codeOnly(src) {
 
 const ID = '[A-Za-z_$][\\w$]*';
 
-// → [{ from: '03-list.js', name: 'select', to: '05-history.js', kind: 'function' | 'const' | 'let' | 'var' }]
+// → [{ from: '04-list.js', name: 'select', to: '05-history.js', kind: 'function' | 'const' | 'let' | 'var' }]
 export function backRefs(dir) {
   const files = fs.readdirSync(dir).filter((f) => /^\d\d-.*\.js$/.test(f)).sort();
   const top = new Map(); // 파일 맨 위(줄 맨 앞)에서 선언한 이름 → 처음 선언한 파일
