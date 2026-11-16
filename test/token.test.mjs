@@ -82,19 +82,36 @@ test('새 자리가 링크면 거절(한국어) — 가리키는 파일은 그�
   assert.ok(fs.existsSync(legacy[0])); // 거절했으니 옛 파일도 그대로
 });
 
-test('같은 순간 여러 서버가 만들어도 한 값만 남는다(다른 쪽은 그 값을 읽음)', async () => {
-  const { file, data } = setup();
-  const code = `import { loadToken } from ${JSON.stringify(path.join(ROOT, 'lib', 'token.mjs'))}; console.log(loadToken({ file: ${JSON.stringify(file)}, legacy: [] }).token);`;
+test('같은 순간 여러 서버가 만들어도 한 값만 남는다(다른 쪽은 그 값을 읽음) — 6개가 모두 「파일 없음」을 본 뒤 함께 붙이게 맞춘다', async () => {
+  const { base, file, data } = setup();
+  const N = 6;
+  const gate = path.join(base, 'gate');
+  fs.mkdirSync(gate);
+  // make 는 「파일이 없다」를 본 뒤 · 붙이기(link) 전에 불린다. 여기서 N 개 모두 도착할 때까지 기다리게 해 정말로 겹치게 만든다
+  // (예전엔 6개를 띄우기만 해서, 먼저 뜬 하나가 만들고 나머지는 읽기만 했을 수 있다 — 겹쳤는지 알 수 없었다)
+  const code = `import fs from 'node:fs'; import crypto from 'node:crypto'; import { loadToken } from ${JSON.stringify(path.join(ROOT, 'lib', 'token.mjs'))};
+const gate = ${JSON.stringify(gate)};
+const make = () => {
+  fs.writeFileSync(gate + '/' + process.pid, '');
+  const end = Date.now() + 10000;
+  while (fs.readdirSync(gate).length < ${N} && Date.now() < end);
+  return crypto.randomBytes(24).toString('hex');
+};
+const r = loadToken({ file: ${JSON.stringify(file)}, legacy: [], make });
+console.log(JSON.stringify({ token: r.token, createdNow: r.createdNow }));`;
   const run = () => new Promise((resolve, reject) => {
     const p = spawn(process.execPath, ['--input-type=module', '-e', code]);
     let out = '';
     p.stdout.on('data', (d) => (out += d));
     p.on('error', reject);
-    p.on('exit', (c) => (c === 0 ? resolve(out.trim()) : reject(new Error(`exit ${c}`))));
+    p.on('exit', (c) => (c === 0 ? resolve(JSON.parse(out)) : reject(new Error(`exit ${c}`))));
   });
-  const tokens = await Promise.all([run(), run(), run(), run(), run(), run()]);
-  assert.equal(new Set(tokens).size, 1);
-  assert.equal(fs.readFileSync(file, 'utf8'), tokens[0]);
+  const got = await Promise.all(Array.from({ length: N }, run));
+  assert.equal(fs.readdirSync(gate).length, N); // 모두 「파일 없음」을 보고 만들려 했다(겹침)
+  assert.equal(new Set(got.map((g) => g.token)).size, 1);
+  assert.equal(got.filter((g) => g.createdNow).length, 1); // 붙이기에 이긴 하나만 만들었다
+  assert.equal(fs.readFileSync(file, 'utf8'), got[0].token);
   assert.equal(mode(file), 0o600);
   assert.deepEqual(tmpLeft(data), []);
 });
+
