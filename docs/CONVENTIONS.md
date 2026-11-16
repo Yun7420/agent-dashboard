@@ -104,6 +104,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 | 4646 | 화면 확인용 데모 |
 | 4692 | launch |
 | 4694 | runner |
+| 4695 | live-commands |
 | 4696 | missing-tools |
 | 4697 | live-server |
 | 4698 | paths |

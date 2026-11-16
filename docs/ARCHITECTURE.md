@@ -184,7 +184,7 @@
 
 ### test
 
-41개 파일, 242개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+46개 파일, 262개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -349,13 +349,29 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 데모는 명령을 맨 앞에서 끝내 버려서, 명령이 tmux 로 무엇을 보내는지는 볼 수 없어요. 그래서:
 
 - `DASHBOARD_TEST=1` + 임시 홈 폴더(`DASHBOARD_HOME`) + 임시 토큰 파일 → 내 `~/.claude` · `~/.agent-dashboard` 는 건드리지 않아요.
-- `PATH` 맨 앞에 `test/fake-bin`(가짜 `tmux` · `claude` · `ps` · `lsof`)을 둬요. 가짜 명령은 받은 인자를 기록 파일에 적고, 정해 둔 답을 돌려줘요(`test/fake-bin/_fake.mjs`). 진짜 명령은 절대 부르지 않아요.
+- `PATH` 맨 앞에 `test/fake-bin`(가짜 `tmux` · `claude` · `ps` · `lsof` · `open` · `xdg-open`)을 둬요. 가짜 명령은 받은 인자를 기록 파일에 적고, 정해 둔 답을 돌려줘요(`test/fake-bin/_fake.mjs`). 진짜 명령은 절대 부르지 않아요.
 
 | 파일 | 지키는 것 |
 |---|---|
 | `test/live-server.test.mjs` (4697) | 보내기 · 승인 · 새 세션 · 복구가 tmux 에 정확히 무엇을 보내는지, 업로드 600, 상태줄 다리 옮기기 |
+| `test/live-commands.test.mjs` (4695) | 멈추기 · 선택 창일 때 닫기/모델 409 · 미리보기 창 화살표 + Enter · 복구 N개 · 설정 파일 깨짐/링크 409 · 폴더 열기(홈 밖 · 없는 폴더) |
 | `test/missing-tools.test.mjs` (4696) | tmux 가 없을 때 서버가 뜨고 한국어로 안내하는지 |
 | `test/runner.test.mjs` (4694) | 실행기: 다시 켜기 · 간격 늘리기 · 포트 충돌 멈춤 · 신호 전달 · 복구는 띄우기만 |
+
+시험 포트는 파일마다 따로예요. 겹치면 안 돼요.
+
+| 포트 | 쓰는 곳 |
+|---|---|
+| 4545 · 4646 | 실제 대시보드 · 화면 확인용 데모(테스트는 쓰지 않음) |
+| 4692 | `launch`(포트 충돌 안내 — 이 포트를 먼저 잡아 둠) |
+| 4694 | `runner` |
+| 4695 | `live-commands` |
+| 4696 | `missing-tools` |
+| 4697 | `live-server` |
+| 4698 | `paths`(공백 · 한글 폴더의 데모) |
+| 4699 | `server`(데모) |
+
+서버를 띄우는 테스트는 `test/_helpers/` 를 써요: `server.mjs`(startServer — 자식이 먼저 꺼지면 바로 실패, 끌 땐 종료까지 기다림) · `tmp.mjs`(임시 폴더, 프로세스 끝에 지움) · `http.mjs` · `until.mjs` · `vm.mjs` · `live-home.mjs`(시험 서버의 임시 홈).
 
 ### 「되돌리면 실패」 확인
 
