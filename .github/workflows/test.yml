@@ -11,9 +11,16 @@ on:
 permissions:
   contents: read
 
+# 같은 브랜치 · PR 에 새로 push 하면 앞 실행은 취소(마지막 커밋 결과만 보면 된다)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    # 평소 1분 안팎. 테스트가 멈춰도 기본 상한(6시간)까지 돌지 않게
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:

@@ -47,11 +47,14 @@ test('tildify · relPath: 홈 아래만 ~ 로, 옆 폴더와 「..foo」 파일 
 // 저장소를 공백 · 한글이 들어간 임시 폴더에 복사해 데모로 띄우고 화면 파일이 열리는지(예전엔 404)
 test('공백 · 한글 폴더에서 띄워도 화면 파일이 열린다', async () => {
   const ROOT = fileURLToPath(new URL('..', import.meta.url));
-  const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ad paths ')), '대시 보드');
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'ad paths '));
+  const dir = path.join(base, '대시 보드');
+  const home = path.join(base, 'home'); // 데모도 demo-token 을 만들어서 실제 홈 대신
   fs.mkdirSync(dir);
+  fs.mkdirSync(home);
   for (const x of ['server.mjs', 'package.json', 'lib', 'adapters', 'public', 'bin']) fs.cpSync(path.join(ROOT, x), path.join(dir, x), { recursive: true });
   const PORT = 4698;
-  const srv = spawn(process.execPath, ['server.mjs'], { cwd: dir, env: { ...process.env, DEMO: '1', PORT: String(PORT) }, stdio: 'ignore' });
+  const srv = spawn(process.execPath, ['server.mjs'], { cwd: dir, env: { ...process.env, DEMO: '1', PORT: String(PORT), HOME: home }, stdio: 'ignore' });
   const get = (p) => new Promise((resolve, reject) => {
     http.get({ host: '127.0.0.1', port: PORT, path: p, headers: { host: `127.0.0.1:${PORT}` } }, (res) => { res.resume(); resolve(res.statusCode); }).on('error', reject);
   });
@@ -61,7 +64,14 @@ test('공백 · 한글 폴더에서 띄워도 화면 파일이 열린다', async
     assert.equal(code, 200);
     assert.equal(await get('/js/01-core.js'), 200);
     assert.ok(!fs.existsSync(path.join(dir, '.dashboard-token'))); // 토큰은 이제 저장소 폴더가 아니라 ~/.agent-dashboard(데모는 demo-token)
+    assert.ok(fs.existsSync(path.join(home, '.agent-dashboard', 'demo-token')));
   } finally {
-    srv.kill(); // 이 테스트가 띄운 서버만 끈다
+    // 이 테스트가 띄운 서버만 끈다. 끝날 때까지 기다린 뒤 임시 폴더(복사본 · 홈)를 지운다
+    if (srv.exitCode === null && srv.signalCode === null) {
+      const gone = new Promise((r) => srv.once('exit', r));
+      srv.kill();
+      await gone;
+    }
+    fs.rmSync(base, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

@@ -5,12 +5,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import net from 'node:net';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { DEMO_TOKEN_FILE } from '../lib/paths.mjs';
 
-// 데모 모드 서버를 따로 띄워 보안 검사를 시험한다(실제 세션은 건드리지 않음)
+// 데모 모드 서버를 따로 띄워 보안 검사를 시험한다(실제 세션은 건드리지 않음).
+// 데모도 토큰 파일(~/.agent-dashboard/demo-token)을 만들어서, HOME 을 임시 폴더로 줘 실제 홈에는 아무것도 쓰지 않는다
 const PORT = 4699;
 const ROOT = fileURLToPath(new URL('..', import.meta.url)); // import.meta.dirname 은 Node 20.11+ 라 18 에서 안 됨
+const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-demo-'));
+const ENV = { ...process.env, DEMO: '1', PORT: String(PORT), HOME };
 let srv;
 let TOKEN;
 
@@ -27,14 +30,22 @@ const req = (p, { method = 'GET', headers = {}, body } = {}) =>
   });
 
 before(async () => {
-  srv = spawn(process.execPath, ['server.mjs'], { cwd: ROOT, env: { ...process.env, DEMO: '1', PORT: String(PORT) }, stdio: 'ignore' });
+  srv = spawn(process.execPath, ['server.mjs'], { cwd: ROOT, env: ENV, stdio: 'ignore' });
   for (let i = 0; i < 50; i++) {
     try { if ((await req('/')) === 200) break; } catch {}
     await new Promise((r) => setTimeout(r, 100));
   }
-  TOKEN = fs.readFileSync(DEMO_TOKEN_FILE, 'utf8').trim(); // 데모는 따로 ~/.agent-dashboard/demo-token(lib/paths.mjs)
+  TOKEN = fs.readFileSync(path.join(HOME, '.agent-dashboard', 'demo-token'), 'utf8').trim(); // 데모는 따로 demo-token(lib/paths.mjs)
 });
-after(() => srv?.kill());
+after(async () => {
+  // 이 테스트가 띄운 서버만. 끝날 때까지 기다린 뒤 임시 홈을 지운다
+  if (srv && srv.exitCode === null && srv.signalCode === null) {
+    const gone = new Promise((r) => srv.once('exit', r));
+    srv.kill();
+    await gone;
+  }
+  fs.rmSync(HOME, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+});
 
 test('화면 파일은 토큰 없이 열린다', async () => {
   assert.equal(await req('/'), 200);
@@ -58,10 +69,27 @@ test('틀린 토큰은 403', async () => {
 
 test('찾아온 주소(Host)가 다르면 403 — DNS 리바인딩 차단', async () => {
   assert.equal(await req('/', { headers: { host: 'evil.example:4699' } }), 403);
+  assert.equal(await req('/', { headers: { host: 'localhost:4698' } }), 403); // 다른 포트도
+});
+
+test('Host 는 localhost:포트 · 127.0.0.1:포트 둘 다 열린다(화면은 보통 http://localhost:포트 로 연다)', async () => {
+  for (const host of [`localhost:${PORT}`, `127.0.0.1:${PORT}`]) {
+    assert.equal(await req('/', { headers: { host } }), 200, host);
+    assert.equal(await req('/api/perf', { headers: { host, 'x-dashboard-token': TOKEN } }), 200, host);
+  }
 });
 
 test('다른 사이트(Origin)에서 온 요청은 토큰이 맞아도 403', async () => {
   assert.equal(await req('/api/perf', { headers: { 'x-dashboard-token': TOKEN, origin: 'https://evil.example' } }), 403);
+  assert.equal(await req('/api/perf', { headers: { 'x-dashboard-token': TOKEN, origin: `http://localhost:${PORT + 1}` } }), 403); // 같은 컴퓨터의 다른 포트도
+});
+
+test('같은 출처(Origin) 요청은 열린다 — 브라우저는 POST 에 Origin 을 붙이므로 이게 막히면 채팅 · 승인이 모두 403', async () => {
+  const H = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };
+  for (const origin of [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`]) {
+    assert.equal(await req('/api/perf', { headers: { ...H, origin } }), 200, origin);
+    assert.equal(await req('/api/cmd/send', { method: 'POST', headers: { ...H, origin }, body: '{"key":"claude:demo-ops","text":"x"}' }), 200, origin);
+  }
 });
 
 test('화면 폴더 밖 파일은 열리지 않는다', async () => {
@@ -112,7 +140,7 @@ test('알림 설정 API: 토큰 없거나 다른 Origin 이면 403, 소리는 �
   assert.equal(await req('/api/notify', { method: 'POST', body: '{"mac":true}' }), 403);
   assert.equal(await req('/api/notify/test', { method: 'POST', body: '{}' }), 403);
   assert.equal(await req('/api/notify', { method: 'POST', headers: { ...H, origin: 'http://evil.example' }, body: '{"mac":true}' }), 403);
-  const file = path.join(process.env.HOME, '.agent-dashboard', 'notify.json');
+  const file = path.join(HOME, '.agent-dashboard', 'notify.json');
   const before = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
   assert.equal(await req('/api/notify', { headers: H }), 200);
   assert.equal(await req('/api/notify', { method: 'POST', headers: H, body: '{"sound":"../../etc/passwd"}' }), 400);
@@ -165,7 +193,7 @@ test('처리기 안의 오류: 500 짧은 한국어 문장, 서버는 그대로 
 });
 
 test('포트 충돌: 안내 문구를 찍고 종료 코드 1', async () => {
-  const p = spawn(process.execPath, ['server.mjs'], { cwd: ROOT, env: { ...process.env, DEMO: '1', PORT: String(PORT) } });
+  const p = spawn(process.execPath, ['server.mjs'], { cwd: ROOT, env: ENV });
   let out = '';
   p.stdout.on('data', (d) => (out += d));
   p.stderr.on('data', (d) => (out += d));

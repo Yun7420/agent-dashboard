@@ -68,16 +68,20 @@ const cmd = (name, body) => req(`/api/cmd/${name}`, { method: 'POST', headers: H
 const fakeLog = () => (fs.existsSync(FAKE_LOG) ? fs.readFileSync(FAKE_LOG, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
 const tmuxCalls = (sub) => fakeLog().filter((x) => x.cmd === 'tmux' && x.args[0] === sub);
 const files = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir, { recursive: true }).filter((f) => fs.statSync(path.join(dir, f)).isFile()) : []);
+// SSE 첫 상태 한 덩어리. 200 이 아니거나(403 등) 첫 덩어리 전에 끝나거나 5초 안에 안 오면 거절 — 기다리다 멈추지 않게
 async function firstState() {
   return new Promise((resolve, reject) => {
     const r = http.get({ host: '127.0.0.1', port: PORT, path: `/events?token=${TOKEN}`, headers: { host: `127.0.0.1:${PORT}` } }, (res) => {
+      if (res.statusCode !== 200) { res.destroy(); return reject(new Error(`/events ${res.statusCode}`)); }
       let t = '';
       res.setEncoding('utf8');
       res.on('data', (d) => {
         t += d;
         if (t.includes('\n\n')) { res.destroy(); resolve(JSON.parse(t.split('\n\n')[0].replace(/^data: /, ''))); }
       });
+      res.on('end', () => reject(new Error('/events 가 첫 상태 전에 끝남')));
     });
+    r.setTimeout(5000, () => { r.destroy(); reject(new Error('/events 5초 안에 첫 상태 없음')); });
     r.on('error', reject);
   });
 }

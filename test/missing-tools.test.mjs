@@ -83,11 +83,16 @@ test('tmux 가 필요한 명령(새 세션)은 409 「tmux 가 필요해요」 �
   const r = await req('/api/cmd/spawn', { method: 'POST', body: JSON.stringify({ cwd: '~/proj' }) });
   assert.equal(r.status, 409);
   assert.equal(r.text, 'tmux 가 필요해요 — brew install tmux');
-  const st = await new Promise((resolve) => {
-    http.get({ host: '127.0.0.1', port: PORT, path: `/events?token=${TOKEN}`, headers: { host: `127.0.0.1:${PORT}` } }, (res) => {
+  // 200 이 아니거나 첫 덩어리 전에 끝나거나 5초 안에 안 오면 거절 — 기다리다 멈추지 않게
+  const st = await new Promise((resolve, reject) => {
+    const r = http.get({ host: '127.0.0.1', port: PORT, path: `/events?token=${TOKEN}`, headers: { host: `127.0.0.1:${PORT}` } }, (res) => {
+      if (res.statusCode !== 200) { res.destroy(); return reject(new Error(`/events ${res.statusCode}`)); }
       let t = '';
       res.on('data', (d) => { t += d; if (t.includes('\n\n')) { res.destroy(); resolve(JSON.parse(t.split('\n\n')[0].replace(/^data: /, ''))); } });
+      res.on('end', () => reject(new Error('/events 가 첫 상태 전에 끝남')));
     });
+    r.setTimeout(5000, () => { r.destroy(); reject(new Error('/events 5초 안에 첫 상태 없음')); });
+    r.on('error', reject);
   });
   assert.deepEqual(st.sessions, []); // 빈 목록 — 화면은 envData.tools 를 보고 안내 문구를 고른다
 });
