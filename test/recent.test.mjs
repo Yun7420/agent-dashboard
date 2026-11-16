@@ -6,10 +6,11 @@ import path from 'node:path';
 import { createRecent, liveEntries, KEEP_DAYS } from '../lib/recent.mjs';
 import { restoreSessions } from '../lib/restore.mjs';
 import { isTrustPrompt } from '../lib/dialog.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const sess = (n, extra = {}) => ({ tool: 'claude', id: ID(n), title: `세션 ${n}`, named: false, cwd: `/Users/me/p${n}`, status: 'idle', tmux: { session: `t${n}` }, ...extra });
-const tmpFile = () => path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ad-recent-')), 'recent.json');
+const tmpFile = () => path.join(tmpDir('ad-recent-'), 'recent.json');
 function clock(t = 1_800_000_000_000) { const now = () => t; now.add = (ms) => (t += ms); return now; }
 const ids = (list) => list.map((e) => e.id);
 

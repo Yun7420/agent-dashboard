@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import claude, { describeStats } from '../adapters/claude.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 // 만든 예시 기록: 턴 시작 → 파일 고치기 → 아주 큰 도구 결과(스크린샷 · 긴 로그 흉내) → 마지막 글
 const at = '2026-11-12T00:00:00Z';
@@ -13,7 +13,7 @@ const edit = (id, file) => ({ type: 'assistant', timestamp: at, message: { id, c
 const big = (id, bytes) => ({ type: 'user', timestamp: at, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: `t-${id}`, content: 'x'.repeat(bytes) }] } });
 const said = (text) => ({ type: 'assistant', timestamp: at, message: { id: `m-${text}`, content: [{ type: 'text', text }], stop_reason: 'end_turn' } });
 function write(lines) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-desc-'));
+  const dir = tmpDir('ad-desc-');
   const file = path.join(dir, 'sess.jsonl');
   fs.writeFileSync(file, lines.map((l) => JSON.stringify(l)).join('\n') + '\n');
   return { file, id: 'sess', size: fs.statSync(file).size, mtimeMs: fs.statSync(file).mtimeMs };

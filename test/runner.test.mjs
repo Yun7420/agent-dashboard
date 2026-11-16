@@ -2,18 +2,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import net from 'node:net';
 import { spawn, spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { createRunner } from '../lib/runner.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
+import { until, wait } from './_helpers/until.mjs';
+import { portOpen } from './_helpers/http.mjs';
+import { ROOT, testEnv } from './_helpers/server.mjs';
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const BIN = path.join(ROOT, 'bin', 'agent-dashboard.mjs');
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'ad-runner-'));
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-const until = async (fn, ms = 5000) => { for (let t = 0; t < ms; t += 50) { if (fn()) return true; await wait(50); } return false; };
+const tmp = () => tmpDir('ad-runner-');
 const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
 
 // 가짜 서버: 켜질 때마다 count 파일에 한 줄, mode 에 따라 바로 죽거나 · 포트 충돌 문구를 남기고 1 로 끝나거나 · 떠 있다가 신호를 기록
@@ -81,24 +79,28 @@ test('run(실행 파일): SIGTERM 을 자식에게 넘기고 함께 끝난다 �
   const dir = tmp();
   const PORT = 4694;
   const home = path.join(dir, 'home');
-  const env = { ...process.env, DASHBOARD_TEST: '1', DASHBOARD_HOME: home, DASHBOARD_RUN_SERVER: fakeServer(dir, 'long', PORT) };
-  delete env.DEMO;
+  const env = testEnv({ home, DASHBOARD_RUN_SERVER: fakeServer(dir, 'long', PORT) });
   const runner = spawn(process.execPath, [BIN, 'run'], { env, stdio: 'ignore' }); // 이 테스트가 띄운 실행기(PID 는 runner.pid)
-  assert.ok(await until(() => fs.existsSync(path.join(dir, 'pid'))));
-  const childPid = Number(fs.readFileSync(path.join(dir, 'pid'), 'utf8'));
-  await wait(300); // 자식이 포트를 열 틈
   const code = new Promise((r) => runner.on('exit', r));
-  runner.kill('SIGTERM'); // 실행기에게만 보낸다 — 자식에게는 실행기가 넘긴다
-  const got = await Promise.race([code, wait(5000).then(() => 'timeout')]);
-  const childGone = await until(() => !alive(childPid), 2000);
-  // 실패해도 이 테스트가 띄운 것(실행기 · 가짜 서버 — PID 는 가짜 서버가 적은 파일)은 정리해 다음 테스트 포트가 막히지 않게
-  if (got === 'timeout') runner.kill('SIGKILL');
-  if (!childGone && alive(childPid)) process.kill(childPid, 'SIGKILL');
+  let childPid = null, got, childGone;
+  try {
+    assert.ok(await until(() => fs.existsSync(path.join(dir, 'pid'))));
+    childPid = Number(fs.readFileSync(path.join(dir, 'pid'), 'utf8'));
+    // 자식이 포트를 연 뒤에 끈다 — 고정 300ms 로는 느린 컴퓨터에서 열기 전에 끌 수 있고, 그러면 끝의 「포트가 닫혔다」가 아무것도 확인하지 않는다
+    assert.ok(await until(() => portOpen(PORT)), '가짜 서버가 포트를 열지 못했다');
+    runner.kill('SIGTERM'); // 실행기에게만 보낸다 — 자식에게는 실행기가 넘긴다
+    got = await Promise.race([code, wait(5000).then(() => 'timeout')]);
+    childGone = await until(() => !alive(childPid), 2000);
+  } finally {
+    // 중간에 실패해도 이 테스트가 띄운 것(실행기 · 가짜 서버 — PID 는 가짜 서버가 적은 파일)만 정리한다.
+    // 안 하면 실행기가 살아 있어 테스트 프로세스가 끝나지 않고 멈춘다(2026-11-16 되돌리기 확인 중 겪음)
+    if (runner.exitCode === null && runner.signalCode === null) { runner.kill('SIGKILL'); await code; }
+    if (childPid && alive(childPid)) process.kill(childPid, 'SIGKILL');
+  }
   assert.equal(got, 0);
   assert.ok(childGone, '실행기가 끝난 뒤 자식이 남았다');
   assert.equal(fs.readFileSync(path.join(dir, 'signal'), 'utf8'), 'SIGTERM');
-  const open = await new Promise((r) => { const s = net.connect(PORT, '127.0.0.1', () => { s.destroy(); r(true); }); s.on('error', () => r(false)); });
-  assert.equal(open, false);
+  assert.equal(await portOpen(PORT), false);
   assert.equal(fs.statSync(path.join(home, '.agent-dashboard', 'server.log')).mode & 0o777, 0o600); // 시험 HOME 의 로그
 });
 
@@ -118,8 +120,7 @@ function restoreSetup(panes) {
   fs.mkdirSync(fake);
   fs.writeFileSync(path.join(fake, 'panes.txt'), panes.map((s, i) => `%${i}\t${process.pid}\t${s}`).join('\n') + '\n');
   const log = path.join(dir, 'fake.log');
-  const env = { ...process.env, DASHBOARD_TEST: '1', DASHBOARD_HOME: home, PATH: `${path.join(ROOT, 'test', 'fake-bin')}:${process.env.PATH}`, FAKE_DIR: fake, FAKE_LOG: log };
-  delete env.DEMO;
+  const env = testEnv({ home, fakeDir: fake, fakeLog: log });
   const calls = () => fs.readFileSync(log, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
   return { env, calls, id, cwd };
 }

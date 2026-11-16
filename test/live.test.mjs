@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createLiveSessions } from '../adapters/claude.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 // 가짜 claude agents: 몇 번 불렸는지 센다
 function fakeRun(result = '[]', ms = 20) {
@@ -14,7 +15,7 @@ function fakeRun(result = '[]', ms = 20) {
 function clock(t = 1_000_000) { const now = () => t; now.add = (ms) => (t += ms); return now; }
 
 test('sessions 폴더가 있으면 비어 있어도 그대로 빈 목록 — claude 를 실행하지 않는다', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-live-'));
+  const dir = tmpDir('ad-live-');
   const run = fakeRun();
   const live = createLiveSessions({ dir, run });
   for (let i = 0; i < 5; i++) assert.deepEqual(await live(), []); // 틱 5번

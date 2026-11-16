@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import claude, { commitMessages } from '../adapters/claude.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 const commitMessage = (c) => commitMessages(c)[0] ?? null;
 
 test('커밋 명령에서 제목 한 줄을 꺼낸다', () => {
@@ -52,7 +52,7 @@ test('커밋 제목 함정: 커밋 자신의 본문 속 「git commit」 · 「-
 });
 
 test('하루 동안의 요청 · 파일 · 명령 · 커밋을 모은다 (다른 날 · 실패한 커밋은 뺀다)', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-day-'));
+  const dir = tmpDir('ad-day-');
   const file = path.join(dir, 's.jsonl');
   const T = (h) => `2026-11-12T${String(h).padStart(2, '0')}:00:00`;
   const lines = [

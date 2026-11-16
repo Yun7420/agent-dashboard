@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNotifier } from '../lib/notify.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 const WEIRD = ['따옴표 " 와 \\ 백슬래시', '줄\n바꿈', '$(rm -rf ~) `id` ; echo hi', '-e', 'end run'];
 
@@ -39,7 +39,7 @@ test('소리 허용 목록: /System/Library/Sounds 이름 몇 개와 없음만',
 });
 
 test('설정 파일: 600 으로 만들고, 없거나 깨졌으면 꺼짐으로 시작', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-notify-'));
+  const dir = tmpDir('ad-notify-');
   const file = path.join(dir, 'notify.json');
   assert.deepEqual(loadSettings(file), { mac: false, sound: 'Glass' });
   const old = process.umask(0o022);

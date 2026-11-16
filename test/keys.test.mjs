@@ -1,12 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import vm from 'node:vm';
+import { loadFront } from './_helpers/vm.mjs';
 
 // 브라우저 파일이지만 판정 함수는 화면에 닿지 않는다 → 불러올 때 필요한 document.addEventListener 만 흉내 내고 node:vm 으로 시험
-const ctx = vm.createContext({ document: { addEventListener() {} } });
-vm.runInContext(fs.readFileSync(new URL('../public/js/19-keys.js', import.meta.url), 'utf8'), ctx);
-const { ignoreKey, nextKey, armTwice, canApprove } = vm.runInContext('({ ignoreKey, nextKey, armTwice, canApprove })', ctx);
+const { ignoreKey, nextKey, armTwice, canApprove } = loadFront(['19-keys.js'], { document: { addEventListener() {} } }).run('({ ignoreKey, nextKey, armTwice, canApprove })');
 const key = (k, extra = {}) => ({ key: k, keyCode: 0, ...extra });
 const body = { tagName: 'BODY' };
 

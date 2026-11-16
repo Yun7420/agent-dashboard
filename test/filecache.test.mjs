@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { createFileCache } from '../lib/filecache.mjs';
 import { pruneStatusFiles, STATUS_KEEP_DAYS } from '../lib/status.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'ad-fc-'));
+const tmp = () => tmpDir('ad-fc-');
 function clock(t = 1_000_000) { const now = () => t; now.add = (ms) => (t += ms); return now; }
 const touch = (f, sec) => fs.utimesSync(f, sec, sec);
 

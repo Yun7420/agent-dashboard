@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import { EventEmitter } from 'node:events';
 import { readBody, saveUpload, drainRest } from '../lib/body.mjs';
 import { createLock } from '../lib/lock.mjs';
 import { createRecent } from '../lib/recent.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 const fakeReq = () => new PassThrough();
 const tick = () => new Promise((r) => setImmediate(r));
@@ -43,7 +43,7 @@ test('readBody: 본문 중간에 끊기면(aborted · close · error) 바로 거
 });
 
 test('saveUpload: 정상이면 600 파일 하나(.part 없음), 끊기거나 넘치면 아무것도 남지 않음', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-up-'));
+  const dir = tmpDir('ad-up-');
   let r = fakeReq();
   let p = saveUpload(r, '../보고서 v1.png', { dir, max: 1000 });
   r.end(Buffer.alloc(300, 1));
@@ -69,7 +69,7 @@ test('saveUpload: 정상이면 600 파일 하나(.part 없음), 끊기거나 넘
 });
 
 test('saveUpload: 디스크 오류는 413 이 아니라 500', async () => {
-  const notDir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ad-up-')), 'file');
+  const notDir = path.join(tmpDir('ad-up-'), 'file');
   fs.writeFileSync(notDir, 'x'); // 폴더 자리에 파일 → 날짜 폴더를 못 만듦
   const r = fakeReq();
   await assert.rejects(saveUpload(r, 'a.png', { dir: notDir, max: 1000 }), (e) => e.status === 500);
@@ -89,13 +89,13 @@ test('복구 잠금: 동시에 두 번이면 하나는 busy, 끝나거나 실패
 });
 
 test('재시동 배너 복구도 방금 띄운 ID 는 뺀다(launchedIds)', () => {
-  const r = createRecent({ file: path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ad-rc-')), 'r.json') });
+  const r = createRecent({ file: path.join(tmpDir('ad-rc-'), 'r.json') });
   r.noteLaunched('00000000-0000-4000-8000-000000000001', { title: 'a', tmuxSession: 't' });
   assert.deepEqual([...r.launchedIds()], ['00000000-0000-4000-8000-000000000001']);
 });
 
 test('saveUpload: 파일이 열리기도 전에 끊겨도 .part 가 남지 않는다(여러 번)', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-up-'));
+  const dir = tmpDir('ad-up-');
   for (let i = 0; i < 30; i++) {
     const r = fakeReq();
     const p = saveUpload(r, `early-${i}.bin`, { dir, max: 1000 });

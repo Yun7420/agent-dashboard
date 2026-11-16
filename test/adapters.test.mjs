@@ -1,17 +1,16 @@
 // 어댑터 모양(adapters/index.mjs 머리 주석)을 어댑터마다 확인한다: 필수 함수 · scan → describe → history 결과의 키와 종류.
 // 새 어댑터를 붙이면 SAMPLES 에 예시 기록 한 개만 더하면 된다. 실제 ~/.claude · ~/.codex 대신 임시 홈을 쓴다
-import { test, after } from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { tmpDir } from './_helpers/tmp.mjs';
 
-const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-adapters-'));
+const HOME = tmpDir('ad-adapters-');
 process.env.DASHBOARD_TEST = '1';
 process.env.DASHBOARD_HOME = HOME;
 delete process.env.DEMO;
 const { adapters } = await import('../adapters/index.mjs'); // 경로(CLAUDE_DIR · CODEX_DIR)가 임시 홈을 보도록 환경을 먼저
-after(() => fs.rmSync(HOME, { recursive: true, force: true }));
 
 const CWD = path.join(HOME, 'proj');
 const at = (s) => `2026-11-13T01:00:0${s}.000Z`;

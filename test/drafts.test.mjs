@@ -1,8 +1,7 @@
 // 입력 칸의 세션별 임시 글 · 첨부(public/js/08-attach.js). 화면 파일을 node:vm 으로 불러, 쓰는 요소(입력 칸 · 첨부 목록 · 보내기 단추)만 흉내 낸다
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import vm from 'node:vm';
+import { loadFront } from './_helpers/vm.mjs';
 
 function load() {
   const els = {};
@@ -12,7 +11,7 @@ function load() {
   const uploads = []; // 아직 끝나지 않은 업로드 { resolve }
   const revoked = [];
   let urlN = 0;
-  const ctx = vm.createContext({
+  const { run } = loadFront(['00-md.js', '01-core.js', '08-attach.js'], {
     window: { DASHBOARD_TOKEN: 't'.repeat(48) },
     document: { querySelector: el, hidden: true },
     localStorage: { getItem: (k) => stored[k] ?? null, setItem: (k, v) => (stored[k] = v) },
@@ -26,10 +25,8 @@ function load() {
       return Promise.resolve({ status: 200, ok: true, text: async () => 'ok' });
     },
   });
-  for (const f of ['00-md.js', '01-core.js', '08-attach.js']) vm.runInContext(fs.readFileSync(new URL(`../public/js/${f}`, import.meta.url), 'utf8'), ctx, { filename: f });
   // 08 이 부르는 07-now 의 renderBusy · 01-core 의 toast 를 흉내(sentAt · canSend 는 01-core.js)
-  vm.runInContext('function renderBusy() {}; function toast() {}; canSend = true;', ctx);
-  const run = (code) => vm.runInContext(code, ctx);
+  run('function renderBusy() {}; function toast() {}; canSend = true;');
   const file = (name) => ({ name, size: 1, type: 'image/png' });
   return { els, el, stored, sent, uploads, revoked, run, file };
 }

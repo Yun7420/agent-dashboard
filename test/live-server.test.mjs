@@ -3,19 +3,19 @@
 // 데모는 명령 · 업로드를 맨 앞에서 끝내서 서버 단위로 못 했던 시험(인자 · 잠금 · 경로 검사 · 끊긴 업로드)을 여기서 한다
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import http from 'node:http';
 import net from 'node:net';
 import crypto from 'node:crypto';
-import { fileURLToPath } from 'node:url';
+import { tmpDir } from './_helpers/tmp.mjs';
+import { until } from './_helpers/until.mjs';
+import { request, firstEvent } from './_helpers/http.mjs';
+import { ROOT, testEnv, startServer } from './_helpers/server.mjs';
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const FAKE_BIN = path.join(ROOT, 'test', 'fake-bin');
 const PORT = 4697;
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-testsrv-'));
+const TMP = tmpDir('ad-testsrv-');
 const HOME = path.join(TMP, 'home');
 const CWD = path.join(HOME, 'proj');
 const UPLOADS = path.join(HOME, '.agent-dashboard', 'uploads');
@@ -51,69 +51,27 @@ function setupHome() {
   fs.writeFileSync(path.join(HOME, '.claude', 'settings.json'), `${JSON.stringify({ model: 'opus[1m]', statusLine: { type: 'command', command: `"${fs.realpathSync(process.execPath)}" "${path.join(ROOT, 'bin', 'statusline.mjs')}"`, padding: 0 }, theme: 'dark' }, null, 2)}\n`);
 }
 
-const req = (p, { method = 'GET', headers = {}, body } = {}) =>
-  new Promise((resolve, reject) => {
-    const r = http.request({ host: '127.0.0.1', port: PORT, path: p, method, headers: { host: `127.0.0.1:${PORT}`, ...headers } }, (res) => {
-      let t = '';
-      res.setEncoding('utf8');
-      res.on('data', (d) => (t += d));
-      res.on('end', () => resolve({ status: res.statusCode, text: t, headers: res.headers }));
-    });
-    r.on('error', reject);
-    if (body) r.write(body);
-    r.end();
-  });
+const req = (p, opts) => request(PORT, p, opts);
 const H = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };
 const cmd = (name, body) => req(`/api/cmd/${name}`, { method: 'POST', headers: H, body: JSON.stringify(body) });
 const fakeLog = () => (fs.existsSync(FAKE_LOG) ? fs.readFileSync(FAKE_LOG, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
 const tmuxCalls = (sub) => fakeLog().filter((x) => x.cmd === 'tmux' && x.args[0] === sub);
 const files = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir, { recursive: true }).filter((f) => fs.statSync(path.join(dir, f)).isFile()) : []);
-// SSE 첫 상태 한 덩어리. 200 이 아니거나(403 등) 첫 덩어리 전에 끝나거나 5초 안에 안 오면 거절 — 기다리다 멈추지 않게
-async function firstState() {
-  return new Promise((resolve, reject) => {
-    const r = http.get({ host: '127.0.0.1', port: PORT, path: `/events?token=${TOKEN}`, headers: { host: `127.0.0.1:${PORT}` } }, (res) => {
-      if (res.statusCode !== 200) { res.destroy(); return reject(new Error(`/events ${res.statusCode}`)); }
-      let t = '';
-      res.setEncoding('utf8');
-      res.on('data', (d) => {
-        t += d;
-        if (t.includes('\n\n')) { res.destroy(); resolve(JSON.parse(t.split('\n\n')[0].replace(/^data: /, ''))); }
-      });
-      res.on('end', () => reject(new Error('/events 가 첫 상태 전에 끝남')));
-    });
-    r.setTimeout(5000, () => { r.destroy(); reject(new Error('/events 5초 안에 첫 상태 없음')); });
-    r.on('error', reject);
-  });
-}
+const firstState = () => firstEvent(PORT, TOKEN);
 
 before(async () => {
   setupHome();
-  const env = { ...process.env, DASHBOARD_TEST: '1', DASHBOARD_HOME: HOME, DASHBOARD_TOKEN_FILE: TOKEN_FILE, PORT: String(PORT), PATH: `${FAKE_BIN}:${process.env.PATH}`, FAKE_LOG, FAKE_DIR, FAKE_NEW_DELAY_MS: '400', FAKE_PS_FIRST_DELAY_MS: '1500' };
-  delete env.DEMO;
-  srv = spawn(process.execPath, ['server.mjs'], { cwd: ROOT, env, stdio: 'ignore' });
+  const env = testEnv({ home: HOME, tokenFile: TOKEN_FILE, port: PORT, fakeDir: FAKE_DIR, fakeLog: FAKE_LOG, FAKE_NEW_DELAY_MS: '400', FAKE_PS_FIRST_DELAY_MS: '1500' });
   // 두 세션이 tmux 창과 함께 보이고(첫 상태), 명령이 보는 상태(latest)도 만들어질 때까지.
   // /events 는 latest 가 없으면 따로 상태를 만들어 보내서, 첫 상태만 기다리면 명령이 아직 503 일 수 있다(예전엔 409 로 흔들림)
-  let ready = false;
-  for (let i = 0; i < 150 && !ready; i++) {
-    try {
-      const st = await firstState();
-      const recent = JSON.parse((await req('/api/recent', { headers: H })).text);
-      ready = st.sessions?.filter((s) => s.tmux).length === 2 && recent.loading === false;
-    } catch {}
-    if (!ready) await new Promise((r) => setTimeout(r, 100));
-  }
-  assert.ok(ready, '시험 서버가 15초 안에 첫 상태를 만들지 못했다');
+  srv = await startServer({ env, name: '시험 서버', ready: async () => {
+    const st = await firstState();
+    const recent = JSON.parse((await req('/api/recent', { headers: H })).text);
+    return st.sessions?.filter((s) => s.tmux).length === 2 && recent.loading === false;
+  } });
 });
-after(async () => {
-  // 이 테스트가 띄운 서버만. 끝날 때까지 기다린 뒤 임시 홈을 지운다 — 바로 지우면 꺼지는 중인 서버가 쓴 파일 때문에 ENOTEMPTY(CI 에서 겪음)
-  if (srv && srv.exitCode === null && srv.signalCode === null) {
-    const gone = new Promise((r) => srv.once('exit', r));
-    srv.kill();
-    await gone;
-  }
-  // 서버가 끝나기 직전에 띄운 가짜 명령(ps · tmux, 서버의 자식)이 몇 ms 늦게 기록 파일을 써서 ENOTEMPTY 가 날 수 있다(CI macOS · Node 18) → 잠깐 다시 시도
-  fs.rmSync(TMP, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
-});
+// 이 테스트가 띄운 서버만, 끝날 때까지 기다린다. 임시 홈은 그 뒤 tmpDir 이 지운다(꺼지는 중인 서버 · 가짜 명령이 늦게 쓴 파일로 ENOTEMPTY 가 났었다)
+after(() => srv?.stop());
 
 test('시험 서버: 임시 홈의 가짜 세션 2개가 tmux 창과 함께 보이고, 가짜 명령만 불렸다', async () => {
   const st = await firstState();
@@ -194,8 +152,9 @@ test('업로드: 임시 홈의 uploads 에 600 으로, 중간에 끊기면 .part
       setTimeout(() => { s.destroy(); resolve(); }, 150);
     });
   });
-  await new Promise((r2) => setTimeout(r2, 300));
-  assert.deepEqual(files(UPLOADS).filter((f) => f.endsWith('.part') || f.includes('cut.bin')), []);
+  // 고정 300ms 대신: 끊긴 업로드를 서버가 치울 때까지(.part 가 없어질 때까지) 기다린다. 끝내 남으면 실패
+  const clean = () => files(UPLOADS).filter((f) => f.endsWith('.part') || f.includes('cut.bin')).length === 0;
+  assert.ok(await until(clean, 3000), `끊긴 업로드가 남음: ${files(UPLOADS)}`);
   assert.equal((await req('/api/perf', { headers: H })).status, 200); // 서버는 그대로
 });
 

@@ -1,20 +1,13 @@
 // 브라우저 설정 정리(public/js/01-core.js 의 prunePrefs) · 활동 로그 첫 줄(02-activity.js). 화면 파일을 node:vm 으로 불러 시험한다
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import vm from 'node:vm';
+import { loadFront, browserStub } from './_helpers/vm.mjs';
 
 function load(files, stored = null) {
   const els = {};
   const el = (sel) => (els[sel] ??= { lines: [], children: { length: 0 }, insertAdjacentHTML(_, h) { this.lines.push(h); this.children.length = this.lines.length; }, addEventListener() {}, classList: { add() {}, remove() {}, toggle() {} }, style: {}, dataset: {} });
-  const ctx = vm.createContext({
-    window: { DASHBOARD_TOKEN: 't'.repeat(48) },
-    document: { querySelector: el, hidden: true },
-    localStorage: { getItem: () => stored, setItem() {} },
-    setInterval() {},
-  });
-  for (const f of files) vm.runInContext(fs.readFileSync(new URL(`../public/js/${f}`, import.meta.url), 'utf8'), ctx, { filename: f });
-  return { run: (c) => vm.runInContext(c, ctx), el };
+  const { run } = loadFront(files, browserStub({ document: { querySelector: el, hidden: true }, localStorage: { getItem: () => stored, setItem() {} } }));
+  return { run, el };
 }
 const plain = (x) => JSON.parse(JSON.stringify(x));
 const DAY = 86400_000;

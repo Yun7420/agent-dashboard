@@ -2,18 +2,17 @@
 // 서버는 보기 전용으로 계속 뜨고, 로그 · 환경 점검 · 명령 응답이 한국어로 안내하는지. 실행 파일(bin) 도움말도 여기서
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import http from 'node:http';
 import crypto from 'node:crypto';
-import { fileURLToPath } from 'node:url';
 import { startupNotices } from '../lib/env.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
+import { request, firstEvent } from './_helpers/http.mjs';
+import { ROOT, startServer } from './_helpers/server.mjs';
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PORT = 4696;
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-notool-'));
+const TMP = tmpDir('ad-notool-');
 const HOME = path.join(TMP, 'home');
 const BIN = path.join(TMP, 'bin');
 const TOKEN = crypto.randomBytes(24).toString('hex');
@@ -21,20 +20,8 @@ const TOKEN = crypto.randomBytes(24).toString('hex');
 // 리눅스(CI)는 tmux 가 /usr/bin 에 있다. 서버가 부르는 명령은 tmux · ps · lsof · claude(+ macOS 의 open · osascript)뿐
 const PATH_NO_TMUX = BIN;
 let srv;
-let log = '';
 
-const req = (p, { method = 'GET', body } = {}) =>
-  new Promise((resolve, reject) => {
-    const r = http.request({ host: '127.0.0.1', port: PORT, path: p, method, headers: { host: `127.0.0.1:${PORT}`, 'x-dashboard-token': TOKEN, 'content-type': 'application/json' } }, (res) => {
-      let t = '';
-      res.setEncoding('utf8');
-      res.on('data', (d) => (t += d));
-      res.on('end', () => resolve({ status: res.statusCode, text: t }));
-    });
-    r.on('error', reject);
-    if (body) r.write(body);
-    r.end();
-  });
+const req = (p, { method = 'GET', body } = {}) => request(PORT, p, { method, body, headers: { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' } });
 
 before(async () => {
   fs.mkdirSync(path.join(HOME, 'proj'), { recursive: true });
@@ -44,30 +31,19 @@ before(async () => {
   fs.writeFileSync(path.join(TMP, 'token'), TOKEN, { mode: 0o600 });
   const env = { ...process.env, DASHBOARD_TEST: '1', DASHBOARD_HOME: HOME, DASHBOARD_TOKEN_FILE: path.join(TMP, 'token'), PORT: String(PORT), PATH: PATH_NO_TMUX, FAKE_DIR: path.join(TMP, 'fake') };
   delete env.DEMO;
-  srv = spawn(process.execPath, [path.join(ROOT, 'server.mjs')], { cwd: ROOT, env });
-  srv.stdout.on('data', (d) => (log += d));
-  srv.stderr.on('data', (d) => (log += d));
   // 첫 환경 점검이 끝날 때까지 — 안내 줄은 따로따로 찍혀 몇 ms 차로 도착할 수 있어 마지막 줄(기록 없음)까지 기다린다(CI macOS · Node 20 에서 한 번 어긋남)
-  for (let i = 0; i < 100 && !(/tmux 가 없어요/.test(log) && /기록이 없어요/.test(log)); i++) await new Promise((r) => setTimeout(r, 100));
+  srv = await startServer({ args: [path.join(ROOT, 'server.mjs')], env, name: '도구 없는 시험 서버', ready: (s) => /tmux 가 없어요/.test(s.log()) && /기록이 없어요/.test(s.log()) });
 });
-after(async () => {
-  // 이 테스트가 띄운 서버만. 끝날 때까지 기다린 뒤 임시 홈을 지운다 — 바로 지우면 꺼지는 중인 서버가 쓴 파일 때문에 ENOTEMPTY(CI 에서 겪음)
-  if (srv && srv.exitCode === null && srv.signalCode === null) {
-    const gone = new Promise((r) => srv.once('exit', r));
-    srv.kill();
-    await gone;
-  }
-  // 서버가 끝나기 직전에 띄운 가짜 명령(ps · tmux, 서버의 자식)이 몇 ms 늦게 기록 파일을 써서 ENOTEMPTY 가 날 수 있다(CI macOS · Node 18) → 잠깐 다시 시도
-  fs.rmSync(TMP, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
-});
+after(() => srv?.stop()); // 이 테스트가 띄운 서버만, 끝날 때까지 기다린다(임시 폴더는 tmpDir 이 그 뒤에 지움)
+const log = () => srv.log();
 
 test('이 시험의 PATH 에는 진짜 tmux 가 없다', () => {
   assert.notEqual(spawnSync('/usr/bin/which', ['tmux'], { env: { PATH: PATH_NO_TMUX } }).status, 0);
 });
 
 test('tmux · 기록이 없어도 서버는 뜨고, 시작 로그에 한국어 안내', async () => {
-  assert.match(log, /tmux 가 없어요 — brew install tmux 뒤 다시 켜 주세요\. 지금은 보기만 할 수 있어요/);
-  assert.match(log, /아직 Claude Code 세션 기록이 없어요/);
+  assert.match(log(), /tmux 가 없어요 — brew install tmux 뒤 다시 켜 주세요\. 지금은 보기만 할 수 있어요/);
+  assert.match(log(), /아직 Claude Code 세션 기록이 없어요/);
   assert.equal((await req('/')).status, 200);
 });
 
@@ -83,17 +59,7 @@ test('tmux 가 필요한 명령(새 세션)은 409 「tmux 가 필요해요」 �
   const r = await req('/api/cmd/spawn', { method: 'POST', body: JSON.stringify({ cwd: '~/proj' }) });
   assert.equal(r.status, 409);
   assert.equal(r.text, 'tmux 가 필요해요 — brew install tmux');
-  // 200 이 아니거나 첫 덩어리 전에 끝나거나 5초 안에 안 오면 거절 — 기다리다 멈추지 않게
-  const st = await new Promise((resolve, reject) => {
-    const r = http.get({ host: '127.0.0.1', port: PORT, path: `/events?token=${TOKEN}`, headers: { host: `127.0.0.1:${PORT}` } }, (res) => {
-      if (res.statusCode !== 200) { res.destroy(); return reject(new Error(`/events ${res.statusCode}`)); }
-      let t = '';
-      res.on('data', (d) => { t += d; if (t.includes('\n\n')) { res.destroy(); resolve(JSON.parse(t.split('\n\n')[0].replace(/^data: /, ''))); } });
-      res.on('end', () => reject(new Error('/events 가 첫 상태 전에 끝남')));
-    });
-    r.setTimeout(5000, () => { r.destroy(); reject(new Error('/events 5초 안에 첫 상태 없음')); });
-    r.on('error', reject);
-  });
+  const st = await firstEvent(PORT, TOKEN);
   assert.deepEqual(st.sessions, []); // 빈 목록 — 화면은 envData.tools 를 보고 안내 문구를 고른다
 });
 

@@ -2,16 +2,14 @@
 // 서버의 lib/dialog.mjs parseOptions 와 같은 화면 예시에서 같은 번호 · 같은 글자를 읽는지 함께 본다
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import vm from 'node:vm';
+import { loadFront, browserStub } from './_helpers/vm.mjs';
 import { parseOptions } from '../lib/dialog.mjs';
 import { DEMO_PANE } from '../lib/demo.mjs';
 
 function load() {
   const el = () => ({ addEventListener() {}, classList: { toggle() {}, add() {}, remove() {} }, dataset: {}, style: {} });
-  const ctx = vm.createContext({ window: { DASHBOARD_TOKEN: 't'.repeat(48) }, document: { querySelector: el, hidden: true }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {} });
-  for (const f of ['00-md.js', '01-core.js', '05-approval.js']) vm.runInContext(fs.readFileSync(new URL(`../public/js/${f}`, import.meta.url), 'utf8'), ctx, { filename: f });
-  return (text, focus) => JSON.parse(JSON.stringify(vm.runInContext('approvalChoices', ctx)(text, focus)));
+  const { run } = loadFront(['00-md.js', '01-core.js', '05-approval.js'], browserStub({ document: { querySelector: el, hidden: true } }));
+  return (text, focus) => JSON.parse(JSON.stringify(run('approvalChoices')(text, focus)));
 }
 const choices = load();
 // 서버 쪽 결과를 화면 쪽 모양으로: 번호 · 미리보기 상자 뗀 글자

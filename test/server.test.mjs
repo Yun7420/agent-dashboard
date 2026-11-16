@@ -3,49 +3,28 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import http from 'node:http';
 import net from 'node:net';
-import os from 'node:os';
-import { fileURLToPath } from 'node:url';
+import { tmpDir } from './_helpers/tmp.mjs';
+import { request, rawFirstLine } from './_helpers/http.mjs';
+import { ROOT, demoEnv, startServer } from './_helpers/server.mjs';
 
 // 데모 모드 서버를 따로 띄워 보안 검사를 시험한다(실제 세션은 건드리지 않음).
 // 데모도 토큰 파일(~/.agent-dashboard/demo-token)을 만들어서, HOME 을 임시 폴더로 줘 실제 홈에는 아무것도 쓰지 않는다
 const PORT = 4699;
-const ROOT = fileURLToPath(new URL('..', import.meta.url)); // import.meta.dirname 은 Node 20.11+ 라 18 에서 안 됨
-const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-demo-'));
-const ENV = { ...process.env, DEMO: '1', PORT: String(PORT), HOME };
+const HOME = tmpDir('ad-demo-');
+const ENV = demoEnv({ home: HOME, port: PORT });
 let srv;
 let TOKEN;
 
-// fetch 는 Host 헤더를 바꿀 수 없어서 http 모듈로 직접 보낸다
-const req = (p, { method = 'GET', headers = {}, body } = {}) =>
-  new Promise((resolve, reject) => {
-    const r = http.request({ host: '127.0.0.1', port: PORT, path: p, method, headers: { host: `127.0.0.1:${PORT}`, ...headers } }, (res) => {
-      res.destroy(); // SSE 처럼 끝나지 않는 응답도 상태 코드만 보고 끊는다
-      resolve(res.statusCode);
-    });
-    r.on('error', reject);
-    if (body) r.write(body);
-    r.end();
-  });
+// 상태 코드만(SSE 처럼 끝나지 않는 응답도 끊고 돌아온다)
+const req = async (p, opts = {}) => (await request(PORT, p, { ...opts, statusOnly: true })).status;
 
 before(async () => {
-  srv = spawn(process.execPath, ['server.mjs'], { cwd: ROOT, env: ENV, stdio: 'ignore' });
-  for (let i = 0; i < 50; i++) {
-    try { if ((await req('/')) === 200) break; } catch {}
-    await new Promise((r) => setTimeout(r, 100));
-  }
+  // 화면이 열리고 토큰 파일이 생길 때까지. 자식이 먼저 꺼지거나 15초가 지나면 여기서 실패한다(예전엔 기다리기만 하고 확인 없이 다음으로 넘어갔다)
+  srv = await startServer({ env: ENV, name: '데모 서버', ready: async () => (await req('/')) === 200 && fs.existsSync(path.join(HOME, '.agent-dashboard', 'demo-token')) });
   TOKEN = fs.readFileSync(path.join(HOME, '.agent-dashboard', 'demo-token'), 'utf8').trim(); // 데모는 따로 demo-token(lib/paths.mjs)
 });
-after(async () => {
-  // 이 테스트가 띄운 서버만. 끝날 때까지 기다린 뒤 임시 홈을 지운다
-  if (srv && srv.exitCode === null && srv.signalCode === null) {
-    const gone = new Promise((r) => srv.once('exit', r));
-    srv.kill();
-    await gone;
-  }
-  fs.rmSync(HOME, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
-});
+after(() => srv?.stop()); // 이 테스트가 띄운 서버만, 끝날 때까지 기다린다(임시 홈은 tmpDir 이 프로세스 끝에 지움)
 
 test('화면 파일은 토큰 없이 열린다', async () => {
   assert.equal(await req('/'), 200);
@@ -92,7 +71,7 @@ test('같은 출처(Origin) 요청은 열린다 — 브라우저는 POST 에 Ori
   }
 });
 
-test('화면 폴더 밖 파일은 열리지 않는다', async () => {
+test('주소의 .. · %2f 로는 화면 폴더(public) 밖에 못 나간다: URL 이 .. 를 먼저 정리하고 %2f 는 글자 그대로 찾아 404', async () => {
   assert.equal(await req('/../server.mjs'), 404);
   assert.equal(await req('/..%2f.dashboard-token'), 404);
 });
@@ -169,16 +148,7 @@ test('복구 API: 토큰 없거나 다른 Origin 이면 403, 데모에선 흉내
   assert.equal(await req('/api/cmd/recent-restore', { method: 'POST', headers: H, body: '{"ids":["00000000-0000-4000-8000-000000000001"],"cwd":"/etc"}' }), 200);
 });
 
-// 날 요청(브라우저가 못 만드는 모양)을 그대로 보내고 첫 줄(상태)만 받는다
-const raw = (text) =>
-  new Promise((resolve, reject) => {
-    const s = net.connect(PORT, '127.0.0.1', () => s.write(text));
-    let got = '';
-    s.on('data', (d) => { got += d; if (got.includes('\r\n')) { s.destroy(); resolve(got.split('\r\n')[0]); } });
-    s.on('error', reject);
-    s.on('close', () => resolve(got.split('\r\n')[0]));
-    s.setTimeout(3000, () => { s.destroy(); resolve('응답 없음'); }); // 응답이 안 오면 멈추지 않고 실패로
-  });
+const raw = (text) => rawFirstLine(PORT, text);
 
 test('화면 파일: 폴더 경로(/js · /js/ · /fonts)는 404 이고 서버는 그대로 산다', async () => {
   for (const p of ['/js', '/js/', '/fonts', '/../public', '/%2e%2e/server.mjs']) assert.equal(await req(p), 404, p);
@@ -204,16 +174,7 @@ test('포트 충돌: 안내 문구를 찍고 종료 코드 1', async () => {
 });
 
 // 응답 머리(헤더)까지 받는다 — 보안 헤더가 모든 종류의 응답에 붙는지
-const headOf = (p, { method = 'GET', headers = {}, body } = {}) =>
-  new Promise((resolve, reject) => {
-    const r = http.request({ host: '127.0.0.1', port: PORT, path: p, method, headers: { host: `127.0.0.1:${PORT}`, ...headers } }, (res) => {
-      res.destroy();
-      resolve({ status: res.statusCode, h: res.headers });
-    });
-    r.on('error', reject);
-    if (body) r.write(body);
-    r.end();
-  });
+const headOf = async (p, opts = {}) => { const r = await request(PORT, p, { ...opts, statusOnly: true }); return { status: r.status, h: r.headers }; };
 const SECURE = (h) => h['x-frame-options'] === 'DENY' && h['content-security-policy'] === "frame-ancestors 'none'" && h['x-content-type-options'] === 'nosniff';
 
 test('보안 헤더(클릭재킹 · nosniff): 화면 · API 200/403 · SSE · 404 · Host 403 · 500 모두에 붙는다', async () => {
@@ -278,18 +239,7 @@ test('요청 본문: 너무 크면 413 한국어 문장 후 소켓을 닫고, �
 });
 
 // 응답 본문까지 받는다
-const fetchText = (p, { method = 'GET', headers = {}, body } = {}) =>
-  new Promise((resolve, reject) => {
-    const r = http.request({ host: '127.0.0.1', port: PORT, path: p, method, headers: { host: `127.0.0.1:${PORT}`, ...headers } }, (res) => {
-      let t = '';
-      res.setEncoding('utf8');
-      res.on('data', (d) => (t += d));
-      res.on('end', () => resolve({ status: res.statusCode, type: res.headers['content-type'], text: t }));
-    });
-    r.on('error', reject);
-    if (body) r.write(body);
-    r.end();
-  });
+const fetchText = async (p, opts) => { const r = await request(PORT, p, opts); return { status: r.status, type: r.headers['content-type'], text: r.text }; };
 
 test('오류 응답 모양: text/plain; charset=utf-8 한국어 문장, 영어 · 시스템 문구 없음', async () => {
   const T = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };

@@ -1,5 +1,5 @@
 // 어댑터 바퀴 d: 기록 폴더 환경 변수(CLAUDE_CONFIG_DIR · CODEX_HOME) · 이름 한 칸(--name=) · 모르는 상태 값 알림 · 요청을 필드로 먼저 가르기
-import { test, after } from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -9,10 +9,10 @@ import { fileURLToPath } from 'node:url';
 import claude, { createLiveSessions, unknownStatuses } from '../adapters/claude.mjs';
 import { newSessionArgs } from '../lib/spawn.mjs';
 import { createEnvCheck } from '../lib/env.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-fields-'));
-after(() => fs.rmSync(TMP, { recursive: true, force: true }));
+const TMP = tmpDir('ad-fields-');
 
 // paths.mjs 는 불러올 때 한 번 정하므로 새 프로세스에서 값만 읽는다(아무것도 쓰지 않음)
 const dirsWith = (env) => {

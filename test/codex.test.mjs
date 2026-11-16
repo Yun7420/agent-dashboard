@@ -1,20 +1,18 @@
 // Codex 어댑터 첫 테스트. 실제 Codex 기록 대신 같은 모양의 예시 jsonl 을 임시 홈에 만든다.
 // 모양: 한 줄 = { timestamp, type, payload } — session_meta · turn_context · event_msg(user_message · agent_message(phase) ·
 // task_started · token_count · task_complete) · response_item(function_call · function_call_output). (어댑터 코드 · Codex 공개 기록 형식 기준)
-import { test, after } from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { tmpDir } from './_helpers/tmp.mjs';
 
-const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-codex-'));
+const HOME = tmpDir('ad-codex-');
 process.env.DASHBOARD_TEST = '1';
 process.env.DASHBOARD_HOME = HOME;
 delete process.env.DEMO;
 const { default: codex, isTurnStartLine } = await import('../adapters/codex.mjs'); // CODEX_DIR 이 임시 홈을 보도록 환경을 먼저 정한다
 const { readTurnTail } = await import('../lib/history-core.mjs');
-
-after(() => fs.rmSync(HOME, { recursive: true, force: true }));
 
 const ID = '019a0000-1111-7222-8333-444455556666';
 const DIR = path.join(HOME, '.codex', 'sessions', '2026', '11', '13');

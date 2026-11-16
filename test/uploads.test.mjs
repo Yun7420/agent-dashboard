@@ -1,15 +1,14 @@
 // 첨부 14일 정리(lib/uploads.mjs 의 pruneUploads). 임시 폴더만 쓴다(실제 ~/.agent-dashboard/uploads 는 건드리지 않음)
-import { test, after } from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { pruneUploads, UPLOAD_KEEP_DAYS } from '../lib/uploads.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 const DAY = 86400_000;
 const NOW = Date.parse('2026-11-16T12:00:00Z');
-const base = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-uploads-'));
-after(() => fs.rmSync(base, { recursive: true, force: true }));
+const base = tmpDir('ad-uploads-');
 
 // 파일을 만들고 수정 시각을 days 일 전으로
 function put(dir, rel, days) {

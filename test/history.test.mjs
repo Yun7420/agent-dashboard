@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import claude from '../adapters/claude.mjs';
 import { historyFull } from './_history-full.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 // Claude Code 대화 기록(.jsonl) 흉내: 질문 → 글 → 도구 → 글 → 도구 → 글
 function writeTranscript(lines) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-test-'));
+  const dir = tmpDir('ad-test-');
   const file = path.join(dir, 's.jsonl');
   fs.writeFileSync(file, lines.map((l) => JSON.stringify(l)).join('\n') + '\n');
   return file;

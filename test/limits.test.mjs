@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { createRecorder, readRange, pruneLimits, appendRow, validRange, rowOf, dayName, KEEP_DAYS } from '../lib/limits.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'ad-limits-'));
+const tmp = () => tmpDir('ad-limits-');
 const usage = (h5, d7, h5r = 1794544800, d7r = 1794736800) => ({ enabled: true, fiveHour: { percent: h5, resetsAt: h5r }, sevenDay: { percent: d7, resetsAt: d7r } });
 const T0 = new Date(2026, 10, 13, 12, 0).getTime(); // 로컬 2026-11-13 12:00
 const lines = (dir, t = T0) => fs.readFileSync(path.join(dir, `${dayName(t)}.jsonl`), 'utf8').trim().split('\n').map((l) => JSON.parse(l));

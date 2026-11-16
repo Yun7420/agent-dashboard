@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { updateJson, updateText, writeAtomic, enableStatusLine, disableStatusLine, restoreModelText, SettingsError } from '../lib/claude-settings.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 // 실제 ~/.claude 는 건드리지 않는다 — 모두 임시 폴더의 가짜 settings.json
 function setup(obj = { model: 'opus[1m]', permissions: { allow: ['Bash(ls)'] } }, mode = 0o600) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-set-'));
+  const dir = tmpDir('ad-set-');
   const file = path.join(dir, 'settings.json');
   fs.writeFileSync(file, `${JSON.stringify(obj, null, 2)}\n`);
   fs.chmodSync(file, mode);

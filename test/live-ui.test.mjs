@@ -1,20 +1,12 @@
 // 화면 공통(public/js/01-core.js)의 403 처리 · 실시간 연결 판정. 브라우저 파일이라 불러올 때 쓰는 것(window · document · fetch …)만 흉내 내고 node:vm 으로 시험한다
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import vm from 'node:vm';
+import { loadFront, browserStub } from './_helpers/vm.mjs';
 
 function load(fetchImpl) {
   const banner = { hidden: true };
-  const ctx = vm.createContext({
-    window: { DASHBOARD_TOKEN: 't'.repeat(48) },
-    document: { querySelector: (s) => (s === '#token-gone' ? banner : null), hidden: true },
-    localStorage: { getItem: () => null, setItem() {} },
-    setInterval() {},
-    fetch: fetchImpl,
-  });
-  vm.runInContext(fs.readFileSync(new URL('../public/js/01-core.js', import.meta.url), 'utf8'), ctx);
-  return { ctx, banner, get: (name) => vm.runInContext(name, ctx) };
+  const { ctx, run } = loadFront(['01-core.js'], browserStub({ document: { querySelector: (s) => (s === '#token-gone' ? banner : null), hidden: true }, fetch: fetchImpl }));
+  return { ctx, banner, get: run };
 }
 const res = (status, text = '') => ({ status, ok: status >= 200 && status < 300, text: async () => text });
 

@@ -1,12 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import vm from 'node:vm';
+import { loadFront } from './_helpers/vm.mjs';
 
 // 브라우저 파일이지만 화면(DOM)에 닿지 않는 순수 함수만 있어서 node:vm 으로 그대로 불러 시험한다
-const ctx = vm.createContext({});
-vm.runInContext(fs.readFileSync(new URL('../public/js/00-md.js', import.meta.url), 'utf8'), ctx);
-const md = (s) => vm.runInContext('md', ctx)(s);
+const md = loadFront(['00-md.js']).run('md');
 
 test('기존 꾸밈: 굵게 · 인라인 코드 · 제목', () => {
   assert.equal(md('**굵게** 와 `npm test`'), '<b>굵게</b> 와 <code>npm test</code>');

@@ -1,13 +1,12 @@
 // Claude 어댑터 캐시: 파일이 바뀌어 들어온 것(inode) · 합성 응답의 usage 0 · 서브에이전트 다시 읽기 · 추이 점 상한 · 중복 응답 거르기
-import { test, after } from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import claude, { subagentStats } from '../adapters/claude.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-ccache-'));
-after(() => fs.rmSync(TMP, { recursive: true, force: true }));
+const TMP = tmpDir('ad-ccache-');
 
 let tick = 0;
 const ts = () => new Date(Date.UTC(2026, 10, 13, 0, 0, 0, tick++ * 1000)).toISOString();

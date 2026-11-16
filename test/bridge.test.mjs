@@ -1,18 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { bridgeCommand, installBridge, syncBridge, enableBridge, disableBridge, BridgeError } from '../lib/bridge.mjs';
 import { isBridge } from '../lib/claude-settings.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SRC = path.join(ROOT, 'bin', 'statusline.mjs');
 // 임시 폴더만(실제 ~/.claude · ~/.agent-dashboard 는 건드리지 않음)
 function setup(settings) {
-  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-bridge-'));
+  const base = tmpDir('ad-bridge-');
   const dataDir = path.join(base, '.agent-dashboard');
   const settingsFile = path.join(base, 'settings.json');
   if (settings) fs.writeFileSync(settingsFile, `${JSON.stringify(settings, null, 2)}\n`);

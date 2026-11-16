@@ -1,16 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { loadToken, TokenError, TOKEN_RE } from '../lib/token.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 // 임시 폴더만 쓴다(실제 ~/.agent-dashboard · 저장소의 .dashboard-token 은 건드리지 않음)
 function setup() {
-  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-token-'));
+  const base = tmpDir('ad-token-');
   const data = path.join(base, 'home', '.agent-dashboard');
   const repo = path.join(base, 'repo');
   fs.mkdirSync(repo);

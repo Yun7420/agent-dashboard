@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { usageOf, addUsage, emptyTokens, thinTrend, drops } from '../lib/usage.mjs';
 import claude from '../adapters/claude.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 // 만든 예시 데이터: 한 응답(id)이 내용 블록마다 같은 usage 로 여러 줄 — 실제 Claude Code 기록 모양
 const at = (h) => new Date(2026, 10, 12, h, 0, 0).toISOString(); // 로컬 시각
@@ -39,7 +39,7 @@ test('추이 줄이기: 상한(N개) 안으로, 처음 · 끝 · 자동 요약�
 });
 
 function transcript(lines) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-usage-'));
+  const dir = tmpDir('ad-usage-');
   const file = path.join(dir, 'sess.jsonl');
   fs.writeFileSync(file, lines.map((l) => JSON.stringify(l)).join('\n') + '\n');
   return { file, dir, id: 'sess', size: fs.statSync(file).size };

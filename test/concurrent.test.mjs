@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import claude from '../adapters/claude.mjs';
 import { historyFull } from './_history-full.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 // 기록 · 지금 탭 · 검색이 같은 세션의 기록을 동시에 부르면, 증분 캐시가 같은 줄을 두 번 읽어
 // 답변 문단 · 요청이 두 번씩 붙던 버그(2026-11-13). 동시에 불러도 한 번 부른 결과와 같아야 한다.
@@ -22,7 +22,7 @@ function turns(n, tag) {
 }
 let seq = 0;
 function makeFile(lines) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-conc-'));
+  const dir = tmpDir('ad-conc-');
   const file = path.join(dir, `sess-${seq++}.jsonl`);
   fs.writeFileSync(file, jsonl(lines));
   return file;

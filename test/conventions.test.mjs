@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { backRefs } from './_helpers/front-deps.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -54,17 +55,13 @@ test('화면 불러오기: index.html 의 <script> 는 public/js 의 NN-*.js 전
 });
 
 test('화면 번호 순서 검사기: 주석 · 글자 · 객체 키 · 지역 이름에 속지 않고, 진짜 부르기는 잡는다', async () => {
-  const dir = fs.mkdtempSync(path.join((await import('node:os')).tmpdir(), 'ad-conv-'));
-  try {
-    fs.writeFileSync(path.join(dir, '01-a.js'), [
-      '// later() 는 주석', "const s = 'later()';", 'const o = { later: 1 };', 'function f(later) { return later; }',
-      'const re = /later/;', 'const t = `${o.later} later`;', 'function g() { return later2(); }',
-    ].join('\n'));
-    fs.writeFileSync(path.join(dir, '02-b.js'), 'function later() {}\nfunction later2() {}\n');
-    assert.deepEqual(backRefs(dir).map((r) => r.name), ['later2']);
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
+  const dir = tmpDir('ad-conv-');
+  fs.writeFileSync(path.join(dir, '01-a.js'), [
+    '// later() 는 주석', "const s = 'later()';", 'const o = { later: 1 };', 'function f(later) { return later; }',
+    'const re = /later/;', 'const t = `${o.later} later`;', 'function g() { return later2(); }',
+  ].join('\n'));
+  fs.writeFileSync(path.join(dir, '02-b.js'), 'function later() {}\nfunction later2() {}\n');
+  assert.deepEqual(backRefs(dir).map((r) => r.name), ['later2']);
 });
 
 // ---------- 파일 크기 ----------
