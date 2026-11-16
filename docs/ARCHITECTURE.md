@@ -66,7 +66,7 @@
 |---|---|---|
 | 1 | `server.mjs` | 머리 주석이 전체 지도예요. `handle` · `ROUTES` · `tick` 세 곳만 먼저 보세요 |
 | 2 | `lib/paths.mjs` | 짧고, 「폴더 안인가」 검사(`isInside`)를 여기서 처음 만나요 |
-| 3 | `adapters/index.mjs` → `adapters/codex.mjs` | 어댑터가 어떤 모양인지. codex 는 94줄이라 claude(604줄)보다 먼저 |
+| 3 | `adapters/index.mjs` → `adapters/codex.mjs` | 어댑터가 어떤 모양인지. codex 는 115줄이라 claude(542줄)보다 먼저. 둘 다 「줄 하나가 무슨 일인가」만 해석하고, 증분 읽기 · 턴 묶기는 `lib/history-core.mjs` 가 같이 해요 |
 | 4 | `lib/state.mjs` | 2초마다 상태 한 장을 만드는 곳. 머리 주석에 순서가 적혀 있어요 |
 | 5 | `lib/commands.mjs` | 「이름 → 처리 함수」 표. 승인 · 채팅이 여기서 tmux 로 가요 |
 | 6 | `public/js/01-core.js` → `16-live.js` → `12-controls.js` | 화면 쪽: 서버 요청(`api`) → 실시간 연결(`connect`) → 다시 그리기(`render`) |
@@ -78,8 +78,8 @@
 |---|---|
 | `server.mjs` | 서버 켜기 · 요청 입구의 보안 검사(`handle`) · 경로 표(`ROUTES`) · 2초 틱(`tick`) · 각 구역을 잇는 일 |
 | `adapters/index.mjs` | 쓸 어댑터 목록(`adapters`). 새 도구는 여기에 한 줄 |
-| `adapters/claude.mjs` | Claude Code 기록 읽기: 세션 찾기(`scan`) · 요약(`describe`) · 기록 탭(`history`) · 세션 간 메시지(`peers`) · 오늘 한 일(`daySummary`) · 커밋 제목(`commitMessages`) |
-| `adapters/codex.mjs` | Codex 기록 읽기: `scan` · `describe` · `history` 만 있어요(그래서 Codex 는 일부 기능만) |
+| `adapters/claude.mjs` | Claude Code 기록의 줄 해석: 세션 찾기(`scan`) · 요약(`describe`) · 기록 탭(`history`) · 세션 간 메시지(`peers`) · 오늘 한 일(`daySummary`) · 커밋 제목(`commitMessages`) |
+| `adapters/codex.mjs` | Codex 기록의 줄 해석: `scan` · `describe` · `history` 만 있어요(그래서 Codex 는 일부 기능만) |
 
 ### lib — 상태 만들기 (2초 틱)
 
@@ -139,7 +139,8 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `lib/util.mjs` | 파일 끝 · 처음 몇 줄 읽기(`readTailLines` · `readHeadLines`) · JSON 한 줄 읽기(`parse`) |
+| `lib/history-core.mjs` | 기록 읽기 공용: 새로 붙은 줄만 읽기(`createIncremental` — 같은 파일은 한 번에 하나 · 파일이 바뀌면 처음부터) · 마지막 턴 시작 찾기(`findTurnStart` · `readTurnTail`) · 턴으로 묶기(`addTurnEvent`) |
+| `lib/util.mjs` | 파일 끝 · 처음 몇 줄 읽기(`readTailLines` · `readHeadLines`) · JSON 한 줄 읽기(`parse`) · 답변 이어 붙이기(`joinReply`) |
 | `lib/filecache.mjs` | 수정 시각 · 크기가 같으면 지난 내용 재사용(`createFileCache`) |
 | `lib/lru.mjs` | 최근에 쓴 것만 남기는 캐시(`createLru`) |
 | `lib/serial.mjs` | 같은 파일 일은 한 번에 하나씩(`createSerial`) — [7절](#7-겪은-일에서-배운-점) 참고 |
@@ -278,10 +279,10 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 2. 다음 `tick` → `buildState` → `sessionsFromRecords` → `lib/state.mjs` 안의 `describe(s)`.
    - 파일 크기 · 수정 시각이 지난번과 같으면 캐시(`describeCache`)를 그대로 써요.
 3. 달라졌으면 어댑터의 `describe` 로 가요 — `adapters/claude.mjs` 의 `describe`:
-   - `serial('describe|파일', …)` 로 같은 파일 읽기는 한 번에 하나씩(7절).
-   - 지난번에 읽은 위치(`offset`)부터 **새로 붙은 줄만** 읽어요(`readNew`). 100MB 파일도 매번 처음부터 읽지 않아요.
+   - 읽기는 `lib/history-core.mjs:createIncremental` 이 해요. 같은 파일 읽기는 한 번에 하나씩(7절).
+   - 지난번에 읽은 위치(`offset`)부터 **새로 붙은 줄만** 읽어요. 100MB 파일도 매번 처음부터 읽지 않아요. 처음 한 번은 마지막 턴 시작부터(`findTurnStart`).
    - 마지막 줄이 아직 반쯤 쓰였으면 거기까지는 읽지 않아요(`completeLineEnd`).
-   - 줄마다 `applyLine` 으로 요약 상태(마지막 요청 · 답변 · 바꾼 파일 · 기다리는 도구 …)를 고쳐요.
+   - 줄마다 어댑터의 `applyLine` 으로 요약 상태(마지막 요청 · 답변 · 바꾼 파일 · 기다리는 도구 …)를 고쳐요.
 4. 세션 카드가 바뀌었으니 `tick` 의 JSON 비교에서 「다름」 → SSE 로 보내요.
 5. 화면: `connect` 의 `onmessage` → 선택한 세션에 새 요청이 왔으면 `select` 로 기록을 다시 읽고, `render` 로 다시 그려요.
 
@@ -384,7 +385,7 @@ GitHub Actions(`.github/workflows/test.yml`)가 push · PR 마다 Ubuntu · macO
 
 - **무슨 일:** 기록 탭 · 지금 탭 · 검색이 같은 세션 기록을 거의 동시에 불렀어요. 둘 다 같은 `offset` 에서 새 줄을 읽어 캐시에 더해서, 답변 문단과 요청이 두 번씩 붙었어요.
 - **배운 점:** `await` 사이에는 다른 호출이 끼어들 수 있어요. 「읽은 위치」 같은 공유 상태를 고치는 일은 한 번에 하나씩 해야 해요.
-- **지키는 곳:** `lib/serial.mjs:createSerial` 을 `adapters/claude.mjs` 의 `describe` · `history` · `peers` 가 써요. `test/concurrent.test.mjs` 가 「동시에 3번 = 한 번」을 확인해요.
+- **지키는 곳:** `lib/history-core.mjs:createIncremental` 이 `lib/serial.mjs:createSerial` 로 같은 파일 · 같은 목적(describe · history · peers)의 읽기를 차례로 해요. Claude · Codex 어댑터가 모두 이걸 써요. `test/concurrent.test.mjs` 가 「동시에 3번 = 한 번」을 확인해요.
 
 ### 첫 상태 전 경쟁 — 「화면이 본 것과 명령이 본 것이 다르다」
 

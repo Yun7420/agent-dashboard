@@ -131,11 +131,11 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 - **서버 쪽 `.mjs` 300줄, 화면 js 200줄을 넘으면 나누기를 검토**해요. 「꼭 나눈다」가 아니라 「이유를 적고 남기거나, 나눈다」예요.
 - 지금 넘은 파일은 4개예요(07-changes.js 는 2026-11-16 에 나눠 목록에서 빠졌어요).
   - `server.mjs` 648
-  - `adapters/claude.mjs` 629
+  - `adapters/claude.mjs` 542
   - `lib/state.mjs` 320
   - `public/js/03-graph.js` 201
 - 3부 테스트가 이 4개는 **지금보다 늘지 않게**, 다른 파일은 상한을 넘지 않게 지켜요.
-  - `adapters/claude.mjs` 는 4단계(history-core)에서 줄여요.
+  - `adapters/claude.mjs` 는 2026-11-16 기록 읽기 공용 부분을 `lib/history-core.mjs` 로 옮겨 629 → 542줄이 됐어요. 나머지(커밋 제목 읽기 · 공식 세션 목록 · 하루 요약)를 나눌지는 따로 제안해요.
   - `server.mjs` 는 지금은 늘지만 않게 두고, 나누는 안은 4단계(history-core) 뒤에 따로 제안해요.
 - 한 줄 길이 기준은 이번엔 두지 않아요(2026-11-16 사용자 결정).
 
@@ -149,7 +149,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 ### ③ 이름
 
 - 파일 이름은 **그 파일이 하는 일**로 지어요(`lib/uploads.mjs` = 첨부). `util` · `helpers` 처럼 무엇이든 들어갈 이름은 새로 만들지 않아요.
-  - 지금 `lib/util.mjs` 는 「기록 읽기 도구」라서, 4단계(history-core)에서 이름을 맞출지 볼게요.
+  - `lib/util.mjs` 는 「기록 파일 한 줄씩 · 끝 몇 줄 읽기」 도구라서, 이름을 바꿀지(예: `lib/jsonl.mjs`) 따로 제안해요. 2026-11-16 은 그대로 뒀어요(어댑터 · 테스트가 많이 불러요).
 - 상태를 가진 모듈은 `createXxx(deps)` 를 쓰고, 머리 주석에 `deps:` 목록을 적어요. 상태가 없으면 함수를 그대로 내보내요.
 - 화면 공용 도우미(`fmtTok` · `ctxLevel` · `modelName` · `initials` …)는 `01-core.js` 에 둬요.
 

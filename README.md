@@ -272,6 +272,7 @@ agent-dashboard/
 │  ├─ token · paths · perms                       비밀 열쇠 · 경로(폴더 안 검사) · 파일 권한
 │  ├─ claude-settings · bridge · status · limits · usage   사용 한도(상태줄 다리 · 한도 기록 · 토큰 합계)
 │  ├─ recent · restore · restore-cli · runner     복구 · 재시동 복구 · 실행기
+│  ├─ history-core                                기록 읽기 공용(새로 붙은 줄만 · 턴 묶기 — 어댑터는 줄 해석만)
 │  ├─ notify · paging · filecache · lru · serial · lock · util   알림 · 기록 나눠 받기 · 캐시 · 차례 지키기
 │  └─ demo                                        데모 데이터
 ├─ bin/                # agent-dashboard.mjs(실행 명령: start · run · restore) · run.sh(예전 실행기) · restore.mjs(npm run restore) · statusline.mjs(상태줄 다리 원본)

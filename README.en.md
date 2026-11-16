@@ -272,6 +272,7 @@ agent-dashboard/
 │  ├─ token · paths · perms                       secret token · paths (inside-folder checks) · file permissions
 │  ├─ claude-settings · bridge · status · limits · usage   usage limits (status-line bridge · limit history · token totals)
 │  ├─ recent · restore · restore-cli · runner     restore · restore after reboot · runner
+│  ├─ history-core                                shared transcript reading (new lines only · grouping into turns — adapters only interpret lines)
 │  ├─ notify · paging · filecache · lru · serial · lock · util   notifications · paged history · caches · ordering
 │  └─ demo                                        demo data
 ├─ bin/                # agent-dashboard.mjs (start · run · restore) · run.sh (older runner) · restore.mjs (npm run restore) · statusline.mjs (status-line bridge source)

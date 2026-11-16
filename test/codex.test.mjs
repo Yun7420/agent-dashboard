@@ -11,7 +11,8 @@ const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'ad-codex-'));
 process.env.DASHBOARD_TEST = '1';
 process.env.DASHBOARD_HOME = HOME;
 delete process.env.DEMO;
-const { default: codex, readTurnTail } = await import('../adapters/codex.mjs'); // CODEX_DIR 이 임시 홈을 보도록 환경을 먼저 정한다
+const { default: codex, isTurnStartLine } = await import('../adapters/codex.mjs'); // CODEX_DIR 이 임시 홈을 보도록 환경을 먼저 정한다
+const { readTurnTail } = await import('../lib/history-core.mjs');
 
 after(() => fs.rmSync(HOME, { recursive: true, force: true }));
 
@@ -83,6 +84,6 @@ test('describe: 도구 출력이 커서 이번 턴 요청이 끝 256KB 밖이어
   assert.equal(x.lastText, '하나\n\n둘\n\n셋\n\n끝');
   assert.equal(x.turnClipped, false);
   // 상한을 작게 주면 못 찾았다고 알린다
-  const t = await readTurnTail(s.file, { first: 64 * 1024, cap: 256 * 1024 });
+  const t = await readTurnTail(s.file, isTurnStartLine, { first: 64 * 1024, cap: 256 * 1024 });
   assert.equal(t.clipped, true);
 });

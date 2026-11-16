@@ -72,7 +72,7 @@ test('화면 번호 순서 검사기: 주석 · 글자 · 객체 키 · 지역 �
 const LINES = { server: 300, front: 200 };
 const OVER = {
   'server.mjs': 648,
-  'adapters/claude.mjs': 629,
+  'adapters/claude.mjs': 542,
   'lib/state.mjs': 320,
   'public/js/03-graph.js': 201,
 };

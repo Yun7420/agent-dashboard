@@ -5,12 +5,10 @@ import fsp from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
-import fs from 'node:fs';
-import readline from 'node:readline';
-import { clip, joinReply, parse, readHeadLines, readJsonLines, readJsonOrNull, readTailLines, statOrNull } from '../lib/util.mjs';
+import { clip, parse, readHeadLines, readJsonLines, readJsonOrNull, readTailLines, statOrNull } from '../lib/util.mjs';
 import { createLru } from '../lib/lru.mjs';
 import { CLAUDE_DIR } from '../lib/paths.mjs';
-import { createSerial } from '../lib/serial.mjs';
+import { createIncremental, findTurnStart, newTurns, addTurnEvent } from '../lib/history-core.mjs';
 import { usageOf, contextOf, addUsage, emptyTokens, thinTrend, DROP } from '../lib/usage.mjs';
 
 
@@ -135,50 +133,9 @@ export function turnStart(d) {
 //   <cross-session-message from="uds:/tmp/cc-socks/<보낸 PID>.sock" from-name="<보낸 세션 이름>">본문</cross-session-message>
 // 로 남는다. 큰 파일을 매번 다 읽지 않게, 읽은 위치(offset)부터 새로 붙은 부분만 읽는다.
 const PEER_RE = /<cross-session-message from="([^"]*)" from-name="([^"]*)"[^>]*>([\s\S]*?)<\/cross-session-message>/g;
-// 서버가 오래 켜져 있어도 쌓이지 않게 LRU + 30분. 떠 있는 세션은 2초마다 쓰여 만료되지 않는다
-const peerCache = createLru({ max: 200, ttlMs: 30 * 60_000 }); // file → { offset, msgs, names }
-
-async function readNew(file, start, end, onLine) {
-  const input = fs.createReadStream(file, { encoding: 'utf8', start, end: end - 1 });
-  const rl = readline.createInterface({ input, crlfDelay: Infinity });
-  for await (const line of rl) onLine(line);
-}
-
-// 기록 전체(요청 · 답변): 가장 큰 세션(375MB 파일, 요청 301개)도 응답 0.5MB 정도 → 최근 30개면 15MB 안쪽.
-// 목록 세션 수(보통 10~30개)보다 작으면 전체 검색 때마다 처음부터 다시 읽게 되므로 30. 비워진 뒤엔 처음부터 다시 읽는다
-const historyCache = createLru({ max: 30, ttlMs: 30 * 60_000 }); // file → { offset, items, cur }
 const subagentCache = createLru({ max: 2000, ttlMs: 30 * 60_000 }); // 서브에이전트 파일 → { mtimeMs, size, meta, endTurn }
 export const subagentStats = { reads: 0 }; // 테스트용: 메타 · 끝을 몇 번 읽었는지
 const startCwd = createLru({ max: 500, ttlMs: 24 * 3600_000 }); // file → 세션을 시작한 폴더(짧은 글자라 넉넉히)
-
-// 증분 캐시(peers · history · describe)는 같은 파일이면 한 번에 하나씩 읽는다(lib/serial.mjs).
-// 기록 · 지금 탭 · 검색 · 상태 조립이 동시에 부르면 같은 줄이 두 번 붙던 버그(2026-11-13)
-const serial = createSerial();
-// 부른 쪽이 먼저 잰 크기(s.size)가 이미 읽은 위치보다 작으면, 줄 서 있는 사이 앞 호출이 더 읽은 것 —
-// 파일이 실제로 줄었을 때(새로 쓰기)만 처음부터 다시 읽도록 지금 크기를 다시 잰다
-async function sizeNow(s, offset) {
-  if (s.size >= offset) return s.size;
-  return (await statOrNull(s.file))?.size ?? s.size;
-}
-
-// 같은 경로에 다른 파일이 들어왔나(지우고 새로 쓰기 · 옮기기). 크기가 줄지 않으면 예전 위치부터 남의 줄을 이어 읽게 되므로
-// 파일 번호(inode)가 바뀌면 처음부터 다시 읽는다. scan 이 준 ino 가 없으면(테스트 · 다른 호출) 크기 검사만
-const replaced = (c, s) => Boolean(c && s.ino != null && c.ino != null && c.ino !== s.ino);
-
-// 마지막 줄이 아직 쓰이는 중일 수 있어, 마지막 줄바꿈 위치까지만 읽는다
-async function completeLineEnd(file, from, size) {
-  if (size <= from) return from;
-  const fh = await fsp.open(file, 'r');
-  try {
-    const len = Math.min(65536, size - from);
-    const tail = Buffer.alloc(len);
-    await fh.read(tail, 0, len, size - len);
-    const nl = tail.lastIndexOf(10);
-    return nl < 0 ? from : size - len + nl + 1;
-  } finally {
-    await fh.close();
-  }
-}
 
 function peerTexts(d) {
   const a = d.attachment;
@@ -296,38 +253,8 @@ const liveSessions = createLiveSessions();
 // ---------- 세션 상태(describe): 마지막 턴부터, 새로 붙은 줄만 ----------
 // 예전엔 끝 256KB 만 읽어서, 마지막 요청 뒤에 큰 출력(스크린샷 · 긴 로그)이 쌓이면 요청 · 이번 턴 변경 목록을 잃었다.
 // 처음 한 번은 뒤에서부터 256KB → 512KB → … 넓혀 가며 마지막 턴 시작 줄을 찾고(상한 8MB), 그 뒤로는 파일별 상태에 새 줄만 더한다.
-const TAIL = 256 * 1024;
-const TURN_CAP = 8 * 1024 * 1024; // 이보다 앞에서 시작한 턴은 끝 8MB 만 본다(turnClipped 로 알림)
-const describeState = createLru({ max: 300, ttlMs: 30 * 60_000 }); // file → { offset, clipped, st }
-export const describeStats = { reads: 0, scans: 0 }; // 테스트용: 파일을 몇 번 읽었는지
-
-async function findTurnStart(file, size) {
-  describeStats.scans += 1;
-  const fh = await fsp.open(file, 'r');
-  try {
-    for (let win = TAIL; ; win *= 2) {
-      const from = Math.max(0, size - Math.min(win, TURN_CAP));
-      const buf = Buffer.alloc(size - from);
-      await fh.read(buf, 0, buf.length, from);
-      const nl0 = buf.indexOf(10);
-      const first = from === 0 ? 0 : nl0 < 0 ? buf.length : nl0 + 1; // 잘린 첫 줄은 건너뜀
-      let turn = -1;
-      for (let pos = first; pos < buf.length; ) {
-        let nl = buf.indexOf(10, pos);
-        if (nl < 0) nl = buf.length;
-        const line = buf.toString('utf8', pos, nl);
-        if (line.includes('"type":"user"') && turnStart(parse(line) ?? {})) turn = pos;
-        pos = nl + 1;
-      }
-      // 끝 256KB(예전과 같은 범위)는 늘 읽고, 턴 시작이 그보다 앞이면 거기부터
-      if (turn >= 0) return { start: from + (win === TAIL ? first : turn), clipped: false };
-      if (from === 0) return { start: 0, clipped: false };
-      if (win >= TURN_CAP) return { start: from + first, clipped: true };
-    }
-  } finally {
-    await fh.close();
-  }
-}
+export const describeStats = { reads: 0, scans: 0 }; // 테스트용: 파일을 몇 번 읽었는지 · 마지막 턴 시작을 몇 번 찾았는지
+const isTurnStartLine = (line) => line.includes('"type":"user"') && Boolean(turnStart(parse(line) ?? {}));
 
 const newDescribeState = () => ({
   currentDir: null, aiTitle: null, titlePrompt: null, lastPrompt: null, lastPromptAt: null, lastPromptFrom: null,
@@ -370,81 +297,86 @@ function applyLine(st, d) {
   if (st.changes.commands.length > 100) st.changes.commands = st.changes.commands.slice(-40);
 }
 
-// 세션 사이 메시지: 새로 붙은 줄만 읽어 peerCache 에 더한다(같은 파일은 serial 로 한 번에 하나)
-async function readPeers(s) {
-  let c = peerCache.get(s.file);
-  if (replaced(c, s)) c = null;
-  const size = await sizeNow(s, c?.offset ?? 0);
-  if (!c || size < c.offset) c = { offset: 0, ino: s.ino ?? null, msgs: [], names: new Set() };
-  // 마지막 줄이 아직 쓰이는 중일 수 있어, 줄바꿈까지만 읽고 나머지는 다음 번에
-  const end = await completeLineEnd(s.file, c.offset, size);
-  if (end > c.offset) {
-    await readNew(s.file, c.offset, end, (line) => {
-      if (line.includes('"agent-name"')) {
-        const d = parse(line);
-        if (d?.agentName) c.names.add(d.agentName);
-        return;
-      }
-      if (!line.includes('cross-session-message')) return;
-      const d = parse(line);
-      if (!d) return;
-      for (const text of peerTexts(d)) {
-        for (const m of text.matchAll(PEER_RE)) {
-          c.msgs.push({ at: d.timestamp, fromAddr: m[1], fromName: m[2], fromPid: Number(m[1].match(/(\d+)\.sock$/)?.[1]) || null, text: clip(m[3].trim(), 300) });
-        }
-      }
-    });
-    if (c.msgs.length > 300) c.msgs = c.msgs.slice(-300);
-    c.offset = end;
-  }
-  peerCache.set(s.file, c);
-  return { msgs: c.msgs, names: [...c.names] };
-}
+// 이번 턴 상태: 마지막 턴 시작(사람 요청 · 다른 세션 메시지)부터 읽고, 그 뒤로는 새로 붙은 줄만 더한다(lib/history-core.mjs)
+const describeReader = createIncremental({
+  name: 'describe',
+  max: 300,
+  async start(file, size) {
+    describeStats.scans += 1;
+    return findTurnStart(file, size, isTurnStartLine);
+  },
+  init: (found) => ({ clipped: found.clipped, st: newDescribeState() }),
+  onLine(c, line) {
+    const d = parse(line);
+    if (d) applyLine(c.st, d);
+  },
+  onBatch: () => (describeStats.reads += 1),
+});
 
-// 기록 전체(요청 · 답변): 새로 붙은 줄만 읽어 historyCache 에 더한다(같은 파일은 serial 로 한 번에 하나)
+// 세션 사이 메시지: 새로 붙은 줄만(서버가 오래 켜져 있어도 쌓이지 않게 200개 · 30분, 떠 있는 세션은 2초마다 쓰여 만료되지 않는다)
+const peerReader = createIncremental({
+  name: 'peers',
+  max: 200,
+  init: () => ({ msgs: [], names: new Set() }),
+  onLine(c, line) {
+    if (line.includes('"agent-name"')) {
+      const d = parse(line);
+      if (d?.agentName) c.names.add(d.agentName);
+      return;
+    }
+    if (!line.includes('cross-session-message')) return;
+    const d = parse(line);
+    if (!d) return;
+    for (const text of peerTexts(d)) {
+      for (const m of text.matchAll(PEER_RE)) {
+        c.msgs.push({ at: d.timestamp, fromAddr: m[1], fromName: m[2], fromPid: Number(m[1].match(/(\d+)\.sock$/)?.[1]) || null, text: clip(m[3].trim(), 300) });
+      }
+    }
+    if (c.msgs.length > 300) c.msgs.splice(0, c.msgs.length - 300);
+  },
+});
+
+// 기록 전체(요청 · 답변): 가장 큰 세션(375MB 파일, 요청 301개)도 응답 0.5MB 정도 → 최근 30개면 15MB 안쪽.
+// 목록 세션 수(보통 10~30개)보다 작으면 전체 검색 때마다 처음부터 다시 읽게 되므로 30. 비워진 뒤엔 처음부터 다시 읽는다
 const SEEN_MAX = 1000, SEEN_KEEP = 200; // 응답 id 기억(중복 줄 거르기용)
 const TREND_KEEP = 2000; // 대화 창 추이 점: 두 배를 넘으면 이만큼으로 줄인다(가장 긴 실제 세션 3,549개 · 화면엔 120개)
-async function readHistory(s) {
-  let h = historyCache.get(s.file);
-  if (replaced(h, s)) h = null;
+// 기록 탭(lib/history-core.mjs 의 턴 묶기)에 넘길 이벤트
+function historyEvents(d) {
+  const t = turnStart(d);
+  if (t) return [{ type: 'turn', at: d.timestamp, prompt: t.prompt, from: t.from }];
+  if (d.type !== 'assistant' || d.isSidechain) return [];
+  const out = [];
+  for (const c of d.message?.content ?? []) {
+    if (c.type === 'tool_use') out.push({ type: 'tool' });
+    if (c.type === 'text' && c.text?.trim()) out.push({ type: 'reply', text: c.text });
+  }
+  return out;
+}
+const historyReader = createIncremental({
+  name: 'history',
+  max: 30,
   // trend = 응답마다 [시각ms, 대화 창 토큰] — 기록을 읽는 김에 같이 모은다(같은 응답이 여러 줄이면 한 번만).
   // total · drops 는 줄이기 전 전체 기준으로 따로 센다(점을 줄여도 「응답 수 · 자동 요약 횟수」는 그대로)
-  const size = await sizeNow(s, h?.offset ?? 0);
-  if (!h || size < h.offset) h = { offset: 0, ino: s.ino ?? null, items: [], cur: null, trend: [], total: 0, drops: 0, last: null, seen: new Set() };
-  const end = await completeLineEnd(s.file, h.offset, size);
-  if (end > h.offset) {
-    await readNew(s.file, h.offset, end, (line) => {
-      if (!line.includes('"type":"user"') && !line.includes('"type":"assistant"')) return;
-      const d = parse(line);
-      if (!d) return;
-      const u = d.isSidechain ? null : usageOf(d);
-      if (u && (!u.id || !h.seen.has(u.id)) && Date.parse(d.timestamp)) {
-        if (u.id) h.seen.add(u.id);
-        // 같은 응답의 줄들은 붙어서 나오니 최근 id 만 기억하면 된다(긴 세션에서 끝없이 늘지 않게)
-        if (h.seen.size > SEEN_MAX) h.seen = new Set([...h.seen].slice(-SEEN_KEEP));
-        const p = [Date.parse(d.timestamp), contextOf(u)];
-        h.total += 1;
-        if (h.last && p[1] < h.last[1] * DROP) h.drops += 1;
-        h.last = p;
-        h.trend.push(p);
-        if (h.trend.length > TREND_KEEP * 2) h.trend = thinTrend(h.trend, TREND_KEEP); // 떨어진 곳은 남기고 줄인다
-      }
-      const t = turnStart(d);
-      if (t) {
-        h.cur = { at: d.timestamp, prompt: clip(t.prompt, 20000), tools: 0, reply: '', from: t.from };
-        h.items.push(h.cur);
-      } else if (h.cur && d.type === 'assistant' && !d.isSidechain) {
-        for (const c of d.message?.content ?? []) {
-          if (c.type === 'tool_use') h.cur.tools += 1;
-          if (c.type === 'text' && c.text?.trim()) h.cur.reply = joinReply(h.cur.reply, c.text);
-        }
-      }
-    });
-    h.offset = end;
-    historyCache.set(s.file, h);
-  }
-  return h.items;
-}
+  init: () => ({ ...newTurns(), trend: [], total: 0, drops: 0, last: null, seen: new Set() }),
+  onLine(h, line) {
+    if (!line.includes('"type":"user"') && !line.includes('"type":"assistant"')) return;
+    const d = parse(line);
+    if (!d) return;
+    const u = d.isSidechain ? null : usageOf(d);
+    if (u && (!u.id || !h.seen.has(u.id)) && Date.parse(d.timestamp)) {
+      if (u.id) h.seen.add(u.id);
+      // 같은 응답의 줄들은 붙어서 나오니 최근 id 만 기억하면 된다(긴 세션에서 끝없이 늘지 않게)
+      if (h.seen.size > SEEN_MAX) h.seen = new Set([...h.seen].slice(-SEEN_KEEP));
+      const p = [Date.parse(d.timestamp), contextOf(u)];
+      h.total += 1;
+      if (h.last && p[1] < h.last[1] * DROP) h.drops += 1;
+      h.last = p;
+      h.trend.push(p);
+      if (h.trend.length > TREND_KEEP * 2) h.trend = thinTrend(h.trend, TREND_KEEP); // 떨어진 곳은 남기고 줄인다
+    }
+    for (const ev of historyEvents(d)) addTurnEvent(h, ev);
+  },
+});
 
 export default {
   id: 'claude',
@@ -478,27 +410,7 @@ export default {
   cwdKey: encodeCwd,
 
   async describe(s) {
-    // 파일별 상태를 기억하고 새로 붙은 줄만 반영한다. 처음엔 마지막 턴 시작(사람 요청 · 다른 세션 메시지)부터 읽는다
-    const c = await serial(`describe|${s.file}`, async () => {
-      let c = describeState.get(s.file);
-      if (replaced(c, s)) c = null;
-      const size = await sizeNow(s, c?.offset ?? 0);
-      if (!c || size < c.offset) {
-        const found = await findTurnStart(s.file, size);
-        c = { offset: found.start, ino: s.ino ?? null, clipped: found.clipped, st: newDescribeState() };
-      }
-      const end = await completeLineEnd(s.file, c.offset, size);
-      if (end > c.offset) {
-        describeStats.reads += 1;
-        await readNew(s.file, c.offset, end, (line) => {
-          const d = parse(line);
-          if (d) applyLine(c.st, d);
-        });
-        c.offset = end;
-      }
-      describeState.set(s.file, c);
-      return c;
-    });
+    const c = await describeReader.read(s);
     const { currentDir, aiTitle, titlePrompt, lastPrompt, lastPromptAt, lastPromptFrom, lastText, lastTool, turnState, lastAt, model, contextUsed, changes, pending } = c.st;
     let cwd = null;
     // 프로젝트는 세션을 시작한 폴더로 묶는다(중간에 cd 해도 흔들리지 않게). 바뀌지 않는 값이라 파일당 한 번만 읽는다.
@@ -567,19 +479,20 @@ export default {
     return out.sort((a, b) => b.mtimeMs - a.mtimeMs).slice(0, 50); // 너무 오래 쌓인 경우만 자른다
   },
 
-  peers(s) {
-    return serial(`peers|${s.file}`, () => readPeers(s));
+  async peers(s) {
+    const c = await peerReader.read(s);
+    return { msgs: c.msgs, names: [...c.names] };
   },
 
-  history(s) {
-    return serial(`history|${s.file}`, () => readHistory(s));
+  async history(s) {
+    return (await historyReader.read(s)).items;
   },
 
   // 대화 창 사용 추이(history 와 같은 캐시 · 증분 읽기)
   // 돌려주는 값: { points: [[시각ms, 토큰]…](길면 줄인 것), total: 응답 수, drops: 자동 요약으로 떨어진 횟수 }
   async contextTrend(s) {
     await this.history(s);
-    const h = historyCache.get(s.file);
+    const h = historyReader.peek(s.file);
     return { points: h?.trend ?? [], total: h?.total ?? 0, drops: h?.drops ?? 0 };
   },
 

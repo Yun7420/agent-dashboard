@@ -4,23 +4,35 @@
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { CODEX_DIR } from '../lib/paths.mjs';
-import { clip, joinReply, parse, readHeadLines, readJsonLines, readTailLines, statOrNull } from '../lib/util.mjs';
+import { clip, joinReply, parse, readHeadLines, statOrNull } from '../lib/util.mjs';
+import { createIncremental, readTurnTail, newTurns, addTurnEvent } from '../lib/history-core.mjs';
 
 const ROOT = path.join(CODEX_DIR, 'sessions');
-const TAIL = 256 * 1024;
-const TURN_CAP = 8 * 1024 * 1024; // Claude 어댑터와 같은 상한
 
-// 기록 끝에서 이번 턴의 요청(user_message)이 나올 때까지 읽는 범위를 넓힌다(256KB → 1MB → 4MB → 8MB).
-// 끝 256KB 만 보면 도구 출력이 큰 턴에서 요청 · 작업 시작이 잘려 제목 · 상태가 틀렸다
-export async function readTurnTail(file, { first = TAIL, cap = TURN_CAP } = {}) {
-  const size = (await statOrNull(file))?.size ?? 0;
-  for (let bytes = first; ; bytes = Math.min(bytes * 4, cap)) {
-    const lines = await readTailLines(file, bytes);
-    const found = lines.some((l) => l.includes('"type":"user_message"'));
-    if (found || bytes >= size) return { lines, clipped: false };
-    if (bytes >= cap) return { lines, clipped: true };
-  }
+// ---------- 줄 하나가 무슨 일인가(Codex 기록 모양) ----------
+// 한 줄 = { timestamp, type, payload }. 이번 턴 요청 = event_msg 의 user_message
+export const isTurnStartLine = (line) => line.includes('"type":"user_message"');
+
+// 기록 탭(lib/history-core.mjs 의 턴 묶기)에 넘길 이벤트
+function historyEvent(d) {
+  const p = d.payload ?? {};
+  if (d.type === 'event_msg' && p.type === 'user_message') return { type: 'turn', at: d.timestamp, prompt: p.message };
+  if (d.type === 'event_msg' && p.type === 'agent_message' && p.message?.trim()) return { type: 'reply', text: p.message }; // 도구 사이 설명(commentary) + 마지막 답(final_answer)
+  if (d.type === 'response_item' && p.type === 'function_call') return { type: 'tool' };
+  return null;
 }
+
+// 기록 전체: 새로 붙은 줄만 읽는다(같은 파일은 한 번에 하나 · 최근 30개 · 30분, Claude 와 같은 상한)
+const historyReader = createIncremental({
+  name: 'history',
+  max: 30,
+  init: newTurns,
+  onLine(h, line) {
+    if (!line.includes('"event_msg"') && !line.includes('"function_call"')) return;
+    const ev = historyEvent(parse(line) ?? {});
+    if (ev) addTurnEvent(h, ev);
+  },
+});
 
 async function walk(dir, depth, out) {
   const entries = await fsp.readdir(dir, { withFileTypes: true }).catch(() => []);
@@ -52,7 +64,8 @@ export default {
 
   async describe(s) {
     const meta = parse((await readHeadLines(s.file))[0])?.payload ?? {};
-    const { lines, clipped } = await readTurnTail(s.file);
+    // 끝에서부터 이번 턴의 요청(user_message)이 나올 때까지 읽는 범위를 넓힌다 — 끝 256KB 만 보면 도구 출력이 큰 턴에서 요청 · 작업 시작이 잘려 제목 · 상태가 틀렸다
+    const { lines, clipped } = await readTurnTail(s.file, isTurnStartLine);
     let contextUsed = null, contextWindow = null;
     let cwd = meta.cwd ?? null, lastPrompt = null, lastPromptAt = null, lastText = '', lastTool = null, turnState = 'idle', lastAt = null;
     for (const l of lines) {
@@ -97,16 +110,6 @@ export default {
   },
 
   async history(s) {
-    const items = [];
-    let cur = null;
-    for await (const d of readJsonLines(s.file, ['"event_msg"', '"function_call"'])) {
-      const p = d.payload ?? {};
-      if (d.type === 'event_msg' && p.type === 'user_message') {
-        cur = { at: d.timestamp, prompt: clip(p.message, 20000), tools: 0, reply: '' };
-        items.push(cur);
-      } else if (cur && d.type === 'event_msg' && p.type === 'agent_message' && p.message?.trim()) cur.reply = joinReply(cur.reply, p.message); // 도구 사이 설명(commentary) + 마지막 답(final_answer)
-      else if (cur && d.type === 'response_item' && p.type === 'function_call') cur.tools += 1;
-    }
-    return items;
+    return (await historyReader.read(s)).items;
   },
 };
