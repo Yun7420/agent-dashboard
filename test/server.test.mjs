@@ -287,7 +287,10 @@ test('포트 충돌: 안내 문구를 찍고 종료 코드 1', async () => {
 
 // 응답 머리(헤더)까지 받는다 — 보안 헤더가 모든 종류의 응답에 붙는지
 const headOf = async (p, opts = {}) => { const r = await request(PORT, p, { ...opts, statusOnly: true }); return { status: r.status, h: r.headers }; };
-const SECURE = (h) => h['x-frame-options'] === 'DENY' && h['content-security-policy'] === "frame-ancestors 'none'" && h['x-content-type-options'] === 'nosniff';
+// CSP 는 낱개 지시어로 본다(점검 A3): 스크립트는 자기 파일만 · 연결은 자기 서버만 · 플러그인 · base · 다른 곳으로 form 없음
+const CSP_NEED = ["default-src 'self'", "script-src 'self'", "connect-src 'self'", "img-src 'self' data: blob:", "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-ancestors 'none'"];
+const cspOk = (v) => { const d = String(v ?? '').split(/;\s*/); return CSP_NEED.every((x) => d.includes(x)) && !d.some((x) => /^script-src\b.*(unsafe|\*|data:)/.test(x)); };
+const SECURE = (h) => h['x-frame-options'] === 'DENY' && cspOk(h['content-security-policy']) && h['x-content-type-options'] === 'nosniff' && h['referrer-policy'] === 'no-referrer';
 
 test('보안 헤더(클릭재킹 · nosniff): 화면 · API 200/403 · SSE · 404 · Host 403 · 500 모두에 붙는다', async () => {
   const T = { ...AUTH };

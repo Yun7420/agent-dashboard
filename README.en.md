@@ -251,6 +251,7 @@ A session already running in a terminal has no official way to receive input fro
 - The `~/.agent-dashboard` folder is yours only (700), and the files in it (log, settings backups, restore list) are readable only by you (600). On start the server also tightens older folders, subfolders and files that were created wider (only narrowing; symlinks are not followed).
 - Reading the session list and history also requires the same login as commands (so other accounts or programs on the same Mac can't read your conversations).
 - Every response carries `X-Frame-Options: DENY`, `frame-ancestors 'none'` and `nosniff`, so another website can't load this page in a hidden iframe and trick you into clicking approve.
+- A Content Security Policy limits the damage if a bug (XSS) ever slips into the page: scripts only from this server (`script-src 'self'`, no inline scripts or onclick), connections only to this server (`connect-src 'self'`), no plugins or `<base>`, and `Referrer-Policy: no-referrer`.
 - Permission modes follow your own Claude settings. The dashboard never uses permission-skipping flags.
 - A new session's first prompt is passed after `--`, so text starting with `-` (e.g. `--permission-mode …`) is never read as a claude option.
 

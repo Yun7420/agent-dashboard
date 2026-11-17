@@ -88,6 +88,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
   - 앞 파일이 뒤 파일 것을 쓰는 곳: let · const 는 0곳, 서로 부르는 function 8곳만 남았어요(ARCHITECTURE 8절 · 아래 2부 ④).
 - 서버 요청은 **`01-core.js` 의 `apiFetch`(`api` · `apiJson`) 한 길**로만 해요. 403 이면 서버가 준 「로그인이 필요해요 — … open」 안내를 한 곳에서 띄워요. 요청마다 `X-Dashboard-Request: 1` 을 붙여요(CSRF).
   - 예외는 `16-live.js` 의 연결 확인(`/api/perf`) 하나예요.
+- **인라인 스크립트 · `onclick=` 같은 속성 · `javascript:` 주소를 쓰지 않아요.** CSP(`script-src 'self'`)가 막아 단추가 조용히 죽어요. 동작은 js 파일에서 `addEventListener` 로 이어요(3부 테스트).
 - 서버에서 온 글자를 HTML 에 넣을 땐 **언제나 `esc()`** 를 거쳐요. 속성(`class="…"`) 자리도 마찬가지예요.
 - 다시 그릴 땐 `setHtml(el, html)` 을 써서 바뀐 곳만 바꿔요. 「N초 전」처럼 자주 바뀌는 글자는 따로 고쳐요(`updateAgo`).
 - 브라우저 저장 키는 `agent-deck` 하나예요. 바꾸면 사용자 설정이 초기화돼요.
@@ -136,7 +137,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 
 - **서버 쪽 `.mjs` 300줄, 화면 js · css 200줄을 넘으면 나누기를 검토**해요. 「꼭 나눈다」가 아니라 「이유를 적고 남기거나, 나눈다」예요.
 - 지금 넘은 파일은 1개예요(07-changes.js 는 2026-11-16, `adapters/claude.mjs` · `lib/state.mjs` 는 2026-11-17 에 나눠, `03-graph.js` 는 2026-11-17 죽은 코드 · 중복을 덜어 201 → 198줄로 목록에서 빠졌어요). `style.css`(610줄)는 2026-11-17 `public/css/` 12개로 나눴어요(가장 큰 `04-drawer.css` 149줄).
-  - `server.mjs` 325
+  - `server.mjs` 316
 - 3부 테스트가 이 1개는 **지금보다 늘지 않게**, 다른 파일은 상한을 넘지 않게 지켜요.
   - `adapters/claude.mjs` 는 2026-11-16 기록 읽기 공용 부분을 `lib/history-core.mjs` 로 옮겨 629 → 542줄, 2026-11-17 커밋 제목 읽기를 `lib/git-commits.mjs`, 턴 시작 판단 · 이번 턴 변경 · 공식 세션 목록 · 하루 요약을 `adapters/claude/` 의 `prompts` · `changes` · `live` · `day` 로 옮겨 291줄이 됐어요(사용자 승인). 커밋 제목은 Claude 기록 형식이 아닌 셸 명령 글자 해석이라 lib, 나머지는 Claude 기록 · 파일만 아는 일이라 어댑터 폴더예요.
   - `server.mjs` 는 2026-11-17 기록 · 검색 · 오늘 한 일을 `lib/history-api.mjs`, 사용 한도 · 기본 모델을 `lib/usage-bridge.mjs` 로 옮겨 648 → 468줄이 됐어요(사용자 승인). 보안 입구(`handle` · `authorized` · 보안 헤더)와 경로 표(`ROUTES`) · 처리 함수 · 틱은 남겨요 — 보안 검사를 한 파일 한 곳에서 보이게 하려고요. 같은 날 다시(사용자 승인) 처리 함수를 「그 값을 가진 모듈」로 옮겨 468 → 325줄: 2초 틱 · SSE · 보는 기간은 `lib/live-feed.mjs`, 알림 설정은 `lib/notify-api.mjs`, 기록 경로는 `lib/history-api.mjs`, 본문 실패 응답은 `lib/body.mjs`, 켤 때 정리는 `lib/housekeeping.mjs`. 토큰 · `handle` · `authorized` · `ROUTES` 표 · `serveStatic` 은 server 에 남겨요 — 토큰이 server 밖으로 나가지 않고, 처리 함수가 어디 있든 표에 오기 전에 `handle` 이 검사해요(3부 테스트: 경로 표의 모든 경로 403 · `createServer` · `listen` 은 server 에만).
@@ -219,6 +220,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 | 모듈 부수 효과: `lib` · `adapters` 맨 바깥에 `process.exit` · `console.*` · fs 쓰기 없음 | 없음 |
 | 화면 서버 요청: 직접 `fetch` 는 `01-core` · `16-live` 각 한 줄 | 없음 |
 | 토큰 자리: `public` 어디에도 토큰 자리 · 토큰 머리글 · `?token=` 없음, 서버도 읽지 않음 | 없음 |
+| CSP 와 맞는 화면: 인라인 `<script>` 본문 · `on…=` 속성 · `javascript:` 없음 | 없음 |
 | 머리 주석 | 없음 |
 | 테스트 짝 | 없음(2026-11-17 비움) |
 

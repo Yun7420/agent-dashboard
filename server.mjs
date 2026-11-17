@@ -26,7 +26,7 @@ import { createStateBuilder } from './lib/state.mjs';
 import { createEnvCheck, startupNotices } from './lib/env.mjs';
 import { detectEditors, openDir } from './lib/open-dir.mjs';
 import { UPLOAD_DIR, UPLOAD_MAX } from './lib/uploads.mjs';
-import { sendText, sendJson, friendly, logPath } from './lib/respond.mjs';
+import { sendText, sendJson, friendly, logPath, SECURITY_HEADERS } from './lib/respond.mjs';
 import { isObject } from './lib/validate.mjs';
 import { DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
 import { loadToken } from './lib/token.mjs';
@@ -144,7 +144,6 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 // - 다른 사이트가 이 화면을 iframe 으로 띄워(로그인된 채로) 승인 단추를 누르게 속이는 클릭재킹을 막는다(X-Frame-Options · frame-ancestors)
 // - 브라우저가 Content-Type 을 짐작해 다른 종류로 실행하지 않게 한다(nosniff)
 // - 다른 곳으로 갈 때 주소(Referer)를 붙이지 않는다(no-referrer)
-const SECURITY_HEADERS = { 'X-Frame-Options': 'DENY', 'Content-Security-Policy': "frame-ancestors 'none'", 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' };
 
 // 처리 안 된 오류는 500 + 짧은 한국어 문장으로 돌려주고 자세한 내용은 로그로만(요청 하나 때문에 서버 전체가 죽지 않게)
 const onRequest = (req, res) => {

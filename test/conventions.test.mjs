@@ -85,7 +85,7 @@ test('화면 번호 순서 검사기: 주석 · 글자 · 객체 키 · 지역 �
 // 서버 쪽(.mjs) 300줄 · 화면 js · css 200줄을 넘으면 나누기를 검토한다. 이미 넘은 파일은 지금 줄 수를 상한으로(늘지 않게)
 const LINES = { server: 300, front: 200, css: 200 };
 const OVER = {
-  'server.mjs': 317, // 2026-11-17 기록 · 사용 한도를 lib/history-api · usage-bridge 로(648 → 468), 틱 · 알림 · 기록 경로 · 본문 · 정리를 lib/live-feed · notify-api · history-api · body · housekeeping 으로(468 → 325), 복구 단추 정보 · 한도 경로 · 로그인 경로를 lib/recent · limits · auth 로(쿠키 로그인을 더하고 325 → 317)
+  'server.mjs': 316, // 2026-11-17 기록 · 사용 한도를 lib/history-api · usage-bridge 로(648 → 468), 틱 · 알림 · 기록 경로 · 본문 · 정리를 lib/live-feed · notify-api · history-api · body · housekeeping 으로(468 → 325), 복구 단추 정보 · 한도 경로 · 로그인 경로를 lib/recent · limits · auth 로(쿠키 로그인을 더하고 325 → 317), 보안 머리글을 lib/respond 로(317 → 316)
 };
 
 test('파일 크기: 서버 쪽 300줄 · 화면 js · css 200줄 이하, 이미 넘은 파일은 지금보다 늘지 않는다', () => {
@@ -183,6 +183,17 @@ test('토큰 자리: public 어디에도 토큰 자리(__DASHBOARD_TOKEN__ · DA
   walk('public');
   assert.deepEqual(where, []);
   assert.doesNotMatch(read('server.mjs'), /__DASHBOARD_TOKEN__|searchParams\.get\('token'\)|x-dashboard-token/i); // 서버도 그 자리를 채우거나 읽지 않는다
+});
+
+// CSP 가 script-src 'self' 라 인라인 스크립트 · onclick 같은 속성 · javascript: 주소는 브라우저가 막는다(점검 A3) → 화면에 생기면 그 단추가 조용히 죽는다
+test('CSP 와 맞는 화면: index.html · 화면 js 에 인라인 <script> 본문 · on…= 속성 · javascript: 주소가 없다', () => {
+  const where = [];
+  const html = read('public/index.html');
+  for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) if (!/\bsrc=/.test(m[1]) || m[2].trim()) where.push(`index.html: ${m[0].slice(0, 60)}`);
+  for (const f of ['public/index.html', ...FRONT]) {
+    for (const m of read(f).matchAll(/<[a-z][^<>]*\son[a-z]+\s*=|javascript:/gi)) where.push(`${f}: ${m[0].slice(0, 60)}`);
+  }
+  assert.deepEqual(where, []);
 });
 
 // ---------- 머리 주석 ----------

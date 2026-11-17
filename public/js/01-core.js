@@ -24,6 +24,8 @@ function loginNeeded(text) {
   if (text && $('#login-how')) $('#login-how').textContent = text;
   el.hidden = false;
 }
+// 인라인 onclick 은 CSP(script-src 'self')가 막는다 → 단추 동작은 js 에서 잇는다
+$('#login-reload')?.addEventListener('click', () => location.reload());
 async function apiFetch(path, { method = 'GET', headers = {}, body } = {}) {
   const res = await fetch(path, { method, headers: { ...REQ_HEADER, ...headers }, body });
   if (res.status === 403) { loginNeeded(await res.text().catch(() => '')); throw new Error(LOGIN_MSG); }
