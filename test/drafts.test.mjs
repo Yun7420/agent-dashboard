@@ -12,7 +12,7 @@ function load() {
   const revoked = [];
   let urlN = 0;
   const { run } = loadFront(['00-md.js', '01-core.js', '08-attach.js'], {
-    window: { DASHBOARD_TOKEN: 't'.repeat(48) },
+    window: {},
     document: { querySelector: el, hidden: true },
     localStorage: { getItem: (k) => stored[k] ?? null, setItem: (k, v) => (stored[k] = v) },
     setInterval() {},

@@ -22,6 +22,6 @@ dialog .note { color: var(--faint); font-size: 12px; margin-top: 10px; line-heig
 #rc-launched .rc-msg.trust { color: var(--text); border: 1px solid var(--waiting); }
 #toast { position: fixed; left: 50%; bottom: 156px; transform: translateX(-50%); background: var(--surface-3); border: 1px solid var(--border-strong); border-radius: 999px; padding: 8px 16px; box-shadow: var(--shadow); display: none; font-size: 13px; z-index: 10; max-width: min(480px, 90vw); text-align: center; }
 
-/* 토큰이 바뀜(403): 토스트처럼 사라지지 않는 고정 안내 — 이 탭으로는 더 이상 명령이 통하지 않아서(01-core.js 의 tokenGone) */
-#token-gone { position: fixed; top: 68px; left: 50%; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(251, 111, 146, .5); background: #2a1420; color: #ffd9e3; font-size: 13px; box-shadow: 0 8px 24px rgba(0, 0, 0, .4); }
-#token-gone[hidden] { display: none; }
+/* 로그인 필요(403): 토스트처럼 사라지지 않는 고정 안내 — 이 탭으로는 명령이 통하지 않아서(01-core.js 의 loginNeeded) */
+#login-needed { position: fixed; top: 68px; left: 50%; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(251, 111, 146, .5); background: #2a1420; color: #ffd9e3; font-size: 13px; box-shadow: 0 8px 24px rgba(0, 0, 0, .4); }
+#login-needed[hidden] { display: none; }

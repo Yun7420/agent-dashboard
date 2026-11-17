@@ -28,7 +28,7 @@ const home = createLiveHome({
   // 사용 한도 보기가 옛 방식(저장소의 bin/statusline.mjs 를 직접 등록)으로 켜져 있던 설치
   settings: `${JSON.stringify({ model: 'opus[1m]', statusLine: { type: 'command', command: `"${fs.realpathSync(process.execPath)}" "${path.join(ROOT, 'bin', 'statusline.mjs')}"`, padding: 0 }, theme: 'dark' }, null, 2)}\n`,
 });
-const { HOME, CWD, UPLOADS, TOKEN, H, req, cmd, fakeLog, tmuxCalls, firstState } = home;
+const { HOME, CWD, UPLOADS, AUTH, H, req, cmd, fakeLog, tmuxCalls, firstState } = home;
 // 홈 안의 링크: 홈 밖 시험 폴더를 가리키는 것 · 홈 안 폴더를 가리키는 것
 const OUTSIDE = tmpDir('ad-outside-');
 fs.symlinkSync(OUTSIDE, path.join(HOME, 'link-out'));
@@ -63,7 +63,7 @@ test('시험 서버: 임시 홈의 가짜 세션 2개가 tmux 창과 함께 보�
 
 test('보안 층은 시험 모드에서도 그대로: 토큰 · Host · Origin 403, 보안 헤더', async () => {
   assert.equal((await req('/api/perf')).status, 403);
-  assert.equal((await req('/api/perf', { headers: { 'x-dashboard-token': 'x'.repeat(48) } })).status, 403);
+  assert.equal((await req('/api/perf', { headers: { cookie: `ad_session_${PORT}=1.${'0'.repeat(64)}`, 'x-dashboard-request': '1' } })).status, 403);
   assert.equal((await req('/', { headers: { host: 'evil.example:4697' } })).status, 403);
   assert.equal((await req('/api/notify', { method: 'POST', headers: { ...H, origin: 'http://evil.example' }, body: '{}' })).status, 403);
   const ok = await req('/api/perf', { headers: H });
@@ -167,14 +167,14 @@ test('recent-restore: 동시에 두 번이면 하나는 409, 본문의 cwd 는 �
 });
 
 test('업로드: 임시 홈의 uploads 에 600 으로, 중간에 끊기면 .part 가 남지 않는다', async () => {
-  const r = await req('/api/upload?name=a.png', { method: 'POST', headers: { 'x-dashboard-token': TOKEN }, body: 'x'.repeat(100) });
+  const r = await req('/api/upload?name=a.png', { method: 'POST', headers: AUTH, body: 'x'.repeat(100) });
   assert.equal(r.status, 200);
   const saved = JSON.parse(r.text);
   assert.ok(saved.path.startsWith(UPLOADS + path.sep));
   assert.equal(fs.statSync(saved.path).mode & 0o777, 0o600);
   await new Promise((resolve) => {
     const s = net.connect(PORT, '127.0.0.1', () => {
-      s.write(`POST /api/upload?name=cut.bin HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-Dashboard-Token: ${TOKEN}\r\nContent-Length: 100000\r\n\r\n` + 'y'.repeat(500));
+      s.write(`POST /api/upload?name=cut.bin HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nCookie: ${AUTH.cookie}\r\nX-Dashboard-Request: 1\r\nContent-Length: 100000\r\n\r\n` + 'y'.repeat(500));
       setTimeout(() => { s.destroy(); resolve(); }, 150);
     });
   });

@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { sessionCookie } from '../../lib/auth.mjs';
 import { tmpDir } from './tmp.mjs';
 import { request, firstEvent } from './http.mjs';
 import { testEnv } from './server.mjs';
@@ -56,15 +57,17 @@ export function createLiveHome({ port, prefix = 'ad-testsrv-', ...opts }) {
   if (restore) fs.writeFileSync(path.join(data, 'restore.json'), JSON.stringify({ savedAt: '2000-01-01T00:00:00.000Z', entries: restore }), { mode: 0o600 }); // 이번 부팅 전에 저장된 목록
   if (settings != null) fs.writeFileSync(path.join(HOME, '.claude', 'settings.json'), settings);
 
-  const H = { 'x-dashboard-token': h.TOKEN, 'content-type': 'application/json' };
+  const AUTH = { cookie: sessionCookie({ token: h.TOKEN, port }), 'x-dashboard-request': '1' }; // 로그인한 브라우저처럼(lib/auth.mjs)
+  const H = { ...AUTH, 'content-type': 'application/json' };
   const fakeLog = () => (fs.existsSync(h.FAKE_LOG) ? fs.readFileSync(h.FAKE_LOG, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
   return {
     ...h,
     H,
+    AUTH,
     env: (extra = {}) => testEnv({ home: HOME, tokenFile: h.TOKEN_FILE, port, fakeDir: h.FAKE_DIR, fakeLog: h.FAKE_LOG, ...extra }),
     req: (p, opts) => request(port, p, opts),
     cmd: (name, body) => request(port, `/api/cmd/${name}`, { method: 'POST', headers: H, body: JSON.stringify(body) }),
-    firstState: () => firstEvent(port, h.TOKEN),
+    firstState: () => firstEvent(port, AUTH),
     fakeLog,
     tmuxCalls: (sub) => fakeLog().filter((x) => x.cmd === 'tmux' && x.args[0] === sub),
     setScreen: (text) => fs.writeFileSync(path.join(h.FAKE_DIR, 'screen.txt'), text), // 가짜 capture-pane 의 답(모든 창 같음)

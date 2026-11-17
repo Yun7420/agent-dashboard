@@ -1,21 +1,32 @@
-// 공통: 토큰 · 서버 요청 · 알림 토스트 · 화면 상태 · 설정 저장
-// 비밀 토큰은 서버가 index.html 을 줄 때만 끼워 넣는다(이 파일은 토큰 없이 받을 수 있으므로 여기엔 두지 않음)
-const TOKEN = window.DASHBOARD_TOKEN;
+// 공통: 서버 요청 · 로그인 안내 · 알림 토스트 · 화면 상태 · 설정 저장
+// 로그인은 쿠키(HttpOnly — 이 스크립트도 못 읽음)라 화면 파일에 비밀이 없다. 서버 요청에는 사용자 지정 머리글만 붙인다:
+// 다른 사이트의 form · img 요청은 이 머리글을 붙일 수 없어 서버가 거절한다(CSRF, server.mjs 의 authorized)
+const REQ_HEADER = { 'X-Dashboard-Request': '1' };
 const $ = (s) => document.querySelector(s);
 
-// 서버 요청은 모두 이 길로: 403 = 토큰이 바뀜(토큰 파일을 지우고 서버를 다시 켬 등) → 고정 안내를 한 번 띄우고 오류로 끝낸다.
-// 예전엔 직접 fetch 하던 곳(기록 · 검색 · 오늘 한 일 등)이 403 을 「없음」으로 바꿔, 열린 탭이 고장 난 줄 모르고 빈 결과를 믿었다
-const TOKEN_GONE_MSG = '보안 토큰이 바뀌었어요 — 새로고침(⌘+R)해 주세요';
-let tokenGoneShown = false;
-function tokenGone() {
-  if (tokenGoneShown) return;
-  tokenGoneShown = true;
-  const el = $('#token-gone');
-  if (el) el.hidden = false;
+// 서버 요청은 모두 이 길로: 403 = 로그인이 필요함(처음 · 30일 지남 · 토큰 파일을 지우고 다시 켬) → 고정 안내를 한 번 띄우고 오류로 끝낸다.
+// 안내 문구는 서버가 403 에 담아 준 것(켠 방법에 맞는 open 명령)을 그대로. 예전엔 직접 fetch 하던 곳이 403 을 「없음」으로 바꿔 빈 결과를 믿었다
+const LOGIN_MSG = '로그인이 필요해요 — 위 안내대로 로그인 링크를 다시 열어 주세요';
+let loginShown = false;
+function loginNeeded(text) {
+  if (loginShown) return;
+  loginShown = true;
+  // 처음 여는 중(연동 카드가 떠 있음)이면 그 카드를 로그인 안내로 바꾼다 — 「연동하고 있어요」가 끝없이 돌지 않게. 쓰던 중이면 위쪽 고정 안내
+  const boot = $('#boot');
+  if (boot && !boot.classList.contains('gone')) {
+    boot.classList.add('login');
+    boot.querySelector('h2').textContent = '로그인이 필요해요';
+    if (text) boot.querySelector('p').textContent = text;
+    return;
+  }
+  const el = $('#login-needed');
+  if (!el) return;
+  if (text && $('#login-how')) $('#login-how').textContent = text;
+  el.hidden = false;
 }
 async function apiFetch(path, { method = 'GET', headers = {}, body } = {}) {
-  const res = await fetch(path, { method, headers: { 'X-Dashboard-Token': TOKEN, ...headers }, body });
-  if (res.status === 403) { tokenGone(); throw new Error(TOKEN_GONE_MSG); }
+  const res = await fetch(path, { method, headers: { ...REQ_HEADER, ...headers }, body });
+  if (res.status === 403) { loginNeeded(await res.text().catch(() => '')); throw new Error(LOGIN_MSG); }
   return res;
 }
 async function api(path, body) {
@@ -28,7 +39,7 @@ const apiJson = async (path) => JSON.parse(await api(path));
 
 // 실시간 연결(SSE)이 끊겼을 때 할 일 — 순수 판정(test/live-ui.test.mjs).
 // 브라우저는 서버가 200 이 아닌 답(403 등)을 주면 다시 시도를 멈춘다(CLOSED). 그때만 /api/perf 로 이유를 확인한다:
-// 403 이면 토큰이 바뀐 것 → 안내하고 멈춤, 그 밖(서버가 아직 켜지는 중 등)은 잠시 뒤 다시 연결. 연결 중(CONNECTING)이면 브라우저가 알아서 다시 시도
+// 403 이면 로그인이 필요한 것 → 안내하고 멈춤, 그 밖(서버가 아직 켜지는 중 등)은 잠시 뒤 다시 연결. 연결 중(CONNECTING)이면 브라우저가 알아서 다시 시도
 const sseOnError = (readyState, CLOSED = 2) => (readyState === CLOSED ? 'probe' : 'wait');
 const probeVerdict = (status) => (status === 403 ? 'gone' : 'reconnect');
 // 흐르는 점선: 움직일 선이 있고 탭이 보일 때만 125ms 마다 2px 씩(점선 주기 7·11 의 공배수로 되감아 끊김 없이).

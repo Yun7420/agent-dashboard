@@ -5,8 +5,11 @@ import { loadFront, browserStub } from './_helpers/vm.mjs';
 
 function load(fetchImpl) {
   const banner = { hidden: true };
-  const { ctx, run } = loadFront(['01-core.js'], browserStub({ document: { querySelector: (s) => (s === '#token-gone' ? banner : null), hidden: true }, fetch: fetchImpl }));
-  return { ctx, banner, get: run };
+  const how = { textContent: '' };
+  const calls = [];
+  const fetchSpy = (path, opts) => { calls.push(opts); return fetchImpl(path, opts); };
+  const { ctx, run } = loadFront(['01-core.js'], browserStub({ document: { querySelector: (s) => (s === '#login-needed' ? banner : s === '#login-how' ? how : null), hidden: true }, fetch: fetchSpy }));
+  return { ctx, banner, how, calls, get: run };
 }
 const res = (status, text = '') => ({ status, ok: status >= 200 && status < 300, text: async () => text });
 
@@ -19,17 +22,33 @@ test('실시간 연결: 브라우저가 멈췄을 때(CLOSED)만 이유를 확�
   for (const s of [0, 200, 500, 503]) assert.equal(probeVerdict(s), 'reconnect', String(s));
 });
 
-test('api · apiJson: 403 이면 고정 안내를 한 번만 켜고 「새로고침」 오류, 그 밖의 오류는 서버 문장 그대로', async () => {
-  let next = res(403, '보안 토큰이 맞지 않아요');
-  const { banner, get } = load(async () => next);
+test('api · apiJson: 403 이면 서버가 준 로그인 안내(open 명령)를 고정 안내로 한 번만 켜고 오류, 그 밖의 오류는 서버 문장 그대로 · 요청엔 X-Dashboard-Request', async () => {
+  let next = res(403, '로그인이 필요해요 — 터미널에서 「agent-dashboard open」 를 실행하면');
+  const { banner, how, calls, get } = load(async () => next);
   const api = get('api'), apiJson = get('apiJson');
-  await assert.rejects(api('/api/perf'), /보안 토큰이 바뀌었어요 — 새로고침/);
+  await assert.rejects(api('/api/perf'), /로그인이 필요해요/);
   assert.equal(banner.hidden, false);
+  assert.match(how.textContent, /agent-dashboard open/);
+  assert.equal(calls[0].headers['X-Dashboard-Request'], '1'); // 다른 사이트는 붙일 수 없는 머리글(CSRF) — 비밀은 쿠키라 화면엔 없음
+  assert.ok(!JSON.stringify(calls[0]).match(/token/i));
   banner.hidden = true;
-  await assert.rejects(apiJson('/api/search?q=ab'), /새로고침/);
+  await assert.rejects(apiJson('/api/search?q=ab'), /로그인이 필요해요/);
   assert.equal(banner.hidden, true); // 두 번째부터는 다시 띄우지 않는다(이미 떠 있음)
   next = res(409, '지금은 승인 요청이 없어요');
   await assert.rejects(api('/api/cmd/approve', {}), /^Error: 지금은 승인 요청이 없어요$/);
   next = res(200, '{"items":[1]}');
   assert.deepEqual(JSON.parse(JSON.stringify(await apiJson('/api/history?key=a'))), { items: [1] });
+});
+
+test('처음 여는 중(연동 카드가 떠 있음)에 403 이면 그 카드를 로그인 안내로 바꾼다 — 「연동하고 있어요」가 끝없이 돌지 않게', async () => {
+  const cls = new Set();
+  const h2 = { textContent: '이 컴퓨터의 AI 세션을 연동하고 있어요' }, p = { textContent: '' };
+  const boot = { classList: { add: (c) => cls.add(c), contains: (c) => cls.has(c) }, querySelector: (s) => (s === 'h2' ? h2 : p) };
+  const banner = { hidden: true };
+  const { run } = loadFront(['01-core.js'], browserStub({ document: { querySelector: (s) => (s === '#boot' ? boot : s === '#login-needed' ? banner : null), hidden: true }, fetch: async () => res(403, '로그인이 필요해요 — 터미널에서 「agent-dashboard open」') }));
+  await assert.rejects(run('api')('/api/env'));
+  assert.ok(cls.has('login'));
+  assert.equal(h2.textContent, '로그인이 필요해요');
+  assert.match(p.textContent, /agent-dashboard open/);
+  assert.equal(banner.hidden, true); // 카드에 보였으니 위쪽 안내는 띄우지 않는다
 });

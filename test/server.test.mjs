@@ -6,7 +6,7 @@ import path from 'node:path';
 import net from 'node:net';
 import os from 'node:os';
 import { tmpDir } from './_helpers/tmp.mjs';
-import { request, rawFirstLine } from './_helpers/http.mjs';
+import { request, rawFirstLine, loginHeaders } from './_helpers/http.mjs';
 import { ROOT, demoEnv, startServer } from './_helpers/server.mjs';
 
 // 데모 모드 서버를 따로 띄워 보안 검사를 시험한다(실제 세션은 건드리지 않음).
@@ -15,7 +15,8 @@ const PORT = 4699;
 const HOME = tmpDir('ad-demo-');
 const ENV = demoEnv({ home: HOME, port: PORT });
 let srv;
-let TOKEN;
+let TOKEN, AUTH; // AUTH = 로그인한 브라우저의 쿠키 + 사용자 지정 머리글(_helpers/http.mjs 의 loginHeaders)
+const BAD = { cookie: `ad_session_${PORT}=${Date.now() + 60_000}.${'0'.repeat(64)}`, 'x-dashboard-request': '1' }; // 모양은 맞지만 서명이 틀린 쿠키
 
 // 상태 코드만(SSE 처럼 끝나지 않는 응답도 끊고 돌아온다)
 const req = async (p, opts = {}) => (await request(PORT, p, { ...opts, statusOnly: true })).status;
@@ -24,10 +25,11 @@ before(async () => {
   // 화면이 열리고 토큰 파일이 생길 때까지. 자식이 먼저 꺼지거나 15초가 지나면 여기서 실패한다(예전엔 기다리기만 하고 확인 없이 다음으로 넘어갔다)
   srv = await startServer({ env: ENV, name: '데모 서버', ready: async () => (await req('/')) === 200 && fs.existsSync(path.join(HOME, '.agent-dashboard', 'demo-token')) });
   TOKEN = fs.readFileSync(path.join(HOME, '.agent-dashboard', 'demo-token'), 'utf8').trim(); // 데모는 따로 demo-token(lib/paths.mjs)
+  AUTH = await loginHeaders(PORT, TOKEN);
 });
 after(() => srv?.stop()); // 이 테스트가 띄운 서버만, 끝날 때까지 기다린다(임시 홈은 tmpDir 이 프로세스 끝에 지움)
 
-test('화면 파일은 토큰 없이 열린다', async () => {
+test('화면 파일은 로그인 없이 열린다', async () => {
   assert.equal(await req('/'), 200);
   assert.equal(await req('/css/00-base.css'), 200);
   assert.match((await request(PORT, '/css/11-narrow.css')).headers['content-type'], /^text\/css/); // 하위 폴더도 같은 MIME
@@ -38,28 +40,102 @@ test('화면 파일은 토큰 없이 열린다', async () => {
 const ROUTE_LIST = [...fs.readFileSync(path.join(ROOT, 'server.mjs'), 'utf8').matchAll(/^\s*\{ (path|prefix): '([^']+)'(?:, method: '(\w+)')?, handler:/gm)]
   .map((m) => ({ path: m[1] === 'prefix' ? `${m[2]}send` : m[2], method: m[3] ?? 'GET' }));
 
-test('경로 표의 모든 경로는 /events 또는 /api/ 아래 — 토큰 검사(handle)가 주소 앞부분으로 걸러서, 그 밖에 두면 토큰 없이 열린다', () => {
+// 로그인 없이 받는 경로는 이 둘뿐(로그인 링크 확인 · 서버 확인) — 토큰 · 기록 · 명령은 주지 않는다(아래 시험)
+const PUBLIC = ['/login', '/hello'];
+test('경로 표의 모든 경로는 /events 또는 /api/ 아래(로그인 검사가 주소 앞부분으로 걸러서, 그 밖에 두면 로그인 없이 열린다) — 예외는 PUBLIC 둘', () => {
   const block = fs.readFileSync(path.join(ROOT, 'server.mjs'), 'utf8').match(/const ROUTES = \[([\s\S]*?)\n\];/)[1];
   assert.equal(ROUTE_LIST.length, block.match(/handler:/g).length, '경로 표를 다 읽지 못했어요(표 모양이 바뀌었으면 위 정규식도)');
-  assert.ok(ROUTE_LIST.length >= 15);
-  for (const r of ROUTE_LIST) assert.ok(r.path === '/events' || r.path.startsWith('/api/'), r.path);
+  assert.ok(ROUTE_LIST.length >= 17);
+  for (const r of ROUTE_LIST) assert.ok(r.path === '/events' || r.path.startsWith('/api/') || PUBLIC.includes(r.path), r.path);
+  assert.deepEqual(ROUTE_LIST.filter((r) => PUBLIC.includes(r.path)).map((r) => `${r.method} ${r.path}`), ['GET /login', 'GET /hello']);
 });
 
-test('경로 표의 모든 경로는 토큰이 없으면 403 (그 경로가 받는 방식으로)', async () => {
-  for (const r of ROUTE_LIST) {
+test('경로 표의 모든 경로는 로그인 쿠키가 없거나 틀리면 403 (그 경로가 받는 방식으로)', async () => {
+  for (const r of ROUTE_LIST.filter((x) => !PUBLIC.includes(x.path))) {
     const opts = r.method === 'POST' ? { method: 'POST', body: '{}' } : {};
     assert.equal(await req(r.path, opts), 403, `${r.method} ${r.path}`);
-    assert.equal(await req(r.path, { ...opts, headers: { 'x-dashboard-token': 'x'.repeat(TOKEN.length) } }), 403, `틀린 토큰 ${r.method} ${r.path}`);
+    assert.equal(await req(r.path, { ...opts, headers: { 'x-dashboard-request': '1' } }), 403, `쿠키 없음 ${r.method} ${r.path}`);
+    assert.equal(await req(r.path, { ...opts, headers: { ...BAD } }), 403, `틀린 쿠키 ${r.method} ${r.path}`);
   }
 });
 
-test('토큰이 있으면 열린다 (헤더 · SSE 는 주소)', async () => {
-  assert.equal(await req('/api/perf', { headers: { 'x-dashboard-token': TOKEN } }), 200);
-  assert.equal(await req(`/events?token=${TOKEN}`), 200);
+test('로그인하면 열린다 (쿠키 + 머리글 · SSE 는 쿠키만) — 예전 방식(주소 ?token= · X-Dashboard-Token)은 이제 통하지 않는다', async () => {
+  assert.equal(await req('/api/perf', { headers: AUTH }), 200);
+  assert.equal(await req('/events', { headers: { cookie: AUTH.cookie } }), 200);
+  assert.equal(await req(`/events?token=${TOKEN}`), 403);
+  assert.equal(await req('/api/perf', { headers: { 'x-dashboard-token': TOKEN } }), 403);
 });
 
-test('틀린 토큰은 403', async () => {
-  assert.equal(await req('/api/perf', { headers: { 'x-dashboard-token': 'x'.repeat(TOKEN.length) } }), 403);
+test('틀린 쿠키는 403 — 비ASCII · 너무 긴 값 · 지난 값 · 먼 미래 값도 500 없이 403(점검 A1)', async () => {
+  assert.equal(await req('/api/perf', { headers: BAD }), 403);
+  const c = (v) => ({ cookie: `ad_session_${PORT}=${v}`, 'x-dashboard-request': '1' });
+  for (const v of [encodeURIComponent('é'.repeat(48)), 'x'.repeat(5000), `${Date.now() - 1000}.${'a'.repeat(64)}`, `${Date.now() + 400 * 86400_000}.${'a'.repeat(64)}`, AUTH.cookie.split('=')[1] + '0']) {
+    assert.equal(await req('/api/perf', { headers: c(v) }), 403, v.slice(0, 30));
+  }
+  // 예전 토큰 자리(?token=)에 비ASCII 를 넣어도 500 이 아니다(예전엔 timingSafeEqual 이 던져 500 + 로그)
+  assert.equal(await req(`/events?token=${encodeURIComponent('é'.repeat(48))}`), 403);
+  assert.equal(await req('/api/perf', { headers: { ...c(AUTH.cookie.split('=')[1]), 'x-dashboard-request': '1' } }), 200);
+});
+
+// 같은 Mac 의 다른 계정 · 프로세스 흉내: 로그인 없이 받을 수 있는 화면 파일 어디에도 토큰이 없다(예전엔 index.html 에 들어 있었다 — 점검 C1)
+test('로그인 없이 받는 것(화면 · js · css · /hello · /login 오류)에는 토큰도 쿠키 서명도 없다', async () => {
+  const files = ['/', '/index.html', ...fs.readdirSync(path.join(ROOT, 'public', 'js')).map((f) => `/js/${f}`), ...fs.readdirSync(path.join(ROOT, 'public', 'css')).map((f) => `/css/${f}`)];
+  for (const f of files) {
+    const r = await request(PORT, f);
+    assert.equal(r.status, 200, f);
+    assert.ok(!r.text.includes(TOKEN), `${f} 에 토큰`);
+    assert.equal(r.headers['set-cookie'], undefined, f);
+    assert.doesNotMatch(r.text, /__DASHBOARD_TOKEN__|DASHBOARD_TOKEN/, f);
+  }
+  for (const p of ['/hello?n=' + 'a'.repeat(32), '/hello?n=x', '/login?t=1.' + '0'.repeat(64), '/login']) {
+    const r = await request(PORT, p);
+    assert.ok(!r.text.includes(TOKEN), p);
+    assert.equal(r.headers['set-cookie'], undefined, p);
+  }
+});
+
+test('로그인 링크: 맞으면 303 → / 와 쿠키(HttpOnly · SameSite=Strict · Path=/ · 30일, 이름에 포트, 값은 토큰이 아님), 틀리거나 지나면 403 안내', async () => {
+  const { loginUrl } = await import('../lib/auth.mjs');
+  const u = new URL(loginUrl({ token: TOKEN, port: PORT }));
+  const r = await request(PORT, u.pathname + u.search);
+  assert.equal(r.status, 303);
+  assert.equal(r.headers.location, '/'); // 주소창 · 방문 기록엔 서명 없는 / 만
+  const c = r.headers['set-cookie'][0];
+  assert.match(c, new RegExp(`^ad_session_${PORT}=\\d+\\.[0-9a-f]{64}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000$`));
+  assert.ok(!c.includes(TOKEN));
+  assert.equal(r.headers['referrer-policy'], 'no-referrer');
+  const old = new URL(loginUrl({ token: TOKEN, port: PORT, now: Date.now() - 11 * 60_000 })); // 10분 지남
+  const other = new URL(loginUrl({ token: TOKEN, port: PORT + 1 })); // 다른 포트용 링크
+  const forged = new URL(loginUrl({ token: 'f'.repeat(48), port: PORT }));
+  for (const [what, p] of [['지남', old.pathname + old.search], ['다른 포트', other.pathname + other.search], ['다른 토큰', forged.pathname + forged.search], ['비ASCII', `/login?t=${encodeURIComponent('é'.repeat(70))}`], ['없음', '/login']]) {
+    const x = await request(PORT, p);
+    assert.equal(x.status, 403, what);
+    assert.match(x.text, /로그인 링크가 맞지 않거나 10분이 지났어요 — 터미널에서 「node bin\/agent-dashboard\.mjs open」/, what);
+    assert.equal(x.headers['set-cookie'], undefined, what);
+  }
+  const deny = await request(PORT, '/api/perf');
+  assert.match(deny.text, /^로그인이 필요해요 — 터미널에서 「node bin\/agent-dashboard\.mjs open」 를 실행하면/); // 화면이 그대로 보여 줄 안내
+});
+
+test('CSRF: /api 는 쿠키가 맞아도 사용자 지정 머리글이 없으면 403, Sec-Fetch-Site 가 same-origin 이 아니면 403(같은 Mac 의 다른 포트 페이지는 「같은 사이트」라 쿠키가 간다)', async () => {
+  const cookie = { cookie: AUTH.cookie };
+  assert.equal(await req('/api/perf', { headers: cookie }), 403);
+  assert.equal(await req('/api/cmd/send', { method: 'POST', headers: { ...cookie, 'content-type': 'text/plain' }, body: '{"key":"claude:demo-ops","text":"x"}' }), 403); // form 으로 보낼 수 있는 모양
+  for (const site of ['cross-site', 'same-site', 'none']) {
+    assert.equal(await req('/api/perf', { headers: { ...AUTH, 'sec-fetch-site': site } }), 403, site);
+    assert.equal(await req('/events', { headers: { ...cookie, 'sec-fetch-site': site } }), 403, `SSE ${site}`);
+  }
+  assert.equal(await req('/api/perf', { headers: { ...AUTH, 'sec-fetch-site': 'same-origin' } }), 200);
+  assert.equal(await req('/api/cmd/send', { method: 'POST', headers: { ...AUTH, 'sec-fetch-site': 'same-origin', origin: `http://localhost:${PORT}`, 'content-type': 'application/json' }, body: '{"key":"claude:demo-ops","text":"x"}' }), 200);
+});
+
+test('서버 확인(/hello): 토큰으로 서명한 답 — open 이 「진짜 우리 서버인가」를 본다. 모양이 틀리면 400', async () => {
+  const { proofFor } = await import('../lib/auth.mjs');
+  const n = 'ab'.repeat(16);
+  const r = await request(PORT, `/hello?n=${n}`);
+  assert.equal(r.status, 200);
+  assert.equal(r.text, proofFor(TOKEN, PORT, n));
+  for (const bad of ['', 'x', 'g'.repeat(32), 'a'.repeat(33)]) assert.equal((await request(PORT, `/hello?n=${bad}`)).status, 400, bad);
 });
 
 test('찾아온 주소(Host)가 다르면 403 — DNS 리바인딩 차단', async () => {
@@ -90,17 +166,17 @@ test('127.0.0.1 에만 연다: 이 컴퓨터의 다른 주소(공유기 · 외�
 test('Host 는 localhost:포트 · 127.0.0.1:포트 둘 다 열린다(화면은 보통 http://localhost:포트 로 연다)', async () => {
   for (const host of [`localhost:${PORT}`, `127.0.0.1:${PORT}`]) {
     assert.equal(await req('/', { headers: { host } }), 200, host);
-    assert.equal(await req('/api/perf', { headers: { host, 'x-dashboard-token': TOKEN } }), 200, host);
+    assert.equal(await req('/api/perf', { headers: { host, ...AUTH } }), 200, host);
   }
 });
 
-test('다른 사이트(Origin)에서 온 요청은 토큰이 맞아도 403', async () => {
-  assert.equal(await req('/api/perf', { headers: { 'x-dashboard-token': TOKEN, origin: 'https://evil.example' } }), 403);
-  assert.equal(await req('/api/perf', { headers: { 'x-dashboard-token': TOKEN, origin: `http://localhost:${PORT + 1}` } }), 403); // 같은 컴퓨터의 다른 포트도
+test('다른 사이트(Origin)에서 온 요청은 로그인돼 있어도 403', async () => {
+  assert.equal(await req('/api/perf', { headers: { ...AUTH, origin: 'https://evil.example' } }), 403);
+  assert.equal(await req('/api/perf', { headers: { ...AUTH, origin: `http://localhost:${PORT + 1}` } }), 403); // 같은 컴퓨터의 다른 포트도
 });
 
 test('같은 출처(Origin) 요청은 열린다 — 브라우저는 POST 에 Origin 을 붙이므로 이게 막히면 채팅 · 승인이 모두 403', async () => {
-  const H = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };
+  const H = { ...AUTH, 'content-type': 'application/json' };
   for (const origin of [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`]) {
     assert.equal(await req('/api/perf', { headers: { ...H, origin } }), 200, origin);
     assert.equal(await req('/api/cmd/send', { method: 'POST', headers: { ...H, origin }, body: '{"key":"claude:demo-ops","text":"x"}' }), 200, origin);
@@ -113,23 +189,23 @@ test('주소의 .. · %2f 로는 화면 폴더(public) 밖에 못 나간다: URL
 });
 
 test('전체 기록 검색: 데모 기록에서 찾고 최신순으로 돌려준다', async () => {
-  const res = await fetch(`http://127.0.0.1:${PORT}/api/search?q=${encodeURIComponent('필터')}`, { headers: { 'x-dashboard-token': TOKEN } });
+  const res = await fetch(`http://127.0.0.1:${PORT}/api/search?q=${encodeURIComponent('필터')}`, { headers: { ...AUTH } });
   const items = await res.json();
   assert.ok(items.length >= 2);
   assert.ok(items.every((x) => x.snippet.includes('필터')));
   assert.ok(items.every((x, i) => i === 0 || Date.parse(items[i - 1].at) >= Date.parse(x.at)));
-  const short = await (await fetch(`http://127.0.0.1:${PORT}/api/search?q=a`, { headers: { 'x-dashboard-token': TOKEN } })).json();
+  const short = await (await fetch(`http://127.0.0.1:${PORT}/api/search?q=a`, { headers: { ...AUTH } })).json();
   assert.deepEqual(short, []); // 1글자는 찾지 않음
 });
 
 test('환경 점검에 「승인 감지」 줄이 붙는다(엇갈림이 없으면 ok)', async () => {
-  const env = await (await fetch(`http://127.0.0.1:${PORT}/api/env`, { headers: { 'x-dashboard-token': TOKEN } })).json();
+  const env = await (await fetch(`http://127.0.0.1:${PORT}/api/env`, { headers: { ...AUTH } })).json();
   const row = env.items.find((x) => x.name === '승인 감지');
   assert.equal(row?.level, 'ok');
 });
 
 test('기록 API: 나눠 보내기 · 검색어 거르기 (데모 기록 132개)', async () => {
-  const get = async (qs) => (await fetch(`http://127.0.0.1:${PORT}/api/history?key=claude:demo-ops${qs}`, { headers: { 'x-dashboard-token': TOKEN } })).json();
+  const get = async (qs) => (await fetch(`http://127.0.0.1:${PORT}/api/history?key=claude:demo-ops${qs}`, { headers: { ...AUTH } })).json();
   const first = await get('');
   assert.deepEqual([first.items.length, first.total, first.nextOffset], [80, 132, 80]);
   assert.equal(first.items[0].n, 132); // 최신이 위
@@ -143,14 +219,14 @@ test('기록 API: 나눠 보내기 · 검색어 거르기 (데모 기록 132개)
 
 test('대화 창 추이 API: 토큰 필요, 데모는 점 · 자동 요약 수를 돌려준다', async () => {
   assert.equal(await req('/api/trend?key=claude:demo-fe'), 403);
-  const t = await (await fetch(`http://127.0.0.1:${PORT}/api/trend?key=claude:demo-fe`, { headers: { 'x-dashboard-token': TOKEN } })).json();
+  const t = await (await fetch(`http://127.0.0.1:${PORT}/api/trend?key=claude:demo-fe`, { headers: { ...AUTH } })).json();
   assert.equal(t.supported, true);
   assert.ok(t.points.length >= 2 && t.points.length <= 120);
   assert.equal(t.drops, 1);
 });
 
 test('알림 설정 API: 토큰 없거나 다른 Origin 이면 403, 소리는 허용 목록만, 데모는 설정 파일을 건드리지 않는다', async () => {
-  const H = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };
+  const H = { ...AUTH, 'content-type': 'application/json' };
   assert.equal(await req('/api/notify'), 403);
   assert.equal(await req('/api/notify', { method: 'POST', body: '{"mac":true}' }), 403);
   assert.equal(await req('/api/notify/test', { method: 'POST', body: '{}' }), 403);
@@ -167,7 +243,7 @@ test('알림 설정 API: 토큰 없거나 다른 Origin 이면 403, 소리는 �
 });
 
 test('한도 추이 API: 토큰 없으면 403, range 는 24h · 7d 만(그 밖은 400)', async () => {
-  const H = { 'x-dashboard-token': TOKEN };
+  const H = { ...AUTH };
   assert.equal(await req('/api/limits?range=24h'), 403);
   assert.equal(await req('/api/limits?range=24h', { headers: { ...H, origin: 'http://evil.example' } }), 403);
   assert.equal(await req('/api/limits?range=24h', { headers: H }), 200);
@@ -176,7 +252,7 @@ test('한도 추이 API: 토큰 없으면 403, range 는 24h · 7d 만(그 밖�
 });
 
 test('복구 API: 토큰 없거나 다른 Origin 이면 403, 데모에선 흉내만', async () => {
-  const H = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };
+  const H = { ...AUTH, 'content-type': 'application/json' };
   assert.equal(await req('/api/recent'), 403);
   assert.equal(await req('/api/cmd/recent-restore', { method: 'POST', body: '{"ids":[]}' }), 403);
   assert.equal(await req('/api/cmd/recent-restore', { method: 'POST', headers: { ...H, origin: 'http://evil.example' }, body: '{"ids":[]}' }), 403);
@@ -214,7 +290,7 @@ const headOf = async (p, opts = {}) => { const r = await request(PORT, p, { ...o
 const SECURE = (h) => h['x-frame-options'] === 'DENY' && h['content-security-policy'] === "frame-ancestors 'none'" && h['x-content-type-options'] === 'nosniff';
 
 test('보안 헤더(클릭재킹 · nosniff): 화면 · API 200/403 · SSE · 404 · Host 403 · 500 모두에 붙는다', async () => {
-  const T = { 'x-dashboard-token': TOKEN };
+  const T = { ...AUTH };
   const cases = [
     ['/', {}, 200],
     ['/js/01-core.js', {}, 200],
@@ -222,7 +298,7 @@ test('보안 헤더(클릭재킹 · nosniff): 화면 · API 200/403 · SSE · 40
     ['/api/perf', { headers: T }, 200],
     ['/api/perf', {}, 403],
     ['/api/limits?range=30d', { headers: T }, 400],
-    [`/events?token=${TOKEN}`, {}, 200],
+    ['/events', { headers: AUTH }, 200],
     ['/no-such-file.js', {}, 404],
     ['/', { headers: { host: 'evil.example:4699' } }, 403],
     ['/api/cmd/send', { method: 'POST', headers: { ...T, 'content-type': 'application/json' }, body: '{' }, 400],
@@ -248,7 +324,7 @@ test('요청 본문: 너무 크면 413 한국어 문장 후 소켓을 닫고, �
   // 413 뒤 서버가 바로 끊으면(destroy) 받지 않은 본문 때문에 RST 로 닫혀 문장을 못 읽을 수 있다(3MB 면 200번 중 70~80번, CI macOS 에서 한 번).
   // 본문을 3MB 로 20번 보내 매번 문장을 읽고, 쓰기 오류 없이 정상 종료(FIN)되는지 본다
   const big = 'x'.repeat(3_000_000);
-  const head = `POST /api/cmd/send HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-Dashboard-Token: ${TOKEN}\r\nContent-Type: application/json\r\nContent-Length: ${big.length}\r\n\r\n`;
+  const head = `POST /api/cmd/send HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nCookie: ${AUTH.cookie}\r\nX-Dashboard-Request: 1\r\nContent-Type: application/json\r\nContent-Length: ${big.length}\r\n\r\n`;
   for (let i = 0; i < 20; i++) {
     const r = await new Promise((resolve) => {
       const s = net.connect(PORT, '127.0.0.1', () => { s.write(head); s.write(big, () => {}); });
@@ -266,19 +342,19 @@ test('요청 본문: 너무 크면 413 한국어 문장 후 소켓을 닫고, �
   // 본문을 약속(Content-Length)보다 적게 보내고 끊기
   await new Promise((resolve) => {
     const s = net.connect(PORT, '127.0.0.1', () => {
-      s.write(`POST /api/cmd/send HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-Dashboard-Token: ${TOKEN}\r\nContent-Length: 1000\r\n\r\n{"key":`);
+      s.write(`POST /api/cmd/send HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nCookie: ${AUTH.cookie}\r\nX-Dashboard-Request: 1\r\nContent-Length: 1000\r\n\r\n{"key":`);
       setTimeout(() => { s.destroy(); resolve(); }, 100);
     });
   });
   assert.equal(await req('/'), 200);
-  assert.equal(await req('/api/perf', { headers: { 'x-dashboard-token': TOKEN } }), 200);
+  assert.equal(await req('/api/perf', { headers: { ...AUTH } }), 200);
 });
 
 // 응답 본문까지 받는다
 const fetchText = async (p, opts) => { const r = await request(PORT, p, opts); return { status: r.status, type: r.headers['content-type'], text: r.text }; };
 
 test('오류 응답 모양: text/plain; charset=utf-8 한국어 문장, 영어 · 시스템 문구 없음', async () => {
-  const T = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };
+  const T = { ...AUTH, 'content-type': 'application/json' };
   const cases = [
     ['/', { headers: { host: 'evil.example:4699' } }, 403],
     ['/api/perf', {}, 403],
@@ -304,7 +380,7 @@ test('오류 응답 모양: text/plain; charset=utf-8 한국어 문장, 영어 �
 });
 
 test('창 기간(/api/window): 바꾸기는 POST, 틀리면 400, GET 은 읽기만', async () => {
-  const T = { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' };
+  const T = { ...AUTH, 'content-type': 'application/json' };
   const now = async () => JSON.parse((await fetchText('/api/window', { headers: T })).text).hours;
   assert.equal(await now(), 24);
   await fetchText('/api/window?hours=6', { headers: T }); // 예전 방식(GET 으로 바꾸기)은 이제 바꾸지 않는다

@@ -17,6 +17,7 @@ const HELP = `Agent Dashboard ${version} — 내 Mac 에 떠 있는 AI 코딩 �
   agent-dashboard start      위와 같아요
   agent-dashboard run        실행기: 서버가 꺼지면 다시 켜요(로그 ~/.agent-dashboard/server.log). tmux 안에서 띄워 두면 좋아요
   agent-dashboard restore    맥을 다시 켠 뒤: 재시동 전 tmux 세션을 다시 띄우고 실행기도 tmux 'dashboard' 로 켜요
+  agent-dashboard open       로그인 링크를 브라우저로 열어요(이 브라우저는 30일 동안 로그인 — 처음 · 만료 · 다른 브라우저일 때)
   agent-dashboard --help     이 도움말
   agent-dashboard --version  버전
 
@@ -28,6 +29,7 @@ const [cmd] = process.argv.slice(2);
 if (cmd === undefined || cmd === 'start' || cmd === 'run') {
   const { startCommand } = await import('../lib/launch.mjs');
   process.env.DASHBOARD_START_CMD = startCommand({ env: process.env, argv1: process.argv[1], pkgName: name, sub: cmd ?? 'start' });
+  process.env.DASHBOARD_OPEN_CMD = startCommand({ env: process.env, argv1: process.argv[1], pkgName: name, sub: 'open' }); // 「로그인이 필요해요」 안내에
 }
 if (cmd === '--help' || cmd === '-h' || cmd === 'help') console.log(HELP);
 else if (cmd === '--version' || cmd === '-v') console.log(version);
@@ -40,6 +42,13 @@ else if (cmd === 'run') {
   const runner = createRunner({ command: [process.execPath, server], cwd: root, logFile: path.join(DATA_DIR, 'server.log') });
   for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => runner.stop(sig));
   process.exitCode = await runner.done;
+} else if (cmd === 'open') {
+  const { tokenFiles } = await import('../lib/paths.mjs');
+  const { loadToken } = await import('../lib/token.mjs');
+  const { openLogin } = await import('../lib/login-open.mjs');
+  const r = await openLogin({ token: loadToken(tokenFiles(root)).token, port: Number(process.env.PORT ?? 4545) });
+  (r.ok ? console.log : console.error)(r.message);
+  if (!r.ok) process.exitCode = 1;
 } else if (cmd === 'restore') {
   const { restoreAll } = await import('../lib/restore-cli.mjs');
   await restoreAll({ root, launcher: [process.execPath, path.join(root, 'bin', 'agent-dashboard.mjs'), 'run'] });

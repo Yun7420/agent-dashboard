@@ -34,9 +34,10 @@ function renderEnv() {
   if (!envData) { $('#env-list').innerHTML = `<div class="env-row"><span class="lv error">✕</span><span class="nm">점검 실패</span><span class="dt">${esc(envError || '서버에 연결하지 못했어요')}</span></div>`; return; }
   $('#env-host').textContent = `${envData.host.replace(/\.local$/, '')} · ${new Date(envData.checkedAt).toLocaleString('ko-KR')} 점검`;
   const tk = envData.token;
-  if (tk) $('#token-status').innerHTML = tk.createdNow
+  if (tk) $('#token-status').innerHTML = (tk.createdNow
     ? `<span class="new">✓ 이 컴퓨터용 열쇠를 방금 만들었어요</span> · <code>${esc(tk.path)}</code>`
-    : `✓ 이 컴퓨터용 열쇠가 준비돼 있어요 (${new Date(tk.createdAt).toLocaleDateString('ko-KR')} 생성) · <code>${esc(tk.path)}</code>`;
+    : `✓ 이 컴퓨터용 열쇠가 준비돼 있어요 (${new Date(tk.createdAt).toLocaleDateString('ko-KR')} 생성) · <code>${esc(tk.path)}</code>`)
+    + (tk.openCmd ? `<br>✓ 이 브라우저는 로그인돼 있어요(${tk.loginDays}일) — 다른 브라우저 · 만료 땐 터미널에서 <code>${esc(tk.openCmd)}</code>` : '');
   $('#env-list').innerHTML = envData.items.map((it) => `<div class="env-row"><span class="lv ${esc(it.level)}">${LV_ICON[it.level]}</span><span class="nm">${esc(it.name)}</span><span class="dt">${esc(it.detail)}</span></div>`).join('');
 }
 function openWelcome() { renderEnv(); $('#welcome').showModal(); }

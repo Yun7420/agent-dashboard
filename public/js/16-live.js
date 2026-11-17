@@ -1,21 +1,21 @@
 // 실시간 연결(서버와 SSE)
 // 끊기면: 서버가 꺼져 있는 동안은 브라우저가 알아서 다시 시도한다(「재연결 중…」).
-// 서버가 다시 켜졌는데 토큰이 바뀌었으면 403 → 브라우저가 멈추므로, 이유를 확인해 안내하거나(403) 잠시 뒤 새로 연결한다(01-core.js 의 sseOnError · probeVerdict)
+// 로그인이 안 됐거나 지났으면 403 → 브라우저가 멈추므로, 이유를 확인해 안내하거나(403) 잠시 뒤 새로 연결한다(01-core.js 의 sseOnError · probeVerdict)
 let liveES = null;
 const connState = (cls, text) => { $('#conn').innerHTML = `<span class="dot-s ${cls}"></span>${text}`; $('#conn').title = text; }; // 좁은 창에선 글자를 숨겨 title 로
 function connect() {
   liveES?.close();
-  const es = (liveES = new EventSource(`/events?token=${TOKEN}`)); // EventSource 는 헤더를 못 넣어 주소로 보낸다
+  const es = (liveES = new EventSource('/events')); // 로그인 쿠키가 같이 간다(주소에 비밀을 싣지 않음)
   es.onopen = () => connState('live', '실시간');
   es.onerror = () => {
-    if (tokenGoneShown) { es.close(); connState('waiting', '토큰이 바뀜'); return; }
+    if (loginShown) { es.close(); connState('waiting', '로그인 필요'); return; }
     connState('waiting', '재연결 중…');
     if (sseOnError(es.readyState, EventSource.CLOSED) !== 'probe') return;
-    fetch('/api/perf', { headers: { 'X-Dashboard-Token': TOKEN } })
-      .then((r) => r.status, () => 0) // 서버가 아직 안 켜졌으면 0
-      .then((status) => {
+    fetch('/api/perf', { headers: REQ_HEADER })
+      .then(async (r) => [r.status, r.status === 403 ? await r.text().catch(() => '') : ''], () => [0, '']) // 서버가 아직 안 켜졌으면 0
+      .then(([status, text]) => {
         if (es !== liveES) return; // 그사이 새로 연결했으면 그대로
-        if (probeVerdict(status) === 'gone') { tokenGone(); connState('waiting', '토큰이 바뀜'); }
+        if (probeVerdict(status) === 'gone') { loginNeeded(text); connState('waiting', '로그인 필요'); }
         else setTimeout(() => es === liveES && connect(), 3000);
       });
   };

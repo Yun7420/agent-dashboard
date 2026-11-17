@@ -6,7 +6,7 @@ import vm from 'node:vm';
 export const readFront = (f) => fs.readFileSync(new URL(`../../public/js/${f}`, import.meta.url), 'utf8');
 
 // 01-core.js 를 불러올 때 필요한 최소한. 테스트마다 다른 것(fetch · querySelector …)은 globals 로 덮어쓴다
-export const browserStub = (globals = {}) => ({ window: { DASHBOARD_TOKEN: 't'.repeat(48) }, document: { querySelector: () => null }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, ...globals });
+export const browserStub = (globals = {}) => ({ window: {}, document: { querySelector: () => null }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, ...globals });
 
 // files 를 번호 순서대로 한 바탕(같은 전역)에 불러온다. run(코드) 로 그 안의 이름을 꺼내거나 바꾼다
 export function loadFront(files, globals = {}) {

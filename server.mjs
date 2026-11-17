@@ -15,11 +15,9 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { adapters } from './adapters/index.mjs';
 import { unknownStatuses } from './adapters/claude.mjs';
 import * as tmux from './lib/tmux.mjs';
-import { isTrustPrompt } from './lib/dialog.mjs';
 import { saveUpload, jsonBody, bodyFail } from './lib/body.mjs';
 import { createLock } from './lib/lock.mjs';
 import { createCommands } from './lib/commands.mjs';
@@ -32,8 +30,9 @@ import { sendText, sendJson, friendly, logPath } from './lib/respond.mjs';
 import { isObject } from './lib/validate.mjs';
 import { DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
 import { loadToken } from './lib/token.mjs';
+import { createAuth, loginUrl, SESSION_MS } from './lib/auth.mjs';
 import { portInUseMessage } from './lib/launch.mjs';
-import { createRecorder, readRange, validRange } from './lib/limits.mjs';
+import { createRecorder, limitsRoute } from './lib/limits.mjs';
 import { createNotifyApi } from './lib/notify-api.mjs';
 import { createLiveFeed } from './lib/live-feed.mjs';
 import { startHousekeeping } from './lib/housekeeping.mjs';
@@ -41,16 +40,18 @@ import { createHistoryApi } from './lib/history-api.mjs';
 import { createUsageBridge, STATUS_DIR } from './lib/usage-bridge.mjs';
 import * as demo from './lib/demo.mjs';
 import { saveSnapshot, restoreCandidates, restoreSessions, modelAlias, defaultAlias } from './lib/restore.mjs';
-import { createRecent, liveEntries, KEEP_DAYS as RECENT_DAYS } from './lib/recent.mjs';
+import { createRecent, liveEntries, recentInfo } from './lib/recent.mjs';
 import { checkNode } from './lib/node-check.mjs';
 checkNode(); // 맨 먼저(import 다음): Node 가 낮으면 안내하고 끝낸다(lib/node-check.mjs)
 const DEMO = process.env.DEMO === '1'; // 가짜 데이터로 화면만 보여 주는 모드(스크린샷용)
 const PORT = Number(process.env.PORT ?? 4545);
 const ROOT = dirOf(import.meta.url); // 저장소(패키지) 폴더 — 공백 · 한글 폴더에서도 맞게(lib/paths.mjs)
-// 토큰은 ~/.agent-dashboard/token(600)에 보관해 서버를 다시 켜도 열려 있던 탭이 그대로 동작하게 한다(lib/token.mjs · 자리는 lib/paths.mjs)
+// 토큰은 ~/.agent-dashboard/token(600). 화면에 넣지 않고 로그인 링크 · 쿠키의 서명 열쇠로만 쓴다(lib/auth.mjs) — 다시 켜도 로그인 그대로
 const { file: TOKEN_FILE, legacy: TOKEN_LEGACY } = tokenFiles(ROOT);
 const { token: TOKEN, createdNow: TOKEN_CREATED_NOW, migrated: TOKEN_MIGRATED } = loadToken({ file: TOKEN_FILE, legacy: TOKEN_LEGACY });
 if (TOKEN_MIGRATED) console.log(`토큰을 새 자리로 옮겼어요 → ${TOKEN_FILE} (저장소 폴더의 옛 파일은 지움)`);
+const OPEN_CMD = process.env.DASHBOARD_OPEN_CMD || 'node bin/agent-dashboard.mjs open'; // 로그인 링크를 다시 여는 명령(켠 방법에 맞게, bin 이 넘김)
+const auth = createAuth({ token: TOKEN, port: PORT, openCmd: OPEN_CMD });
 const ALLOWED_HOSTS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`]);
 const PUBLIC_DIR = path.join(ROOT, 'public');
 
@@ -89,7 +90,7 @@ const env = createEnvCheck({
   demo: DEMO,
   demoEnv: demo.DEMO_ENV,
   usageEnabled: () => usage.usageEnabled(),
-  tokenInfo: () => ({ createdNow: TOKEN_CREATED_NOW, path: tildify(TOKEN_FILE), createdAt: fs.statSync(TOKEN_FILE).birthtime.toISOString() }),
+  tokenInfo: () => ({ createdNow: TOKEN_CREATED_NOW, path: tildify(TOKEN_FILE), createdAt: fs.statSync(TOKEN_FILE).birthtime.toISOString(), openCmd: OPEN_CMD, loginDays: SESSION_MS / 86400_000 }),
   detectEditors,
   dialogIssues,
   unknownStatuses,
@@ -107,17 +108,6 @@ const recent = DEMO ? null : createRecent({ file: path.join(DATA_DIR, 'recent.js
 const restoreLock = createLock(); // 재시동 배너 · 복구 단추가 같이 쓰는 잠금 — 한 번에 하나의 복구만(같은 세션을 두 번 띄우지 않게)
 // 아직 첫 상태를 만들기 전(서버를 켠 직후)이면 null — 복구는 「무엇이 떠 있는지」를 알 때만 한다
 const liveIdSet = () => (feed.latest() ? new Set(feed.latest().sessions.filter((s) => s.status !== 'ended').map((s) => s.id)) : null);
-// 복구 후보 + 방금 다시 띄운 세션의 상태(폴더 신뢰 확인 창이 떴는지 — 대신 누르지 않고 안내만)
-async function recentInfo() {
-  if (DEMO) return demo.demoRecent();
-  const items = recent.candidates(liveIdSet()).map((e) => ({ ...e, cwd: tildify(e.cwd) }));
-  const launched = [];
-  for (const l of recent.launchedList()) {
-    const screen = await tmux.capture(l.tmuxSession, 30).catch(() => null);
-    launched.push({ id: l.id, title: l.title, tmuxSession: l.tmuxSession, state: screen == null ? 'gone' : isTrustPrompt(screen) ? 'trust' : 'started' });
-  }
-  return { items, launched, keepDays: RECENT_DAYS, loading: !feed.latest() };
-}
 
 // ---------- 2초 틱: 상태 → 바뀐 것만 SSE (lib/live-feed.mjs) ----------
 // 만든 직후 · 보내기 전에: 알림 · 한도 기록, 재시동 복구 — 재시동 전 목록 중 지금 없는 세션을 알려 주고, 떠 있는 tmux 세션 목록을 저장한다.
@@ -139,32 +129,37 @@ const feed = createLiveFeed({
 });
 
 // ---------- HTTP: 보안 입구 · 경로 표 ----------
+// 로그인 쿠키 + 같은 출처: Origin 이 있으면 이 서버, 브라우저가 붙이는 Sec-Fetch-Site 가 있으면 same-origin 이어야 한다
+// (같은 Mac 의 다른 포트 페이지는 쿠키가 같이 가는 「같은 사이트」라 SameSite 만으론 못 막는다).
+// /api/* 는 사용자 지정 머리글도 요구 — 다른 사이트의 form · img · script 요청은 이 머리글을 붙일 수 없다(CSRF). SSE 는 붙일 수 없어 쿠키 · 출처만
 const authorized = (req, url) => {
-  const origin = req.headers.origin;
-  const originOk = !origin || origin === `http://localhost:${PORT}` || origin === `http://127.0.0.1:${PORT}`;
-  // EventSource(SSE)는 헤더를 못 넣어서 주소의 ?token= 도 받는다
-  const token = req.headers['x-dashboard-token'] ?? url?.searchParams.get('token') ?? '';
-  return originOk && token.length === TOKEN.length && crypto.timingSafeEqual(Buffer.from(token), Buffer.from(TOKEN));
+  const origin = req.headers.origin, site = req.headers['sec-fetch-site'];
+  const sameOrigin = (!origin || origin === `http://localhost:${PORT}` || origin === `http://127.0.0.1:${PORT}`) && (!site || site === 'same-origin');
+  return sameOrigin && (url.pathname === '/events' || req.headers['x-dashboard-request'] === '1') && auth.loggedIn(req);
 };
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 
 // 모든 응답(화면 · API · SSE · 403/404/500)에 붙는 보안 헤더. 응답마다 따로 쓰면 빠지는 경로가 생기므로 요청을 받는 맨 앞에서 한 번.
-// - 다른 사이트가 이 화면을 iframe 으로 띄워(토큰이 든 채로) 승인 단추를 누르게 속이는 클릭재킹을 막는다(X-Frame-Options · frame-ancestors)
+// - 다른 사이트가 이 화면을 iframe 으로 띄워(로그인된 채로) 승인 단추를 누르게 속이는 클릭재킹을 막는다(X-Frame-Options · frame-ancestors)
 // - 브라우저가 Content-Type 을 짐작해 다른 종류로 실행하지 않게 한다(nosniff)
-const SECURITY_HEADERS = { 'X-Frame-Options': 'DENY', 'Content-Security-Policy': "frame-ancestors 'none'", 'X-Content-Type-Options': 'nosniff' };
+// - 다른 곳으로 갈 때 주소(Referer)를 붙이지 않는다(no-referrer)
+const SECURITY_HEADERS = { 'X-Frame-Options': 'DENY', 'Content-Security-Policy': "frame-ancestors 'none'", 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' };
 
 // 처리 안 된 오류는 500 + 짧은 한국어 문장으로 돌려주고 자세한 내용은 로그로만(요청 하나 때문에 서버 전체가 죽지 않게)
-const server = http.createServer((req, res) => {
+const onRequest = (req, res) => {
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v); // writeHead 의 헤더와 합쳐진다
   handle(req, res).catch((e) => {
     console.error('[요청 오류]', req.method, logPath(req.url), e?.stack ?? e);
     if (!res.headersSent) sendText(res, 500, '서버에서 문제가 생겼어요. 잠시 뒤 다시 해 주세요');
     else res.destroy(); // SSE 처럼 이미 보내기 시작한 응답은 끊는다
   });
-});
+};
+const server = http.createServer(onRequest);
+// localhost 는 [::1](IPv6)로도 찾아가서, 다른 프로그램이 [::1]:포트 를 먼저 열면 브라우저가 그쪽(가짜 화면)으로 갔다(점검 C2) → 같은 포트로 함께 연다
+const server6 = http.createServer(onRequest);
 
-// 요청 입구: 보안 검사(Host → Origin · 토큰)를 여기서 순서대로 한 뒤 경로 표(아래 ROUTES)로 보낸다.
+// 요청 입구: 보안 검사(Host → 출처 · 로그인 쿠키 · 요청 머리글)를 여기서 순서대로 한 뒤 경로 표(아래 ROUTES)로 보낸다.
 // 보안 검사는 이 함수에만 둔다 — 경로가 늘어도 검사를 빠뜨리지 않게
 async function handle(req, res) {
   if (!ALLOWED_HOSTS.has(req.headers.host ?? '')) {
@@ -172,9 +167,9 @@ async function handle(req, res) {
     return;
   }
   const url = new URL(req.url, 'http://localhost');
-  // 대화 목록·기록도 명령과 같은 토큰을 요구한다(화면 파일만 토큰 없이 연다)
+  // 대화 목록 · 기록도 명령과 같은 로그인을 요구한다(화면 파일 · 로그인 링크 · 서버 확인만 로그인 없이)
   if ((url.pathname === '/events' || url.pathname.startsWith('/api/')) && !authorized(req, url)) {
-    sendText(res, 403, '보안 토큰이 맞지 않아요. 페이지를 새로고침해 주세요');
+    sendText(res, 403, auth.deniedText);
     return;
   }
   const route = ROUTES.find((r) => (r.prefix ? url.pathname.startsWith(r.prefix) : url.pathname === r.path) && (!r.method || r.method === req.method));
@@ -207,14 +202,16 @@ const handleCommand = createCommands({
 // ---------- 경로 표: 주소 → 처리 함수 ----------
 // method 가 적힌 경로는 그 방식만 받고(다른 방식은 화면 파일 쪽으로 떨어져 404), 없으면 방식을 가리지 않는다.
 // 처리 함수는 (req, res, url) 을 받는다. 바뀌는 값을 가진 구역(틱 feed · 알림 notify · 기록 history)은 그 모듈의 함수를, 나머지는 아래 함수를 가리킨다.
-// 이 표에 오기 전에 handle 이 토큰을 본다 — 처리 함수가 어느 파일에 있든 /events · /api/ 경로는 모두 검사를 거친다
+// 이 표에 오기 전에 handle 이 로그인을 본다 — 처리 함수가 어느 파일에 있든 /events · /api/ 경로는 모두 검사를 거친다
 const ROUTES = [
+  { path: '/login', method: 'GET', handler: auth.loginRoute }, // 로그인 없이 받는 두 경로(링크 확인 · 서버 확인, lib/auth.mjs) — 토큰 · 기록은 주지 않는다
+  { path: '/hello', method: 'GET', handler: auth.helloRoute },
   { path: '/events', handler: feed.openEvents },
   { path: '/api/env', handler: getEnv },
   { path: '/api/notify', handler: notify.route },
   { path: '/api/notify/test', method: 'POST', handler: notify.test },
-  { path: '/api/limits', handler: getLimits },
-  { path: '/api/recent', handler: async (req, res) => sendJson(res, 200, await recentInfo()) },
+  { path: '/api/limits', handler: limitsRoute({ dir: LIMITS_DIR, demoLimits: DEMO ? demo.demoLimits : null }) },
+  { path: '/api/recent', handler: async (req, res) => sendJson(res, 200, DEMO ? demo.demoRecent() : await recentInfo({ recent, liveIds: liveIdSet(), capture: tmux.capture })) },
   { path: '/api/perf', handler: feed.getPerf },
   { path: '/api/window', handler: feed.windowRoute },
   { path: '/api/history', handler: history.getHistory },
@@ -230,13 +227,6 @@ async function getEnv(req, res, url) {
   const e = url.searchParams.has('refresh') || !env.cached() ? await checkEnv() : env.cached();
   // 「승인 감지」 줄은 서버가 켜진 뒤 쌓인 기록이라 캐시 없이 매번 붙인다
   sendJson(res, 200, { ...e, items: [...e.items, dialogEnvItem(), statusEnvItem()] });
-}
-
-// 계정 한도 추이: ?range=24h|7d → { points: [[ms, 5시간 %, 주간 %]], resets: [{ t, kind }] }
-async function getLimits(req, res, url) {
-  const range = url.searchParams.get('range') ?? '24h';
-  if (!validRange(range)) return void sendText(res, 400, '기간은 24h 또는 7d 만 고를 수 있어요');
-  sendJson(res, 200, DEMO ? demo.demoLimits(range) : readRange(LIMITS_DIR, range));
 }
 
 // tmux 세션 화면(색 정보로 「지금 보고 있는 질문 탭」도)
@@ -286,7 +276,6 @@ function serveStatic(res, url) {
     return;
   }
   const head = { 'Content-Type': MIME[path.extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store' };
-  if (file.endsWith('index.html')) return void res.writeHead(200, head).end(fs.readFileSync(file, 'utf8').replace('__DASHBOARD_TOKEN__', TOKEN));
   const stream = fs.createReadStream(file);
   stream.on('open', () => { res.writeHead(200, head); stream.pipe(res); });
   stream.on('error', (e) => { // 읽는 사이 지워진 파일 등 — 응답만 정리하고 서버는 계속
@@ -309,7 +298,10 @@ server.on('error', (e) => {
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}`);
+  console.log(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}\n로그인 링크(10분): ${loginUrl({ token: TOKEN, port: PORT })} — 나중엔 「${OPEN_CMD}」`);
+  // [::1] 을 못 열면 이유만 남기고 127.0.0.1 로 계속(IPv6 가 꺼진 Mac 등). 다른 프로그램이 이미 쓰고 있으면 크게 알린다
+  server6.on('error', (e) => console.error(e.code === 'EADDRINUSE' ? `주의: 다른 프로그램이 [::1]:${PORT} 를 쓰고 있어요 — localhost 가 그쪽으로 갈 수 있어요. http://127.0.0.1:${PORT} 로 여세요` : `[::1]:${PORT} 은 열지 못했어요(${e.code ?? e.message}) — 127.0.0.1 로만 받아요`));
+  server6.listen(PORT, '::1');
   // 없는 도구(tmux · Claude Code) · 다른 OS 는 로그에 한국어로 안내만 하고 서버는 계속(보기 전용으로라도)
   checkEnv().then((e) => { if (!DEMO) for (const line of startupNotices(e)) console.log(line); }).catch((e) => console.error('[환경 점검]', e.message)); // 시작 때 실패해도 서버는 계속(화면에서 다시 점검 가능)
   feed.start();

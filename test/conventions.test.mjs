@@ -85,7 +85,7 @@ test('화면 번호 순서 검사기: 주석 · 글자 · 객체 키 · 지역 �
 // 서버 쪽(.mjs) 300줄 · 화면 js · css 200줄을 넘으면 나누기를 검토한다. 이미 넘은 파일은 지금 줄 수를 상한으로(늘지 않게)
 const LINES = { server: 300, front: 200, css: 200 };
 const OVER = {
-  'server.mjs': 325, // 2026-11-17 기록 · 사용 한도를 lib/history-api · usage-bridge 로(648 → 468), 틱 · 알림 · 기록 경로 · 본문 · 정리를 lib/live-feed · notify-api · history-api · body · housekeeping 으로(468 → 325)
+  'server.mjs': 317, // 2026-11-17 기록 · 사용 한도를 lib/history-api · usage-bridge 로(648 → 468), 틱 · 알림 · 기록 경로 · 본문 · 정리를 lib/live-feed · notify-api · history-api · body · housekeeping 으로(468 → 325), 복구 단추 정보 · 한도 경로 · 로그인 경로를 lib/recent · limits · auth 로(쿠키 로그인을 더하고 325 → 317)
 };
 
 test('파일 크기: 서버 쪽 300줄 · 화면 js · css 200줄 이하, 이미 넘은 파일은 지금보다 늘지 않는다', () => {
@@ -169,17 +169,20 @@ test('화면 파일: 서버 요청은 apiFetch 한곳으로 — 직접 fetch 는
   assert.deepEqual(direct.map((x) => x.split(':')[0]).sort(), ['01-core.js', '16-live.js']); // 각 한 줄씩
 });
 
-test('토큰 자리: __DASHBOARD_TOKEN__ 은 public/index.html 한 곳에만(js · css 파일엔 토큰을 두지 않는다)', () => {
+// 화면 파일은 로그인 없이 누구나 받는다(같은 Mac 의 다른 계정 포함) → 토큰을 끼워 넣을 자리도, 토큰을 주소 · 머리글에 싣는 코드도 없어야 한다.
+// 로그인은 HttpOnly 쿠키(lib/auth.mjs). 예전엔 index.html 에 토큰을 넣었다(2026-11-17 점검 C1)
+test('토큰 자리: public 어디에도 토큰 자리(__DASHBOARD_TOKEN__ · DASHBOARD_TOKEN) · 토큰 머리글 · ?token= 이 없다', () => {
   const where = [];
   const walk = (dir) => {
     for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
       const rel = `${dir}/${e.name}`;
       if (e.isDirectory()) walk(rel);
-      else if (read(rel).includes('__DASHBOARD_TOKEN__')) where.push(rel);
+      else if (/DASHBOARD_TOKEN|X-Dashboard-Token|[?&]token=/i.test(read(rel))) where.push(rel);
     }
   };
   walk('public');
-  assert.deepEqual(where, ['public/index.html']);
+  assert.deepEqual(where, []);
+  assert.doesNotMatch(read('server.mjs'), /__DASHBOARD_TOKEN__|searchParams\.get\('token'\)|x-dashboard-token/i); // 서버도 그 자리를 채우거나 읽지 않는다
 });
 
 // ---------- 머리 주석 ----------

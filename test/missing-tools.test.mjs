@@ -10,6 +10,7 @@ import { startupNotices } from '../lib/env.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { request, firstEvent } from './_helpers/http.mjs';
 import { ROOT, startServer } from './_helpers/server.mjs';
+import { sessionCookie } from '../lib/auth.mjs';
 
 const PORT = 4696;
 const TMP = tmpDir('ad-notool-');
@@ -21,7 +22,8 @@ const TOKEN = crypto.randomBytes(24).toString('hex');
 const PATH_NO_TMUX = BIN;
 let srv;
 
-const req = (p, { method = 'GET', body } = {}) => request(PORT, p, { method, body, headers: { 'x-dashboard-token': TOKEN, 'content-type': 'application/json' } });
+const AUTH = { cookie: sessionCookie({ token: TOKEN, port: PORT }), 'x-dashboard-request': '1' };
+const req = (p, { method = 'GET', body } = {}) => request(PORT, p, { method, body, headers: { ...AUTH, 'content-type': 'application/json' } });
 
 before(async () => {
   fs.mkdirSync(path.join(HOME, 'proj'), { recursive: true });
@@ -59,7 +61,7 @@ test('tmux 가 필요한 명령(새 세션)은 409 「tmux 가 필요해요」 �
   const r = await req('/api/cmd/spawn', { method: 'POST', body: JSON.stringify({ cwd: '~/proj' }) });
   assert.equal(r.status, 409);
   assert.equal(r.text, 'tmux 가 필요해요 — brew install tmux');
-  const st = await firstEvent(PORT, TOKEN);
+  const st = await firstEvent(PORT, AUTH);
   assert.deepEqual(st.sessions, []); // 빈 목록 — 화면은 envData.tools 를 보고 안내 문구를 고른다
 });
 
