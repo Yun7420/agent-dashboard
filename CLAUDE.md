@@ -39,12 +39,13 @@
 
 ## 구조
 ```
-server.mjs            서버 켜기 · 요청 입구의 보안 검사(Host · Origin · 토큰) · 경로 표(ROUTES) · 2초 틱(상태 → SSE) · 구역 잇기
+server.mjs            서버 켜기 · 요청 입구의 보안 검사(Host · Origin · 토큰) · 경로 표(ROUTES)와 처리 함수 · 2초 틱(상태 → SSE) · 구역 잇기
 adapters/             도구별 차이(claude.mjs · codex.mjs). 새 에이전트 = 어댑터 파일 하나
 lib/                  구역별 일(모듈은 createXxx(deps) 로 필요한 것만 받는다)
   state · procs        상태 조립(세션 · 메시지 · 한도) · ps/lsof/tmux 목록
   history-core         기록 읽기 공용(새로 붙은 줄만 · 마지막 턴 찾기 · 턴 묶기) — 어댑터는 줄 해석만
   launch               켠 방법(npx · 설치 명령 · bin · npm start)에 맞는 안내 문구
+  history-api · usage-bridge   기록 탭 · 검색 · 오늘 한 일 · 대화 창 추이 / 사용 한도(상태줄 다리) · 기본 모델 지키기
   commands             명령(채팅 · 승인 · 멈춤 · 닫기 · 모델 · 복구 · 새 세션)
   env · open-dir       환경 점검 · 폴더를 에디터로 열기
   body · uploads       요청 본문 · 첨부 저장/정리
