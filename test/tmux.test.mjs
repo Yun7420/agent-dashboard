@@ -58,8 +58,8 @@ test('sendText: 붙여넣기 버퍼(stdin) → paste-buffer → Enter 순서, se
   assert.deepEqual(sent[2].args, ['send-keys', '-t', '%2', 'Enter']);
   await sendKey('%2', 'Escape');
   assert.deepEqual(calls().at(-1).args, ['send-keys', '-t', '%2', 'Escape']);
-  await newSession({ name: 'n', cwd: '/w', command: ['claude', '--', '-x'] });
-  assert.deepEqual(calls().at(-1).args, ['new-session', '-d', '-s', 'n', '-c', '/w', '-x', '200', '-y', '50', '--', 'claude', '--', '-x']);
+  assert.equal(await newSession({ name: 'n', cwd: '/w', command: ['claude', '--', '-x'] }), '%90'); // 새 창 번호(-P -F) — 첫 프롬프트를 넣을 곳
+  assert.deepEqual(calls().at(-1).args, ['new-session', '-d', '-P', '-F', '#{pane_id}', '-s', 'n', '-c', '/w', '-x', '200', '-y', '50', '--', 'claude', '--', '-x']);
 });
 
 test('sendText: 여러 세션에 거의 동시에 보내도 버퍼가 섞이지 않고(이름이 매번 새로), 붙인 뒤 · 붙이기 실패 때 버퍼가 남지 않는다', async () => {

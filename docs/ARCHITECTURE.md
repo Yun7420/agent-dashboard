@@ -113,7 +113,7 @@
 | 파일 | 하는 일 |
 |---|---|
 | `lib/commands.mjs` | `/api/cmd/<이름>` 처리 표(`createCommands`). tmux 가 필요한 명령은 세션 찾기 · tmux 확인을 앞에서 한 번에 |
-| `lib/spawn.mjs` | 새 세션 claude 인자(`newSessionArgs`). 첫 프롬프트는 `--` 뒤에 |
+| `lib/spawn.mjs` | 새 세션 claude 인자(`newSessionArgs`, 첫 프롬프트 없음) · 첫 프롬프트 넣기(`deliverFirstPrompt`: 입력칸이 보이면 tmux 버퍼로 — 인자는 `ps` 에 보여서, 점검 C5) |
 | `lib/open-dir.mjs` | 폴더를 VS Code · Cursor · Finder 로 열기(`openDir`), 설치된 앱 찾기(`detectEditors`) |
 | `lib/env.mjs` | 환경 점검(`createEnvCheck`) · 시작 로그 안내(`startupNotices`) |
 | `lib/node-check.mjs` | 켤 때 Node 버전 확인(`nodeCheck`): engines 보다 낮으면 한국어 안내 후 종료, 지원 끝난 버전(짝수 LTS 중 18 · 20, 홀수 전부 — `isEol`)은 한 줄 안내. bin · server.mjs 가 맨 앞에서 `checkNode()` 를 부른다(불러오기만 해서는 아무것도 안 함) |
@@ -349,7 +349,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 | 홈 아래 폴더(링크 풀기) | `lib/paths.mjs:isInsideReal` ← `spawn` · `open-dir` · `lib/restore.mjs:restoreSessions` · 첨부(`allInside`) | 글자로 홈 아래인지 + 링크를 푼 실제 폴더도 홈 아래인지. `~/x → /etc` 같은 링크로 홈 밖에서 세션을 띄우거나 폴더를 열지 못하게 |
 | 복구 | `lib/commands.mjs` 의 `recent-restore` | 화면은 세션 ID 만 보내고, 폴더 · 이름은 서버가 기억한 목록에서만 |
 | 본문 상한 | `lib/body.mjs:readBody` · `saveUpload` | 큰 요청은 413 한 번, 그 뒤 본문은 쌓지 않음. 끊기면 바로 정리(`.part` 안 남김) |
-| 셸을 거치지 않기 | `lib/tmux.mjs`(`execFile` · `spawn` 인자 배열) · `lib/spawn.mjs:newSessionArgs` | 글자가 명령으로 해석되지 않게. 첫 프롬프트는 `--` 뒤라 `--permission-mode …` 같은 글도 옵션이 아님 |
+| 셸을 거치지 않기 | `lib/tmux.mjs`(`execFile` · `spawn` 인자 배열) · `lib/spawn.mjs:newSessionArgs` | 글자가 명령으로 해석되지 않게. 첫 프롬프트는 인자가 아니라 입력칸에 붙여 넣어 `ps` 에 안 보이고 `--permission-mode …` 같은 글도 옵션이 아님 |
 | 붙여넣기 버퍼 | `lib/tmux.mjs:sendText` | 보낼 때마다 새 이름(`agent-deck-<무작위>`)으로 넣고 붙이면서 지움(`-d`), 붙이기가 실패해도 지움. 두 세션에 거의 동시에 보내도 글이 섞이지 않고 tmux 에 남지 않게 |
 | 상태줄 명령 | `lib/bridge.mjs:bridgeCommand` | 경로에 따옴표 · `$` · `` ` `` 등이 있으면 켜지 않음(설정 파일 속 명령에 끼어들지 못하게) |
 | 파일 권한 | `lib/perms.mjs:tightenTree` · `lib/runner.mjs` 의 `openLog` · `lib/body.mjs:saveUpload` | 폴더 700, 파일 600. 예전에 넓게 만든 폴더 · 하위 폴더(uploads/<날짜> · status · limits · bin)와 파일도 켤 때 좁힘(넓히지는 않음 — mkdir 의 mode 는 이미 있던 폴더엔 닿지 않아서). 링크는 따라가지 않음 |

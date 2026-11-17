@@ -113,16 +113,22 @@ test('pane: tmux 창 세션은 그 창 화면(capture-pane -t 창), 목록에 �
   for (const key of ['claude:없는-세션', '']) assert.equal((await req(`/api/pane?key=${encodeURIComponent(key)}`, { headers: H })).status, 404, key);
 });
 
-test('spawn: 홈 밖은 400, 첫 프롬프트는 -- 뒤 한 칸(옵션으로 읽히지 않게)', async () => {
+// 첫 프롬프트는 인자가 아니라(ps 에 보임 — 점검 C5) 새 창(-P 로 받은 %N)의 입력칸이 뜬 뒤 tmux 버퍼로
+test('spawn: 홈 밖은 400, 첫 프롬프트는 claude 인자에 없고 입력칸이 뜬 새 창에 붙여 넣는다', async () => {
   assert.equal((await cmd('spawn', { cwd: '/etc' })).status, 400);
-  const r = await cmd('spawn', { cwd: '~/proj', name: '새 일', prompt: '--permission-mode bypassPermissions' });
+  home.setScreen('─────────\n❯ ');
+  const prompt = '--permission-mode bypassPermissions';
+  const r = await cmd('spawn', { cwd: '~/proj', name: '새 일', prompt });
   assert.equal(r.status, 200);
   const args = tmuxCalls('new-session').at(-1).args;
   assert.equal(args[args.indexOf('-c') + 1], CWD);
   const claude = args.slice(args.indexOf('--') + 1);
   assert.equal(claude[0], 'claude');
-  assert.deepEqual(claude.slice(-2), ['--', '--permission-mode bypassPermissions']);
-  assert.ok(!claude.slice(0, -1).includes('--permission-mode bypassPermissions'));
+  assert.ok(!claude.includes(prompt) && !claude.includes('--'));
+  assert.ok(await until(() => tmuxCalls('paste-buffer').some((c) => c.pasted === prompt)));
+  const paste = tmuxCalls('paste-buffer').find((c) => c.pasted === prompt).args;
+  assert.equal(paste[paste.indexOf('-t') + 1], '%90'); // 가짜 tmux 가 -P 로 돌려준 새 창
+  home.setScreen('> ');
   assert.ok(!fakeLog().some((x) => x.cmd === 'claude' && x.args.includes('--permission-mode'))); // claude 를 직접 실행하지 않음(tmux 안에서만)
 });
 

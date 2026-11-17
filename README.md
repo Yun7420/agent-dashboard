@@ -253,7 +253,7 @@ node bin/agent-dashboard.mjs restore   # 같은 일(대시보드는 run 실행�
 - 다른 웹사이트가 이 화면을 몰래 띄워(iframe) 승인 단추를 누르게 속이지 못하게, 모든 응답에 화면 끼워 넣기 금지(`X-Frame-Options: DENY` · `frame-ancestors 'none'`)와 `nosniff` 를 붙여요.
 - 화면 코드에 실수(XSS)가 하나 생겨도 남의 스크립트가 돌거나 밖으로 보내지 못하게 CSP 를 붙여요: 스크립트는 이 서버의 파일만(`script-src 'self'`, 인라인 스크립트 · onclick 없음), 연결도 이 서버로만(`connect-src 'self'`), 플러그인 · `<base>` 없음, 다른 곳으로 가는 주소에 이 주소를 붙이지 않음(`Referrer-Policy: no-referrer`).
 - 권한 모드는 각자 Claude 설정을 그대로 따라요. 권한 건너뛰기 옵션을 쓰지 않아요.
-- 새 세션의 첫 프롬프트는 `--` 뒤에 넘겨서, `-` 로 시작하는 글(예: `--permission-mode …`)이 claude 옵션으로 읽히지 않아요.
+- 새 세션의 첫 프롬프트는 claude 명령 인자로 넘기지 않아요. 인자는 `ps` 로 이 Mac 의 다른 계정에도 보여서, 세션이 뜨고 입력칸이 보이면(보통 1초 남짓) tmux 버퍼로 붙여 넣어요. 그래서 `-` 로 시작하는 글(예: `--permission-mode …`)이 옵션으로 읽힐 일도 없어요. 폴더 신뢰 확인 창이 떠 있으면 답할 때까지(최대 10분) 기다렸다가 넣어요.
 
 ## 어떻게 동작하나
 

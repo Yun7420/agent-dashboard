@@ -78,7 +78,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 - `~/.agent-dashboard` 는 폴더 700 · 파일 600 이에요. 쓰기 전에 **링크면 거절**하고(`lstat`), 중요한 파일은 **임시 파일 + rename** 으로 한 번에 바꿔요(`lib/claude-settings.mjs:writeAtomic` · `lib/token.mjs`).
 - 「폴더 안인가」는 `lib/paths.mjs:isInside` 하나로 봐요. `startsWith` 만으로는 옆 폴더(`uploads-x`)도 통과해요.
 - **모듈은 import 만으로 프로세스를 끝내거나 밖에 쓰지 않아요.** `lib/` · `adapters/` 의 맨 바깥에서 `process.exit` · `console.*` · 파일 쓰기를 하지 않고, 그런 일은 함수로 내보내 부르는 쪽(`server.mjs` · `bin/`)이 불러요. 예: `lib/node-check.mjs:checkNode()` 를 bin · server.mjs 맨 앞에서 부름. 불러오기만 한 테스트가 끝나 버리거나, 읽는 사람이 「어디서 끝나는지」 찾기 어려워지지 않게요.
-- 외부 명령은 **`execFile` · `spawn` 에 인자 배열**로 불러요. 셸을 거치지 않아요. 사람이 쓴 글은 `--` 뒤나 stdin(`tmux load-buffer`)으로 넘겨요.
+- 외부 명령은 **`execFile` · `spawn` 에 인자 배열**로 불러요. 셸을 거치지 않아요. 사람이 쓴 글은 stdin(`tmux load-buffer`)으로 넘겨요. 명령 인자는 `ps` 로 다른 계정에도 보여서 프롬프트 같은 글은 싣지 않아요(새 세션 첫 프롬프트도 입력칸이 뜬 뒤 붙여 넣기, 2026-11-17). 꼭 인자로 넘길 땐 `--` 뒤나 `--이름=값` 한 칸으로.
 - 프로세스는 **내가 띄운 것만, 적어 둔 PID 로만** 꺼요(CLAUDE.md 「프로세스 끄기 사고」). 코드도 같아요: 실행기는 자기 자식에게만 신호를 보내고, 복구는 띄우기만 해요.
 
 ### 화면(public)

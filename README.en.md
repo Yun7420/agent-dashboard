@@ -253,7 +253,7 @@ A session already running in a terminal has no official way to receive input fro
 - Every response carries `X-Frame-Options: DENY`, `frame-ancestors 'none'` and `nosniff`, so another website can't load this page in a hidden iframe and trick you into clicking approve.
 - A Content Security Policy limits the damage if a bug (XSS) ever slips into the page: scripts only from this server (`script-src 'self'`, no inline scripts or onclick), connections only to this server (`connect-src 'self'`), no plugins or `<base>`, and `Referrer-Policy: no-referrer`.
 - Permission modes follow your own Claude settings. The dashboard never uses permission-skipping flags.
-- A new session's first prompt is passed after `--`, so text starting with `-` (e.g. `--permission-mode …`) is never read as a claude option.
+- A new session's first prompt is never passed as a claude argument (arguments are visible to other accounts on this Mac via `ps`). Once the session's input box appears (usually about a second), it is pasted through a tmux buffer, so text starting with `-` (e.g. `--permission-mode …`) can't be read as an option either. If the folder-trust prompt is showing, it waits (up to 10 minutes) until you answer it.
 
 ## How it works
 

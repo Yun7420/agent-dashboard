@@ -17,8 +17,8 @@ function setup({ sessions = [], hasState = true } = {}) {
   const tmux = {
     sendText: async (t, x) => calls.push(['text', t, x]),
     sendKey: async (t, k) => calls.push(['key', t, k]),
-    capture: async () => '',
-    newSession: async (o) => calls.push(['new', o.name, o.command]),
+    capture: async () => '────────\n❯ ',
+    newSession: async (o) => { calls.push(['new', o.name, o.command]); return '%9'; },
   };
   const recent = { launchedIds: () => new Set(), noteLaunched: (id) => calls.push(['noted', id]), pick: () => [], markClosed: (id) => calls.push(['closed', id]) };
   const restoreLock = createLock();
@@ -94,7 +94,10 @@ test('복구 · 폴더 열기 · 새 세션 · 사용 한도: 예전 응답 그�
   const [code, json] = await t.run('spawn', { cwd: '~', name: '이름', prompt: '--x' });
   assert.equal(code, 200);
   assert.match(JSON.parse(json).key, /^claude:[0-9a-f-]{36}$/);
-  assert.deepEqual(t.calls.at(-1)[2].slice(-2), ['--', '--x']);
+  const made = t.calls.findLast((c) => c[0] === 'new');
+  assert.ok(!made[2].includes('--x') && !made[2].includes('--')); // 프롬프트는 인자에 없음(ps 에 안 보이게)
+  await new Promise((r) => setImmediate(r));
+  assert.deepEqual(t.calls.findLast((c) => c[0] === 'text'), ['text', '%9', '--x']); // 입력칸이 보여 새 창(%9)에 붙여 넣음
   assert.deepEqual(await t.run('usage-on', {}), [200, '켰어요']);
   assert.deepEqual(await t.run('usage-off', {}), [200, '껐어요']);
 });

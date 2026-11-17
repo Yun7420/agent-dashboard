@@ -27,4 +27,7 @@ if (answer('fail.txt').split('\n').includes(sub)) process.exit(1);
 if (sub === '-V') process.stdout.write('tmux 3.4\n');
 else if (sub === 'list-panes') process.stdout.write(answer('panes.txt'));
 else if (sub === 'capture-pane') process.stdout.write(answer('screen.txt', '> '));
-else if (sub === 'new-session') await new Promise((r) => setTimeout(r, Number(process.env.FAKE_NEW_DELAY_MS ?? 0)));
+else if (sub === 'new-session') {
+  await new Promise((r) => setTimeout(r, Number(process.env.FAKE_NEW_DELAY_MS ?? 0)));
+  if (args.includes('-P')) process.stdout.write(`${answer('new-pane.txt', '%90')}\n`); // -P -F '#{pane_id}' 흉내
+}

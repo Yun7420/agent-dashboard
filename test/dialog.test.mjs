@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hasDialog, detectDialog, dialogMismatch, parseOptions } from '../lib/dialog.mjs';
+import { hasDialog, inputReady, detectDialog, dialogMismatch, parseOptions } from '../lib/dialog.mjs';
 import { DEMO_PANE } from '../lib/demo.mjs';
 
 const approval = `${DEMO_PANE}
@@ -87,4 +87,16 @@ test('긴 줄: 공백 5만 칸 · 「1.」 뒤 긴 줄도 선택지 읽기 · �
     detectDialog(`${line}\n${line}`);
   }
   assert.ok(performance.now() - t0 < 100, `${Math.round(performance.now() - t0)}ms`);
+});
+
+// 새 세션 첫 프롬프트를 붙여 넣어도 되는 때(lib/spawn.mjs): 입력칸이 보이고 선택창이 없을 때만
+test('inputReady: 입력칸(가로줄 + 「❯ 」)만 참 — 뜨는 중 · 폴더 신뢰 확인(번호 없는 ❯) · 승인 창 · 대화 속 「> 」는 거짓', () => {
+  const RULE = '─'.repeat(40);
+  assert.equal(inputReady(`✻ Welcome\n\n${RULE}\n❯ \n${RULE}\n  ? for shortcuts`), true);
+  assert.equal(inputReady(`답변\n${RULE}\n> \n${RULE}`), true);
+  assert.equal(inputReady('✻ Welcome to Claude Code'), false);
+  assert.equal(inputReady(' Is this a project you trust?\n ❯ No, exit\n   Yes, I trust this folder\n Enter to confirm · Esc to cancel'), false);
+  assert.equal(inputReady(` Do you want to proceed?\n ❯ 1. Yes\n   2. No\n Esc to cancel`), false);
+  assert.equal(inputReady('> 인용문\n> 둘째 줄'), false);
+  assert.equal(inputReady(`${RULE}\n❯ \n${RULE}\n ❯ 1. Yes\n   2. No\n Esc to cancel`), false); // 입력칸 아래에 선택창이 붙어 떠도 넣지 않는다 // 가로줄 없는 「> 」는 입력칸이 아님
 });
