@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { HOME, DATA_DIR, dirOf, isInside, allInside, tildify } from '../lib/paths.mjs';
+import { HOME, DATA_DIR, dirOf, isInside, isInsideReal, allInside, tildify } from '../lib/paths.mjs';
 import { relPath } from '../lib/approval.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { request } from './_helpers/http.mjs';
@@ -12,6 +12,23 @@ test('dirOf: 공백 · 한글 폴더도 실제 경로로(new URL().pathname 은 
   const url = 'file:///Users/a%20b/%ED%95%9C%EA%B8%80/server.mjs';
   assert.equal(dirOf(url), '/Users/a b/한글');
   assert.notEqual(path.dirname(new URL(url).pathname), '/Users/a b/한글'); // 예전 방식은 틀린다
+});
+
+test('isInsideReal: 링크를 풀어 본다 — 안의 링크가 밖을 가리키면 밖, 안을 가리키면 안, 없는 경로는 밖, 부모가 링크여도 같게', () => {
+  const T = tmpDir('ad-real-');
+  const home = path.join(T, 'home'), out = path.join(T, 'out');
+  fs.mkdirSync(path.join(home, 'proj'), { recursive: true });
+  fs.mkdirSync(out);
+  fs.symlinkSync(out, path.join(home, 'to-out'));
+  fs.symlinkSync(path.join(home, 'proj'), path.join(home, 'to-proj'));
+  fs.symlinkSync(home, path.join(T, 'home-link'));
+  assert.equal(isInside(home, path.join(home, 'to-out')), true); // 글자로는 안
+  assert.equal(isInsideReal(home, path.join(home, 'to-out')), false);
+  assert.equal(isInsideReal(home, path.join(home, 'to-proj')), true);
+  assert.equal(isInsideReal(home, path.join(home, 'proj')), true);
+  assert.equal(isInsideReal(home, path.join(home, '없는-폴더')), false);
+  assert.equal(isInsideReal(path.join(T, 'home-link'), path.join(home, 'proj')), true); // 홈 자체가 링크
+  assert.equal(isInsideReal(home, path.join(T, 'home-link', 'proj')), true);
 });
 
 test('isInside: 자기 자신 · 아래는 안, 옆 폴더 · 부모 · .. 로 빠져나간 것은 밖', () => {

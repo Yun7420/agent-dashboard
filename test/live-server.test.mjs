@@ -12,6 +12,7 @@ import crypto from 'node:crypto';
 import { until } from './_helpers/until.mjs';
 import { ROOT, startServer } from './_helpers/server.mjs';
 import { createLiveHome } from './_helpers/live-home.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
 
 const PORT = 4697;
 const ID = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
@@ -28,6 +29,10 @@ const home = createLiveHome({
   settings: `${JSON.stringify({ model: 'opus[1m]', statusLine: { type: 'command', command: `"${fs.realpathSync(process.execPath)}" "${path.join(ROOT, 'bin', 'statusline.mjs')}"`, padding: 0 }, theme: 'dark' }, null, 2)}\n`,
 });
 const { HOME, CWD, UPLOADS, TOKEN, H, req, cmd, fakeLog, tmuxCalls, firstState } = home;
+// 홈 안의 링크: 홈 밖 시험 폴더를 가리키는 것 · 홈 안 폴더를 가리키는 것
+const OUTSIDE = tmpDir('ad-outside-');
+fs.symlinkSync(OUTSIDE, path.join(HOME, 'link-out'));
+fs.symlinkSync(CWD, path.join(HOME, 'link-in'));
 let srv;
 
 const files = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir, { recursive: true }).filter((f) => fs.statSync(path.join(dir, f)).isFile()) : []);
@@ -109,16 +114,20 @@ test('spawn: 홈 밖은 400, 첫 프롬프트는 -- 뒤 한 칸(옵션으로 읽
   assert.ok(!fakeLog().some((x) => x.cmd === 'claude' && x.args.includes('--permission-mode'))); // claude 를 직접 실행하지 않음(tmux 안에서만)
 });
 
-test('spawn: 폴더가 아닌 것(파일 · 없는 폴더 · .. 로 홈 밖)은 400, tmux 를 부르지 않는다', async () => {
+test('spawn: 폴더가 아닌 것(파일 · 없는 폴더 · .. 로 홈 밖 · 홈 밖을 가리키는 링크)은 400, tmux 를 부르지 않는다', async () => {
   const file = path.join(CWD, 'notes.txt');
   fs.writeFileSync(file, 'x');
   const before = tmuxCalls('new-session').length;
-  for (const cwd of [file, '~/proj/notes.txt', '~/proj/없는-폴더', `${HOME}/../`, '~/../..']) {
+  for (const cwd of [file, '~/proj/notes.txt', '~/proj/없는-폴더', `${HOME}/../`, '~/../..', '~/link-out', '~/link-out/', `${HOME}/link-in/../link-out`]) {
     const r = await cmd('spawn', { cwd });
     assert.equal(r.status, 400, cwd);
     assert.equal(r.text, '홈 폴더 아래에 있는 폴더만 열 수 있어요', cwd);
   }
   assert.equal(tmuxCalls('new-session').length, before);
+  // 홈 안을 가리키는 링크는 연다(그 경로 그대로 -c 로)
+  assert.equal((await cmd('spawn', { cwd: '~/link-in' })).status, 200);
+  const args = tmuxCalls('new-session').at(-1).args;
+  assert.equal(args[args.indexOf('-c') + 1], path.join(HOME, 'link-in'));
 });
 
 test('spawn: tmux 세션 이름은 dash-<이름 조각>-<ID 4자리>, 이름이 없으면 폴더 이름 · 쓸 글자가 없으면 session', async () => {

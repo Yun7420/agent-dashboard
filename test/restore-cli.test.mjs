@@ -49,3 +49,18 @@ test('떠 있는 세션은 빼고 꺼진 것만 다시 열고, 대시보드가 �
   assert.equal((await run(again))[0], '다시 열 세션이 없어요(이미 떠 있어요).');
   assert.deepEqual(again.made, []);
 });
+
+test('홈 안의 링크가 홈 밖을 가리키는 폴더는 다시 열지 않고, 홈 안을 가리키는 링크는 연다', async () => {
+  const OUT = tmpDir('ad-rcli-out-');
+  fs.symlinkSync(OUT, path.join(HOME, 'link-out'));
+  fs.symlinkSync(CWD, path.join(HOME, 'link-in'));
+  // 저장 시각을 앞 테스트와 다르게 — 같으면 이미 떼어 둔 재시동 전 목록(restore-prev)을 그대로 쓴다
+  fs.writeFileSync(path.join(DATA, 'restore.json'), JSON.stringify({ savedAt: '2000-01-02T00:00:00.000Z', entries: [
+    { id: id(3), title: '밖 링크', named: true, cwd: path.join(HOME, 'link-out'), tmuxSession: 'sc', model: null },
+    { id: id(4), title: '안 링크', named: true, cwd: path.join(HOME, 'link-in'), tmuxSession: 'sd', model: null },
+  ] }));
+  fileCache.forget(path.join(DATA, 'restore.json'));
+  const t = fakeTmux(['dashboard']);
+  await run(t);
+  assert.deepEqual(t.made.map((m) => [m.name, m.cwd]), [['sd', path.join(HOME, 'link-in')]]);
+});

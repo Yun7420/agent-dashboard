@@ -11,7 +11,7 @@ import { startServer } from './_helpers/server.mjs';
 import { createLiveHome } from './_helpers/live-home.mjs';
 
 const PORT = 4695;
-const [A, B, OUT, GONE, R1, R2, R3, R4] = Array.from({ length: 8 }, () => crypto.randomUUID());
+const [A, B, OUT, GONE, R1, R2, R3, R4, LOUT, LIN] = Array.from({ length: 10 }, () => crypto.randomUUID());
 const home = createLiveHome({
   port: PORT,
   prefix: 'ad-cmdsrv-',
@@ -20,6 +20,8 @@ const home = createLiveHome({
     { id: B, pid: process.ppid, status: 'waiting', pane: '%2', tmuxSession: 'sess-b', cwd: CWD }, // 선택 창
     { id: OUT, cwd: path.join(TMP, 'outside') }, // 끝난 세션 — 목록에는 있지만 폴더가 홈 밖
     { id: GONE, cwd: path.join(HOME, 'gone') }, // 끝난 세션 — 폴더가 지워짐
+    { id: LOUT, cwd: path.join(HOME, 'link-out') }, // 끝난 세션 — 홈 안의 링크가 홈 밖을 가리킴
+    { id: LIN, cwd: path.join(HOME, 'link-in') }, // 끝난 세션 — 홈 안의 링크가 홈 안을 가리킴
   ],
   // 재시동 전 목록: 떠 있는 A 는 빼고 R1 · R2 만 다시 연다
   restore: ({ CWD }) => [A, R1, R2].map((id, i) => ({ id, title: `복구 ${i}`, named: false, cwd: CWD, tmuxSession: i ? `old-${i}` : 'sess-a', model: null })),
@@ -27,6 +29,8 @@ const home = createLiveHome({
 });
 const { HOME, CWD, TMP, H, req, cmd, fakeLog, tmuxCalls, firstState, setScreen } = home;
 fs.mkdirSync(path.join(TMP, 'outside'));
+fs.symlinkSync(path.join(TMP, 'outside'), path.join(HOME, 'link-out'));
+fs.symlinkSync(CWD, path.join(HOME, 'link-in'));
 const SETTINGS = path.join(HOME, '.claude', 'settings.json');
 let srv;
 
@@ -35,7 +39,7 @@ before(async () => {
     const st = await firstState();
     const by = Object.fromEntries(st.sessions.map((s) => [s.id, s]));
     const recent = JSON.parse((await req('/api/recent', { headers: H })).text);
-    return by[A]?.status === 'working' && by[B]?.status === 'waiting' && by[OUT] && by[GONE] && recent.loading === false && (await cmd('stop', { key: 'x' })).status !== 503;
+    return by[A]?.status === 'working' && by[B]?.status === 'waiting' && by[OUT] && by[GONE] && by[LOUT] && by[LIN] && recent.loading === false && (await cmd('stop', { key: 'x' })).status !== 503;
   } });
 });
 after(() => srv?.stop()); // 이 테스트가 띄운 서버만, 끝날 때까지 기다린다(임시 홈은 tmpDir 이 그 뒤 지움)
@@ -120,14 +124,17 @@ test('usage-on · off: 설정 파일이 깨졌거나 링크면 409 와 그 이�
   }
 });
 
-test('open-dir: 목록에 있어도 홈 밖 · 없는 폴더 · 목록에 없는 폴더는 400 이고 열지 않는다, 목록 세션의 홈 안 폴더는 연다(가짜 open)', async () => {
+test('open-dir: 목록에 있어도 홈 밖 · 없는 폴더 · 홈 밖을 가리키는 링크 · 목록에 없는 폴더는 400 이고 열지 않는다, 목록 세션의 홈 안 폴더(링크 포함)는 연다(가짜 open)', async () => {
   const opened = () => fakeLog().filter((c) => c.cmd === 'open' || c.cmd === 'xdg-open');
-  for (const dir of [path.join(TMP, 'outside'), path.join(HOME, 'gone'), HOME, '/etc']) {
+  for (const dir of [path.join(TMP, 'outside'), path.join(HOME, 'gone'), path.join(HOME, 'link-out'), HOME, '/etc']) {
     const r = await cmd('open-dir', { dir, app: 'finder' });
     assert.deepEqual([r.status, r.text], [400, '목록에 있는 세션의 폴더만 열 수 있어요'], dir);
   }
   assert.deepEqual(opened(), []);
   const r = await cmd('open-dir', { dir: CWD, app: 'finder' });
   assert.deepEqual([r.status, r.text], [200, '~/proj 를 열었어요']);
-  assert.deepEqual(opened().map((c) => [c.cmd, c.args]), [[os.platform() === 'darwin' ? 'open' : 'xdg-open', [CWD]]]);
+  const OPEN = os.platform() === 'darwin' ? 'open' : 'xdg-open';
+  assert.deepEqual(opened().map((c) => [c.cmd, c.args]), [[OPEN, [CWD]]]);
+  assert.equal((await cmd('open-dir', { dir: path.join(HOME, 'link-in'), app: 'finder' })).status, 200);
+  assert.deepEqual(opened().at(-1).args, [path.join(HOME, 'link-in')]);
 });
