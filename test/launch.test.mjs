@@ -1,6 +1,7 @@
 // 포트 충돌 안내가 「켠 방법」에 맞는 명령을 보여 주는지. 서버를 띄울 땐 임시 홈 · 가짜 명령(test/fake-bin)만 쓴다
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -54,4 +55,15 @@ test('포트 충돌: 저장소에서 node server.mjs(npm start)는 예전처럼 
     assert.equal(r.status, 1);
     assert.match(r.stderr, /PORT=4693 npm start 처럼/);
   });
+});
+
+// npm 의 agent-dashboard 는 남의 패키지라, 출시 전 README · 도움말이 그 이름으로 npx 를 안내하면 남의 코드를 실행하게 된다(2026-11-17 점검 E2)
+test('출시 전(private): README · 도움말에 npx 실행 안내가 없다 — 패키지 이름은 출시 때 정함', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  if (!pkg.private) return; // 출시하면 정한 이름으로 안내한다
+  const help = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'agent-dashboard.mjs'), '--help'], { encoding: 'utf8' }).stdout;
+  for (const [what, text] of [['README.md', fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8')], ['README.en.md', fs.readFileSync(path.join(ROOT, 'README.en.md'), 'utf8')], ['도움말', help]]) {
+    assert.doesNotMatch(text, /npx\s+(@[\w.-]+\/)?agent-dashboard\b/, what);
+  }
+  assert.match(help, /사용법/);
 });

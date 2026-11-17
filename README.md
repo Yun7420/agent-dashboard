@@ -94,7 +94,7 @@ tmux respawn-pane -k -t dashboard     # 코드를 고친 뒤 다시 켜기 (Ctrl
 ```
 
 - `run` 은 1분 안에 5번 넘게 꺼지면 다시 켜는 간격을 30초로 늘리고, 포트가 이미 쓰이고 있으면 다시 켜지 않고 끝나요. Ctrl+C(SIGINT) · SIGTERM 을 받으면 서버도 함께 끝내요.
-- 배포 뒤에는 `npx agent-dashboard run` 처럼 저장소 없이 쓸 수 있게 할 예정이에요(아직 npm 에 올리지 않았어요).
+- 나중에 npm 으로 내놓아 저장소 없이 쓸 수 있게 할 예정이에요. **패키지 이름은 출시 때 정해요**(아직 npm 에 올리지 않았어요). npm 에 이미 있는 비슷한 이름의 패키지는 이 프로젝트와 상관없으니 `npx` 로 받지 마세요.
 
 ### 맥을 껐다 켠 뒤: 세션 한 번에 복구
 
@@ -102,7 +102,7 @@ tmux respawn-pane -k -t dashboard     # 코드를 고친 뒤 다시 켜기 (Ctrl
 
 ```bash
 npm run restore    # 재시동 전 세션들을 tmux 로 다시 띄우고, 대시보드도 켜요
-node bin/agent-dashboard.mjs restore   # 같은 일(대시보드는 run 실행기로 켜요). 배포 뒤에는 npx agent-dashboard restore
+node bin/agent-dashboard.mjs restore   # 같은 일(대시보드는 run 실행기로 켜요)
 ```
 
 띄우기만 하고 아무것도 끄지 않아요. 이미 떠 있는 세션은 다시 띄우지 않아요.

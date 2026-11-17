@@ -94,7 +94,7 @@ tmux respawn-pane -k -t dashboard     # restart after editing code (sending Ctrl
 ```
 
 - `run` widens the restart delay to 30 seconds after 5 exits within a minute, and stops instead of restarting when the port is already in use. On Ctrl+C (SIGINT) or SIGTERM it stops the server too.
-- After an npm release this is meant to work without the repo, e.g. `npx agent-dashboard run` (not published yet).
+- It is meant to be released on npm later so it works without the repo. **The package name will be decided at release** (not published yet). Packages with similar names already on npm are unrelated to this project — don't run them with `npx`.
 
 ### After a restart: restore all sessions at once
 
@@ -102,7 +102,7 @@ A restart kills tmux and every session inside it, but the conversations are save
 
 ```bash
 npm run restore    # reopens the pre-restart sessions in tmux and starts the dashboard
-node bin/agent-dashboard.mjs restore   # same job (starts the dashboard with the run runner). After a release: npx agent-dashboard restore
+node bin/agent-dashboard.mjs restore   # same job (starts the dashboard with the run runner)
 ```
 
 It only starts things and never stops anything. Sessions that are already running aren't started again.
