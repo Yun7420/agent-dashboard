@@ -3,6 +3,7 @@
 > 2026-11-12 정리. 하나씩 끝내고 실제로 써 본 뒤 다음으로 넘어간다. 끝난 항목은 `[x]` 와 커밋 해시를 적는다.
 
 ## 0. 기반
+- [x] 5바퀴(남은 빈칸 · 큰 파일): 127.0.0.1 에만 여는지(다른 주소로 붙으면 실패) `f7deae0` · 새 세션에 파일 · 없는 폴더는 400 + 쓸 글자 없는 이름의 tmux 이름 고침 `f30c49b` · lib/state.mjs 단위 테스트(테스트 짝 허용 목록 0) `a5f5a5e` · adapters/claude.mjs 나누기(사용자 승인): 커밋 제목 → lib/git-commits, 턴 시작 · 이번 턴 변경 · 공식 목록 · 하루 요약 → adapters/claude/, 542 → 291줄. 실제 기록 136세션 옛/새 같음 `86c950b` · lib/state.mjs 나누기: lib/dialog-watch · lib/peer-links, 320 → 234줄. 실제 상태 옛/새 8틱 같음 `63bc412`. 크기 허용 목록 4 → 2(server 468 · 03-graph 201)
 - [x] 4바퀴(점검 → 고침): 급한 테스트(Host localhost · 같은 출처 Origin · 첨부 정리 폴더 버그) `7e1ab59` `e4ce3f7` · 코드 규칙 CONVENTIONS + 기계 검사 `dcc71e0` · 화면 01-core 모으기 · 번호 `038eaf3` · 07 나누기 `aa5447a` · lib/history-core `64f8e60` · 테스트 도우미 test/_helpers · 임시 폴더 누수 · 준비 확인 `ce060ee` · 토큰 동시 생성 겹치게 `538d314` · 재시동 복구 순서 버그 + 명령 빈칸 시험 `79dc603` · 단위 테스트(테스트 짝 허용 5 → 1) `45cf420` · server.mjs 나누기(사용자 승인): 기록 · 검색 · 오늘 한 일 → lib/history-api, 사용 한도 · 기본 모델 → lib/usage-bridge, 648 → 468줄(보안 입구 · ROUTES 는 server 에). 데모 응답 66개 같음 · 실제 모드 대조 같음(늘어난 것만 다름)
 - [x] 3바퀴 3-6 성능: 같은 답변 md 건너뛰기 · 목록은 시간 글자만 · 비교용 HTML 은 WeakMap(데모 10초: md 15→0 · 목록 교체 5→0 · data-src 17KB→0) `73b6e98` / 3-7 문서 · 작은 정리: 화면 흐름 · 주말에 같이 볼 것 · 홈 줄이기(state.home) · esc 굳히기 · 검색 강조 · 죽은 CSS `2b742be`
 - [x] 3바퀴 3-5 접근성: 동작 줄이기 · 카드 Tab/Enter/Space · ✕ 따로 · 포커스 유지 · 탭 role/← → · faint 대비 4.5 · #conn status · 390 승인 단추 sticky `27482ce`
@@ -36,7 +37,7 @@
 - [x] 버그 수정: 서버를 켠 직후 복구 목록에 떠 있는 세션까지 보이던 것(첫 상태 전엔 후보 없음 · 다시 열기 503) `0b91472`
 - [x] 버그 수정(점검 2번): 경로 처리 — fileURLToPath(공백 · 한글 폴더), 폴더 안 검사를 isInside 하나로(첨부 uploads-x · 홈 옆 폴더 통과하던 것), 데이터 폴더 DATA_DIR 하나로 `0084945`
 - [x] 버그 수정(점검 1번): 서버가 죽는 경로 — 화면 파일 경로로 폴더(/js) 요청 시 EISDIR 로 죽던 것(토큰 없이 아무 사이트나 가능), 처리 안 된 오류 → 500, unhandledRejection 로그만, 시작 환경 점검 catch, 포트 충돌 안내 · 종료 코드 1 `f74f7b8`
-- [ ] **파일 나누기 (2단계)** — 예전 한 파일 `public/index.html`(약 1,800줄)을 화면 · 상태 · 기능별 파일로. 패키지 0개 · 빌드 없음은 유지. 지금(2026-11-17): `index.html` 283줄 · `style.css` 610줄 · `public/js/00-md.js` ~ `19-keys.js` 20개, 서버는 `server.mjs` 468줄 + `lib/` 37개
+- [ ] **파일 나누기 (2단계)** — 예전 한 파일 `public/index.html`(약 1,800줄)을 화면 · 상태 · 기능별 파일로. 패키지 0개 · 빌드 없음은 유지. 지금(2026-11-17): `index.html` 283줄 · `style.css` 610줄 · `public/js/00-md.js` ~ `19-keys.js` 20개, 서버는 `server.mjs` 468줄 + `lib/` 40개 + `adapters/claude/` 조각 4개
   - [x] 1. 화면 모양(CSS) → `public/style.css`
   - [x] 2. 화면 동작(JS) → `public/app.js` (토큰은 index.html 에만 끼워 넣음)
   - [x] 3. app.js 를 구역별 파일로 → `public/js/00-md.js` ~ `19-keys.js` (번호 순서대로 불러옴. 처음 나눌 땐 01-core ~ 16-live 였고 뒤에 기능마다 늘어남)
