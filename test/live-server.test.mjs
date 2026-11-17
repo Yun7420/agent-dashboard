@@ -97,6 +97,32 @@ test('spawn: 홈 밖은 400, 첫 프롬프트는 -- 뒤 한 칸(옵션으로 읽
   assert.ok(!fakeLog().some((x) => x.cmd === 'claude' && x.args.includes('--permission-mode'))); // claude 를 직접 실행하지 않음(tmux 안에서만)
 });
 
+test('spawn: 폴더가 아닌 것(파일 · 없는 폴더 · .. 로 홈 밖)은 400, tmux 를 부르지 않는다', async () => {
+  const file = path.join(CWD, 'notes.txt');
+  fs.writeFileSync(file, 'x');
+  const before = tmuxCalls('new-session').length;
+  for (const cwd of [file, '~/proj/notes.txt', '~/proj/없는-폴더', `${HOME}/../`, '~/../..']) {
+    const r = await cmd('spawn', { cwd });
+    assert.equal(r.status, 400, cwd);
+    assert.equal(r.text, '홈 폴더 아래에 있는 폴더만 열 수 있어요', cwd);
+  }
+  assert.equal(tmuxCalls('new-session').length, before);
+});
+
+test('spawn: tmux 세션 이름은 dash-<이름 조각>-<ID 4자리>, 이름이 없으면 폴더 이름 · 쓸 글자가 없으면 session', async () => {
+  const nameOf = async (body) => {
+    assert.equal((await cmd('spawn', { cwd: '~/proj', ...body })).status, 200);
+    const args = tmuxCalls('new-session').at(-1).args;
+    return args[args.indexOf('-s') + 1];
+  };
+  assert.match(await nameOf({ name: '새 일' }), /^dash-새-일-[0-9a-f]{4}$/);
+  assert.match(await nameOf({}), /^dash-proj-[0-9a-f]{4}$/); // 이름이 없으면 폴더 이름
+  assert.match(await nameOf({ name: 'a.b:c' }), /^dash-a-b-c-[0-9a-f]{4}$/); // tmux 가 이름에 못 쓰는 . : 는 - 로
+  assert.match(await nameOf({ name: '!!! 🚀 ' }), /^dash-session-[0-9a-f]{4}$/); // 쓸 글자가 없으면 「-」 하나 대신 session
+  assert.match(await nameOf({ name: '-앞뒤-' }), /^dash-앞뒤-[0-9a-f]{4}$/);
+  assert.match(await nameOf({ name: 'x'.repeat(50) }), new RegExp(`^dash-${'x'.repeat(30)}-[0-9a-f]{4}$`)); // 조각은 30자까지
+});
+
 test('recent-restore: 동시에 두 번이면 하나는 409, 본문의 cwd 는 무시하고 기억한 폴더로, 방금 띄운 세션은 다시 안 띄움', async () => {
   const cand = JSON.parse((await req('/api/recent', { headers: H })).text);
   assert.deepEqual(cand.items.map((x) => x.id), [ID[2]]);
