@@ -215,7 +215,7 @@
 
 ### test
 
-54개 파일, 307개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+54개 파일, 311개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -390,11 +390,11 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 데모는 명령을 맨 앞에서 끝내 버려서, 명령이 tmux 로 무엇을 보내는지는 볼 수 없어요. 그래서:
 
 - `DASHBOARD_TEST=1` + 임시 홈 폴더(`DASHBOARD_HOME`) + 임시 토큰 파일 → 내 `~/.claude` · `~/.agent-dashboard` 는 건드리지 않아요.
-- `PATH` 맨 앞에 `test/fake-bin`(가짜 `tmux` · `claude` · `ps` · `lsof` · `open` · `xdg-open`)을 둬요. 가짜 명령은 받은 인자를 기록 파일에 적고, 정해 둔 답을 돌려줘요(`test/fake-bin/_fake.mjs`). 진짜 명령은 절대 부르지 않아요.
+- `PATH` 맨 앞에 `test/fake-bin`(가짜 `tmux` · `claude` · `ps` · `lsof` · `open` · `xdg-open` · `osascript`)을 둬요. 가짜 명령은 받은 인자를 기록 파일에 적고, 정해 둔 답을 돌려줘요(`test/fake-bin/_fake.mjs`). 진짜 명령은 절대 부르지 않아요.
 
 | 파일 | 지키는 것 |
 |---|---|
-| `test/live-server.test.mjs` (4697) | 보내기 · 승인 · 새 세션 · 복구가 tmux 에 정확히 무엇을 보내는지, 업로드 600, 상태줄 다리 옮기기 |
+| `test/live-server.test.mjs` (4697) | 보내기 · 승인 · 새 세션 · 복구가 tmux 에 정확히 무엇을 보내는지, 업로드 600, 상태줄 다리 옮기기, 창 화면(`/api/pane`), 홈 밖 링크 거절, 승인 필요 → 틱 → macOS 알림(가짜 osascript, 시험 모드에서만 `DASHBOARD_FAKE_MAC=1` 로 리눅스도) |
 | `test/live-commands.test.mjs` (4695) | 멈추기 · 선택 창일 때 닫기/모델 409 · 미리보기 창 화살표 + Enter · 복구 N개 · 설정 파일 깨짐/링크 409 · 폴더 열기(홈 밖 · 없는 폴더) |
 | `test/missing-tools.test.mjs` (4696) | tmux 가 없을 때 서버가 뜨고 한국어로 안내하는지 |
 | `test/runner.test.mjs` (4694) | 실행기: 다시 켜기 · 간격 늘리기 · 포트 충돌 멈춤 · 신호 전달 · 복구는 띄우기만 |

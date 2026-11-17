@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { PassThrough } from 'node:stream';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { createNotifyApi } from '../lib/notify-api.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 
@@ -79,4 +81,15 @@ test('macOS 가 아니면 지원 안 함: 켜도 보내지 않는다', async () 
   api.tick([S('waiting')]);
   assert.deepEqual((await call(api.test, post({}))).json, { sent: false, supported: false });
   assert.deepEqual(runs, []);
+});
+
+test('DASHBOARD_FAKE_MAC 는 시험 모드에서만(평소 실행 · 데모는 무시) — 환경 변수 하나로 알림 경로를 바꾸지 못하게', () => {
+  const probe = (extra) => {
+    const env = { ...process.env, DASHBOARD_FAKE_MAC: '1', ...extra };
+    for (const k of Object.keys(extra)) if (extra[k] === undefined) delete env[k];
+    return execFileSync(process.execPath, ['--input-type=module', '-e', "import { FAKE_MAC } from './lib/notify-api.mjs'; console.log(FAKE_MAC)"], { cwd: fileURLToPath(new URL('..', import.meta.url)), env, encoding: 'utf8' }).trim();
+  };
+  assert.equal(probe({ DASHBOARD_TEST: undefined, DEMO: undefined }), 'false');
+  assert.equal(probe({ DASHBOARD_TEST: '1', DEMO: '1' }), 'false');
+  assert.equal(probe({ DASHBOARD_TEST: '1', DEMO: undefined }), 'true');
 });

@@ -283,7 +283,7 @@ agent-dashboard/
 │  ├─ index.html       # structure (the server injects the token here only)
 │  ├─ css/00-base.css ~ 11-narrow.css   # styles, one file per area, loaded in number order (narrow-screen @media in the last file)
 │  └─ js/00-md.js ~ 19-keys.js   # behavior, one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
-└─ test/               # node --test, 54 files · _helpers (temp folders · starting servers · requests) · fake-bin (fake tmux · claude · ps · lsof · open)
+└─ test/               # node --test, 54 files · _helpers (temp folders · starting servers · requests) · fake-bin (fake tmux · claude · ps · lsof · open · osascript)
 ```
 
 ### Adding another agent
@@ -305,9 +305,9 @@ Shows the UI with fake data (Project1, Lead Manager, …). No commands are execu
 npm test
 ```
 
-Uses Node's built-in test runner (`node --test`), nothing to install. 307 tests (2026-11-17): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
-- Test servers briefly use ports 4692 and 4694–4699. Instead of real sessions and tmux they use a temporary home folder and the fake commands in `test/fake-bin` (tmux · claude · ps · lsof · open), so your `~/.claude` and `~/.agent-dashboard` are never touched.
-- GitHub Actions runs `npm test` on every push to main and every PR, on Ubuntu · macOS × Node 18 · 20 · 22 · 24 (badge above). The macOS notification (osascript) test runs only on macOS.
+Uses Node's built-in test runner (`node --test`), nothing to install. 311 tests (2026-11-17): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
+- Test servers briefly use ports 4692 and 4694–4699. Instead of real sessions and tmux they use a temporary home folder and the fake commands in `test/fake-bin` (tmux · claude · ps · lsof · open · osascript), so your `~/.claude` and `~/.agent-dashboard` are never touched.
+- GitHub Actions runs `npm test` on every push to main and every PR, on Ubuntu · macOS × Node 18 · 20 · 22 · 24 (badge above). Real macOS notifications (osascript) are tested only on macOS; the "approval needed → notification" wiring is also tested on Linux with a fake osascript.
 
 ## Supported environment and limits
 

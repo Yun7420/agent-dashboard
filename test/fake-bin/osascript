@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+// 가짜 osascript: macOS 알림(lib/notify-api.mjs)을 기록만 한다 — 시험 중에 진짜 알림이 뜨지 않게, 리눅스 CI 에서도 알림 연결을 시험하게
+import { record } from './_fake.mjs';
+record('osascript', process.argv.slice(2));

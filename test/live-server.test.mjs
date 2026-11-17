@@ -38,7 +38,7 @@ let srv;
 const files = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir, { recursive: true }).filter((f) => fs.statSync(path.join(dir, f)).isFile()) : []);
 
 before(async () => {
-  const env = home.env({ FAKE_NEW_DELAY_MS: '400', FAKE_PS_FIRST_DELAY_MS: '1500' });
+  const env = home.env({ FAKE_NEW_DELAY_MS: '400', FAKE_PS_FIRST_DELAY_MS: '1500', DASHBOARD_FAKE_MAC: '1' }); // 리눅스 CI 에서도 macOS 알림 연결을 가짜 osascript 로
   // 두 세션이 tmux 창과 함께 보이고(첫 상태), 명령이 보는 상태(latest)도 만들어질 때까지.
   // /events 는 latest 가 없으면 따로 상태를 만들어 보내서, 첫 상태만 기다리면 명령이 아직 503 일 수 있다(예전엔 409 로 흔들림)
   srv = await startServer({ env, name: '시험 서버', ready: async () => {
@@ -207,4 +207,27 @@ test('상태줄 다리: 서버를 켤 때 옛 경로 등록을 ~/.agent-dashboar
   s = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
   assert.equal(s.statusLine.command, want);
   assert.equal(s.theme, 'dark');
+});
+
+test('macOS 알림: 켜 두면 승인 필요가 된 세션을 틱이 알린다(afterBuild → notify.tick → 가짜 osascript), 값은 -- 뒤 인자로만', async () => {
+  const on = await req('/api/notify', { method: 'POST', headers: H, body: JSON.stringify({ mac: true, sound: 'Ping' }) });
+  assert.equal(on.status, 200);
+  assert.equal(JSON.parse(on.text).supported, true);
+  const calls = () => fakeLog().filter((x) => x.cmd === 'osascript');
+  const before = calls().length;
+  // 공식 세션 목록에서 idle 세션 하나를 「승인 필요」로 바꾼다(다음 틱이 알아챈다)
+  const file = path.join(HOME, '.claude', 'sessions', `${PID[0]}.json`);
+  const orig = fs.readFileSync(file, 'utf8');
+  fs.writeFileSync(file, JSON.stringify({ ...JSON.parse(orig), status: 'waiting' }));
+  try {
+    assert.ok(await until(() => calls().length > before, 10_000), 'osascript 가 불리지 않았어요');
+  } finally {
+    fs.writeFileSync(file, orig);
+  }
+  const args = calls().at(-1).args;
+  const tail = args.slice(args.indexOf('--') + 1);
+  assert.equal(tail[0], '요청 0'); // 제목 = 세션 이름
+  assert.match(tail[1], /^승인이 필요해요/);
+  assert.equal(tail[2], 'Ping');
+  assert.ok(args.slice(0, args.indexOf('--')).every((a, i) => (i % 2 ? !a.includes('요청 0') : a === '-e'))); // 스크립트 글자 속에 값이 들어가지 않음
 });
