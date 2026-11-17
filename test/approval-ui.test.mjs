@@ -52,3 +52,11 @@ test('여러 질문 창: 맨 위 「← … →」 줄 아래에서만 선택지
   assert.deepEqual([submit.tabs.cur, submit.tabs.canPrev, submit.tabs.canNext], [-1, true, false]);
   assert.equal(choices(' ❯ 1. Yes').tabs, null);
 });
+
+// 아주 긴 한 줄도 금방 — 줄마다 앞 500자만 본다(점검 B7, 예전 5만 칸 1.4초)
+test('긴 줄: 공백 5만 칸 · 「1.」 뒤 긴 줄도 선택지 읽기가 금방 끝난다', () => {
+  const t0 = performance.now();
+  choices(' '.repeat(50_000) + 'x', '');
+  choices('1. a' + ' '.repeat(50_000) + 'x\n2. b', '');
+  assert.ok(performance.now() - t0 < 100, `${Math.round(performance.now() - t0)}ms`);
+});

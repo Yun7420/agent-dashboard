@@ -28,7 +28,7 @@ $('#approve-card').addEventListener('click', (e) => {
 const TAB_LINE = /^\s*←.*(Submit|→)\s*$/;
 const OPTION_LINE = /^[\s│|]*(?:❯|›|>)?\s*([1-9])\.\s+(.+?)[\s│|]*$/;
 function approvalChoices(text, focus = '') {
-  const lines = String(text ?? '').split('\n');
+  const lines = String(text ?? '').split('\n').map((l) => l.slice(0, 500)); // 아주 긴 줄은 앞만 — 선택지 정규식이 오래 걸리지 않게(점검 B7)
   const tabIdx = lines.map((l) => TAB_LINE.test(l)).lastIndexOf(true);
   const options = [];
   for (const line of tabIdx >= 0 ? lines.slice(tabIdx + 1) : lines.slice(-40)) {

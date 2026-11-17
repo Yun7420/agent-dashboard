@@ -107,8 +107,10 @@ test('다시 띄우기: 같은 ID 는 한 번, 홈 밖 · 없는 폴더는 건�
     { id: ID(4), title: '없는 폴더', cwd: path.join(HOME, '__agent_dashboard_없는_폴더__'), tmuxSession: 't4' },
     { id: ID(5), title: '홈과 이름만 비슷', cwd: HOME + '-other', tmuxSession: 't5' },
     { id: 'bad', title: 'x', cwd: HOME, tmuxSession: 't6' },
+    { id: ID(7), title: '모르는 모델', cwd: HOME, tmuxSession: 't7', model: '--dangerously-skip-permissions' },
   ], deps);
-  assert.deepEqual(done.map((d) => d.id), [ID(1), ID(2)]);
+  assert.deepEqual(done.map((d) => d.id), [ID(1), ID(2), ID(7)]);
+  assert.deepEqual(calls[2].command, ['claude', '--resume', ID(7)]); // 모르는 모델 값은 넘기지 않고 기본 모델로
   assert.equal(calls[0].name, 't1-2'); // t1 이 이미 있음
   assert.deepEqual(calls[0].command, ['claude', '--resume', ID(1)]);
   assert.deepEqual(calls[1].command, ['claude', '--resume', ID(2), '--name=이름 "따옴표" $(x)', '--model', 'sonnet']);

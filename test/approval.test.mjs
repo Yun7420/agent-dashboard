@@ -87,6 +87,15 @@ test('화면에서 추정: 기록에 없을 때 승인 창 머리 아래 줄을 
   assert.equal(guessFromScreen('평범한 화면\n> '), null);
 });
 
+// 줄 앞뒤 떼기가 정규식 되짚기로 오래 걸리지 않게(점검 B7) — 긴 명령 글자는 자르지 않는다(위험 판정에 쓰인다)
+test('화면에서 추정: 공백 5만 칸 줄 · 상자 세로줄이 붙은 긴 명령도 금방, 명령은 자르지 않음', () => {
+  const long = 'echo ' + 'a'.repeat(3000) + ' && rm -rf ~/x';
+  const t0 = performance.now();
+  assert.equal(guessFromScreen(` Bash command\n\n x${' '.repeat(50_000)}y \n Do you want to proceed?`).input.command, `x${' '.repeat(50_000)}y`); // 가운데 긴 공백이 느린 경우
+  assert.equal(guessFromScreen(` Bash command\n\n │   ${long}   │\n\n Do you want to proceed?`).input.command, long);
+  assert.ok(performance.now() - t0 < 100, `${Math.round(performance.now() - t0)}ms`);
+});
+
 test('pendingTool: 다른 세션이 보낸 메시지로 새 턴이 시작돼도 그 전 호출은 버린다', () => {
   const peerLine = { type: 'user', isMeta: true, turnOrigin: 'peer', origin: { kind: 'peer', name: '예시', body: '예시 지시' }, message: { content: '<cross-session-message from="x" from-name="예시">예시 지시</cross-session-message>' } };
   assert.equal(pendingToolOf([use('a', 'Bash', { command: 'ls' }), peerLine]), null);

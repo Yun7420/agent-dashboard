@@ -67,3 +67,24 @@ test('엇갈림 판별: 공식 상태만 승인 필요 / 선택지만 있고 문
   assert.equal(dialogMismatch({ official: false, hint: false, options: false }), null);
   assert.equal(dialogMismatch({ official: false, hint: true, options: false }), null); // 번호 없는 확인 창(입력 칸 등)은 정상
 });
+
+// 쉬는 세션: 답변 끝에 선택창 문구 · 커서 있는 번호 목록이 있어도, 그 아래 입력칸(가로줄 + 「> 」)이 있으면 선택창이 아니다(2026-11-17 점검 B4)
+const idle = (reply) => [...reply, '', '─'.repeat(60), '> ', '─'.repeat(60), '  ? for shortcuts'].join('\n');
+test('답변 끝의 「Enter to …」 · 「❯ 1. 2.」 는 입력칸 위라서 선택창이 아니다 — 입력칸이 없는 진짜 선택창은 그대로', () => {
+  assert.deepEqual(detectDialog(idle(['⏺ 정리했어요.', '  Enter to continue reading'])), { dialog: false, by: null, hint: false, options: false });
+  assert.equal(hasDialog(idle(['⏺ 고를 것:', ' ❯ 1. foo', '   2. bar'])), false);
+  assert.equal(hasDialog(idle(['Esc to cancel'])), false);
+  assert.equal(hasDialog(`${idle(['이전 답변'])}\n${DEMO_PANE}\n Esc to cancel · Tab to amend`), true); // 입력칸 아래에 뜬 선택창
+  assert.equal(hasDialog(['╭' + '─'.repeat(40) + '╮', '│ > 입력 중인 글', '╰' + '─'.repeat(40) + '╯', '  Enter to continue'].join('\n')), true); // 입력칸 아래의 안내는 선택창 쪽
+  assert.equal(hasDialog(approval), true);
+});
+
+// 아주 긴 한 줄(capture-pane -J 로 이어 붙은 줄)도 금방 — 줄마다 앞 500자만 본다(점검 B7, 예전 5만 칸 1.5초)
+test('긴 줄: 공백 5만 칸 · 「1.」 뒤 긴 줄도 선택지 읽기 · 감지가 금방 끝난다', () => {
+  const t0 = performance.now();
+  for (const line of [' '.repeat(50_000) + 'x', '❯ 1. a' + ' '.repeat(50_000) + 'x', '│'.repeat(50_000)]) {
+    parseOptions(`${line}\n${line}`);
+    detectDialog(`${line}\n${line}`);
+  }
+  assert.ok(performance.now() - t0 < 100, `${Math.round(performance.now() - t0)}ms`);
+});
