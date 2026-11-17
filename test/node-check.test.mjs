@@ -4,22 +4,23 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { nodeCheck, checkNode, EOL_MAJORS } from '../lib/node-check.mjs';
+import { nodeCheck, checkNode, isEol } from '../lib/node-check.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { ROOT, demoEnv } from './_helpers/server.mjs';
 
-test('nodeCheck: engines 보다 낮으면 멈춤 + 한국어 안내, 지원 끝난 18 · 20 은 한 줄 안내 후 계속, 22 이상은 조용히', () => {
+test('nodeCheck: engines 보다 낮으면 멈춤 + 한국어 안내, 지원 끝난 18 · 20 · 홀수 버전은 한 줄 안내 후 계속, 22 · 24 는 조용히', () => {
   const low = nodeCheck('v16.20.0', '>=18');
   assert.equal(low.ok, false);
   assert.match(low.message, /^Node 18 이상이 필요해요\(지금 v16\.20\.0\)/);
-  for (const v of ['v18.20.4', 'v20.11.0']) {
+  for (const v of ['v18.20.4', 'v20.11.0', 'v19.0.0', 'v23.11.0', 'v25.2.0']) {
     const r = nodeCheck(v, '>=18');
     assert.equal(r.ok, true, v);
     assert.match(r.message, /지원이 끝난 버전이에요/, v);
   }
   assert.deepEqual(nodeCheck('v22.1.0', '>=18'), { ok: true, message: null });
   assert.deepEqual(nodeCheck('v24.0.0', '>=18'), { ok: true, message: null });
-  assert.deepEqual(EOL_MAJORS, [18, 20]);
+  assert.match(nodeCheck('v23.1.0', '>=18').message, /짝수 LTS/);
+  assert.deepEqual([18, 19, 20, 21, 22, 23, 24, 26].map(isEol), [true, true, true, true, false, true, false, false]);
 });
 
 test('checkNode: 부를 때만 안내 · 종료(불러오기만 해서는 아무것도 안 함) — 낮으면 exit(1), 18 · 20 은 안내만', () => {
