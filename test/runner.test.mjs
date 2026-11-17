@@ -64,6 +64,25 @@ test('run: 짧은 시간에 계속 죽으면 다시 켜는 간격을 늘린다',
   assert.equal(await r.done, 0); // 기다리던 다시 켜기를 취소하고 끝남
 });
 
+test('run: 로그가 상한을 넘으면 .1 로 한 번 돌린다(켤 때 · 쓰는 중 모두, 600 그대로, 그전 .1 은 덮음)', async () => {
+  const dir = tmp();
+  const logFile = path.join(dir, 'server.log');
+  fs.writeFileSync(logFile, 'x'.repeat(600), { mode: 0o600 }); // 켤 때 이미 상한(500)을 넘음
+  fs.writeFileSync(`${logFile}.1`, '아주 옛 로그', { mode: 0o600 });
+  const r = createRunner({ command: [process.execPath, fakeServer(dir, 'crash')], cwd: dir, logFile, restartMs: 5, logMax: 500, burst: { count: 1000, windowMs: 60_000, delayMs: 60_000 } });
+  try { // 실패해도 finally 에서 실행기를 멈춘다(안 그러면 계속 다시 켜며 테스트가 끝나지 않는다)
+    assert.equal(fs.readFileSync(`${logFile}.1`, 'utf8'), 'x'.repeat(600)); // 켜자마자(아직 아무것도 쓰기 전에) 돌림
+    assert.equal(fs.statSync(logFile).size, 0);
+    assert.ok(await until(() => fs.existsSync(`${logFile}.1`) && !fs.readFileSync(`${logFile}.1`, 'utf8').startsWith('x') && count(dir) >= 3, 5000), '쓰는 중에 다시 돌리지 않았다');
+  } finally {
+    r.stop();
+  }
+  await r.done;
+  assert.ok(fs.statSync(logFile).size <= 500 + 200);
+  assert.doesNotMatch(fs.readFileSync(`${logFile}.1`, 'utf8'), /아주 옛 로그/);
+  for (const f of [logFile, `${logFile}.1`]) assert.equal(fs.statSync(f).mode & 0o777, 0o600, f);
+});
+
 test('run: 포트 충돌이면 다시 켜지 않고 종료 코드 1', async () => {
   const dir = tmp();
   const r = createRunner({ command: [process.execPath, fakeServer(dir, 'port')], cwd: dir, logFile: path.join(dir, 'server.log'), restartMs: 20 });

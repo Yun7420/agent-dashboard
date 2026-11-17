@@ -28,7 +28,7 @@ import { createStateBuilder } from './lib/state.mjs';
 import { createEnvCheck, startupNotices } from './lib/env.mjs';
 import { detectEditors, openDir } from './lib/open-dir.mjs';
 import { UPLOAD_DIR, UPLOAD_MAX } from './lib/uploads.mjs';
-import { sendText, sendJson, friendly } from './lib/respond.mjs';
+import { sendText, sendJson, friendly, logPath } from './lib/respond.mjs';
 import { isObject } from './lib/validate.mjs';
 import { DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
 import { loadToken } from './lib/token.mjs';
@@ -158,7 +158,7 @@ const SECURITY_HEADERS = { 'X-Frame-Options': 'DENY', 'Content-Security-Policy':
 const server = http.createServer((req, res) => {
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v); // writeHead 의 헤더와 합쳐진다
   handle(req, res).catch((e) => {
-    console.error('[요청 오류]', req.method, req.url, e?.stack ?? e);
+    console.error('[요청 오류]', req.method, logPath(req.url), e?.stack ?? e);
     if (!res.headersSent) sendText(res, 500, '서버에서 문제가 생겼어요. 잠시 뒤 다시 해 주세요');
     else res.destroy(); // SSE 처럼 이미 보내기 시작한 응답은 끊는다
   });

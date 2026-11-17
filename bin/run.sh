@@ -8,6 +8,8 @@ LOG="$HOME/.agent-dashboard/server.log"
 (umask 077; : >> "$LOG")
 chmod 600 "$LOG"
 while true; do
+  # 5MB 를 넘으면 .1 로 한 번 돌린다(lib/runner.mjs 의 LOG_MAX 와 같게). 새 파일도 600
+  if [ "$(wc -c < "$LOG")" -gt 5242880 ]; then mv -f "$LOG" "$LOG.1"; (umask 077; : >> "$LOG"); fi
   node server.mjs 2>&1 | tee -a "$LOG"
   echo "[$(date '+%F %T')] 서버 종료(코드 $?) — 2초 뒤 다시 켭니다" | tee -a "$LOG"
   sleep 2

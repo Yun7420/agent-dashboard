@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { friendly, TMUX_MISSING } from '../lib/respond.mjs';
+import { friendly, TMUX_MISSING, logPath } from '../lib/respond.mjs';
 import { isObject, validDate, KEY_RE, WINDOW_HOURS } from '../lib/validate.mjs';
 
 const fail = (cmd, env) => new Promise((resolve) => execFile(cmd, ['-V'], env ? { env } : {}, (e) => resolve(e)));
@@ -26,4 +26,12 @@ test('입력 검사: 객체 · 날짜(실제로 있는 날) · 세션 열쇠 · 
   for (const k of ['claude:00000000-0000-4000-8000-000000000001', 'codex:rollout-2026-11-13', 'claude:pid-123', 'claude:demo-lead']) assert.match(k, KEY_RE);
   for (const k of ['', 'claude:', ':abc', 'claude:a b', 'claude:../x/y']) assert.doesNotMatch(k, KEY_RE, k);
   assert.deepEqual(WINDOW_HOURS, [6, 24, 72, 168]);
+});
+
+test('logPath: 로그에는 경로만 — ?token= · 검색어 · # 뒤는 남기지 않는다', () => {
+  assert.equal(logPath('/events?token=' + 'a'.repeat(48)), '/events');
+  assert.equal(logPath('/api/search?q=비밀 프로젝트'), '/api/search');
+  assert.equal(logPath('/x#y?z'), '/x');
+  assert.equal(logPath('/api/state'), '/api/state');
+  assert.equal(logPath(undefined), '');
 });

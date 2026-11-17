@@ -122,7 +122,7 @@ node bin/agent-dashboard.mjs restore   # 같은 일(대시보드는 run 실행�
 |---|---|---|
 | `token` | 비밀 열쇠. 지우고 다시 켜면 새로 만들어요 | 600 |
 | `demo-token` | 데모 모드 전용 열쇠 | 600 |
-| `server.log` | 실행기(`run`)가 남기는 서버 출력 | 600 |
+| `server.log` | 실행기(`run`)가 남기는 서버 출력. 5MB 를 넘으면 `server.log.1` 로 한 번 돌려요(그전 것은 지움). 요청 주소는 경로만 남겨요(토큰 · 검색어 안 남음) | 600 |
 | `restore.json` · `restore-prev.json` | 재시동 복구 목록(지금 · 재시동 전) | 600 |
 | `recent.json` | 복구 단추용 최근 7일 세션 기억 | 600 |
 | `notify.json` | 알림 설정 | 600 |

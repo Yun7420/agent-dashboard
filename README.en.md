@@ -122,7 +122,7 @@ Everything the dashboard writes lives in `~/.agent-dashboard/` (it never writes 
 |---|---|---|
 | `token` | secret token. Delete it and restart to get a new one | 600 |
 | `demo-token` | token for demo mode only | 600 |
-| `server.log` | server output written by the runner (`run`) | 600 |
+| `server.log` | server output written by the runner (`run`). Over 5MB it is rotated once to `server.log.1` (the previous one is dropped). Request URLs are logged as paths only (no token or search text) | 600 |
 | `restore.json` · `restore-prev.json` | restore-after-reboot lists (now · before the reboot) | 600 |
 | `recent.json` | sessions from the last 7 days, for the restore button | 600 |
 | `notify.json` | notification settings | 600 |
