@@ -142,3 +142,21 @@ test('restoreFirstPrompts: 떠 있는 세션은 임시 글로(쓰던 글은 뒤�
   assert.deepEqual(JSON.parse(JSON.stringify(run('globalThis.__log'))), [['x', '[일] 첫 메시지를 넣지 못해 입력 칸에 돌려놨어요 — 확인하고 보내 주세요'], ['x', '[b] 세션이 닫혀 첫 메시지를 보내지 못했어요 — 보내려던 글: 닫힌 세션 글']]);
   assert.deepEqual(sent.map((x) => x.key), ['claude:a', 'claude:b']);
 });
+
+test('음성 입력 안내(점검 H2): 처음엔 창을 띄우고, 취소면 듣지 않고, 「다시 보지 않기」로 시작하면 agent-deck 에 기억해 다음엔 창 없이', async () => {
+  const { el, stored, run } = load();
+  const dlg = el('#mic-dlg');
+  let shown = 0, onClose = null;
+  dlg.addEventListener = (type, fn) => { if (type === 'close') onClose = fn; };
+  dlg.showModal = () => shown++;
+  const ask = (answer, dont) => { const p = run('micNotice')(); el('#mic-dont').checked = dont; dlg.returnValue = answer; onClose(); return p; };
+  assert.equal(await ask('cancel', true), false);
+  assert.equal(JSON.parse(stored['agent-deck'] ?? '{}').micNoticeOk, undefined);
+  assert.equal(await ask('ok', false), true); // 체크를 풀고 시작하면 이번만
+  assert.equal(JSON.parse(stored['agent-deck'] ?? '{}').micNoticeOk, undefined);
+  assert.equal(await ask('ok', true), true);
+  assert.equal(JSON.parse(stored['agent-deck']).micNoticeOk, true);
+  assert.equal(shown, 3);
+  assert.equal(await run('micNotice')(), true);
+  assert.equal(shown, 3);
+});

@@ -216,6 +216,14 @@
     <div class="row"><button value="cancel">닫기</button><button class="primary" id="usage-act" value="act"></button></div>
   </form>
 </dialog>
+<dialog id="mic-dlg">
+  <form method="dialog">
+    <h3>음성 입력</h3>
+    <div style="color:var(--dim);font-size:13px;line-height:1.7">크롬 음성 인식은 소리를 구글 서버로 보내 글자로 바꿔요. 말한 내용이 이 컴퓨터 밖으로 나가니, 비밀번호나 회사 정보는 말하지 마세요.</div>
+    <label class="check"><input type="checkbox" id="mic-dont" checked> 다시 보지 않기</label>
+    <div class="row"><button value="cancel">취소</button><button class="primary" value="ok">듣기 시작</button></div>
+  </form>
+</dialog>
 <div class="menu-pop" id="dir-menu"></div>
 <div id="toast" role="status"></div>
 <div id="login-needed" role="alert" hidden><span id="login-how">로그인이 필요해요 — 터미널에서 「node bin/agent-dashboard.mjs open」 을 실행하면 이 브라우저에 다시 열려요</span> <button type="button" class="primary" id="login-reload">새로고침</button></div>

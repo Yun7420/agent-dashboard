@@ -143,10 +143,25 @@ $('#d-model').addEventListener('change', async (e) => {
 const MIC_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>';
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
+// 처음 누를 때 한 번, 소리가 구글 서버로 간다는 것을 알린다(점검 H2). 「다시 보지 않기」는 저장 키(agent-deck) 안 micNoticeOk
+function micNotice() {
+  if (pref.micNoticeOk) return Promise.resolve(true);
+  const dlg = $('#mic-dlg');
+  return new Promise((resolve) => {
+    dlg.addEventListener('close', () => {
+      const ok = dlg.returnValue === 'ok';
+      if (ok && $('#mic-dont').checked) { pref.micNoticeOk = true; savePref(); }
+      resolve(ok);
+    }, { once: true });
+    dlg.returnValue = '';
+    dlg.showModal();
+  });
+}
 if (Recognition) {
   $('#mic').hidden = false;
-  $('#mic').addEventListener('click', () => {
+  $('#mic').addEventListener('click', async () => {
     if (rec) { rec.stop(); return; }
+    if (!(await micNotice()) || rec) return;
     rec = new Recognition();
     rec.lang = 'ko-KR';
     rec.interimResults = true;

@@ -10,7 +10,8 @@ dialog .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18
 dialog .note { color: var(--faint); font-size: 12px; margin-top: 10px; line-height: 1.6; }
 /* 복구 단추 창: 체크 목록(이름 · 폴더 · 마지막으로 본 때), 직접 닫은 세션은 따로 */
 #recent-dlg label.rc-all, #recent-dlg .rc-item { display: flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; }
-#recent-dlg input[type=checkbox] { width: 16px; height: 16px; flex: none; accent-color: var(--accent); }
+dialog label.check { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; cursor: pointer; }
+dialog label.check input, #recent-dlg input[type=checkbox] { width: 16px; height: 16px; flex: none; accent-color: var(--accent); }
 #recent-dlg label.rc-all { padding: 6px 2px; border-bottom: 1px solid var(--border); color: var(--text); font-size: 13px; }
 #rc-list { max-height: min(46vh, 360px); overflow-y: auto; }
 #rc-list .rc-item { padding: 8px 2px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text); }
