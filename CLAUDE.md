@@ -26,10 +26,10 @@
 ## 지켜야 할 원칙
 - **외부 패키지 0개, 빌드 없음.** `git clone` → `npm start` 로 바로 동작해야 한다. 테스트도 Node 내장 `node --test`.
 - **보안 층은 절대 약하게 하지 않는다** (자세한 이유: README 「보안」)
-  1. `server.listen(PORT, '127.0.0.1')` — 이 컴퓨터 자신만
+  1. `127.0.0.1` + `[::1]` 같은 포트에만 연다 — 이 컴퓨터 자신만(`[::1]` 도 열어 다른 프로그램의 가로채기를 막음)
   2. Host 검사(`localhost:포트` · `127.0.0.1:포트` 외 403) — DNS 리바인딩
   3. Origin 검사 — 내 브라우저에서 연 외부 사이트의 요청
-  4. 토큰 — `/events` 와 `/api/*` 전부. 헤더 `X-Dashboard-Token`, SSE 는 `?token=`. 토큰은 서버가 `index.html` 에만 끼워 넣는다(`window.DASHBOARD_TOKEN`). **js 파일에 토큰을 두지 않는다**
+  4. 로그인 — `/events` 와 `/api/*` 전부 로그인 쿠키(`ad_session_<포트>`, HttpOnly · SameSite=Strict · 30일, 값은 토큰 HMAC 서명). 토큰은 **화면 파일(index.html · js · css)에 두지 않는다** — 로그인 링크(`/login?t=`, 10분)는 토큰 파일을 읽을 수 있는 `agent-dashboard open`(서버가 진짜인지 `/hello` 서명으로 확인)과 시작 로그만 만든다. `/api/*` 는 `X-Dashboard-Request: 1` 머리글과 같은 출처(Origin · Sec-Fetch-Site)도 요구한다. 주소에 토큰을 싣지 않는다(`?token=` 없음)
   5. 파일 권한 — 토큰 `~/.agent-dashboard/token` 600(링크 거절 · 예전 저장소의 `.dashboard-token` 은 처음 켤 때 옮기고 지움 · 데모는 `demo-token`), `~/.agent-dashboard` 700 / 경로 검사 — 첨부는 uploads 폴더 안만, 폴더 열기는 목록의 세션 폴더만
   6. 첨부는 14일 지나면 자동 삭제
 - 다른 기기에서 접속하게 만드는 일(로그인 · Tailscale · 클라우드)은 **사용자와 정하기 전에 하지 않는다.** 이 Mac 에서만 쓰는 동안 로그인 화면은 필요 없다는 결론(2026-11-12).
@@ -46,6 +46,8 @@ lib/                  구역별 일(모듈은 createXxx(deps) 로 필요한 것�
   dialog-watch · peer-links   선택창 감시(두 틱에 한 번 · 엇갈림 기록) · 세션 사이 메시지 잇기
   live-feed · notify-api · housekeeping   2초 틱 · SSE(latest · 보는 기간) · 알림 설정 · 켤 때 정리
   history-core · git-commits   기록 읽기 공용(새로 붙은 줄만 · 마지막 턴 찾기 · 턴 묶기 — 어댑터는 줄 해석만) · 커밋 제목 읽기
+  auth · login-open    로그인 쿠키 · 로그인 링크(open 은 서버가 진짜인지 확인 뒤)
+  command-risk · node-check   승인 카드 위험 판정(낱말 단위) · 켤 때 Node 버전 확인
   launch               켠 방법(npx · 설치 명령 · bin · npm start)에 맞는 안내 문구
   history-api · usage-bridge   기록 탭 · 검색 · 오늘 한 일 · 대화 창 추이 / 사용 한도(상태줄 다리) · 기본 모델 지키기
   commands             명령(채팅 · 승인 · 멈춤 · 닫기 · 모델 · 복구 · 새 세션)
