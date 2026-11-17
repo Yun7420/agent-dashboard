@@ -85,25 +85,25 @@ function renderGraph() {
   const b = bounds(tree), sig = `${b.x2 | 0}x${b.y2 | 0}`;
   if (sig !== view.sig) { view.sig = sig; view.init = false; }
   let edges = '', nodes = '';
-  const walk = (n) => {
-    for (const c of n.children) {
+  const walk = (n, p = '0') => { // p = 뿌리부터의 자리(0.1.2) — 마우스를 올린 노드의 위아래 줄기를 찾는 데 쓴다(07-center.js)
+    n.children.forEach((c, ci) => { const cp = `${p}.${ci}`;
       const hot = c.status === 'working';
       if (c.stacked) {
         const ex = n.x + 10, ey = c.y + c.h / 2;
-        edges += `<path class="edge stack ${hot ? 'working' : ''}" d="M${ex},${n.y + n.h} V${ey} H${c.x}"/>`;
-        walk(c);
-        continue;
+        edges += `<path class="edge stack ${hot ? 'working' : ''}" data-path="${cp}" d="M${ex},${n.y + n.h} V${ey} H${c.x}"/>`;
+        walk(c, cp);
+        return;
       }
       const x1 = n.x + n.w / 2, y1 = n.y + n.h, x2 = c.x + c.w / 2, y2 = c.y;
       const my = (y1 + y2) / 2;
-      edges += `<path class="edge ${hot ? 'working' : ''}" d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}"/>`;
-      edges += `<circle class="dot ${hot ? 'working' : ''}" cx="${(x1 + x2) / 2}" cy="${my}" r="2.5"/>`;
-      walk(c);
-    }
+      edges += `<path class="edge ${hot ? 'working' : ''}" data-path="${cp}" d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}"/>`;
+      edges += `<circle class="dot ${hot ? 'working' : ''}" data-path="${cp}" cx="${(x1 + x2) / 2}" cy="${my}" r="2.5"/>`;
+      walk(c, cp);
+    });
     const cls = ['node', n.dir ? 'proj' : '', n.kind === 'sub' ? 'sub' : '', n.more ? 'more' : '', n.kind === 'group' || n.kind === 'root' ? 'group' : '', n.status || '', n.key && n.key === selected ? 'sel' : ''].join(' ');
     const max = Math.floor((n.w - 14) / 7.4); // 12px 고정폭 글자 기준
     const subMax = Math.floor((n.w - 12) / 6.4); // 10px
-    nodes += `<g class="${esc(cls)}" ${n.key ? `data-key="${esc(n.key)}"` : ''} ${n.toggle ? `data-toggle="${esc(n.toggle)}"` : ''} ${n.dir ? `data-dir="${esc(n.dir)}"` : ''} transform="translate(${n.x},${n.y})">
+    nodes += `<g class="${esc(cls)}" data-path="${p}" data-st="${esc(n.status || '')}" ${n.key ? `data-key="${esc(n.key)}"` : ''} ${n.toggle ? `data-toggle="${esc(n.toggle)}"` : ''} ${n.dir ? `data-dir="${esc(n.dir)}"` : ''} transform="translate(${n.x},${n.y})">
       <rect width="${n.w}" height="${n.h}" rx="10"/>
       <text x="${n.w / 2}" y="${n.h / 2 - 4}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
       <text class="t2" x="${n.w / 2}" y="${n.h / 2 + 13}" text-anchor="middle">${esc(fit(String(n.sub || '').toUpperCase(), subMax))}</text>
@@ -160,15 +160,16 @@ function autoFit(tree) {
   const drawer = $('#drawer').classList.contains('open') ? $('#drawer').getBoundingClientRect().width : 0;
   const width = Math.max(120, svg.width - drawer); // 패널에 가려지지 않는 보이는 폭
   const b = bounds(tree);
-  // 가로는 보이는 폭에 맞추되, 남은 폭이 좁아도 글자를 읽을 수 있게 0.45배 아래로는 줄이지 않는다
-  // (그 경우 왼쪽 끝부터 보이고 나머지는 드래그로 본다)
+  // 가로는 보이는 폭에 맞추되, 노드 이름(12px)이 작아지지 않게 1배 아래로는 줄이지 않는다(0.45배는 1440 에서 거의 안 읽혔다)
+  // (그 경우 고른 세션 — 없으면 나무 가운데 — 를 가운데에 두고 나머지는 드래그로 본다)
   const fitW = (width - 48) / (b.x2 - b.x1);
   const fitH = (svg.height - 60) / (b.y2 - b.y1);
-  const k = Math.max(0.45, Math.min(1.2, fitW, Math.max(fitH, Math.min(fitW, 0.7))));
+  const k = Math.max(1, Math.min(1.2, fitW, Math.max(fitH, Math.min(fitW, 0.7))));
   view.k = k;
   const graphW = (b.x2 - b.x1) * k;
-  view.x = (graphW <= width - 48 ? (width - graphW) / 2 : 24) - b.x1 * k;
-  view.y = Math.max(28, (svg.height - (b.y2 - b.y1) * k) / 2.6) - b.y1 * k;
+  const sel = (function find(n) { return n.key && n.key === selected ? n : n.children.reduce((a, c) => a || find(c), null); })(tree);
+  view.x = graphW <= width - 48 ? (width - graphW) / 2 - b.x1 * k : Math.min(24 - b.x1 * k, Math.max(width - 24 - b.x2 * k, width / 2 - (sel ? sel.x + sel.w / 2 : (b.x1 + b.x2) / 2) * k));
+  view.y = Math.max(64, (svg.height - (b.y2 - b.y1) * k) / 2.6) - b.y1 * k;
   view.init = true;
 }
 function applyView() { $('#viewport').setAttribute('transform', `translate(${view.x},${view.y}) scale(${view.k})`); }

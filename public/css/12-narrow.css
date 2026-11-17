@@ -20,7 +20,7 @@
   #drawer { top: 0; right: 0; bottom: 0; width: 100%; border-radius: 0; border: none; }
   .hint { display: none; }
   /* 가운데 탭 · 큰 그래프는 넓은 화면에서만 — 좁으면 조직도만, 대화 창 추이는 지금 탭 아래 작은 그래프로 */
-  #ctx-panel, .center-tabs { display: none !important; }
+  #ctx-panel, .center-tabs, .zoom-btns { display: none !important; }
   body.cv-ctx #graph { visibility: visible; }
 }
 @media (min-width: 861px) { #now-trend { display: none; } } /* 넓은 화면은 가운데 「대화 창」 탭이 같은 추이를 크게 보여 준다 */
@@ -46,7 +46,7 @@
 @media (max-width: 600px) { #notify-menu, #settings-menu { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; } } /* 좁은 화면에선 종 단추 기준으로 두면 왼쪽이 화면 밖으로 나간다 */
 /* 「동작 줄이기」를 켠 사람: 깜빡임 · 도는 표시 · 녹음 깜빡임 · 화면 전환 효과를 멈춘다(흐르는 점선은 01-core.js 가 멈춤) */
 @media (prefers-reduced-motion: reduce) {
-  .pulse, .spinner, #mic.rec, .cp-chart .fade { animation: none !important; }
+  .pulse, .spinner, #mic.rec, .cp-chart .fade, .node.bump rect { animation: none !important; }
   *, *::before, *::after { transition-duration: 0s !important; scroll-behavior: auto !important; }
 }
 /* 휴대폰 너비 승인 창: 위험 카드 → 터미널 화면 → 단추 순서는 그대로, 단추 줄만 상자 아래에 붙여 첫 화면에 보이게 */

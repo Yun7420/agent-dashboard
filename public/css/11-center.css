@@ -5,7 +5,7 @@ main { --dw: 0px; } /* 오른쪽 패널 폭(07-center.js 가 채움) — 탭 · 
 .center-tabs .tab.on { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
 /* 「대화 창」 탭이면 조직도는 자리만 두고 숨긴다(돌아왔을 때 크기 계산이 맞게) */
 body:not(.cv-ctx) #ctx-panel { display: none; }
-body.cv-ctx #graph, body.cv-ctx .hint { visibility: hidden; }
+body.cv-ctx #graph, body.cv-ctx .hint, body.cv-ctx .zoom-btns { visibility: hidden; }
 
 /* 알약: 초록 테두리 + 점 */
 .pill { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: 999px; font-size: 12px; white-space: nowrap; background: color-mix(in srgb, var(--accent) 6%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); color: var(--dim); }
@@ -58,3 +58,12 @@ body.cv-ctx #graph, body.cv-ctx .hint { visibility: hidden; }
 .cp-pop h4 { margin: 0 0 6px; color: var(--working-text); font-size: 13px; }
 .cp-pop p { margin: 0 0 6px; }
 .cp-pop button { margin-top: 4px; }
+
+/* 조직도: 확대 단추(오른쪽 위) · 마우스 올린 노드와 그 위아래 줄기만 또렷하게 · 상태가 바뀐 노드는 한 번 은은히 빛남 */
+.zoom-btns { position: absolute; top: 12px; right: calc(var(--dw) + 12px); z-index: 3; display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1px solid var(--border); }
+.zoom-btns button { font-size: 16px; line-height: 1; }
+#graph.hl .node:not(.on), #graph.hl .edge:not(.on), #graph.hl .dot:not(.on) { opacity: .28; }
+#graph .node, #graph .edge, #graph .dot { transition: opacity .2s; }
+#graph .node.on rect { stroke: var(--accent); }
+.node.bump rect { animation: bump 1.2s ease-out; }
+@keyframes bump { 0% { filter: drop-shadow(0 0 0 var(--accent)); } 30% { filter: drop-shadow(0 0 14px var(--accent)); } 100% { filter: none; } }

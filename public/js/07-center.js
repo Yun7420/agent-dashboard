@@ -1,4 +1,4 @@
-// 가운데 칸: 탭 「구조(조직도) / 대화 창(사용률 큰 그래프)」 — 처음엔 「대화 창」, 고른 탭은 agent-deck 의 centerView 에
+// 가운데 칸: 탭 「구조(조직도 확대 단추 · 강조) / 대화 창(사용률 큰 그래프)」 — 처음엔 「대화 창」, 고른 탭은 agent-deck 의 centerView 에
 // 큰 그래프는 지금 탭이 1초마다 다시 그릴 때(08-now.js 의 renderNow) 같이 불린다. 바뀐 게 없으면 그대로 둔다
 const centerTabs = [...document.querySelectorAll('.center-tabs .tab')];
 function applyCenterView() {
@@ -17,6 +17,36 @@ for (const b of centerTabs) b.addEventListener('click', () => {
 const dwSync = () => $('main').style.setProperty('--dw', `${$('#drawer').classList.contains('open') && innerWidth > 860 ? $('#drawer').getBoundingClientRect().width : 0}px`);
 new ResizeObserver(dwSync).observe($('#drawer'));
 new MutationObserver(dwSync).observe($('#drawer'), { attributes: true, attributeFilter: ['class'] });
+
+// ---------- 조직도: 확대 단추 · 마우스 올린 노드 강조 · 상태가 바뀐 노드 한 번 빛남 ----------
+const zoomBy = (f) => {
+  const r = $('#graph').getBoundingClientRect(), cx = (r.width - parseFloat(getComputedStyle($('main')).getPropertyValue('--dw'))) / 2, cy = r.height / 2;
+  const k = Math.min(3, Math.max(0.2, view.k * f));
+  view.x = cx - (cx - view.x) * (k / view.k); view.y = cy - (cy - view.y) * (k / view.k); view.k = k;
+  applyView();
+};
+$('#zoom-in').addEventListener('click', () => zoomBy(1.2));
+$('#zoom-out').addEventListener('click', () => zoomBy(1 / 1.2));
+$('#zoom-fit').addEventListener('click', () => { view.init = false; renderGraph(); });
+// 노드에 마우스를 올리면 그 노드의 위(부모들) · 아래(자식들) 줄기만 또렷하게(data-path 는 03-graph.js)
+$('#graph').addEventListener('pointerover', (e) => {
+  const g = e.target.closest('.node'), svg = $('#graph');
+  if (!g) { svg.classList.remove('hl'); return; }
+  const p = g.dataset.path, near = (q) => q === p || p.startsWith(q + '.') || q.startsWith(p + '.');
+  for (const el of svg.querySelectorAll('[data-path]')) el.classList.toggle('on', near(el.dataset.path));
+  svg.classList.add('hl');
+});
+$('#graph').addEventListener('pointerleave', () => $('#graph').classList.remove('hl'));
+// 조직도를 다시 그릴 때마다(바뀐 곳이 있을 때만 setHtml) 상태가 바뀐 노드에 bump — 동작 줄이기면 CSS 가 끈다
+const lastSt = new Map();
+new MutationObserver(() => {
+  for (const g of document.querySelectorAll('#graph .node[data-key]')) {
+    const k = g.dataset.key, st = g.dataset.st;
+    if (lastSt.has(k) && lastSt.get(k) !== st) g.classList.add('bump');
+    lastSt.set(k, st);
+  }
+  if (!$('#graph .node:hover')) $('#graph').classList.remove('hl'); // 새로 그린 노드엔 on 표시가 없으니 강조도 푼다
+}).observe($('#viewport'), { childList: true });
 
 // ---------- 대화 창 사용률 큰 그래프 ----------
 const big = { key: null, sig: '', cmpKey: '', cmp: null };

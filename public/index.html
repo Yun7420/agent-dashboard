@@ -90,6 +90,11 @@
     <button type="button" class="tab" data-view="org" role="tab" aria-selected="false">구조</button>
     <button type="button" class="tab on" data-view="ctx" role="tab" aria-selected="true">대화 창</button>
   </div>
+  <div class="zoom-btns" role="group" aria-label="조직도 확대">
+    <button type="button" class="ghost icon-btn" id="zoom-in" title="확대" aria-label="확대">+</button>
+    <button type="button" class="ghost icon-btn" id="zoom-out" title="축소" aria-label="축소">−</button>
+    <button type="button" class="ghost icon-btn" id="zoom-fit" title="화면에 맞춤(더블클릭과 같아요)" aria-label="화면에 맞춤"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  </div>
   <section id="ctx-panel" aria-labelledby="ctx-title">
     <div class="cp-head">
       <h3 id="ctx-title">대화 창 사용률 <span>— Claude 가 기억하는 대화 양</span></h3>
