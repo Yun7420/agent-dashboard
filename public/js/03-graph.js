@@ -59,7 +59,6 @@ function layout(node, depth = 0, x0 = 0) {
       c.w = SUB_W; c.h = SUB_H;
       c.x = x0 + (NODE_W - SUB_W) / 2 + 10;
       c.y = node.y + NODE_H + 18 + i * (SUB_H + 8);
-      c.children = [];
       c.stacked = true;
     });
     return x0 + NODE_W + GAP_X;
@@ -78,13 +77,12 @@ function layout(node, depth = 0, x0 = 0) {
 function fit(s, n) { return s.length > n ? s.slice(0, n - 1) + '…' : s; }
 
 function renderGraph() {
-  const vp = $('#viewport');
   const tree = buildTree();
   $('#empty').hidden = tree.children.length > 0;
   const shown = new Set(visible().map((s) => s.key));
   GAP_Y = (state.links || []).some((l) => shown.has(l.from) && shown.has(l.to)) ? 104 : 64;
   layout(tree);
-  const sig = `${bounds(tree).x2 | 0}x${bounds(tree).y2 | 0}`;
+  const b = bounds(tree), sig = `${b.x2 | 0}x${b.y2 | 0}`;
   if (sig !== view.sig) { view.sig = sig; view.init = false; }
   let edges = '', nodes = '';
   const walk = (n) => {
@@ -112,8 +110,7 @@ function renderGraph() {
     </g>`;
   };
   walk(tree);
-  const svgHtml = edges + nodes + drawLinks(tree);
-  setHtml(vp, svgHtml);
+  setHtml($('#viewport'), edges + nodes + drawLinks(tree));
   if (!view.init) autoFit(tree);
   applyView();
 }

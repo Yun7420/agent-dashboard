@@ -72,7 +72,6 @@ test('화면 번호 순서 검사기: 주석 · 글자 · 객체 키 · 지역 �
 const LINES = { server: 300, front: 200 };
 const OVER = {
   'server.mjs': 468, // 2026-11-17 기록 · 사용 한도를 lib/history-api · usage-bridge 로 옮김(648 → 468)
-  'public/js/03-graph.js': 201,
 };
 
 test('파일 크기: 서버 쪽 300줄 · 화면 js 200줄 이하, 이미 넘은 파일은 지금보다 늘지 않는다', () => {
