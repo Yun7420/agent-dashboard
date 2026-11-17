@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { nodeCheck, EOL_MAJORS } from '../lib/node-check.mjs';
+import { nodeCheck, checkNode, EOL_MAJORS } from '../lib/node-check.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { ROOT, demoEnv } from './_helpers/server.mjs';
 
@@ -20,6 +20,17 @@ test('nodeCheck: engines 보다 낮으면 멈춤 + 한국어 안내, 지원 끝�
   assert.deepEqual(nodeCheck('v22.1.0', '>=18'), { ok: true, message: null });
   assert.deepEqual(nodeCheck('v24.0.0', '>=18'), { ok: true, message: null });
   assert.deepEqual(EOL_MAJORS, [18, 20]);
+});
+
+test('checkNode: 부를 때만 안내 · 종료(불러오기만 해서는 아무것도 안 함) — 낮으면 exit(1), 18 · 20 은 안내만', () => {
+  const out = [], exits = [];
+  const run = (version) => checkNode({ version, log: (m) => out.push(m), exit: (c) => exits.push(c) });
+  assert.equal(run('v16.0.0').ok, false);
+  assert.deepEqual(exits, [1]);
+  assert.equal(run('v20.0.0').ok, true);
+  assert.equal(run('v22.0.0').message, null);
+  assert.deepEqual(exits, [1]);
+  assert.equal(out.length, 2);
 });
 
 // 실제로 켜는 길(서버 · 실행 명령)에서 맨 먼저 확인하는지: Node 16 인 척하면 서버를 열기 전에 1 로 끝난다

@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 // 실행 명령(package.json 의 bin): 서버 켜기 · 실행기(죽으면 다시 켜기) · 재시동 복구. 모르는 하위 명령이면 도움말을 보여 준다.
 // npx 로 받은 사람은 저장소 폴더 · bin/run.sh 가 없어서 같은 일을 여기 하위 명령으로 한다(일은 lib/runner.mjs · lib/restore-cli.mjs)
-import '../lib/node-check.mjs'; // 맨 먼저: 낮은 Node 면 안내하고 끝낸다
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkNode } from '../lib/node-check.mjs';
+
+checkNode(); // 맨 먼저: Node 가 낮으면 안내하고 끝낸다
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url))); // bin/ 의 부모 = 저장소(패키지) 폴더
 const { name, version, homepage } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));

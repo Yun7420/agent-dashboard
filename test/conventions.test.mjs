@@ -149,6 +149,17 @@ test('외부 명령: child_process 는 execFile · spawn(+Sync) 만, shell 옵�
   assert.deepEqual(bad, []);
 });
 
+// lib · adapters 는 불러오기만 해서는 프로세스를 끝내거나 파일 · 화면에 쓰지 않는다 — 그런 일은 부르는 쪽(server.mjs · bin)이 함수를 불러서.
+// 맨 앞(들여쓰기 없음) 줄의 process.exit · console.* · fs 쓰기를 찾는다(예전 node-check.mjs 는 import 만으로 exit 했다, 2026-11-17)
+test('모듈 부수 효과: lib · adapters 의 맨 바깥에서 process.exit · console · fs 쓰기를 하지 않는다', () => {
+  const TOP = /^(?:if \(.*\) )?(?:process\.exit|console\.|fs\.(?:write|append|mkdir|rm|unlink|rename|chmod|copy)\w*\()/;
+  const bad = [];
+  for (const f of [...listDeep('lib', /\.mjs$/), ...listDeep('adapters', /\.mjs$/)]) {
+    read(f).split('\n').forEach((l, i) => { if (TOP.test(l)) bad.push(`${f}:${i + 1}`); });
+  }
+  assert.deepEqual(bad, []);
+});
+
 // ---------- 화면: 서버 요청은 apiFetch 한곳 · 토큰은 index.html 에만 ----------
 test('화면 파일: 서버 요청은 apiFetch 한곳으로 — 직접 fetch 는 01-core 와 실시간 연결 확인(16-live)뿐', () => {
   const direct = [];

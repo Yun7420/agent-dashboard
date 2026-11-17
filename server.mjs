@@ -42,9 +42,9 @@ import { createUsageBridge, STATUS_DIR } from './lib/usage-bridge.mjs';
 import * as demo from './lib/demo.mjs';
 import { saveSnapshot, restoreCandidates, restoreSessions, modelAlias, defaultAlias } from './lib/restore.mjs';
 import { createRecent, liveEntries, KEEP_DAYS as RECENT_DAYS } from './lib/recent.mjs';
-
+import { checkNode } from './lib/node-check.mjs';
+checkNode(); // 맨 먼저(import 다음): Node 가 낮으면 안내하고 끝낸다(lib/node-check.mjs)
 const DEMO = process.env.DEMO === '1'; // 가짜 데이터로 화면만 보여 주는 모드(스크린샷용)
-
 const PORT = Number(process.env.PORT ?? 4545);
 const ROOT = dirOf(import.meta.url); // 저장소(패키지) 폴더 — 공백 · 한글 폴더에서도 맞게(lib/paths.mjs)
 // 토큰은 ~/.agent-dashboard/token(600)에 보관해 서버를 다시 켜도 열려 있던 탭이 그대로 동작하게 한다(lib/token.mjs · 자리는 lib/paths.mjs)
