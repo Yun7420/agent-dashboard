@@ -1,0 +1,50 @@
+/* 좁은 창 · 휴대폰 · 동작 줄이기(@media) — 모든 구역의 덮어쓰기를 여기 맨 뒤에 모아 순서가 늘 「기본 규칙 다음」이 되게 */
+/* ---------- 좁은 창 (화면을 나눠 쓸 때) ---------- */
+/* 1100 → 1320: 머리에 단추가 늘면서(알림 · 복구) 1100~1320 에서 글자가 두 줄로 밀렸다 */
+@media (max-width: 1320px) {
+  .stats .stat:nth-child(n+3) { display: none; }
+  .usage-pill .rs { display: none; }
+  header label.switch { display: none; }
+}
+/* 1024 근처: 로고 옆 「Dashboard」 · 연결 글자를 빼야 머리가 한 줄에 들어간다(연결은 점만, 글자는 title) */
+@media (max-width: 1180px) {
+  .brand h1 span { display: none; }
+  #conn { font-size: 0; gap: 0; }
+}
+/* 태블릿 세로 · 좁은 창: 목록을 숨기지 않고 접힌 띠(상태 점 + 이니셜)로 둔다 — 접기 단추는 숨김(JS 가 항상 접음) */
+@media (max-width: 860px) {
+  body, body.aside-folded { grid-template-columns: 64px 1fr; grid-template-rows: 56px 1fr 120px; }
+  #aside-fold { display: none; }
+  header { gap: 8px; padding: 0 12px; }
+  .brand h1 span, .stats, #conn { display: none; }
+  #drawer { top: 0; right: 0; bottom: 0; width: 100%; border-radius: 0; border: none; }
+  .hint { display: none; }
+}
+/* 휴대폰 크기: 사용 한도는 막대 · 주간을 빼고 짧게(줄바꿈되며 가로로 넘치지 않게) */
+@media (max-width: 600px) {
+  /* 사용 한도는 「5시간 %」 만 짧게 남겨 누르면 추이를 볼 수 있게 */
+  .usage-pill { padding: 0 10px; gap: 6px; white-space: nowrap; flex: none; }
+  .brand h1, #new-session { white-space: nowrap; }
+  .brand h1 { display: none; } /* 로고만 남겨 머리 단추가 줄바꿈되지 않게 */
+  .usage-pill .badge, .usage-pill .bar, .usage-pill .rs, .usage-pill .u + .u { display: none; }
+  #limits-pop { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; }
+  #new-session { padding: 0 12px; }
+  #new-session span { display: none; } /* 「+」만(이름은 title · aria-label) */
+  header { gap: 4px; } /* 390px 에서도 오른쪽 여백이 남게 */
+  body, body.aside-folded { grid-template-columns: 56px 1fr; }
+  /* 패널 머리: 이름 · 탭 · ⋯ · 닫기만 남겨 오른쪽 단추가 잘리지 않게 */
+  #d-model, #wide, #d-info-btn { display: none; }
+  #drawer .head-top h2 { max-width: none; flex: 1 1 auto; }
+  #drawer .head-top .grow { display: none; }
+}
+
+@media (max-width: 600px) { #notify-menu { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; } } /* 좁은 화면에선 종 단추 기준으로 두면 왼쪽이 화면 밖으로 나간다 */
+/* 「동작 줄이기」를 켠 사람: 깜빡임 · 도는 표시 · 녹음 깜빡임 · 화면 전환 효과를 멈춘다(흐르는 점선은 01-core.js 가 멈춤) */
+@media (prefers-reduced-motion: reduce) {
+  .pulse, .spinner, #mic.rec { animation: none !important; }
+  *, *::before, *::after { transition-duration: 0s !important; scroll-behavior: auto !important; }
+}
+/* 휴대폰 너비 승인 창: 위험 카드 → 터미널 화면 → 단추 순서는 그대로, 단추 줄만 상자 아래에 붙여 첫 화면에 보이게 */
+@media (max-width: 600px) {
+  #drawer.approving #approval .btns { position: sticky; bottom: -12px; z-index: 2; margin: 0 -14px -12px; padding: 8px 14px 12px; background: linear-gradient(rgba(251, 111, 146, .06), rgba(251, 111, 146, .06)), var(--surface); border-top: 1px solid rgba(251, 111, 146, .25); }
+}

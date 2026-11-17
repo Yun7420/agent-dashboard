@@ -1,0 +1,57 @@
+/* 승인 창: 허락할 내용 카드 · 선택지 단추 · 음성 입력 표시 */
+/* 승인 창이 떠 있으면 승인과 입력창이 먼저 보이게, 최근 답변·검색은 잠깐 접는다 */
+#drawer.approving #log-view { display: none; }
+/* 승인 중엔 승인 창이 남는 높이를 다 채우고(화면 내용은 그 안에서 스크롤), 입력창은 바닥에 그대로 */
+#drawer.approving #approval { flex: 1 1 auto; max-height: none; min-height: 0; display: flex; flex-direction: column; margin-top: 12px; }
+#drawer.approving #approval pre { flex: 1 1 auto; max-height: none; min-height: 80px; }
+#composer { margin-top: auto; } /* 위 내용이 짧아도 입력창은 항상 패널 바닥에 */
+#approval { flex: none; max-height: 52%; overflow-y: auto; margin: 0 16px 10px; border: 1px solid rgba(251, 111, 146, .4); background: rgba(251, 111, 146, .06); border-radius: 12px; padding: 12px 14px; }
+#approval h3 { margin: 0 0 8px; font-size: 13px; color: var(--waiting); }
+#approval pre { margin: 0 0 10px; max-height: 170px; overflow: auto; font: 11px/1.4 var(--mono); white-space: pre-wrap; color: #f3d6e0; background: rgba(0, 0, 0, .25); border-radius: 8px; padding: 8px 10px; }
+#approval .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+/* 「허락할 내용」 카드: 터미널 글자를 읽지 않아도 무엇을 허락하는지 보이게. 위험하면 경고색 */
+#approve-card { flex: none; margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border-strong); min-width: 0; }
+#approve-card.risky { background: rgba(245, 185, 66, .08); border-color: rgba(245, 185, 66, .55); }
+#approve-card .ac-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 12px; }
+#approve-card .ac-kind { font-weight: 700; color: var(--text); }
+#approve-card .ac-tool { font-family: var(--mono); color: var(--faint); font-size: 11px; }
+#approve-card .ac-tag, #approve-card .ac-src { border-radius: 999px; padding: 0 8px; font-size: 11px; border: 1px solid var(--border-strong); color: var(--dim); }
+#approve-card .ac-tag { color: var(--working); border-color: rgba(245, 185, 66, .45); }
+#approve-card .ac-risk { margin-bottom: 6px; color: var(--working); font-size: 12.5px; font-weight: 600; }
+#drawer #approval #approve-card .ac-main { margin: 0; max-height: none; flex: none; min-height: 0; font: 13.5px/1.5 var(--mono); color: var(--text); background: rgba(0, 0, 0, .3); white-space: pre-wrap; word-break: break-all; overflow-wrap: anywhere; }
+#drawer #approval #approve-card .ac-main.closed { max-height: 9em; overflow: hidden; }
+#approve-card .ac-main.fold.closed::after { --fade: #141625; }
+#approve-card .ac-desc { margin-top: 6px; color: var(--dim); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.q-nav { flex-basis: 100%; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; margin-bottom: 2px; border-bottom: 1px solid rgba(251, 111, 146, .2); }
+.q-nav button { height: 28px; font-size: 12px; padding: 0 10px; flex: none; }
+.q-steps { flex: 1; min-width: 0; display: flex; gap: 10px; justify-content: center; font-size: 12px; color: var(--faint); overflow: hidden; white-space: nowrap; }
+.q-steps .done { color: var(--ok); }
+#approve-btns button small { font-size: 11px; opacity: .8; margin-left: 4px; }
+.q-steps .cur { color: var(--text); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+
+#composer { flex: none; padding: 12px 16px 16px; border-top: 1px solid var(--border); }
+#composer .box { background: var(--bg); border: 1px solid rgba(139, 124, 246, .35); border-radius: 12px; padding: 10px 12px 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, .25); transition: border-color .15s, box-shadow .15s; }
+#composer .box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139, 124, 246, .15); }
+#composer textarea { display: block; width: 100%; height: 60px; max-height: 60px; overflow-y: auto; font-size: 14px; resize: none; background: transparent; border: none; outline: none; padding: 2px 2px 6px; }
+#composer .bar { display: flex; align-items: center; justify-content: space-between; }
+#composer .kbd-hint { color: var(--faint); font-size: 11px; }
+#composer .actions { display: flex; gap: 6px; }
+#composer .why { color: var(--faint); font-size: 11px; margin-top: 8px; }
+#composer .why:empty { display: none; }
+#composer .why code { color: var(--dim); user-select: all; }
+.icon-btn { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border-radius: 8px; }
+#mic, #attach { background: transparent; border-color: transparent; color: var(--dim); }
+#attach:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
+#attach-list { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; }
+#attach-list:not(:empty) { margin-bottom: 8px; }
+.att { display: inline-flex; align-items: center; gap: 6px; max-width: 220px; padding: 3px 6px 3px 3px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border-strong); font-size: 12px; color: var(--dim); }
+.att img, .att .ic { width: 28px; height: 28px; border-radius: 5px; object-fit: cover; flex: none; background: var(--surface-3); display: grid; place-items: center; font-size: 10px; }
+.att .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.att.up { opacity: .55; }
+.att button { padding: 0 4px; border: none; background: transparent; color: var(--faint); font-size: 12px; }
+.att button:hover { color: var(--waiting); background: transparent !important; }
+#composer .box.drop { border-color: var(--accent); background: var(--accent-soft); }
+#mic:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
+#send { color: #fff; }
+#send svg { transform: translate(-1px, 1px); } /* 종이비행기는 모양이 오른쪽 위로 쏠려 보여서 살짝 보정 */
+#mic.rec { color: var(--waiting); background: rgba(251, 111, 146, .12); animation: pulse 1.2s ease-in-out infinite; }

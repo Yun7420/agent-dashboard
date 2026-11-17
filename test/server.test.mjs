@@ -29,7 +29,8 @@ after(() => srv?.stop()); // 이 테스트가 띄운 서버만, 끝날 때까지
 
 test('화면 파일은 토큰 없이 열린다', async () => {
   assert.equal(await req('/'), 200);
-  assert.equal(await req('/style.css'), 200);
+  assert.equal(await req('/css/00-base.css'), 200);
+  assert.match((await request(PORT, '/css/11-narrow.css')).headers['content-type'], /^text\/css/); // 하위 폴더도 같은 MIME
   assert.equal(await req('/js/01-core.js'), 200);
 });
 
@@ -217,7 +218,7 @@ test('보안 헤더(클릭재킹 · nosniff): 화면 · API 200/403 · SSE · 40
   const cases = [
     ['/', {}, 200],
     ['/js/01-core.js', {}, 200],
-    ['/style.css', {}, 200],
+    ['/css/00-base.css', {}, 200],
     ['/api/perf', { headers: T }, 200],
     ['/api/perf', {}, 403],
     ['/api/limits?range=30d', { headers: T }, 400],

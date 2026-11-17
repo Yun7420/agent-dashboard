@@ -17,6 +17,7 @@ const listDeep = (dir, re) => fs.readdirSync(path.join(ROOT, dir), { withFileTyp
   .flatMap((e) => (e.isDirectory() ? listDeep(`${dir}/${e.name}`, re) : re.test(e.name) ? [`${dir}/${e.name}`] : [])).sort();
 const SERVER = ['server.mjs', ...listDeep('lib', /\.mjs$/), ...listDeep('adapters', /\.mjs$/), ...list('bin', /\.mjs$/)];
 const FRONT = list('public/js', /^\d\d-.*\.js$/);
+const STYLES = list('public/css', /^\d\d-.*\.css$/);
 
 // 허용 목록과 실제를 견준다: 새로 생긴 것 · 이미 사라진 것을 따로 보여 준다
 function sameAsAllowed(found, allowed, what) {
@@ -57,6 +58,19 @@ test('화면 불러오기: index.html 의 <script> 는 public/js 의 NN-*.js 전
   assert.deepEqual(tags, FRONT.map((f) => path.basename(f)));
 });
 
+test('화면 모양 불러오기: index.html 의 <link> 는 public/css 의 NN-*.css 전부를 번호 순서대로, 번호 없는 css 는 없다', () => {
+  const tags = [...read('public/index.html').matchAll(/<link rel="stylesheet" href="([^"]+)">/g)].map((m) => m[1]);
+  assert.deepEqual(tags, STYLES.map((f) => `/${f.replace(/^public\//, '')}`));
+  assert.deepEqual(fs.readdirSync(path.join(ROOT, 'public/css')).filter((f) => f.endsWith('.css')).sort(), STYLES.map((f) => path.basename(f)));
+  assert.equal(fs.existsSync(path.join(ROOT, 'public/style.css')), false); // 예전 한 파일이 남아 있으면 어느 쪽을 고쳐야 할지 헷갈린다
+});
+
+// 덮어쓰기 순서: 좁은 창 · 동작 줄이기(@media)는 모든 구역의 기본 규칙을 덮으므로 맨 뒤 파일 하나에만 — 다른 파일에 두면 그 뒤 파일의 기본 규칙이 거꾸로 덮을 수 있다
+test('화면 모양: @media 는 마지막 번호 css 에만', () => {
+  const bad = STYLES.slice(0, -1).filter((f) => /@media\b/.test(read(f).replace(/\/\*[\s\S]*?\*\//g, '')));
+  assert.deepEqual(bad, []);
+});
+
 test('화면 번호 순서 검사기: 주석 · 글자 · 객체 키 · 지역 이름에 속지 않고, 진짜 부르기는 잡는다', async () => {
   const dir = tmpDir('ad-conv-');
   fs.writeFileSync(path.join(dir, '01-a.js'), [
@@ -68,17 +82,18 @@ test('화면 번호 순서 검사기: 주석 · 글자 · 객체 키 · 지역 �
 });
 
 // ---------- 파일 크기 ----------
-// 서버 쪽(.mjs) 300줄 · 화면 js 200줄을 넘으면 나누기를 검토한다. 이미 넘은 파일은 지금 줄 수를 상한으로(늘지 않게)
-const LINES = { server: 300, front: 200 };
+// 서버 쪽(.mjs) 300줄 · 화면 js · css 200줄을 넘으면 나누기를 검토한다. 이미 넘은 파일은 지금 줄 수를 상한으로(늘지 않게)
+const LINES = { server: 300, front: 200, css: 200 };
 const OVER = {
   'server.mjs': 325, // 2026-11-17 기록 · 사용 한도를 lib/history-api · usage-bridge 로(648 → 468), 틱 · 알림 · 기록 경로 · 본문 · 정리를 lib/live-feed · notify-api · history-api · body · housekeeping 으로(468 → 325)
 };
 
-test('파일 크기: 서버 쪽 300줄 · 화면 js 200줄 이하, 이미 넘은 파일은 지금보다 늘지 않는다', () => {
+test('파일 크기: 서버 쪽 300줄 · 화면 js · css 200줄 이하, 이미 넘은 파일은 지금보다 늘지 않는다', () => {
   const lines = (rel) => read(rel).split('\n').length - (read(rel).endsWith('\n') ? 1 : 0);
   const over = [];
   for (const f of SERVER) if (lines(f) > LINES.server) over.push(f);
   for (const f of FRONT) if (lines(f) > LINES.front) over.push(f);
+  for (const f of STYLES) if (lines(f) > LINES.css) over.push(f);
   sameAsAllowed(over, Object.keys(OVER), '크기 상한을 넘은 파일');
   for (const [f, max] of Object.entries(OVER)) assert.ok(lines(f) <= max, `${f}: ${lines(f)}줄 — 허용 목록의 ${max}줄보다 늘었어요(나누거나 줄여 주세요)`);
 });

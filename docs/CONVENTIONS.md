@@ -26,6 +26,7 @@
 |---|---|---|
 | 서버 쪽 파일 | `.mjs`, 소문자 낱말을 `-` 로 이음 | `lib/claude-settings.mjs` · `lib/open-dir.mjs` |
 | 화면 파일 | `public/js/NN-이름.js`, 번호 순서대로 불러옴 | `04-list.js` · `16-live.js` |
+| 화면 모양 | `public/css/NN-이름.css`, 번호 순서대로 불러옴(`<link>`) | `03-graph.css` · `11-narrow.css` |
 | 테스트 | `test/<대상>.test.mjs`, 도우미는 `test/_helpers/` · `test/_*.mjs` | `test/paths.test.mjs` · `test/_history-full.mjs` |
 | 함수 · 변수 | camelCase | `buildState` · `pruneUploads` |
 | 고정값 | 대문자 + `_` | `SCAN_MS` · `ALLOWED_HOSTS` · `UPLOAD_MAX` |
@@ -90,6 +91,8 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 - 다시 그릴 땐 `setHtml(el, html)` 을 써서 바뀐 곳만 바꿔요. 「N초 전」처럼 자주 바뀌는 글자는 따로 고쳐요(`updateAgo`).
 - 브라우저 저장 키는 `agent-deck` 하나예요. 바꾸면 사용자 설정이 초기화돼요.
 - **토큰은 `index.html` 에만** 있어요. 서버가 `__DASHBOARD_TOKEN__` 을 바꿔 넣어요. js 파일에는 토큰을 두지 않아요.
+- 모양(css)도 **그 단추 · 칸이 있는 구역 파일**에 둬요(머리 단추가 여는 팝업은 `01-header.css`, 프로젝트 박스의 폴더 메뉴는 `03-graph.css`).
+- **`@media`(좁은 창 · 휴대폰 · 동작 줄이기)는 마지막 파일(`11-narrow.css`)에만** 둬요. 뒤 파일의 기본 규칙이 앞 파일의 `@media` 를 거꾸로 덮지 않게, 그리고 「좁은 화면에서 무엇이 빠지나」를 한곳에서 보게요(2026-11-17).
 
 ### 테스트
 
@@ -130,8 +133,8 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 
 ### ① 파일 크기
 
-- **서버 쪽 `.mjs` 300줄, 화면 js 200줄을 넘으면 나누기를 검토**해요. 「꼭 나눈다」가 아니라 「이유를 적고 남기거나, 나눈다」예요.
-- 지금 넘은 파일은 1개예요(07-changes.js 는 2026-11-16, `adapters/claude.mjs` · `lib/state.mjs` 는 2026-11-17 에 나눠, `03-graph.js` 는 2026-11-17 죽은 코드 · 중복을 덜어 201 → 198줄로 목록에서 빠졌어요).
+- **서버 쪽 `.mjs` 300줄, 화면 js · css 200줄을 넘으면 나누기를 검토**해요. 「꼭 나눈다」가 아니라 「이유를 적고 남기거나, 나눈다」예요.
+- 지금 넘은 파일은 1개예요(07-changes.js 는 2026-11-16, `adapters/claude.mjs` · `lib/state.mjs` 는 2026-11-17 에 나눠, `03-graph.js` 는 2026-11-17 죽은 코드 · 중복을 덜어 201 → 198줄로 목록에서 빠졌어요). `style.css`(610줄)는 2026-11-17 `public/css/` 12개로 나눴어요(가장 큰 `04-drawer.css` 149줄).
   - `server.mjs` 325
 - 3부 테스트가 이 1개는 **지금보다 늘지 않게**, 다른 파일은 상한을 넘지 않게 지켜요.
   - `adapters/claude.mjs` 는 2026-11-16 기록 읽기 공용 부분을 `lib/history-core.mjs` 로 옮겨 629 → 542줄, 2026-11-17 커밋 제목 읽기를 `lib/git-commits.mjs`, 턴 시작 판단 · 이번 턴 변경 · 공식 세션 목록 · 하루 요약을 `adapters/claude/` 의 `prompts` · `changes` · `live` · `day` 로 옮겨 291줄이 됐어요(사용자 승인). 커밋 제목은 Claude 기록 형식이 아닌 셸 명령 글자 해석이라 lib, 나머지는 Claude 기록 · 파일만 아는 일이라 어댑터 폴더예요.
@@ -206,7 +209,10 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 | 화면 번호 순서: 앞 번호 파일이 뒤 번호 파일의 let · const 를 쓰지 않음 | 없음(예외 없음) |
 | 화면 번호 순서: 앞 번호 파일이 뒤 번호 파일의 function 을 부르는 곳은 서로 부르는 고리만 | 8곳(이유와 함께) |
 | 화면 불러오기: `index.html` 의 `<script>` 가 `public/js` 전부를 번호 순서대로 | 없음 |
-| 파일 크기: 서버 쪽 300 · 화면 js 200줄, 넘은 파일은 늘지 않음 | 1개(위 ①) |
+| 화면 모양 불러오기: `<link>` 가 `public/css` 전부를 번호 순서대로, 번호 없는 css · 옛 `style.css` 없음 | 없음 |
+| 화면 모양: `@media` 는 마지막 번호 css 에만 | 없음 |
+| 파일 크기: 서버 쪽 300 · 화면 js · css 200줄, 넘은 파일은 늘지 않음 | 1개(위 ①) |
+| 서버 입구: `createServer` · `listen` 은 `server.mjs` 에만 | 없음 |
 | 모듈 경계 | 없음 |
 | 외부 명령: `child_process` 는 `execFile` · `spawn`(+Sync) 만, `shell: true` 없음 | 없음 |
 | 화면 서버 요청: 직접 `fetch` 는 `01-core` · `16-live` 각 한 줄 | 없음 |

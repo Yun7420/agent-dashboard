@@ -32,7 +32,7 @@
 
 ```
  ┌─────────────── 브라우저 (public/) ───────────────┐
- │ index.html + style.css + js/00-md.js ~ 19-keys.js │
+ │ index.html + css/00~11 + js/00-md.js ~ 19-keys.js │
  └───────┬──────────────────────────────▲───────────┘
          │ ① fetch /api/…  (토큰 헤더)    │ ② SSE /events (2초마다 바뀐 상태)
          ▼                              │
@@ -198,6 +198,20 @@
 | `17-search.js` | 전체 기록 검색(`openSearch` · `runSearch`) |
 | `18-day.js` | 오늘 한 일(`loadDay` · `dayMarkdown`) |
 | `19-keys.js` | 키보드 단축키(`approveKey` · `armTwice` · `nextKey`) |
+
+모양(`css/`)도 `index.html` 이 **번호 순서대로** 불러요(`<link>`). 뒤 파일이 앞 파일을 덮을 수 있어서, 좁은 창 · 동작 줄이기(`@media`)는 맨 뒤 `11-narrow.css` 하나에만 둬요.
+
+| 파일 | 모양 |
+|---|---|
+| `00-base.css` | 색 · 글꼴 변수(`:root`) · 화면 틀(body 격자) · 단추 · 입력 칸 같은 공통 컨트롤 |
+| `01-header.css` | 머리 · 사용 한도 표시 · 머리 단추가 여는 팝업(한도 추이 · 알림 설정) |
+| `02-list.css` | 왼쪽 목록 카드 · 접힌 띠 · 재시동 복구 안내 |
+| `03-graph.css` | 조직도 노드 · 선 · 흐르는 점선 · 세션 사이 화살표 · 폴더 열기 메뉴 |
+| `04-drawer.css` | 오른쪽 패널 틀 · 탭 · 지금 탭 · 기록 탭 · 입력 |
+| `05-approval.css` | 승인 창 · 허락할 내용 카드 |
+| `06-dialog.css` | 대화상자 · 토스트 · 복구 창 · 토큰이 바뀜 안내 |
+| `07-onboarding.css` · `08-log.css` · `09-search.css` · `10-day.css` | 첫 실행 안내 · 활동 로그 · 전체 기록 검색 · 오늘 한 일 |
+| `11-narrow.css` | 좁은 창 · 휴대폰 · 동작 줄이기(`@media`) — 모든 구역의 덮어쓰기 |
 
 ### test
 

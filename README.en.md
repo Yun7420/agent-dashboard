@@ -281,7 +281,7 @@ agent-dashboard/
 ├─ bin/                # agent-dashboard.mjs (start · run · restore) · run.sh (older runner) · restore.mjs (npm run restore) · statusline.mjs (status-line bridge source)
 ├─ public/             # UI (vanilla HTML/CSS/JS, no build)
 │  ├─ index.html       # structure (the server injects the token here only)
-│  ├─ style.css        # styles
+│  ├─ css/00-base.css ~ 11-narrow.css   # styles, one file per area, loaded in number order (narrow-screen @media in the last file)
 │  └─ js/00-md.js ~ 19-keys.js   # behavior, one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
 └─ test/               # node --test, 54 files · _helpers (temp folders · starting servers · requests) · fake-bin (fake tmux · claude · ps · lsof · open)
 ```
