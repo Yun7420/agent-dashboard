@@ -264,7 +264,7 @@ node bin/agent-dashboard.mjs restore   # 같은 일(대시보드는 run 실행�
 ```
 agent-dashboard/
 ├─ server.mjs          # 서버 켜기 · 요청 입구의 보안 검사 · 경로 표(ROUTES) · 2초 틱(상태를 만들어 SSE 로 보냄)
-├─ adapters/           # 도구별 차이만 여기 — claude.mjs · codex.mjs · index.mjs
+├─ adapters/           # 도구별 차이만 여기 — claude.mjs(+ claude/ 조각) · codex.mjs · index.mjs
 ├─ lib/                # 구역별 일(파일 하나 = 한 가지 일)
 │  ├─ state · procs · tmux · dialog · approval     상태 조립 · 프로세스 목록 · tmux 조작 · 선택창 감지 · 허락할 내용 카드
 │  ├─ commands · spawn · open-dir · env · launch  명령(채팅 · 승인 · 새 세션 …) · 새 세션 인자 · 폴더 열기 · 환경 점검 · 켠 방법에 맞는 안내
@@ -272,7 +272,7 @@ agent-dashboard/
 │  ├─ token · paths · perms                       비밀 열쇠 · 경로(폴더 안 검사) · 파일 권한
 │  ├─ usage-bridge · claude-settings · bridge · status · limits · usage   사용 한도(상태줄 다리 · 기본 모델 지키기 · 한도 기록 · 토큰 합계)
 │  ├─ recent · restore · restore-cli · runner     복구 · 재시동 복구 · 실행기
-│  ├─ history-core · history-api                  기록 읽기 공용(새로 붙은 줄만 · 턴 묶기 — 어댑터는 줄 해석만) · 기록 탭 · 검색 · 오늘 한 일
+│  ├─ history-core · history-api · git-commits    기록 읽기 공용(새로 붙은 줄만 · 턴 묶기 — 어댑터는 줄 해석만) · 기록 탭 · 검색 · 오늘 한 일 · 커밋 제목 읽기
 │  ├─ notify · paging · filecache · lru · serial · lock · util   알림 · 기록 나눠 받기 · 캐시 · 차례 지키기
 │  └─ demo                                        데모 데이터
 ├─ bin/                # agent-dashboard.mjs(실행 명령: start · run · restore) · run.sh(예전 실행기) · restore.mjs(npm run restore) · statusline.mjs(상태줄 다리 원본)

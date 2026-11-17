@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import os from 'node:os';
 import { commandRisks, fileRisks, relPath, summarizeTool, guessFromScreen } from '../lib/approval.mjs';
-import { pendingToolOf } from '../adapters/claude.mjs';
+import { pendingToolOf } from '../adapters/claude/changes.mjs';
 import { DEMO_PANE } from '../lib/demo.mjs';
 
 const use = (id, name, input) => ({ type: 'assistant', message: { content: [{ type: 'tool_use', id, name, input }] } });

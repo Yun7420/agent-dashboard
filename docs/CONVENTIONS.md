@@ -43,6 +43,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 
 - **보안 검사(Host · Origin · 토큰)는 `server.mjs:handle` 한 곳**에서만 해요. 경로가 늘어도 검사를 빠뜨리지 않게요.
 - 도구마다 다른 점은 **`adapters/` 에만** 둬요. 새 에이전트는 어댑터 파일 하나로 붙여요.
+  - 어댑터가 커지면 그 도구만 아는 조각을 `adapters/<id>/` 폴더로 떼고, 입구(`adapters/<id>.mjs`)가 불러 써요. 서버 · lib 는 입구만 불러요(예: `adapters/claude/`). 여러 도구가 같이 쓸 일은 `lib/` 에 둬요(`lib/history-core.mjs` · `lib/git-commits.mjs`).
 
 ### createXxx(deps)
 
@@ -130,13 +131,12 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 ### ① 파일 크기
 
 - **서버 쪽 `.mjs` 300줄, 화면 js 200줄을 넘으면 나누기를 검토**해요. 「꼭 나눈다」가 아니라 「이유를 적고 남기거나, 나눈다」예요.
-- 지금 넘은 파일은 4개예요(07-changes.js 는 2026-11-16 에 나눠 목록에서 빠졌어요).
+- 지금 넘은 파일은 3개예요(07-changes.js 는 2026-11-16, `adapters/claude.mjs` 는 2026-11-17 에 나눠 목록에서 빠졌어요).
   - `server.mjs` 468
-  - `adapters/claude.mjs` 542
   - `lib/state.mjs` 320
   - `public/js/03-graph.js` 201
-- 3부 테스트가 이 4개는 **지금보다 늘지 않게**, 다른 파일은 상한을 넘지 않게 지켜요.
-  - `adapters/claude.mjs` 는 2026-11-16 기록 읽기 공용 부분을 `lib/history-core.mjs` 로 옮겨 629 → 542줄이 됐어요. 나머지(커밋 제목 읽기 · 공식 세션 목록 · 하루 요약)를 나눌지는 따로 제안해요.
+- 3부 테스트가 이 3개는 **지금보다 늘지 않게**, 다른 파일은 상한을 넘지 않게 지켜요.
+  - `adapters/claude.mjs` 는 2026-11-16 기록 읽기 공용 부분을 `lib/history-core.mjs` 로 옮겨 629 → 542줄, 2026-11-17 커밋 제목 읽기를 `lib/git-commits.mjs`, 턴 시작 판단 · 이번 턴 변경 · 공식 세션 목록 · 하루 요약을 `adapters/claude/` 의 `prompts` · `changes` · `live` · `day` 로 옮겨 291줄이 됐어요(사용자 승인). 커밋 제목은 Claude 기록 형식이 아닌 셸 명령 글자 해석이라 lib, 나머지는 Claude 기록 · 파일만 아는 일이라 어댑터 폴더예요.
   - `server.mjs` 는 2026-11-17 기록 · 검색 · 오늘 한 일을 `lib/history-api.mjs`, 사용 한도 · 기본 모델을 `lib/usage-bridge.mjs` 로 옮겨 648 → 468줄이 됐어요(사용자 승인). 보안 입구(`handle` · `authorized` · 보안 헤더)와 경로 표(`ROUTES`) · 처리 함수 · 틱은 남겨요 — 보안 검사를 한 파일 한 곳에서 보이게 하려고요.
 - 한 줄 길이 기준은 이번엔 두지 않아요(2026-11-16 사용자 결정).
 
@@ -169,7 +169,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 1부 「구역」 그림을 규칙으로 정해요. 3부 테스트가 지켜요.
 
 - `lib → lib` 만.
-- `adapters → lib · adapters` 만.
+- `adapters → lib · adapters` 만. 어댑터 조각(`adapters/<id>/…`)은 그 입구 · 같은 폴더 조각만 불러요.
 - `bin → lib · bin · server.mjs` 만.
 - `server.mjs → lib · adapters` 만.
 - 아무도 `public/` · `test/` 를 import 하지 않아요.
@@ -207,7 +207,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 | 화면 번호 순서: 앞 번호 파일이 뒤 번호 파일의 let · const 를 쓰지 않음 | 없음(예외 없음) |
 | 화면 번호 순서: 앞 번호 파일이 뒤 번호 파일의 function 을 부르는 곳은 서로 부르는 고리만 | 8곳(이유와 함께) |
 | 화면 불러오기: `index.html` 의 `<script>` 가 `public/js` 전부를 번호 순서대로 | 없음 |
-| 파일 크기: 서버 쪽 300 · 화면 js 200줄, 넘은 파일은 늘지 않음 | 4개(위 ①) |
+| 파일 크기: 서버 쪽 300 · 화면 js 200줄, 넘은 파일은 늘지 않음 | 3개(위 ①) |
 | 모듈 경계 | 없음 |
 | 외부 명령: `child_process` 는 `execFile` · `spawn`(+Sync) 만, `shell: true` 없음 | 없음 |
 | 화면 서버 요청: 직접 `fetch` 는 `01-core` · `16-live` 각 한 줄 | 없음 |

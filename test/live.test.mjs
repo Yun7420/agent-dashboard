@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { createLiveSessions } from '../adapters/claude.mjs';
+import { createLiveSessions } from '../adapters/claude/live.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 
 // 가짜 claude agents: 몇 번 불렸는지 센다

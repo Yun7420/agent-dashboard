@@ -2,7 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import claude, { commitMessages } from '../adapters/claude.mjs';
+import claude from '../adapters/claude.mjs';
+import { daySummary } from '../adapters/claude/day.mjs';
+import { commitMessages } from '../lib/git-commits.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 const commitMessage = (c) => commitMessages(c)[0] ?? null;
 
@@ -67,7 +69,8 @@ test('하루 동안의 요청 · 파일 · 명령 · 커밋을 모은다 (다른
   ];
   fs.writeFileSync(file, lines.map((l) => JSON.stringify(l)).join('\n'));
   const from = new Date('2026-11-12T00:00:00').getTime();
-  const s = await claude.daySummary({ file }, from, from + 86400_000);
+  assert.equal(claude.daySummary, daySummary); // 어댑터는 조각(adapters/claude/day.mjs)을 그대로 내놓는다
+  const s = await daySummary({ file }, from, from + 86400_000);
   assert.equal(s.prompts, 2);
   assert.deepEqual(s.files, [{ file: '/p/a.ts', edits: 2 }]);
   assert.equal(s.commands, 2);

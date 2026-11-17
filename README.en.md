@@ -264,7 +264,7 @@ It doesn't touch hooks or global settings — it **only reads** (except for one 
 ```
 agent-dashboard/
 ├─ server.mjs          # start the server · security checks at the request entry · route table (ROUTES) · 2-second tick (build state, send over SSE)
-├─ adapters/           # per-tool differences only — claude.mjs · codex.mjs · index.mjs
+├─ adapters/           # per-tool differences only — claude.mjs (+ claude/ pieces) · codex.mjs · index.mjs
 ├─ lib/                # one job per file
 │  ├─ state · procs · tmux · dialog · approval     build state · process list · tmux control · prompt detection · "what you're allowing" card
 │  ├─ commands · spawn · open-dir · env · launch  commands (chat · approve · new session …) · new-session args · open folder · environment check · hints matching how you started it
@@ -272,7 +272,7 @@ agent-dashboard/
 │  ├─ token · paths · perms                       secret token · paths (inside-folder checks) · file permissions
 │  ├─ usage-bridge · claude-settings · bridge · status · limits · usage   usage limits (status-line bridge · keeping the default model · limit history · token totals)
 │  ├─ recent · restore · restore-cli · runner     restore · restore after reboot · runner
-│  ├─ history-core · history-api                  shared transcript reading (new lines only · grouping into turns — adapters only interpret lines) · history tab · search · today's work
+│  ├─ history-core · history-api · git-commits    shared transcript reading (new lines only · grouping into turns — adapters only interpret lines) · history tab · search · today's work · commit titles
 │  ├─ notify · paging · filecache · lru · serial · lock · util   notifications · paged history · caches · ordering
 │  └─ demo                                        demo data
 ├─ bin/                # agent-dashboard.mjs (start · run · restore) · run.sh (older runner) · restore.mjs (npm run restore) · statusline.mjs (status-line bridge source)

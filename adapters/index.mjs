@@ -1,4 +1,7 @@
 // 새 에이전트를 붙이려면 같은 모양의 어댑터 파일을 만들고 여기에 한 줄 추가한다.
+// 어댑터 하나 = adapters/<id>.mjs 파일 하나(입구). 커지면 그 도구만 아는 조각을 adapters/<id>/ 폴더로 떼어 입구가 불러 쓴다
+// (예: claude/ 의 prompts · changes · live · day). 서버 · lib 는 입구만 부르고, 여러 도구가 같이 쓸 일은 lib/ 에 둔다
+// (기록 읽기 공용 lib/history-core.mjs · 커밋 제목 lib/git-commits.mjs). test/conventions.test.mjs 가 이 경계를 본다.
 // 모양이 맞는지는 test/adapters.test.mjs 가 어댑터마다 확인한다(필수 함수 · describe/history 결과의 키와 종류).
 //
 // ── 필수 ──────────────────────────────────────────────────────────────

@@ -12,7 +12,10 @@ import { tmpDir } from './_helpers/tmp.mjs';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 const list = (dir, re) => fs.readdirSync(path.join(ROOT, dir)).filter((f) => re.test(f)).sort().map((f) => `${dir}/${f}`);
-const SERVER = ['server.mjs', ...list('lib', /\.mjs$/), ...list('adapters', /\.mjs$/), ...list('bin', /\.mjs$/)];
+// 아래 폴더까지(adapters/claude/ 처럼 어댑터 조각을 담는 폴더)
+const listDeep = (dir, re) => fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })
+  .flatMap((e) => (e.isDirectory() ? listDeep(`${dir}/${e.name}`, re) : re.test(e.name) ? [`${dir}/${e.name}`] : [])).sort();
+const SERVER = ['server.mjs', ...listDeep('lib', /\.mjs$/), ...listDeep('adapters', /\.mjs$/), ...list('bin', /\.mjs$/)];
 const FRONT = list('public/js', /^\d\d-.*\.js$/);
 
 // 허용 목록과 실제를 견준다: 새로 생긴 것 · 이미 사라진 것을 따로 보여 준다
@@ -69,7 +72,6 @@ test('화면 번호 순서 검사기: 주석 · 글자 · 객체 키 · 지역 �
 const LINES = { server: 300, front: 200 };
 const OVER = {
   'server.mjs': 468, // 2026-11-17 기록 · 사용 한도를 lib/history-api · usage-bridge 로 옮김(648 → 468)
-  'adapters/claude.mjs': 542,
   'lib/state.mjs': 320,
   'public/js/03-graph.js': 201,
 };
@@ -85,7 +87,7 @@ test('파일 크기: 서버 쪽 300줄 · 화면 js 200줄 이하, 이미 넘은
 
 // ---------- 모듈 경계 ----------
 // lib 는 서버 · 어댑터 · bin 을 모른다. 어댑터는 lib 만 쓴다. 화면은 서버 파일을 불러올 수 없다(브라우저)
-test('모듈 경계: lib → lib 만, adapters → lib · adapters 만, 아무도 public · test 를 import 하지 않는다', () => {
+test('모듈 경계: lib → lib 만, adapters → lib · adapters 만, 어댑터 조각은 그 입구만, 아무도 public · test 를 import 하지 않는다', () => {
   const bad = [];
   for (const f of SERVER) {
     for (const m of read(f).matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s*)['"](\.{1,2}\/[^'"]+)['"]/gm)) {
@@ -99,6 +101,9 @@ test('모듈 경계: lib → lib 만, adapters → lib · adapters 만, 아무�
         'server.mjs': ['lib', 'adapters'],
       }[from];
       if (!ok.includes(area)) bad.push(`${f} → ${target}`);
+      // 어댑터 조각(adapters/<id>/…)은 그 어댑터 입구(adapters/<id>.mjs)와 같은 폴더 조각만 부른다 — 「어댑터 = 입구 파일 하나」
+      const piece = target.match(/^adapters\/([^/]+)\//)?.[1];
+      if (piece && f !== `adapters/${piece}.mjs` && !f.startsWith(`adapters/${piece}/`)) bad.push(`${f} → ${target}(어댑터 조각은 입구만 부름)`);
     }
   }
   assert.deepEqual(bad, []);
@@ -158,9 +163,8 @@ const NO_TEST = [];
 test('테스트 짝: lib · 어댑터 파일마다 그 파일을 불러오는 테스트가 있다(없는 곳은 허용 목록, 줄어들기만)', () => {
   // 테스트가 쓰는 도우미(_history-full 등) 포함, 허용 목록이 적힌 이 파일은 빼고
   const tests = [...list('test', /\.mjs$/), ...list('test/_helpers', /\.mjs$/)].filter((f) => f !== 'test/conventions.test.mjs').map(read).join('\n');
-  const none = [...list('lib', /\.mjs$/), ...list('adapters', /\.mjs$/)].filter((f) => {
-    const [dir, name] = f.split('/');
-    return !tests.includes(`${dir}/${name}`) && !tests.includes(`'${dir}', '${name}'`);
+  const none = [...listDeep('lib', /\.mjs$/), ...listDeep('adapters', /\.mjs$/)].filter((f) => {
+    return !tests.includes(f) && !tests.includes(f.split('/').map((x) => `'${x}'`).join(', ')); // '../lib/x.mjs' 또는 path.join(…, 'lib', 'x.mjs')
   });
   sameAsAllowed(none, NO_TEST, '테스트 없는 파일');
 });
