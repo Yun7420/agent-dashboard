@@ -84,6 +84,18 @@ test('approve: 승인 기다리는 세션에만, 숫자를 그 창으로 보낸�
   assert.deepEqual(tmuxCalls('send-keys').at(-1).args, ['send-keys', '-t', '%2', '2']);
 });
 
+test('pane: tmux 창 세션은 그 창 화면(capture-pane -t 창), 목록에 없는 세션은 404', async () => {
+  const st = await firstState();
+  const s = st.sessions.find((x) => x.id === ID[0]);
+  const r = await req(`/api/pane?key=${encodeURIComponent(s.key)}`, { headers: H });
+  assert.equal(r.status, 200);
+  assert.equal(r.text, '>'); // 가짜 tmux 의 기본 화면 「> 」(끝 공백은 뗀다)
+  assert.equal(r.headers['x-focus-tab'], ''); // 질문 탭 줄이 없으면 빈 값
+  const cap = tmuxCalls('capture-pane').at(-1).args;
+  assert.equal(cap[cap.indexOf('-t') + 1], '%1');
+  for (const key of ['claude:없는-세션', '']) assert.equal((await req(`/api/pane?key=${encodeURIComponent(key)}`, { headers: H })).status, 404, key);
+});
+
 test('spawn: 홈 밖은 400, 첫 프롬프트는 -- 뒤 한 칸(옵션으로 읽히지 않게)', async () => {
   assert.equal((await cmd('spawn', { cwd: '/etc' })).status, 400);
   const r = await cmd('spawn', { cwd: '~/proj', name: '새 일', prompt: '--permission-mode bypassPermissions' });

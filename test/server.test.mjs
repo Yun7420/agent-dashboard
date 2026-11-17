@@ -33,9 +33,23 @@ test('화면 파일은 토큰 없이 열린다', async () => {
   assert.equal(await req('/js/01-core.js'), 200);
 });
 
-test('대화 목록 · 기록 · 명령은 토큰이 없으면 403', async () => {
-  for (const p of ['/events', '/api/history?key=x', '/api/search?q=test', '/api/day?date=2026-11-12', '/api/env', '/api/perf']) assert.equal(await req(p), 403, p);
-  assert.equal(await req('/api/cmd/send', { method: 'POST', body: '{}' }), 403);
+// server.mjs 의 경로 표(ROUTES)를 글자로 읽는다 — 경로가 늘면 아래 403 시험이 저절로 따라간다
+const ROUTE_LIST = [...fs.readFileSync(path.join(ROOT, 'server.mjs'), 'utf8').matchAll(/^\s*\{ (path|prefix): '([^']+)'(?:, method: '(\w+)')?, handler:/gm)]
+  .map((m) => ({ path: m[1] === 'prefix' ? `${m[2]}send` : m[2], method: m[3] ?? 'GET' }));
+
+test('경로 표의 모든 경로는 /events 또는 /api/ 아래 — 토큰 검사(handle)가 주소 앞부분으로 걸러서, 그 밖에 두면 토큰 없이 열린다', () => {
+  const block = fs.readFileSync(path.join(ROOT, 'server.mjs'), 'utf8').match(/const ROUTES = \[([\s\S]*?)\n\];/)[1];
+  assert.equal(ROUTE_LIST.length, block.match(/handler:/g).length, '경로 표를 다 읽지 못했어요(표 모양이 바뀌었으면 위 정규식도)');
+  assert.ok(ROUTE_LIST.length >= 15);
+  for (const r of ROUTE_LIST) assert.ok(r.path === '/events' || r.path.startsWith('/api/'), r.path);
+});
+
+test('경로 표의 모든 경로는 토큰이 없으면 403 (그 경로가 받는 방식으로)', async () => {
+  for (const r of ROUTE_LIST) {
+    const opts = r.method === 'POST' ? { method: 'POST', body: '{}' } : {};
+    assert.equal(await req(r.path, opts), 403, `${r.method} ${r.path}`);
+    assert.equal(await req(r.path, { ...opts, headers: { 'x-dashboard-token': 'x'.repeat(TOKEN.length) } }), 403, `틀린 토큰 ${r.method} ${r.path}`);
+  }
 });
 
 test('토큰이 있으면 열린다 (헤더 · SSE 는 주소)', async () => {

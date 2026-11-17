@@ -107,6 +107,18 @@ test('모듈 경계: lib → lib 만, adapters → lib · adapters 만, 어댑�
   assert.deepEqual(bad, []);
 });
 
+// ---------- 서버 입구는 하나 ----------
+// 보안 검사(Host · Origin · 토큰)는 server.mjs 의 handle 한곳에 있다. 다른 파일이 서버를 열면 그 검사를 거치지 않는 입구가 생긴다
+test('서버 입구: createServer · listen 은 server.mjs 에만', () => {
+  const bad = [];
+  for (const f of SERVER) {
+    if (f === 'server.mjs') continue;
+    const src = read(f).replace(/\/\/.*$/gm, '');
+    if (/\bcreateServer\s*\(|\.listen\s*\(/.test(src)) bad.push(f);
+  }
+  assert.deepEqual(bad, []);
+});
+
 // ---------- 외부 명령: 셸을 거치지 않는다 ----------
 test('외부 명령: child_process 는 execFile · spawn(+Sync) 만, shell 옵션 없음', () => {
   const bad = [];
