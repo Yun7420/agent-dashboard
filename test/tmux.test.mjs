@@ -50,10 +50,33 @@ test('sendText: 붙여넣기 버퍼(stdin) → paste-buffer → Enter 순서, se
   const sent = calls().slice(before);
   assert.deepEqual(sent.map((c) => c.args[0]), ['load-buffer', 'paste-buffer', 'send-keys']);
   assert.equal(sent[0].stdin, '여러\n줄 -- $(rm -rf ~)'); // 글은 인자가 아니라 stdin 으로
-  assert.deepEqual(sent[1].args, ['paste-buffer', '-p', '-d', '-b', 'agent-deck', '-t', '%2']);
+  const name = sent[0].args[2];
+  assert.match(name, /^agent-deck-[0-9a-f-]{36}$/);
+  assert.deepEqual(sent[0].args, ['load-buffer', '-b', name, '-']);
+  assert.deepEqual(sent[1].args, ['paste-buffer', '-p', '-d', '-b', name, '-t', '%2']);
+  assert.equal(sent[1].pasted, '여러\n줄 -- $(rm -rf ~)');
   assert.deepEqual(sent[2].args, ['send-keys', '-t', '%2', 'Enter']);
   await sendKey('%2', 'Escape');
   assert.deepEqual(calls().at(-1).args, ['send-keys', '-t', '%2', 'Escape']);
   await newSession({ name: 'n', cwd: '/w', command: ['claude', '--', '-x'] });
   assert.deepEqual(calls().at(-1).args, ['new-session', '-d', '-s', 'n', '-c', '/w', '-x', '200', '-y', '50', '--', 'claude', '--', '-x']);
+});
+
+test('sendText: 여러 세션에 거의 동시에 보내도 버퍼가 섞이지 않고(이름이 매번 새로), 붙인 뒤 · 붙이기 실패 때 버퍼가 남지 않는다', async () => {
+  const before = calls().length;
+  const targets = ['%1', '%2', '%3', '%4', '%5', '%6'];
+  await Promise.all(targets.map((t) => sendText(t, `글 ${t}`)));
+  const pastes = calls().slice(before).filter((c) => c.args[0] === 'paste-buffer');
+  assert.deepEqual(pastes.map((c) => [c.args.at(-1), c.pasted]).sort(), targets.map((t) => [t, `글 ${t}`]));
+  assert.equal(new Set(pastes.map((c) => c.args[4])).size, targets.length);
+  const left = () => fs.readdirSync(dir).filter((f) => f.startsWith('buffer-'));
+  assert.deepEqual(left(), []);
+  answer('fail.txt', 'paste-buffer');
+  try {
+    await assert.rejects(sendText('%9', '실패'));
+  } finally {
+    fs.rmSync(path.join(dir, 'fail.txt'));
+  }
+  assert.equal(calls().at(-1).args[0], 'delete-buffer');
+  assert.deepEqual(left(), []);
 });

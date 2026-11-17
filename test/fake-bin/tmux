@@ -1,10 +1,29 @@
 #!/usr/bin/env node
-// 가짜 tmux: list-panes · capture-pane 은 정해 둔 답, 나머지(send-keys · load-buffer · paste-buffer · new-session)는 기록만
+// 가짜 tmux: list-panes · capture-pane 은 정해 둔 답, 나머지(send-keys · new-session)는 기록만.
+// 붙여넣기 버퍼는 이름별 파일(FAKE_DIR/buffer-<이름>)로 흉내: load-buffer 가 쓰고, paste-buffer 는 붙인 글을 기록하고 -d 면 지운다(버퍼 섞임 시험).
+// FAKE_DIR/fail.txt 에 적힌 하위 명령은 실패(종료 코드 1)
+import fs from 'node:fs';
+import path from 'node:path';
 import { record, answer, readStdin } from './_fake.mjs';
 const args = process.argv.slice(2);
 const sub = args[0];
-if (sub === 'load-buffer') record('tmux', args, { stdin: readStdin() });
-else record('tmux', args);
+const buf = (name) => path.join(process.env.FAKE_DIR ?? '', `buffer-${name}`);
+const opt = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
+if (sub === 'load-buffer') {
+  const stdin = readStdin();
+  record('tmux', args, { stdin });
+  if (process.env.FAKE_DIR) fs.writeFileSync(buf(opt('-b') ?? 'default'), stdin);
+} else if (sub === 'paste-buffer') {
+  const file = buf(opt('-b') ?? 'default');
+  const pasted = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+  record('tmux', args, { pasted });
+  if (pasted === null) process.exit(1); // 진짜 tmux 도 없는 버퍼면 실패
+  if (args.includes('-d') && !answer('fail.txt').split('\n').includes(sub)) fs.rmSync(file, { force: true });
+} else if (sub === 'delete-buffer') {
+  record('tmux', args);
+  fs.rmSync(buf(opt('-b') ?? 'default'), { force: true });
+} else record('tmux', args);
+if (answer('fail.txt').split('\n').includes(sub)) process.exit(1);
 if (sub === '-V') process.stdout.write('tmux 3.4\n');
 else if (sub === 'list-panes') process.stdout.write(answer('panes.txt'));
 else if (sub === 'capture-pane') process.stdout.write(answer('screen.txt', '> '));

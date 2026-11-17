@@ -344,6 +344,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 | 복구 | `lib/commands.mjs` 의 `recent-restore` | 화면은 세션 ID 만 보내고, 폴더 · 이름은 서버가 기억한 목록에서만 |
 | 본문 상한 | `lib/body.mjs:readBody` · `saveUpload` | 큰 요청은 413 한 번, 그 뒤 본문은 쌓지 않음. 끊기면 바로 정리(`.part` 안 남김) |
 | 셸을 거치지 않기 | `lib/tmux.mjs`(`execFile` · `spawn` 인자 배열) · `lib/spawn.mjs:newSessionArgs` | 글자가 명령으로 해석되지 않게. 첫 프롬프트는 `--` 뒤라 `--permission-mode …` 같은 글도 옵션이 아님 |
+| 붙여넣기 버퍼 | `lib/tmux.mjs:sendText` | 보낼 때마다 새 이름(`agent-deck-<무작위>`)으로 넣고 붙이면서 지움(`-d`), 붙이기가 실패해도 지움. 두 세션에 거의 동시에 보내도 글이 섞이지 않고 tmux 에 남지 않게 |
 | 상태줄 명령 | `lib/bridge.mjs:bridgeCommand` | 경로에 따옴표 · `$` · `` ` `` 등이 있으면 켜지 않음(설정 파일 속 명령에 끼어들지 못하게) |
 | 파일 권한 | `lib/perms.mjs:tightenFiles` · `lib/runner.mjs` 의 `openLog` · `lib/body.mjs:saveUpload` | 폴더 700, 파일 600. 예전에 넓게 만든 파일도 켤 때 맞춤. 링크는 따라가지 않음 |
 | 첨부 정리 | `lib/uploads.mjs:pruneUploads` | 14일 지난 첨부 삭제(스크린샷에 민감한 화면이 남지 않게) |
