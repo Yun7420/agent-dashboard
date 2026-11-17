@@ -139,7 +139,8 @@
 | `lib/login-open.mjs` | `agent-dashboard open`(`openLogin`): 127.0.0.1 · [::1] 서버가 진짜인지 확인한 뒤 로그인 링크를 브라우저로 |
 | `lib/paths.mjs` | 데이터 폴더(`DATA_DIR`) · 시험 모드(`TEST_MODE`) · 폴더 안 검사(`isInside` · `allInside`) · 화면용 `~` 줄이기(`tildify`) |
 | `lib/perms.mjs` | `~/.agent-dashboard` 아래 폴더를 700 · 파일을 600 으로 좁히기(`tightenTree` · `tightenFiles`) |
-| `lib/claude-settings.mjs` | `~/.claude/settings.json` 을 안전하게 고치기(`updateJson` · `writeAtomic`), 상태줄 켜기 · 끄기 |
+| `lib/claude-settings.mjs` | `~/.claude/settings.json` 을 안전하게 고치기(`updateJson`), 상태줄 켜기 · 끄기 |
+| `lib/atomic-write.mjs` | 파일 한 번에 바꾸기(`writeAtomic` · `writeAtomicIn`): 난수 임시 파일 `wx` → fsync → rename — 링크를 따라 쓰지 않음(점검 C7) |
 | `lib/bridge.mjs` | 상태줄 다리를 `~/.agent-dashboard/bin` 에 복사해 등록(`enableBridge` · `syncBridge`) |
 
 ### lib — 복구 · 알림 · 한도

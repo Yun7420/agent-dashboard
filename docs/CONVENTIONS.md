@@ -75,7 +75,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 
 ### 파일 · 외부 명령
 
-- `~/.agent-dashboard` 는 폴더 700 · 파일 600 이에요. 쓰기 전에 **링크면 거절**하고(`lstat`), 중요한 파일은 **임시 파일 + rename** 으로 한 번에 바꿔요(`lib/claude-settings.mjs:writeAtomic` · `lib/token.mjs`).
+- `~/.agent-dashboard` 는 폴더 700 · 파일 600 이에요. 쓰기 전에 **링크면 거절**하고(`lstat`), 파일은 **`lib/atomic-write.mjs` 의 `writeAtomic`(난수 임시 파일 `wx` → rename)** 으로만 써요 — 그 자리에 링크가 있어도 따라가지 않아요(2026-11-17 점검 C7, 3부 검사: `writeFileSync` · `appendFileSync` 금지). `bin/statusline.mjs` 는 따로 실행되는 파일이라 같은 방식을 안에 둬요.
 - 「폴더 안인가」는 `lib/paths.mjs:isInside` 하나로 봐요. `startsWith` 만으로는 옆 폴더(`uploads-x`)도 통과해요.
 - **모듈은 import 만으로 프로세스를 끝내거나 밖에 쓰지 않아요.** `lib/` · `adapters/` 의 맨 바깥에서 `process.exit` · `console.*` · 파일 쓰기를 하지 않고, 그런 일은 함수로 내보내 부르는 쪽(`server.mjs` · `bin/`)이 불러요. 예: `lib/node-check.mjs:checkNode()` 를 bin · server.mjs 맨 앞에서 부름. 불러오기만 한 테스트가 끝나 버리거나, 읽는 사람이 「어디서 끝나는지」 찾기 어려워지지 않게요.
 - 외부 명령은 **`execFile` · `spawn` 에 인자 배열**로 불러요. 셸을 거치지 않아요. 사람이 쓴 글은 stdin(`tmux load-buffer`)으로 넘겨요. 명령 인자는 `ps` 로 다른 계정에도 보여서 프롬프트 같은 글은 싣지 않아요(새 세션 첫 프롬프트도 입력칸이 뜬 뒤 붙여 넣기, 2026-11-17). 꼭 인자로 넘길 땐 `--` 뒤나 `--이름=값` 한 칸으로.
@@ -221,6 +221,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 | 화면 서버 요청: 직접 `fetch` 는 `01-core` · `16-live` 각 한 줄 | 없음 |
 | 토큰 자리: `public` 어디에도 토큰 자리 · 토큰 머리글 · `?token=` 없음, 서버도 읽지 않음 | 없음 |
 | CSP 와 맞는 화면: 인라인 `<script>` 본문 · `on…=` 속성 · `javascript:` 없음 | 없음 |
+| 파일 쓰기: 서버 쪽에 `writeFileSync` · `appendFileSync` 없음(`writeAtomic`) | 없음 |
 | 머리 주석 | 없음 |
 | 테스트 짝 | 없음(2026-11-17 비움) |
 

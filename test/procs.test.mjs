@@ -39,6 +39,8 @@ test('processes: 어댑터가 고른 것만, --resume ID · 에디터 확장(str
   assert.ok(Math.abs(Date.now() - 60_000 - procs[0].startMs) < 5000);
   const lsof = JSON.parse(fs.readFileSync(LOG, 'utf8').trim().split('\n').reverse().find((l) => JSON.parse(l).cmd === 'lsof'));
   assert.deepEqual(lsof.args, ['-a', '-d', 'cwd', '-Fn', '-p', '501,502']); // 고른 PID 만
+  const ps = JSON.parse(fs.readFileSync(LOG, 'utf8').trim().split('\n').reverse().find((l) => JSON.parse(l).cmd === 'ps'));
+  assert.deepEqual(ps.args, ['-U', String(process.getuid()), '-o', 'pid=,ppid=,etime=,command=']); // 내 계정 것만(점검 C8 — 다른 계정의 같은 명령줄에 속지 않게)
 });
 
 test('캐시: 같은 구성(sig)이면 6초 안에 ps 를 다시 부르지 않고, 구성이 바뀌거나 invalidate 면 다시', async () => {

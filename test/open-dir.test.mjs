@@ -25,6 +25,17 @@ test('finder: macOS 는 open, 그 밖은 xdg-open 에 폴더 하나만(셸 없�
   assert.deepEqual(calls().map((c) => [c.cmd, c.args]), [[os.platform() === 'darwin' ? 'open' : 'xdg-open', [target]]]);
 });
 
+// 점검 D: macOS open 은 .app 같은 꾸러미 폴더를 실행한다 → Finder 에서 보여 주기(-R)만. 이름 중간의 .app 이나 다른 OS 는 그대로
+test('finder: 이름이 .app · .bundle 등으로 끝나는 폴더는 macOS 에서 open -R(실행하지 않고 보여 주기)', async () => {
+  const mac = os.platform() === 'darwin';
+  for (const [name, reveal] of [['Tool.app', true], ['Tool.APP/', true], ['x.framework', true], ['my.app-src', false], ['apps', false]]) {
+    const n = calls().length;
+    const target = path.join(dir, name);
+    await openDir(target, 'finder');
+    assert.deepEqual(calls().slice(n).map((c) => [c.cmd, c.args]), [mac ? ['open', reveal ? ['-R', target] : [target]] : ['xdg-open', [target]]], name);
+  }
+});
+
 test('모르는 앱 이름은 실행하지 않고 오류', async () => {
   const n = calls().length;
   await assert.rejects(openDir(dir, '../../bin/sh'), /알 수 없는 앱/);

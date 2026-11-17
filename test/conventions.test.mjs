@@ -196,6 +196,12 @@ test('CSP 와 맞는 화면: index.html · 화면 js 에 인라인 <script> 본�
   assert.deepEqual(where, []);
 });
 
+// 링크를 따라 쓰지 않게(점검 C7): 서버 쪽 파일 쓰기는 lib/atomic-write.mjs(난수 임시 파일 'wx' → rename) 하나로. 첨부는 'wx' 스트림(lib/body)
+test('파일 쓰기: lib · bin · adapters · server 에 writeFileSync · appendFileSync 없음(writeAtomic 을 씀)', () => {
+  const where = SERVER.filter((f) => /\b(writeFileSync|appendFileSync)\s*\(/.test(read(f)));
+  assert.deepEqual(where, []);
+});
+
 // ---------- 머리 주석 ----------
 test('머리 주석: 서버 · lib · 어댑터 · bin · 화면 js 파일은 맨 위에 「무엇을 · 왜」 주석', () => {
   const missing = [];

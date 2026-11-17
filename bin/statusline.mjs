@@ -30,7 +30,17 @@ try {
 try {
   fs.mkdirSync(STATUS_DIR, { recursive: true, mode: 0o700 });
   const id = String(input.session_id || 'unknown').replace(/[^a-zA-Z0-9-]/g, '');
-  fs.writeFileSync(path.join(STATUS_DIR, `${id}.json`), JSON.stringify({ savedAt: new Date().toISOString(), ...input }), { mode: 0o600 });
+  // 난수 임시 파일('wx' — 링크 · 남은 파일이면 실패) → rename: 그 자리가 링크여도 따라가 다른 파일에 쓰지 않는다(lib/atomic-write.mjs 와 같은 방식, 점검 C7)
+  const file = path.join(STATUS_DIR, `${id}.json`);
+  const tmp = `${file}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
+  try {
+    const fd = fs.openSync(tmp, 'wx', 0o600);
+    try { fs.writeSync(fd, JSON.stringify({ savedAt: new Date().toISOString(), ...input })); } finally { fs.closeSync(fd); }
+    fs.renameSync(tmp, file);
+  } catch (e) {
+    fs.rmSync(tmp, { force: true });
+    throw e;
+  }
 } catch {
   /* 기록에 실패해도 상태줄 표시는 막지 않는다 */
 }
