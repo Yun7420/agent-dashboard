@@ -62,7 +62,7 @@ Agent Dashboard puts all of this on one screen.
 
 ### Requirements
 
-You need: **macOS · Node 18+ · tmux · Claude Code**. If something is missing the server still starts and explains it in the startup log and the environment check. Without tmux it's view-only and the New session · Restore · Close buttons are disabled (hover to see why). If there are no Claude Code transcripts yet, the list shows how to get started.
+You need: **macOS · Node 18+ · tmux · Claude Code**. If something is missing the server still starts and explains it in the startup log and the environment check. The exception is Node older than 18: it explains and does not start (on 18 · 20, which are end-of-life, it prints one line recommending 22+ and starts anyway). Without tmux it's view-only and the New session · Restore · Close buttons are disabled (hover to see why). If there are no Claude Code transcripts yet, the list shows how to get started.
 
 | | Required | Install |
 |---|---|---|

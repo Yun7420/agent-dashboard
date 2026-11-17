@@ -115,6 +115,7 @@
 | `lib/spawn.mjs` | 새 세션 claude 인자(`newSessionArgs`). 첫 프롬프트는 `--` 뒤에 |
 | `lib/open-dir.mjs` | 폴더를 VS Code · Cursor · Finder 로 열기(`openDir`), 설치된 앱 찾기(`detectEditors`) |
 | `lib/env.mjs` | 환경 점검(`createEnvCheck`) · 시작 로그 안내(`startupNotices`) |
+| `lib/node-check.mjs` | 켤 때 Node 버전 확인(`nodeCheck`): engines 보다 낮으면 한국어 안내 후 종료, 지원 끝난 18 · 20 은 한 줄 안내. bin 과 env.mjs(서버 쪽)가 불러올 때 바로 확인 |
 | `lib/launch.mjs` | 켠 방법(npx · 설치된 명령 · 저장소)에 맞는 다시 켜기 명령(`startCommand`) · 포트 충돌 안내(`portInUseMessage`) |
 | `lib/lock.mjs` | 한 번에 하나만(`createLock`) — 복구를 두 번 눌러도 한 번만 |
 
