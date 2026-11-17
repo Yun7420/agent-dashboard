@@ -302,7 +302,7 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 
 | 검사 | 어디서 | 왜 |
 |---|---|---|
-| 127.0.0.1 에만 열기 | `server.mjs` 의 `server.listen(PORT, '127.0.0.1')` | 같은 와이파이의 다른 기기가 접속하지 못하게 |
+| 127.0.0.1 에만 열기 | `server.mjs` 의 `server.listen(PORT, '127.0.0.1')` | 같은 와이파이의 다른 기기가 접속하지 못하게. 이 컴퓨터의 다른 주소로 붙어 보는 테스트가 있어요(`test/server.test.mjs`) |
 | 보안 헤더 | `server.mjs:SECURITY_HEADERS` (`createServer` 콜백 맨 앞) | 다른 사이트가 이 화면을 숨은 iframe 으로 띄워 승인 단추를 누르게 속이는 클릭재킹 막기 · 내용 종류 짐작 금지(nosniff) |
 | Host 검사 | `server.mjs:handle` + `ALLOWED_HOSTS` | DNS 리바인딩(나쁜 사이트 주소가 내 컴퓨터 127.0.0.1 을 가리키게 바꾸는 공격) 막기 |
 | Origin 검사 | `server.mjs:authorized` | 내 브라우저에 열린 다른 웹사이트가 보낸 요청 거절 |

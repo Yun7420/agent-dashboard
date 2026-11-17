@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import net from 'node:net';
+import os from 'node:os';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { request, rawFirstLine } from './_helpers/http.mjs';
 import { ROOT, demoEnv, startServer } from './_helpers/server.mjs';
@@ -49,6 +50,26 @@ test('틀린 토큰은 403', async () => {
 test('찾아온 주소(Host)가 다르면 403 — DNS 리바인딩 차단', async () => {
   assert.equal(await req('/', { headers: { host: 'evil.example:4699' } }), 403);
   assert.equal(await req('/', { headers: { host: 'localhost:4698' } }), 403); // 다른 포트도
+});
+
+// 연결이 되는지만 본다: 붙으면 true, 거절 · 없는 주소면 false, 2초 넘게 답이 없어도 false(막힌 것)
+const canConnect = (host) => new Promise((resolve) => {
+  const s = net.connect({ port: PORT, host });
+  const done = (v) => { s.destroy(); resolve(v); };
+  s.once('connect', () => done(true));
+  s.once('error', () => done(false));
+  s.setTimeout(2000, () => done(false));
+});
+
+test('127.0.0.1 에만 연다: 이 컴퓨터의 다른 주소(공유기 · 외부 망)로는 연결 자체가 안 된다', async (t) => {
+  assert.equal(await canConnect('127.0.0.1'), true); // 비교 기준 — 이게 안 되면 아래 「안 됨」도 믿을 수 없다
+  // 밖에서 닿는 주소들. IPv6 는 fe80(링크 로컬)이 장치 이름 없이는 못 붙어서 뺀다. Node 18 초기는 family 가 숫자
+  const others = Object.values(os.networkInterfaces()).flat()
+    .filter((a) => !a.internal && (a.family === 'IPv4' || a.family === 4 || ((a.family === 'IPv6' || a.family === 6) && !a.address.startsWith('fe80'))))
+    .map((a) => a.address);
+  if (process.platform === 'linux') others.push('127.0.0.2'); // 리눅스는 127/8 전체가 자기 자신이라, 0.0.0.0 으로 열면 여기로도 붙는다(밖 주소가 없는 CI 에서도 확인)
+  if (!others.length) { t.skip('이 컴퓨터에 127.0.0.1 말고 확인할 주소가 없음'); return; }
+  for (const host of others) assert.equal(await canConnect(host), false, `${host} 로 붙었다 — 0.0.0.0 처럼 열린 것`);
 });
 
 test('Host 는 localhost:포트 · 127.0.0.1:포트 둘 다 열린다(화면은 보통 http://localhost:포트 로 연다)', async () => {
