@@ -72,3 +72,23 @@ test('데모 모드: 가짜 기록(최신이 위) · 추이 · 하루 요약', a
   assert.equal(await api.contextTrend('claude:d'), 'demo-trend');
   assert.deepEqual(await api.daySummary('2026-11-16'), ['demo-day']);
 });
+
+test('경로 처리 함수: 세션 열쇠 · 날짜가 틀리면 400, 기록은 나눠서(80개씩 · limit), 추이 · 검색 · 하루 요약은 그대로', async () => {
+  const { api } = setup();
+  const res = () => {
+    const r = { code: null, body: '' };
+    r.writeHead = (c) => { r.code = c; return r; };
+    r.end = (b) => { r.body = b ?? ''; return r; };
+    return r;
+  };
+  const call = async (fn, q) => { const r = res(); await fn({}, r, new URL(`http://x/?${q}`)); return [r.code, r.code === 200 ? JSON.parse(r.body) : r.body]; };
+  assert.deepEqual(await call(api.getHistory, 'key=bad key'), [400, '세션을 고르지 않았어요']);
+  assert.deepEqual(await call(api.getTrend, ''), [400, '세션을 고르지 않았어요']);
+  assert.deepEqual(await call(api.getDay, 'date=2026-1-1'), [400, '날짜는 2026-11-13 처럼 YYYY-MM-DD 로 보내 주세요']);
+  const [code, page] = await call(api.getHistory, 'key=claude:a&limit=1');
+  assert.equal(code, 200);
+  assert.deepEqual([page.items.length, page.total], [1, 2]);
+  assert.equal((await call(api.getTrend, 'key=claude:a'))[1].points.length, 120);
+  assert.equal((await call(api.getSearch, 'q=필터'))[0], 200);
+  assert.equal((await call(api.getDay, 'date=2026-11-16'))[0], 200);
+});

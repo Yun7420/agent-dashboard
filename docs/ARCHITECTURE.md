@@ -38,7 +38,7 @@
          ▼                              │
  ┌──────────────────────── server.mjs ─────────────────────────┐
  │ handle(): Host → Origin · 토큰 검사 → ROUTES 표 → 처리 함수     │
- │ tick(): 2초마다 buildState → 바뀌었으면 SSE 로 보냄            │
+ │ feed(lib/live-feed): 2초마다 buildState → 바뀌었으면 SSE 로    │
  └──┬──────────────┬───────────────┬──────────────┬─────────────┘
     │              │               │              │
     ▼              ▼               ▼              ▼
@@ -64,7 +64,7 @@
 
 | 순서 | 파일 | 왜 이 순서 |
 |---|---|---|
-| 1 | `server.mjs` | 머리 주석이 전체 지도예요. `handle` · `ROUTES` · `tick` 세 곳만 먼저 보세요 |
+| 1 | `server.mjs` | 머리 주석이 전체 지도예요. `handle` · `ROUTES` · `createLiveFeed`(틱) 세 곳만 먼저 보세요 |
 | 2 | `lib/paths.mjs` | 짧고, 「폴더 안인가」 검사(`isInside`)를 여기서 처음 만나요 |
 | 3 | `adapters/index.mjs` → `adapters/codex.mjs` | 어댑터가 어떤 모양인지. codex 는 115줄이라 claude(입구 291줄 + `adapters/claude/` 조각 넷)보다 먼저. 둘 다 「줄 하나가 무슨 일인가」만 해석하고, 증분 읽기 · 턴 묶기는 `lib/history-core.mjs` 가 같이 해요 |
 | 4 | `lib/state.mjs` | 2초마다 상태 한 장을 만드는 곳. 머리 주석에 순서가 적혀 있어요 |
@@ -76,7 +76,8 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `server.mjs` | 서버 켜기 · 요청 입구의 보안 검사(`handle`) · 경로 표(`ROUTES`)와 처리 함수 · 2초 틱(`tick`) · 각 구역을 잇는 일 |
+| `server.mjs` | 서버 켜기 · 요청 입구의 보안 검사(`handle` · `authorized` · 보안 헤더) · 토큰 · 경로 표(`ROUTES`) · 화면 파일(`serveStatic`) · 틱 뒤에 할 일(`afterBuild`: 알림 · 한도 기록 · 복구 목록) · 각 구역을 잇는 일. 바뀌는 값을 가진 구역의 처리 함수는 그 모듈에, 남은 처리 함수(환경 · 한도 · 복구 · 창 화면 · 업로드 · 명령)는 여기 |
+| `lib/live-feed.mjs` | 2초 틱과 SSE(`createLiveFeed`): 마지막 상태(`latest`) · 보는 기간 · 열린 탭을 들고, 바뀐 것만 보냄. 경로 `/events` · `/api/perf` · `/api/window` |
 | `adapters/index.mjs` | 쓸 어댑터 목록(`adapters`). 새 도구는 여기에 한 줄 |
 | `adapters/claude.mjs` | Claude Code 어댑터의 입구: 세션 찾기(`scan`) · 요약(`describe`) · 기록 탭(`history`) · 대화 창 추이(`contextTrend`) · 세션 간 메시지(`peers`) · 서브에이전트. 서버 · lib 는 이 파일만 불러요 |
 | `adapters/claude/prompts.mjs` | 줄 하나가 새 턴의 시작인가: 사람이 친 요청(`promptText`) · 다른 세션 메시지(`turnStart`) — 요약 · 기록 탭 · 승인 카드 · 오늘 한 일이 같이 써요 |
@@ -99,7 +100,7 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `lib/history-api.mjs` | 세션 열쇠로 어댑터 · 기록 파일을 찾아 기록 탭(`promptHistory`) · 대화 창 추이(`contextTrend`) · 전체 기록 검색(`searchHistory`) · 오늘 한 일(`daySummary`). 크기가 같으면 다시 읽지 않는 캐시 |
+| `lib/history-api.mjs` | 세션 열쇠로 어댑터 · 기록 파일을 찾아 기록 탭(`promptHistory`) · 대화 창 추이(`contextTrend`) · 전체 기록 검색(`searchHistory`) · 오늘 한 일(`daySummary`). 크기가 같으면 다시 읽지 않는 캐시. 경로 처리 함수 `getHistory` · `getTrend` · `getDay` · `getSearch` |
 | `lib/usage-bridge.mjs` | 상태줄 다리 켜기 · 끄기 · 켜질 때 맞추기(`enableUsage` · `sync`) · 상태줄 파일 읽기(`readStatusFiles` · `usageState`) · `/model` 뒤 기본 모델 되돌리기(`restoreDefaultModel`) |
 | `lib/dialog.mjs` | 화면 맨 아래를 보고 선택창인지(`hasDialog` · `detectDialog`), 선택지와 커서 위치(`parseOptions`) |
 | `lib/approval.mjs` | 승인 창 맨 위 「허락할 내용」 카드: 종류 · 내용 · 위험 이유(`summarizeTool` · `commandRisks` · `fileRisks`) |
@@ -121,7 +122,7 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `lib/body.mjs` | 요청 본문 읽기(`readBody`) · 첨부 저장(`saveUpload`). 너무 큼 413 · 끊김 499 · 디스크 오류 500 을 구분 |
+| `lib/body.mjs` | 요청 본문 읽기(`readBody` · 실패하면 응답까지 하는 `jsonBody`) · 첨부 저장(`saveUpload`) · 실패 응답(`bodyFail`). 너무 큼 413 · 끊김 499 · 디스크 오류 500 을 구분 |
 | `lib/uploads.mjs` | 첨부 폴더 · 25MB 상한 · 14일 지난 첨부 지우기(`pruneUploads`) |
 | `lib/respond.mjs` | 응답 모양(`sendText` · `sendJson`), 시스템 오류를 한국어 문장으로(`friendly`) |
 | `lib/validate.mjs` | 요청 값 검사(`isObject` · `validDate` · `KEY_RE`) |
@@ -145,7 +146,9 @@
 | `lib/restore.mjs` | 재시동 복구: 떠 있는 tmux 세션 목록 저장(`saveSnapshot`) · 다시 띄우기(`restoreSessions`) |
 | `lib/restore-cli.mjs` | 한 줄 명령 복구(`restoreAll`) — `npm run restore` 와 `agent-dashboard restore` 가 같이 씀 |
 | `lib/runner.mjs` | 실행기: 서버가 죽으면 다시 켜기(`createRunner`) |
-| `lib/notify.mjs` | 무엇을 언제 알릴지(`createNotifier`) · macOS 알림 인자(`osascriptArgs`) |
+| `lib/notify.mjs` | 무엇을 언제 알릴지(`createNotifier`) · macOS 알림 인자(`osascriptArgs`) · 설정 파일 |
+| `lib/notify-api.mjs` | 알림 설정 값을 들고(`createNotifyApi`) 틱마다 알리기(`tick`) · 경로 `/api/notify` · `/api/notify/test` |
+| `lib/housekeeping.mjs` | 켤 때 · 6시간마다 정리(`startHousekeeping`): 권한 600 · 14일 지난 첨부 · 30일 지난 한도 기록 · 상태줄 파일 |
 | `lib/limits.mjs` | 계정 한도 추이 기록(`createRecorder`) · 읽기(`readRange`) |
 
 ### lib — 작은 도구
@@ -198,7 +201,7 @@
 
 ### test
 
-51개 파일, 289개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+54개 파일, 307개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -221,13 +224,15 @@
 | `lib/peer-links.mjs:createPeerLinks` | `adapters` | `buildLinks` |
 | `lib/commands.mjs:createCommands` | `tmux` · `findSession(key)` · `hasState()` · `uploadDir` · `recent` · `restoreLock` · `openDir` · `onChanged()` | 명령 하나를 처리하는 함수(서버에선 `handleCommand`) |
 | `lib/procs.mjs:createProcesses` | `adapters` · `tmux` | `processes(sig)` · `panes(sig)` · `invalidate()` |
-| `lib/history-api.mjs:createHistoryApi` | `adapters` · `sessions()` · `projectName(cwd, s)` | `promptHistory` · `contextTrend` · `searchHistory` · `daySummary` · `keepCaches` |
+| `lib/history-api.mjs:createHistoryApi` | `adapters` · `sessions()` · `projectName(cwd, s)` | `promptHistory` · `contextTrend` · `searchHistory` · `daySummary` · `keepCaches` + 경로 처리 함수 |
+| `lib/live-feed.mjs:createLiveFeed` | `buildState(hours)` · `afterBuild(state)` · `scanMs` | `start` · `stop` · `latest()` · `invalidate()` + 경로 처리 함수 `openEvents` · `getPerf` · `windowRoute` |
+| `lib/notify-api.mjs:createNotifyApi` | `demo` · `file` (시험: `platform` · `run`) | `tick(sessions)` · `route` · `test` |
 | `lib/runner.mjs:createRunner` | `command` · `cwd` · `logFile` · `restartMs` · `burst` | `stop(signal)` · `done` · `pid` |
 
 ### 2초 틱: 상태를 만들어 보내는 흐름
 
 ```
-server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
+lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — server.mjs 가 feed.start())
  └─ lib/state.mjs:buildState
      ├─ 어댑터 liveSessions()        떠 있는 세션 목록(빠름) → 「구성 서명」 만들기
      ├─ 어댑터 scan()                 기록 파일 목록
@@ -239,14 +244,14 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
      ├─ attachPendingTool             승인 카드 내용(lib/dialog-watch.mjs → lib/approval.mjs)
      ├─ buildLinks                    세션 사이 메시지(보라 화살표, lib/peer-links.mjs)
      └─ mergeStatusline               상태줄 다리 값(정확한 대화 창 · 한도)
- ├─ latest = 결과                    ← 명령은 이 「마지막 상태」를 기준으로 대상을 찾아요
- ├─ notifyTick · limitsRecorder.observe · saveSnapshot · recent.observe
+ ├─ latest = 결과                    ← 명령은 이 「마지막 상태」(feed.latest())를 기준으로 대상을 찾아요
+ ├─ afterBuild(server.mjs): notify.tick · limitsRecorder.observe · saveSnapshot · recent.observe
  └─ JSON 이 지난번과 다르면 열린 SSE 연결(clients) 모두에 보냄
 ```
 
-- SSE(Server-Sent Events, 서버가 브라우저로 한쪽 방향으로 계속 보내는 연결) 연결은 `server.mjs:openEvents` 가 받아요. 처음 한 번은 전체 상태를 보내고, 그 뒤로는 `tick` 이 바뀐 것만 보내요.
+- SSE(Server-Sent Events, 서버가 브라우저로 한쪽 방향으로 계속 보내는 연결) 연결은 `lib/live-feed.mjs:openEvents` 가 받아요. 처음 한 번은 전체 상태를 보내고, 그 뒤로는 `tick` 이 바뀐 것만 보내요.
 - 바뀐 게 없으면 아무것도 보내지 않아요. 그래서 화면이 조용할 땐 네트워크도 조용해요.
-- 명령이 성공하면 `server.mjs:postCommand` 가 `processes.invalidate()` 를 불러 6초 캐시를 비우고, 다음 틱에 바로 다시 보내게 해요.
+- 명령이 성공하면 `server.mjs:postCommand` 가 `processes.invalidate()` 를 불러 6초 캐시를 비우고, `feed.invalidate()` 로 다음 틱에 바로 다시 보내게 해요.
 
 ### 화면 쪽 흐름
 
@@ -280,7 +285,7 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
    - Host 가 `ALLOWED_HOSTS`(`localhost:포트` · `127.0.0.1:포트`)가 아니면 403
    - `/api/` 로 시작하면 `authorized` 로 Origin · 토큰 검사, 틀리면 403
 5. **경로 표** — `ROUTES` 에서 `prefix: '/api/cmd/'` · `method: 'POST'` 줄을 찾아 `server.mjs:postCommand` 로 가요.
-6. **본문 읽기** — `server.mjs:jsonBody` → `lib/body.mjs:readBody`. 너무 크면 413, 끊기면 499(응답 없이 소켓만 닫음), 모양이 틀리면 400.
+6. **본문 읽기** — `lib/body.mjs:jsonBody` → `readBody`(실패 응답은 `bodyFail`). 너무 크면 413, 끊기면 499(응답 없이 소켓만 닫음), 모양이 틀리면 400.
 7. **명령 처리** — `handleCommand('approve', body)` = `lib/commands.mjs:createCommands` 가 돌려준 함수
    - 첫 상태가 아직이면 503 「읽는 중」(`hasState`)
    - `findSession(key)` 로 `latest` 에서 세션을 찾고, tmux 창이 없으면 409
@@ -315,7 +320,7 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 | 보안 헤더 | `server.mjs:SECURITY_HEADERS` (`createServer` 콜백 맨 앞) | 다른 사이트가 이 화면을 숨은 iframe 으로 띄워 승인 단추를 누르게 속이는 클릭재킹 막기 · 내용 종류 짐작 금지(nosniff) |
 | Host 검사 | `server.mjs:handle` + `ALLOWED_HOSTS` | DNS 리바인딩(나쁜 사이트 주소가 내 컴퓨터 127.0.0.1 을 가리키게 바꾸는 공격) 막기 |
 | Origin 검사 | `server.mjs:authorized` | 내 브라우저에 열린 다른 웹사이트가 보낸 요청 거절 |
-| 토큰 | `server.mjs:authorized` (`crypto.timingSafeEqual`) | `/events` 와 `/api/*` 전부. 비교 시간으로 토큰을 알아내지 못하게 일정한 시간 비교 |
+| 토큰 | `server.mjs:authorized` (`crypto.timingSafeEqual`) | `/events` 와 `/api/*` 전부. 비교 시간으로 토큰을 알아내지 못하게 일정한 시간 비교. 경로 표(`ROUTES`)를 읽어 모든 경로를 토큰 없이 불러 보는 테스트가 있어요 — 경로가 늘면 따라가고, `/events` · `/api/` 밖 경로는 실패(`test/server.test.mjs`). 서버를 여는 곳(`createServer` · `listen`)은 `server.mjs` 하나(`test/conventions.test.mjs`) |
 | 토큰 전달 | `server.mjs:serveStatic` 이 `index.html` 의 `__DASHBOARD_TOKEN__` 만 바꿈 → `01-core.js` 의 `TOKEN` | js 파일에는 토큰이 없어요. 다른 사이트는 같은 출처 정책 때문에 이 페이지를 읽을 수 없어요 |
 | 토큰 파일 | `lib/token.mjs:loadToken` | `~/.agent-dashboard/token`(600). 링크면 거절, 새로 만들 땐 `link` 로 붙여 두 서버가 동시에 켜도 값이 하나 |
 | 화면 파일 경로 | `server.mjs:serveStatic` + `lib/paths.mjs:isInside` | `public/` 안의 일반 파일만. 폴더를 열다 서버가 죽던 경로도 막음 |
@@ -353,7 +358,9 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 | `test/state.test.mjs` | 상태 조립: 기록 · 프로세스 짝짓기(`matchProcesses`), 작업 중 · 대기 · 끝남, 대화 창 크기 추정, 선택창 두 틱에 한 번 · 엇갈림 두 번 연속, 승인 카드, 세션 사이 메시지, 상태줄 덮어쓰기(`mergeStatusline`) |
 | `test/commands.test.mjs` | 명령 표: 409 · 400 · 503 문장, tmux 로 무엇을 보내는지(가짜 tmux) |
 | `test/token.test.mjs` · `perms.test.mjs` · `paths.test.mjs` | 토큰 파일 · 권한 600/700 · 폴더 안 검사 |
-| `test/body.test.mjs` | 본문 상한 413 · 끊긴 요청 · `.part` 안 남김 |
+| `test/body.test.mjs` | 본문 상한 413 · 끊긴 요청 · `.part` 안 남김 · 실패 응답(`bodyFail` — 낯선 오류 문구는 안 보냄) |
+| `test/live-feed.test.mjs` | 틱: 첫 상태 · 바뀐 것만 SSE · `invalidate` 면 다시 · 탭을 닫으면 안 보냄 · `afterBuild` 실패 틱은 안 보냄 · 기간 400/204 · 성능 값 |
+| `test/notify-api.test.mjs` · `housekeeping.test.mjs` | 알림 설정(데모는 메모리만 · 값 검사 400 · 파일 600 · osascript 인자 배열 · macOS 밖은 안 보냄) · 켤 때 정리(하나가 실패해도 나머지는 함) |
 | `test/claude-settings.test.mjs` · `bridge.test.mjs` | 설정 파일을 깨뜨리지 않고 고치기, 링크 거절 |
 | `test/uploads.test.mjs` | 첨부 14일 정리: 날짜 폴더 안 폴더 · 링크에도 멈추거나 밖을 지우지 않기 |
 | `test/approval-ui.test.mjs` | 승인 창 선택지 읽기(화면): 서버 `parseOptions` 와 같은 화면에서 같은 번호 · 글자, 여러 질문 창 이전 · 다음 |

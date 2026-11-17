@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import { EventEmitter } from 'node:events';
-import { readBody, saveUpload, drainRest } from '../lib/body.mjs';
+import { readBody, saveUpload, drainRest, jsonBody, bodyFail } from '../lib/body.mjs';
 import { createLock } from '../lib/lock.mjs';
 import { createRecent } from '../lib/recent.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
@@ -133,4 +133,31 @@ test('drainRest: 다 받으면 end(끊지 않음), 크기 상한을 넘으면 de
   d.complete = true; // 이미 다 받은 요청은 바로 정상 종료
   drainRest(d);
   assert.deepEqual(d.calls, ['end']);
+});
+
+test('jsonBody · bodyFail: 정상은 값, 형식 오류 400 · 너무 큼 413 은 그 문장, 끊김(499)은 응답 없이 소켓만, 낯선 오류는 500 고정 문장', async () => {
+  const fakeRes = () => {
+    const r = { code: null, body: null, destroyed: false, headersSent: false };
+    r.writeHead = (c) => { r.code = c; r.headersSent = true; return r; };
+    r.end = (b, cb) => { r.body = b; cb?.(); return r; };
+    r.destroy = () => (r.destroyed = true);
+    return r;
+  };
+  const reqOf = (raw) => { const q = new PassThrough(); q.end(raw); return q; };
+  const ok = fakeRes();
+  assert.deepEqual(await jsonBody(reqOf('{"a":1}'), ok), { a: 1 });
+  assert.equal(ok.code, null);
+  const bad = fakeRes();
+  assert.equal(await jsonBody(reqOf('{'), bad), undefined);
+  assert.deepEqual([bad.code, bad.body], [400, '요청 형식이 잘못됐어요']);
+  const big = fakeRes();
+  assert.equal(await jsonBody(reqOf('x'.repeat(100_001)), big), undefined);
+  assert.deepEqual([big.code, big.body], [413, '요청이 너무 커요']);
+  const cut = fakeRes();
+  bodyFail(new PassThrough(), cut, Object.assign(new Error('요청이 끊겼어요'), { status: 499 }));
+  assert.deepEqual([cut.code, cut.destroyed], [null, true]);
+  const disk = fakeRes();
+  const err = console.error; console.error = () => {};
+  try { bodyFail(new PassThrough(), disk, new Error('EIO: /Users/me/비밀 경로')); } finally { console.error = err; }
+  assert.deepEqual([disk.code, disk.body], [500, '요청을 처리하지 못했어요']); // 시스템 오류 문구 · 경로는 보내지 않는다
 });

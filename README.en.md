@@ -264,10 +264,10 @@ It doesn't touch hooks or global settings — it **only reads** (except for one 
 
 ```
 agent-dashboard/
-├─ server.mjs          # start the server · security checks at the request entry · route table (ROUTES) · 2-second tick (build state, send over SSE)
+├─ server.mjs          # start the server · security checks at the request entry · token · route table (ROUTES) · static files · wiring the areas together
 ├─ adapters/           # per-tool differences only — claude.mjs (+ claude/ pieces) · codex.mjs · index.mjs
 ├─ lib/                # one job per file
-│  ├─ state · procs · tmux · dialog · approval     build state · process list · tmux control · prompt detection · "what you're allowing" card
+│  ├─ live-feed · state · procs · tmux · dialog · approval   2-second tick · SSE · build state · process list · tmux control · prompt detection · "what you're allowing" card
 │  ├─ dialog-watch · peer-links                   watching for prompts (every other tick · mismatch log) · linking messages between sessions
 │  ├─ commands · spawn · open-dir · env · launch  commands (chat · approve · new session …) · new-session args · open folder · environment check · hints matching how you started it
 │  ├─ body · uploads · respond · validate         request bodies · attachments · response shapes · input checks
@@ -275,14 +275,15 @@ agent-dashboard/
 │  ├─ usage-bridge · claude-settings · bridge · status · limits · usage   usage limits (status-line bridge · keeping the default model · limit history · token totals)
 │  ├─ recent · restore · restore-cli · runner     restore · restore after reboot · runner
 │  ├─ history-core · history-api · git-commits    shared transcript reading (new lines only · grouping into turns — adapters only interpret lines) · history tab · search · today's work · commit titles
-│  ├─ notify · paging · filecache · lru · serial · lock · util   notifications · paged history · caches · ordering
+│  ├─ notify · notify-api · housekeeping           notifications (what and when · settings · routes) · cleanup at start and every 6 hours
+│  ├─ paging · filecache · lru · serial · lock · util   paged history · caches · ordering
 │  └─ demo                                        demo data
 ├─ bin/                # agent-dashboard.mjs (start · run · restore) · run.sh (older runner) · restore.mjs (npm run restore) · statusline.mjs (status-line bridge source)
 ├─ public/             # UI (vanilla HTML/CSS/JS, no build)
 │  ├─ index.html       # structure (the server injects the token here only)
 │  ├─ style.css        # styles
 │  └─ js/00-md.js ~ 19-keys.js   # behavior, one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
-└─ test/               # node --test, 51 files · _helpers (temp folders · starting servers · requests) · fake-bin (fake tmux · claude · ps · lsof · open)
+└─ test/               # node --test, 54 files · _helpers (temp folders · starting servers · requests) · fake-bin (fake tmux · claude · ps · lsof · open)
 ```
 
 ### Adding another agent
@@ -304,7 +305,7 @@ Shows the UI with fake data (Project1, Lead Manager, …). No commands are execu
 npm test
 ```
 
-Uses Node's built-in test runner (`node --test`), nothing to install. 289 tests (2026-11-17): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
+Uses Node's built-in test runner (`node --test`), nothing to install. 307 tests (2026-11-17): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
 - Test servers briefly use ports 4692 and 4694–4699. Instead of real sessions and tmux they use a temporary home folder and the fake commands in `test/fake-bin` (tmux · claude · ps · lsof · open), so your `~/.claude` and `~/.agent-dashboard` are never touched.
 - GitHub Actions runs `npm test` on every push to main and every PR, on Ubuntu · macOS × Node 18 · 20 · 22 · 24 (badge above). The macOS notification (osascript) test runs only on macOS.
 

@@ -132,10 +132,10 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 
 - **서버 쪽 `.mjs` 300줄, 화면 js 200줄을 넘으면 나누기를 검토**해요. 「꼭 나눈다」가 아니라 「이유를 적고 남기거나, 나눈다」예요.
 - 지금 넘은 파일은 1개예요(07-changes.js 는 2026-11-16, `adapters/claude.mjs` · `lib/state.mjs` 는 2026-11-17 에 나눠, `03-graph.js` 는 2026-11-17 죽은 코드 · 중복을 덜어 201 → 198줄로 목록에서 빠졌어요).
-  - `server.mjs` 468
+  - `server.mjs` 325
 - 3부 테스트가 이 1개는 **지금보다 늘지 않게**, 다른 파일은 상한을 넘지 않게 지켜요.
   - `adapters/claude.mjs` 는 2026-11-16 기록 읽기 공용 부분을 `lib/history-core.mjs` 로 옮겨 629 → 542줄, 2026-11-17 커밋 제목 읽기를 `lib/git-commits.mjs`, 턴 시작 판단 · 이번 턴 변경 · 공식 세션 목록 · 하루 요약을 `adapters/claude/` 의 `prompts` · `changes` · `live` · `day` 로 옮겨 291줄이 됐어요(사용자 승인). 커밋 제목은 Claude 기록 형식이 아닌 셸 명령 글자 해석이라 lib, 나머지는 Claude 기록 · 파일만 아는 일이라 어댑터 폴더예요.
-  - `server.mjs` 는 2026-11-17 기록 · 검색 · 오늘 한 일을 `lib/history-api.mjs`, 사용 한도 · 기본 모델을 `lib/usage-bridge.mjs` 로 옮겨 648 → 468줄이 됐어요(사용자 승인). 보안 입구(`handle` · `authorized` · 보안 헤더)와 경로 표(`ROUTES`) · 처리 함수 · 틱은 남겨요 — 보안 검사를 한 파일 한 곳에서 보이게 하려고요.
+  - `server.mjs` 는 2026-11-17 기록 · 검색 · 오늘 한 일을 `lib/history-api.mjs`, 사용 한도 · 기본 모델을 `lib/usage-bridge.mjs` 로 옮겨 648 → 468줄이 됐어요(사용자 승인). 보안 입구(`handle` · `authorized` · 보안 헤더)와 경로 표(`ROUTES`) · 처리 함수 · 틱은 남겨요 — 보안 검사를 한 파일 한 곳에서 보이게 하려고요. 같은 날 다시(사용자 승인) 처리 함수를 「그 값을 가진 모듈」로 옮겨 468 → 325줄: 2초 틱 · SSE · 보는 기간은 `lib/live-feed.mjs`, 알림 설정은 `lib/notify-api.mjs`, 기록 경로는 `lib/history-api.mjs`, 본문 실패 응답은 `lib/body.mjs`, 켤 때 정리는 `lib/housekeeping.mjs`. 토큰 · `handle` · `authorized` · `ROUTES` 표 · `serveStatic` 은 server 에 남겨요 — 토큰이 server 밖으로 나가지 않고, 처리 함수가 어디 있든 표에 오기 전에 `handle` 이 검사해요(3부 테스트: 경로 표의 모든 경로 403 · `createServer` · `listen` 은 server 에만).
   - `lib/state.mjs` 는 2026-11-17 틱 사이 기억이 있는 두 덩어리를 `lib/dialog-watch.mjs`(선택창 감시 · 승인 카드) · `lib/peer-links.mjs`(세션 사이 메시지)로 옮겨 320 → 234줄이 됐어요. 짝짓기 · 세션 카드 · 상태줄 덮어쓰기는 남겨요 — 「상태 한 장을 어떤 순서로 만드나」를 한 파일에서 읽을 수 있게요.
 - 한 줄 길이 기준은 이번엔 두지 않아요(2026-11-16 사용자 결정).
 

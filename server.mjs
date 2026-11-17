@@ -6,39 +6,37 @@
 // 명령(채팅·승인·새 세션)은 서버가 켜질 때 만든 비밀 토큰이 있어야 받는다. 토큰은 이 페이지에만 심겨 있고,
 // 다른 사이트는 브라우저의 같은 출처 정책 때문에 이 페이지를 읽을 수 없어 토큰을 알 수 없다.
 //
-// 이 파일: 서버 켜기 · 요청 입구의 보안 검사 · 경로 표(ROUTES) · 2초 틱(상태를 만들어 SSE 로 보냄) · 각 구역을 잇는 일.
-// 구역별 일은 lib/ 에: 상태 조립 state · 프로세스 procs · 명령 commands · 기록 · 검색 · 오늘 한 일 history-api · 사용 한도 · 기본 모델 usage-bridge ·
-// 환경 점검 env · 폴더 열기 open-dir · 첨부 uploads · body · 복구 recent · restore · 알림 notify · 한도 추이 limits · 응답 모양 respond · 입력 검사 validate.
+// 이 파일: 서버 켜기 · 요청 입구의 보안 검사(handle · authorized · 보안 헤더) · 토큰 · 경로 표(ROUTES) · 화면 파일 · 각 구역을 잇는 일.
+// 구역별 일은 lib/ 에: 상태 조립 state · 프로세스 procs · 2초 틱과 SSE live-feed · 명령 commands · 기록 · 검색 · 오늘 한 일 history-api ·
+// 사용 한도 · 기본 모델 usage-bridge · 알림 notify-api · 환경 점검 env · 폴더 열기 open-dir · 첨부 uploads · body · 복구 recent · restore ·
+// 한도 추이 limits · 정리 작업 housekeeping · 응답 모양 respond · 입력 검사 validate. 경로 처리 함수는 그 값을 가진 모듈에 있고, 서버는 표로 잇기만 한다.
 // lib 모듈은 createXxx(deps) 로 필요한 것만 이름 붙여 받는다(바뀌는 값은 함수로 받아 늘 지금 값을 본다).
 
 import http from 'node:http';
-import { performance } from 'node:perf_hooks';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { execFile } from 'node:child_process';
 import { adapters } from './adapters/index.mjs';
 import { unknownStatuses } from './adapters/claude.mjs';
 import * as tmux from './lib/tmux.mjs';
 import { isTrustPrompt } from './lib/dialog.mjs';
-import { tightenFiles } from './lib/perms.mjs';
-import { readBody, saveUpload, drainRest } from './lib/body.mjs';
+import { saveUpload, jsonBody, bodyFail } from './lib/body.mjs';
 import { createLock } from './lib/lock.mjs';
 import { createCommands } from './lib/commands.mjs';
 import { createProcesses } from './lib/procs.mjs';
 import { createStateBuilder } from './lib/state.mjs';
 import { createEnvCheck, startupNotices } from './lib/env.mjs';
 import { detectEditors, openDir } from './lib/open-dir.mjs';
-import { UPLOAD_DIR, UPLOAD_MAX, pruneUploads } from './lib/uploads.mjs';
-import { pruneStatusFiles } from './lib/status.mjs';
+import { UPLOAD_DIR, UPLOAD_MAX } from './lib/uploads.mjs';
 import { sendText, sendJson, friendly } from './lib/respond.mjs';
-import { isObject, validDate, KEY_RE, WINDOW_HOURS } from './lib/validate.mjs';
+import { isObject } from './lib/validate.mjs';
 import { DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
 import { loadToken } from './lib/token.mjs';
 import { portInUseMessage } from './lib/launch.mjs';
-import { createRecorder, readRange, pruneLimits, validRange } from './lib/limits.mjs';
-import { SOUNDS, validSound, osascriptArgs, loadSettings, saveSettings, createNotifier } from './lib/notify.mjs';
-import { pageHistory, pageParams } from './lib/paging.mjs';
+import { createRecorder, readRange, validRange } from './lib/limits.mjs';
+import { createNotifyApi } from './lib/notify-api.mjs';
+import { createLiveFeed } from './lib/live-feed.mjs';
+import { startHousekeeping } from './lib/housekeeping.mjs';
 import { createHistoryApi } from './lib/history-api.mjs';
 import { createUsageBridge, STATUS_DIR } from './lib/usage-bridge.mjs';
 import * as demo from './lib/demo.mjs';
@@ -54,7 +52,6 @@ const { file: TOKEN_FILE, legacy: TOKEN_LEGACY } = tokenFiles(ROOT);
 const { token: TOKEN, createdNow: TOKEN_CREATED_NOW, migrated: TOKEN_MIGRATED } = loadToken({ file: TOKEN_FILE, legacy: TOKEN_LEGACY });
 if (TOKEN_MIGRATED) console.log(`토큰을 새 자리로 옮겼어요 → ${TOKEN_FILE} (저장소 폴더의 옛 파일은 지움)`);
 const ALLOWED_HOSTS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`]);
-const SCAN_MS = 2000;
 const PUBLIC_DIR = path.join(ROOT, 'public');
 
 // ---------- 세션 상태 ----------
@@ -75,17 +72,15 @@ const { buildState, projectName, dialogIssues } = createStateBuilder({
 });
 
 // ---------- 프롬프트 기록 · 검색 · 오늘 한 일 (lib/history-api.mjs) ----------
-const history = createHistoryApi({ demo: DEMO, demoData: demo, adapters, sessions: () => latest?.sessions ?? [], projectName });
+const history = createHistoryApi({ demo: DEMO, demoData: demo, adapters, sessions: () => feed.latest()?.sessions ?? [], projectName });
 
 // ---------- 계정 사용 한도 (상태줄 다리) · 기본 모델 보존 (lib/usage-bridge.mjs) ----------
 const usage = createUsageBridge({ root: ROOT });
 
 // ---------- 명령: 채팅·승인·새 세션 ----------
-
-let latest = null; // 마지막으로 만든 상태 — 명령은 이 기준으로 대상·상태를 확인한다
-
+// 명령은 마지막으로 만든 상태(feed.latest(), 아래 틱)를 기준으로 대상 · 상태를 확인한다
 function findSession(key) {
-  return latest?.sessions.find((s) => s.key === key) ?? null;
+  return feed.latest()?.sessions.find((s) => s.key === key) ?? null;
 }
 
 // ---------- 환경 점검 · 폴더 열기 ----------
@@ -101,27 +96,8 @@ const env = createEnvCheck({
 });
 const { checkEnv, dialogEnvItem, statusEnvItem } = env;
 
-// ---------- macOS 알림 (브라우저 탭을 닫아도) ----------
-// 켜기/끄기 · 소리는 ~/.agent-dashboard/notify.json(600). 데모 모드에선 파일을 건드리지 않고 메모리에만 두고, 실제 알림도 보내지 않는다
-const NOTIFY_FILE = path.join(DATA_DIR, 'notify.json');
-const MAC_NOTIFY = process.platform === 'darwin' && !DEMO;
-let notifySettings = DEMO ? { mac: false, sound: 'Glass' } : loadSettings(NOTIFY_FILE);
-const notifier = createNotifier();
-// 셸을 거치지 않고(execFile) 값은 argv 로만 넘긴다 → 세션 이름에 따옴표 · $(…) 가 있어도 스크립트가 되지 않는다
-function sendMacNotification(title, body) {
-  if (!MAC_NOTIFY) return Promise.resolve(false);
-  return new Promise((resolve) => {
-    execFile('osascript', osascriptArgs(title, body, notifySettings.sound), { timeout: 5000 }, (err) => {
-      if (err) console.error('macOS 알림 실패:', err.message);
-      resolve(!err);
-    });
-  });
-}
-function notifyTick(sessions) {
-  notifier.observe(sessions); // 꺼져 있어도 상태는 따라가야 켠 순간 지난 일이 한꺼번에 뜨지 않는다
-  const n = notifier.take();
-  if (n && notifySettings.mac) sendMacNotification(n.title, n.body);
-}
+// ---------- macOS 알림 (브라우저 탭을 닫아도) — 설정 · 보내기 · 경로는 lib/notify-api.mjs ----------
+const notify = createNotifyApi({ demo: DEMO });
 // 계정 한도 추이: 머리 표시와 같은 값(usageState)이 바뀔 때만 ~/.agent-dashboard/limits/ 하루 파일에 한 줄(600). 데모는 읽지도 쓰지도 않는다
 const LIMITS_DIR = path.join(DATA_DIR, 'limits');
 const limitsRecorder = DEMO ? null : createRecorder({ dir: LIMITS_DIR });
@@ -130,7 +106,7 @@ const limitsRecorder = DEMO ? null : createRecorder({ dir: LIMITS_DIR });
 const recent = DEMO ? null : createRecent({ file: path.join(DATA_DIR, 'recent.json') });
 const restoreLock = createLock(); // 재시동 배너 · 복구 단추가 같이 쓰는 잠금 — 한 번에 하나의 복구만(같은 세션을 두 번 띄우지 않게)
 // 아직 첫 상태를 만들기 전(서버를 켠 직후)이면 null — 복구는 「무엇이 떠 있는지」를 알 때만 한다
-const liveIdSet = () => (latest ? new Set(latest.sessions.filter((s) => s.status !== 'ended').map((s) => s.id)) : null);
+const liveIdSet = () => (feed.latest() ? new Set(feed.latest().sessions.filter((s) => s.status !== 'ended').map((s) => s.id)) : null);
 // 복구 후보 + 방금 다시 띄운 세션의 상태(폴더 신뢰 확인 창이 떴는지 — 대신 누르지 않고 안내만)
 async function recentInfo() {
   if (DEMO) return demo.demoRecent();
@@ -140,62 +116,29 @@ async function recentInfo() {
     const screen = await tmux.capture(l.tmuxSession, 30).catch(() => null);
     launched.push({ id: l.id, title: l.title, tmuxSession: l.tmuxSession, state: screen == null ? 'gone' : isTrustPrompt(screen) ? 'trust' : 'started' });
   }
-  return { items, launched, keepDays: RECENT_DAYS, loading: !latest };
+  return { items, launched, keepDays: RECENT_DAYS, loading: !feed.latest() };
 }
 
-const notifyInfo = () => ({ ...notifySettings, sounds: SOUNDS, supported: MAC_NOTIFY, demo: DEMO });
-
-// ---------- HTTP (SSE 로 2초마다 바뀐 상태만 보냄) ----------
-
-const clients = new Set();
-let lastJson = '';
-let windowHours = 24;
-
-const tickMs = []; // 최근 상태 계산 시간(ms) — /api/perf 로 확인
-async function tick() {
-  try {
-    const t0 = performance.now();
-    latest = await buildState(windowHours);
-    tickMs.push(Math.round(performance.now() - t0));
-    if (tickMs.length > 30) tickMs.shift();
-    notifyTick(latest.sessions);
+// ---------- 2초 틱: 상태 → 바뀐 것만 SSE (lib/live-feed.mjs) ----------
+// 만든 직후 · 보내기 전에: 알림 · 한도 기록, 재시동 복구 — 재시동 전 목록 중 지금 없는 세션을 알려 주고, 떠 있는 tmux 세션 목록을 저장한다.
+// 이 순서여야 첫 틱에 떠 있던 세션이 저장을 덮기 전에 재시동 전 목록을 떼어 둔다
+const feed = createLiveFeed({
+  buildState,
+  afterBuild(latest) {
+    notify.tick(latest.sessions);
     if (limitsRecorder) {
       try { limitsRecorder.observe(latest.usage); } catch (e) { console.error('한도 기록 실패:', e.message); }
     }
-    // 바뀐 게 있을 때만, 각 부분을 한 번씩만 문자열로 만들어 보낸다
-    // 재시동 복구: 재시동 전 목록 중 지금 없는 세션을 알려 주고, 떠 있는 tmux 세션 목록을 저장한다 — 이 순서여야 첫 틱에 떠 있던 세션이 저장을 덮기 전에 재시동 전 목록을 떼어 둔다
     if (!DEMO) {
       latest.restore = restoreCandidates(liveIdSet()).map((e) => ({ id: e.id, title: e.title, cwd: e.cwd }));
       saveSnapshot(latest.sessions);
       const def = defaultAlias();
       try { recent.observe(liveEntries(latest.sessions, (s) => { const m = modelAlias(s.model); return m === def ? null : m; })); } catch (e) { console.error('복구 목록 기억 실패:', e.message); }
     } else latest.restore = [];
-    const sJ = JSON.stringify(latest.sessions), lJ = JSON.stringify(latest.links), uJ = JSON.stringify(latest.usage), rJ = JSON.stringify(latest.restore);
-    const json = sJ + lJ + uJ + rJ;
-    if (json !== lastJson) {
-      lastJson = json;
-      const msg = `data: {"generatedAt":${JSON.stringify(latest.generatedAt)},"host":${JSON.stringify(latest.host)},"home":${JSON.stringify(latest.home)},"windowHours":${latest.windowHours},"tools":${JSON.stringify(latest.tools)},"sessions":${sJ},"links":${lJ},"usage":${uJ},"restore":${rJ}}\n\n`;
-      for (const res of clients) res.write(msg);
-    }
-  } catch (e) {
-    console.error('[scan]', e.message);
-  } finally {
-    setTimeout(tick, SCAN_MS);
-  }
-}
+  },
+});
 
-// 본문 읽기 · 첨부 저장은 lib/body.mjs. 실패 응답: 끊긴 요청(499)은 보낼 곳이 없어 소켓만 닫고,
-// 너무 큰 본문(413)은 문장을 보낸 뒤 남은 본문을 읽어 버리고(상한 안에서) 다 받으면 닫는다 — 바로 끊으면 문장이 사라질 수 있다(lib/body.mjs 의 drainRest)
-function bodyFail(req, res, e) {
-  const status = e?.status ?? 500;
-  if (status >= 500 && status !== 499) console.error('[본문]', e?.cause?.message ?? e?.message);
-  if (status === 499 || res.headersSent) return void res.destroy();
-  const msg = e?.status ? e.message : '요청을 처리하지 못했어요'; // status 는 lib/body 가 붙인 한국어 문장일 때만 — 낯선 시스템 오류 문구는 보내지 않는다
-  res.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' }).end(msg, () => {
-    if (status === 413) drainRest(req);
-  });
-}
-
+// ---------- HTTP: 보안 입구 · 경로 표 ----------
 const authorized = (req, url) => {
   const origin = req.headers.origin;
   const originOk = !origin || origin === `http://localhost:${PORT}` || origin === `http://127.0.0.1:${PORT}`;
@@ -244,8 +187,8 @@ const handleCommand = createCommands({
   demoRecentRestore: demo.demoRecentRestore,
   tmux,
   findSession,
-  sessions: () => latest?.sessions ?? [],
-  hasState: () => Boolean(latest),
+  sessions: () => feed.latest()?.sessions ?? [],
+  hasState: () => Boolean(feed.latest()),
   liveIdSet,
   uploadDir: UPLOAD_DIR,
   readDefaultModel: usage.readDefaultModel,
@@ -258,47 +201,30 @@ const handleCommand = createCommands({
   restoreSessions,
   restoreCandidates,
   spawnedNames,
-  onChanged: () => (lastJson = ''),
+  onChanged: feed.invalidate,
 });
 
 // ---------- 경로 표: 주소 → 처리 함수 ----------
 // method 가 적힌 경로는 그 방식만 받고(다른 방식은 화면 파일 쪽으로 떨어져 404), 없으면 방식을 가리지 않는다.
-// 처리 함수는 (req, res, url) 을 받는다. 일은 각 구역 함수 · lib 에 있고 여기는 요청 값 검사와 응답만
+// 처리 함수는 (req, res, url) 을 받는다. 바뀌는 값을 가진 구역(틱 feed · 알림 notify · 기록 history)은 그 모듈의 함수를, 나머지는 아래 함수를 가리킨다.
+// 이 표에 오기 전에 handle 이 토큰을 본다 — 처리 함수가 어느 파일에 있든 /events · /api/ 경로는 모두 검사를 거친다
 const ROUTES = [
-  { path: '/events', handler: openEvents },
+  { path: '/events', handler: feed.openEvents },
   { path: '/api/env', handler: getEnv },
-  { path: '/api/notify', handler: notifyRoute },
-  { path: '/api/notify/test', method: 'POST', handler: notifyTest },
+  { path: '/api/notify', handler: notify.route },
+  { path: '/api/notify/test', method: 'POST', handler: notify.test },
   { path: '/api/limits', handler: getLimits },
   { path: '/api/recent', handler: async (req, res) => sendJson(res, 200, await recentInfo()) },
-  { path: '/api/perf', handler: getPerf },
-  { path: '/api/window', handler: windowRoute },
-  { path: '/api/history', handler: getHistory },
-  { path: '/api/trend', handler: getTrend },
-  { path: '/api/day', handler: getDay },
-  { path: '/api/search', handler: async (req, res, url) => sendJson(res, 200, await history.searchHistory(url.searchParams.get('q'))) },
+  { path: '/api/perf', handler: feed.getPerf },
+  { path: '/api/window', handler: feed.windowRoute },
+  { path: '/api/history', handler: history.getHistory },
+  { path: '/api/trend', handler: history.getTrend },
+  { path: '/api/day', handler: history.getDay },
+  { path: '/api/search', handler: history.getSearch },
   { path: '/api/pane', handler: getPane },
   { path: '/api/upload', method: 'POST', handler: postUpload },
   { prefix: '/api/cmd/', method: 'POST', handler: postCommand },
 ];
-
-// JSON 본문 읽기 — 실패하면 응답까지 보내고 undefined(부른 쪽은 그냥 끝낸다)
-async function jsonBody(req, res) {
-  try {
-    return await readBody(req);
-  } catch (e) {
-    bodyFail(req, res, e);
-    return undefined;
-  }
-}
-
-// SSE: 처음 한 번 지금 상태 전체, 그 뒤로는 tick() 이 바뀐 것만 보낸다
-async function openEvents(req, res) {
-  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
-  clients.add(res);
-  req.on('close', () => clients.delete(res));
-  res.write(`data: ${JSON.stringify(latest ?? (await buildState(windowHours)))}\n\n`);
-}
 
 async function getEnv(req, res, url) {
   const e = url.searchParams.has('refresh') || !env.cached() ? await checkEnv() : env.cached();
@@ -306,75 +232,11 @@ async function getEnv(req, res, url) {
   sendJson(res, 200, { ...e, items: [...e.items, dialogEnvItem(), statusEnvItem()] });
 }
 
-// 알림 설정: GET 은 지금 값, POST { mac?, sound? } 는 바꾸기(소리는 허용 목록만)
-async function notifyRoute(req, res) {
-  if (req.method === 'POST') {
-    const body = await jsonBody(req, res);
-    if (body === undefined) return;
-    if (!isObject(body)) return void sendText(res, 400, '요청 형식이 잘못됐어요');
-    if ('sound' in body && !validSound(body.sound)) return void sendText(res, 400, '고를 수 없는 소리예요');
-    if ('mac' in body && typeof body.mac !== 'boolean') return void sendText(res, 400, 'macOS 알림 켜기/끄기 값이 잘못됐어요');
-    const next = { ...notifySettings, ...('mac' in body ? { mac: body.mac } : {}), ...('sound' in body ? { sound: body.sound } : {}) };
-    try {
-      notifySettings = DEMO ? next : saveSettings(NOTIFY_FILE, next);
-    } catch (e) {
-      return void sendText(res, ...friendly(e, '알림 설정을 저장하지 못했어요'));
-    }
-  }
-  sendJson(res, 200, notifyInfo());
-}
-// 시험 알림 한 번
-async function notifyTest(req, res) {
-  const sent = await sendMacNotification('Agent Dashboard', '시험 알림이에요 — 이게 보이면 macOS 알림이 동작해요');
-  sendJson(res, 200, { sent, supported: MAC_NOTIFY });
-}
-
 // 계정 한도 추이: ?range=24h|7d → { points: [[ms, 5시간 %, 주간 %]], resets: [{ t, kind }] }
 async function getLimits(req, res, url) {
   const range = url.searchParams.get('range') ?? '24h';
   if (!validRange(range)) return void sendText(res, 400, '기간은 24h 또는 7d 만 고를 수 있어요');
   sendJson(res, 200, DEMO ? demo.demoLimits(range) : readRange(LIMITS_DIR, range));
-}
-
-async function getPerf(req, res) {
-  const sorted = [...tickMs].sort((a, b) => a - b);
-  sendJson(res, 200, { ticks: tickMs.length, medianMs: sorted[sorted.length >> 1] ?? null, maxMs: sorted.at(-1) ?? null, payloadKB: Math.round(lastJson.length / 1024), heapMB: Math.round(process.memoryUsage().heapUsed / 1048576), rssMB: Math.round(process.memoryUsage().rss / 1048576) });
-}
-
-// 종료된 세션을 얼마나 이전까지 볼지(서버 전체 · 열린 탭 모두에 영향). 바꾸기는 POST { hours }, GET 은 지금 값 읽기만
-async function windowRoute(req, res) {
-  if (req.method !== 'POST') return void sendJson(res, 200, { hours: windowHours });
-  const body = await jsonBody(req, res);
-  if (body === undefined) return;
-  const h = Number(body?.hours);
-  if (!WINDOW_HOURS.includes(h)) return void sendText(res, 400, `기간은 ${WINDOW_HOURS.join(' · ')}시간 중에서 골라 주세요`);
-  windowHours = h;
-  lastJson = '';
-  res.writeHead(204).end();
-}
-
-// 기록 전체가 아니라 80개씩(최대 200), 검색어가 있으면 서버에서 거른 뒤 → { items, total, nextOffset }
-async function getHistory(req, res, url) {
-  try {
-    const key = url.searchParams.get('key') ?? '';
-    if (!KEY_RE.test(key)) return void sendText(res, 400, '세션을 고르지 않았어요');
-    const items = await history.promptHistory(key);
-    sendJson(res, 200, pageHistory(items, pageParams(url.searchParams)));
-  } catch (e) {
-    sendText(res, ...friendly(e, '기록을 읽지 못했어요'));
-  }
-}
-
-async function getTrend(req, res, url) {
-  const key = url.searchParams.get('key') ?? '';
-  if (!KEY_RE.test(key)) return void sendText(res, 400, '세션을 고르지 않았어요');
-  sendJson(res, 200, await history.contextTrend(key).catch(() => ({ supported: true, points: [], drops: 0, total: 0 })));
-}
-
-async function getDay(req, res, url) {
-  const date = url.searchParams.get('date') ?? '';
-  if (!validDate(date)) return void sendText(res, 400, '날짜는 2026-11-13 처럼 YYYY-MM-DD 로 보내 주세요');
-  sendJson(res, 200, await history.daySummary(date));
 }
 
 // tmux 세션 화면(색 정보로 「지금 보고 있는 질문 탭」도)
@@ -409,7 +271,7 @@ async function postCommand(req, res, url) {
     sendText(res, code, msg);
     if (code === 200) {
       processes.invalidate();
-      setTimeout(() => (lastJson = ''), 300); // 바로 다시 그리게
+      setTimeout(feed.invalidate, 300); // 바로 다시 그리게
     }
   } catch (e) {
     sendText(res, ...friendly(e, '명령을 처리하지 못했어요')); // tmux 가 없으면 409 「tmux 가 필요해요」
@@ -450,19 +312,14 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}`);
   // 없는 도구(tmux · Claude Code) · 다른 OS 는 로그에 한국어로 안내만 하고 서버는 계속(보기 전용으로라도)
   checkEnv().then((e) => { if (!DEMO) for (const line of startupNotices(e)) console.log(line); }).catch((e) => console.error('[환경 점검]', e.message)); // 시작 때 실패해도 서버는 계속(화면에서 다시 점검 가능)
-  tick();
+  feed.start();
   if (!DEMO) {
-    // 예전에 644 로 만들어진 로그 · 설정 백업도 본인만 읽게(lib/perms.mjs). 링크는 따라가지 않는다
-    try { const fixed = tightenFiles(DATA_DIR); if (fixed.length) console.log(`권한 정리(600): ${fixed.length}개`); } catch (e) { console.error('권한 정리 실패:', e.message); }
-    try { pruneUploads(); } catch (e) { console.error('첨부 정리 실패:', e.message); }
-    try { pruneLimits(LIMITS_DIR); } catch (e) { console.error('한도 기록 정리 실패:', e.message); }
-    try { pruneStatusFiles(STATUS_DIR); } catch (e) { console.error('상태줄 기록 정리 실패:', e.message); }
+    startHousekeeping({ limitsDir: LIMITS_DIR, statusDir: STATUS_DIR }); // 권한 · 첨부 · 한도 기록 · 상태줄 파일 정리(켤 때 + 6시간마다, lib/housekeeping.mjs)
     // 사용 한도가 켜져 있으면 다리 복사본을 패키지의 최신으로 맞추고, 옛 경로 등록은 새 경로로(꺼져 있으면 아무것도 안 함)
     try {
       const b = usage.sync();
       if (b.copied) console.log('상태줄 다리를 새 버전으로 맞췄어요 →', tildify(usage.bridgeDst));
       if (b.migrated) console.log('상태줄 등록을 새 경로로 바꿨어요 →', tildify(usage.bridgeDst));
     } catch (e) { console.error('[상태줄 다리]', e.message); }
-    setInterval(() => { try { pruneUploads(); } catch {} try { pruneLimits(LIMITS_DIR); } catch {} try { pruneStatusFiles(STATUS_DIR); } catch {} }, 6 * 3600_000);
   }
 });
