@@ -44,6 +44,7 @@ adapters/             도구별 차이(claude.mjs · codex.mjs). 새 에이전�
 lib/                  구역별 일(모듈은 createXxx(deps) 로 필요한 것만 받는다)
   state · procs        상태 조립(세션 · 메시지 · 한도) · ps/lsof/tmux 목록
   dialog-watch · peer-links   선택창 감시(두 틱에 한 번 · 엇갈림 기록) · 세션 사이 메시지 잇기
+  live-feed · notify-api · housekeeping   2초 틱 · SSE(latest · 보는 기간) · 알림 설정 · 켤 때 정리
   history-core · git-commits   기록 읽기 공용(새로 붙은 줄만 · 마지막 턴 찾기 · 턴 묶기 — 어댑터는 줄 해석만) · 커밋 제목 읽기
   launch               켠 방법(npx · 설치 명령 · bin · npm start)에 맞는 안내 문구
   history-api · usage-bridge   기록 탭 · 검색 · 오늘 한 일 · 대화 창 추이 / 사용 한도(상태줄 다리) · 기본 모델 지키기
@@ -57,7 +58,7 @@ lib/                  구역별 일(모듈은 createXxx(deps) 로 필요한 것�
   respond · validate · paging · paths · perms · filecache · lru · serial · lock   응답 모양 · 입력 검사 · 나눠 보내기 · 경로 · 파일 권한 정리 · 캐시 · 차례 · 잠금
   tmux · dialog · approval · spawn · demo · util   tmux 조작 · 선택창 감지 · 승인 카드 · 새 세션 인자 · 데모 · 기록 읽기
 bin/                  agent-dashboard.mjs(실행 명령: start · run · restore) · run.sh(예전 실행기) · restore.mjs(npm run restore) · statusline.mjs(상태줄 다리 원본)
-public/               index.html 뼈대 · style.css · js/00-md.js ~ 19-keys.js(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다)
+public/               index.html 뼈대 · css/00-base.css ~ 11-narrow.css(구역별 모양, 번호 순서 · @media 는 맨 뒤 파일) · js/00-md.js ~ 19-keys.js(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다)
 test/                 node --test (lib 단위 + 데모 서버로 보안 · 응답 모양 + 시험 서버(가짜 tmux · 임시 홈)로 실제 모드)
 docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 ```
