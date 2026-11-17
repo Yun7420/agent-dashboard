@@ -209,7 +209,7 @@
 
 | 만드는 함수 | 받는 것(일부) | 돌려주는 것 |
 |---|---|---|
-| `lib/state.mjs:createStateBuilder` | `adapters` · `tmux` · `processes` · `readStatus()` · `usageState(status)` · `keepCaches(listed)` | `buildState` · `projectName` · `dialogIssues` |
+| `lib/state.mjs:createStateBuilder` | `adapters` · `tmux` · `processes` · `readStatus()` · `usageState(status)` · `keepCaches(listed)` | `buildState` · `projectName` · `dialogIssues` (상태 없는 `matchProcesses` · `mergeStatusline` 은 파일에서 바로 내보냄) |
 | `lib/commands.mjs:createCommands` | `tmux` · `findSession(key)` · `hasState()` · `uploadDir` · `recent` · `restoreLock` · `openDir` · `onChanged()` | 명령 하나를 처리하는 함수(서버에선 `handleCommand`) |
 | `lib/procs.mjs:createProcesses` | `adapters` · `tmux` | `processes(sig)` · `panes(sig)` · `invalidate()` |
 | `lib/history-api.mjs:createHistoryApi` | `adapters` · `sessions()` · `projectName(cwd, s)` | `promptHistory` · `contextTrend` · `searchHistory` · `daySummary` · `keepCaches` |
@@ -339,6 +339,7 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 | `test/concurrent.test.mjs` | 같은 세션을 동시에 불러도 한 번 부른 결과와 같음(7절) |
 | `test/adapters.test.mjs` | 어댑터마다 필수 함수 · describe/history 결과 모양(`adapters/index.mjs` 머리 주석과 같게) |
 | `test/codex.test.mjs` · `claude-cache.test.mjs` · `claude-fields.test.mjs` | Codex 답 이어 붙이기 · 파일 교체(inode) · 합성 응답 · 기록 폴더 환경 변수 · 요청 가르기 |
+| `test/state.test.mjs` | 상태 조립: 기록 · 프로세스 짝짓기(`matchProcesses`), 작업 중 · 대기 · 끝남, 대화 창 크기 추정, 선택창 두 틱에 한 번 · 엇갈림 두 번 연속, 승인 카드, 세션 사이 메시지, 상태줄 덮어쓰기(`mergeStatusline`) |
 | `test/commands.test.mjs` | 명령 표: 409 · 400 · 503 문장, tmux 로 무엇을 보내는지(가짜 tmux) |
 | `test/token.test.mjs` · `perms.test.mjs` · `paths.test.mjs` | 토큰 파일 · 권한 600/700 · 폴더 안 검사 |
 | `test/body.test.mjs` | 본문 상한 413 · 끊긴 요청 · `.part` 안 남김 |
