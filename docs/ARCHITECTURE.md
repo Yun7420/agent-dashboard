@@ -102,7 +102,7 @@
 |---|---|
 | `lib/history-api.mjs` | 세션 열쇠로 어댑터 · 기록 파일을 찾아 기록 탭(`promptHistory`) · 대화 창 추이(`contextTrend`) · 전체 기록 검색(`searchHistory`) · 오늘 한 일(`daySummary`). 크기가 같으면 다시 읽지 않는 캐시. 경로 처리 함수 `getHistory` · `getTrend` · `getDay` · `getSearch` |
 | `lib/usage-bridge.mjs` | 상태줄 다리 켜기 · 끄기 · 켜질 때 맞추기(`enableUsage` · `sync`) · 상태줄 파일 읽기(`readStatusFiles` · `usageState`) · `/model` 뒤 기본 모델 되돌리기(`restoreDefaultModel`) |
-| `lib/dialog.mjs` | 화면 맨 아래를 보고 선택창인지(`hasDialog` · `detectDialog`), 선택지와 커서 위치(`parseOptions`). 입력칸(가로줄 + `> `)보다 위는 답변이라 보지 않고, 줄마다 앞 500자만 본다 |
+| `lib/dialog.mjs` | 화면 맨 아래를 보고 선택창인지(`hasDialog` · `detectDialog`), 선택지와 커서 위치(`parseOptions`), 승인 단추로 쓸 커서 묶음(`dialogOptions` · `cursorRun` — 화면 `05-approval.js:approvalChoices` 와 같은 규칙). 입력칸(가로줄 + `> `)보다 위는 답변이라 보지 않고, 줄마다 앞 500자만 본다 |
 | `lib/approval.mjs` | 승인 창 맨 위 「허락할 내용」 카드: 종류 · 내용 · 위험 이유(`summarizeTool` · `commandRisks` · `fileRisks`) |
 | `lib/usage.mjs` | 토큰 수 세기(`usageOf` · `addUsage`) · 대화 창 추이 줄이기(`thinTrend`) |
 | `lib/status.mjs` | 상태줄 다리가 세션마다 남기는 파일 정리(`pruneStatusFiles`) |
@@ -306,7 +306,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 7. **명령 처리** — `handleCommand('approve', body)` = `lib/commands.mjs:createCommands` 가 돌려준 함수
    - 첫 상태가 아직이면 503 「읽는 중」(`hasState`)
    - `findSession(key)` 로 `latest` 에서 세션을 찾고, tmux 창이 없으면 409
-   - `approve` 처리: 상태가 `waiting` 이 아니면 409. 숫자면 `lib/tmux.mjs:sendKey` 로 `tmux send-keys -t <창> 1`
+   - `approve` 처리: 상태가 `waiting` 이 아니면 409. 숫자면 화면에 보였던 단추 글자(`label`)도 받아, 보내기 직전 화면을 다시 읽고 `lib/dialog.mjs:dialogOptions`(커서 줄에서 번호가 1씩 이어지는 묶음)의 같은 번호 글자와 다르면 409 「화면이 바뀌었어요」 — 승인 창 속 명령 본문의 가짜 「1. No」 줄로 단추를 바꿔치기하거나(점검 B1), 그사이 다음 선택창이 뜬 경우(B6). 맞으면 `lib/tmux.mjs:sendKey` 로 `tmux send-keys -t <창> 1`
    - (미리보기가 붙은 질문 창은 숫자를 받지 않아서, `lib/dialog.mjs:parseOptions` 로 커서 위치를 읽고 화살표 + Enter 로 보내요)
 8. **응답** — `[200, 'ok']` → `sendText`. 성공이면 `processes.invalidate()` 와 `lastJson = ''` 로 다음 틱에 꼭 다시 보내게 해요.
 9. **다음 틱** — Claude Code 가 숫자를 받아 진행하면 기록 파일에 새 줄이 생기고, 화면의 선택창도 사라져요. `buildState` 가 이걸 보고 상태를 `working` 으로 바꿔 SSE 로 보내요.

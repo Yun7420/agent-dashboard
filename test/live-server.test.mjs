@@ -90,10 +90,15 @@ test('send: 첨부가 uploads 안이면 load-buffer → paste → Enter, uploads
   assert.deepEqual(tmuxCalls('send-keys').at(-1).args, ['send-keys', '-t', '%1', 'Enter']);
 });
 
-test('approve: 승인 기다리는 세션에만, 숫자를 그 창으로 보낸다', async () => {
-  assert.deepEqual([(await cmd('approve', { key: `claude:${ID[0]}`, choice: '1' })).status], [409]); // 대기 중인 세션엔 승인 요청이 없음
-  assert.equal((await cmd('approve', { key: `claude:${ID[1]}`, choice: '2' })).status, 200);
-  assert.deepEqual(tmuxCalls('send-keys').at(-1).args, ['send-keys', '-t', '%2', '2']);
+test('approve: 승인 기다리는 세션에만, 화면의 번호 · 글자가 맞으면 숫자를 그 창으로 보낸다', async () => {
+  assert.deepEqual([(await cmd('approve', { key: `claude:${ID[0]}`, choice: '1', label: 'Yes' })).status], [409]); // 대기 중인 세션엔 승인 요청이 없음
+  home.setScreen(' Do you want to proceed?\n ❯ 1. Yes\n   2. No\n Esc to cancel');
+  try {
+    assert.equal((await cmd('approve', { key: `claude:${ID[1]}`, choice: '2', label: 'No' })).status, 200);
+    assert.deepEqual(tmuxCalls('send-keys').at(-1).args, ['send-keys', '-t', '%2', '2']);
+  } finally {
+    home.setScreen('> ');
+  }
 });
 
 test('pane: tmux 창 세션은 그 창 화면(capture-pane -t 창), 목록에 없는 세션은 404', async () => {

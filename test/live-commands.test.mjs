@@ -72,16 +72,36 @@ test('approve: 미리보기가 붙은 질문 창은 숫자 대신 커서(❯)에
   setScreen(PREVIEW.join('\n'));
   try {
     let n = tmuxCalls('send-keys').length;
-    assert.equal((await cmd('approve', { key: `claude:${B}`, choice: '3' })).status, 200);
+    assert.equal((await cmd('approve', { key: `claude:${B}`, choice: '3', label: '버튼 C' })).status, 200);
     assert.deepEqual(sentKeys('%2', n), ['Down', 'Down', 'Enter']);
     setScreen(PREVIEW.map((l) => l.replace(' ❯ 1.', '   1.').replace('   3.', ' ❯ 3.')).join('\n'));
     n = tmuxCalls('send-keys').length;
-    assert.equal((await cmd('approve', { key: `claude:${B}`, choice: '1' })).status, 200);
+    assert.equal((await cmd('approve', { key: `claude:${B}`, choice: '1', label: '버튼 A' })).status, 200);
     assert.deepEqual(sentKeys('%2', n), ['Up', 'Up', 'Enter']);
     setScreen(' ❯ 1. Yes\n   2. No\n Enter to select');
     n = tmuxCalls('send-keys').length;
-    assert.equal((await cmd('approve', { key: `claude:${B}`, choice: '2' })).status, 200);
+    assert.equal((await cmd('approve', { key: `claude:${B}`, choice: '2', label: 'No' })).status, 200);
     assert.deepEqual(sentKeys('%2', n), ['2']);
+  } finally {
+    setScreen('> ');
+  }
+});
+
+// 사용자가 본 단추(번호 + 글자)가 보내기 직전 화면과 다르면 아무 키도 보내지 않고 409(점검 B1 · B6)
+test('approve: 보내기 직전 화면을 다시 읽어 번호 · 글자가 다르면 409 — 그사이 다음 선택창이 떴거나 · 글자가 없거나 · 본문 속 가짜 줄을 고른 경우', async () => {
+  const FAKE = [' Bash command', '   1. No, cancel (safe choice)', ' Do you want to proceed?', ' ❯ 1. Yes', '   2. No, and tell Claude what to do differently (esc)', ' Esc to cancel'].join('\n');
+  setScreen(FAKE);
+  try {
+    const n = tmuxCalls('send-keys').length;
+    for (const body of [{ choice: '1', label: 'No, cancel (safe choice)' }, { choice: '1' }, { choice: '1', label: 5 }, { choice: '3', label: 'Yes' }, { choice: '2', label: 'Yes' }]) {
+      const r = await cmd('approve', { key: `claude:${B}`, ...body });
+      assert.deepEqual([r.status, r.text], [409, '화면이 바뀌었어요 — 다시 확인해 주세요'], JSON.stringify(body));
+    }
+    assert.deepEqual(sentKeys('%2', n), []); // 하나도 보내지 않음
+    setScreen(FAKE.replace(' ❯ 1. Yes', ' ❯ 1. Yes, and edit files')); // 같은 번호, 다른 글자(다음 요청이 떴다)
+    assert.equal((await cmd('approve', { key: `claude:${B}`, choice: '1', label: 'Yes' })).status, 409);
+    assert.equal((await cmd('approve', { key: `claude:${B}`, choice: '1', label: ' Yes, and edit files ' })).status, 200); // 앞뒤 공백은 무시
+    assert.deepEqual(sentKeys('%2', n), ['1']);
   } finally {
     setScreen('> ');
   }

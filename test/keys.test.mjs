@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { loadFront } from './_helpers/vm.mjs';
 
 // 브라우저 파일이지만 판정 함수는 화면에 닿지 않는다 → 불러올 때 필요한 document.addEventListener 만 흉내 내고 node:vm 으로 시험
-const { ignoreKey, nextKey, armTwice, canApprove } = loadFront(['19-keys.js'], { document: { addEventListener() {} } }).run('({ ignoreKey, nextKey, armTwice, canApprove })');
+const { ignoreKey, nextKey, armTwice, canApprove, needsTwice } = loadFront(['19-keys.js'], { document: { addEventListener() {} } }).run('({ ignoreKey, nextKey, armTwice, canApprove, needsTwice })');
 const key = (k, extra = {}) => ({ key: k, keyCode: 0, ...extra });
 const body = { tagName: 'BODY' };
 
@@ -62,4 +62,12 @@ test('숫자 · Esc 는 승인 창이 떠 있는 고른 세션에서만', () => 
   assert.equal(canApprove(false, { status: 'waiting' }, false), false); // 패널이 닫혀 있음
   assert.equal(canApprove(true, { status: 'waiting' }, true), false); // tmux 밖 세션이라 승인 창이 없음
   assert.equal(canApprove(true, null, false), false);
+});
+
+test('위험 요청 두 번 누르기: 보낼 키 기준 — 숫자는 단추가 거절처럼 보여도 두 번, Esc 만 바로, 위험 표시가 없으면 한 번', () => {
+  const risky = { risks: ['rm -rf — 폴더째 지우고 되돌릴 수 없음'] };
+  for (const k of ['1', '2', '3']) assert.equal(needsTwice(k, risky), true, k);
+  assert.equal(needsTwice('Escape', risky), false);
+  assert.equal(needsTwice('1', { risks: [] }), false);
+  assert.equal(needsTwice('1', null), false);
 });

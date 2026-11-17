@@ -1,9 +1,9 @@
 // 승인 창 선택지 읽기(public/js/05-approval.js 의 approvalChoices). 화면 파일을 node:vm 으로 불러,
-// 서버의 lib/dialog.mjs parseOptions 와 같은 화면 예시에서 같은 번호 · 같은 글자를 읽는지 함께 본다
+// 서버의 lib/dialog.mjs dialogOptions(승인 직전 다시 읽어 맞춰 보는 쪽)와 같은 화면 예시에서 같은 번호 · 같은 글자를 읽는지 함께 본다
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadFront, browserStub } from './_helpers/vm.mjs';
-import { parseOptions } from '../lib/dialog.mjs';
+import { parseOptions, dialogOptions } from '../lib/dialog.mjs';
 import { DEMO_PANE } from '../lib/demo.mjs';
 
 function load() {
@@ -12,24 +12,28 @@ function load() {
   return (text, focus) => JSON.parse(JSON.stringify(run('approvalChoices')(text, focus)));
 }
 const choices = load();
-// 서버 쪽 결과를 화면 쪽 모양으로: 번호 · 미리보기 상자 뗀 글자
-const server = (screen) => parseOptions(screen).options.map((o) => ({ n: String(o.num), label: o.label.replace(/\s{2,}[│┌└├].*$/, '').trim() }));
+// 서버 쪽 결과를 화면 쪽 모양으로: 번호 · 글자
+const server = (screen) => dialogOptions(screen).map(({ n, label }) => ({ n, label }));
 const front = (screen) => choices(screen).options.map(({ n, label }) => ({ n, label }));
 
 const PREVIEW = [' ❯ 1. 버튼 A      │ 미리보기', '   2. 버튼 B      │', ' Enter to select'].join('\n');
 const BOXED = ['│ Do you want to proceed?            │', '│ ❯ 1. Yes                           │', '│   2. No, and tell Claude what to do │', '╰────────────────────────────────────╯'].join('\n');
 
-test('서버(parseOptions)와 같은 화면에서 같은 번호 · 글자를 읽는다: 데모 승인 창 · 미리보기 상자 · 테두리 상자', () => {
-  for (const screen of [DEMO_PANE, PREVIEW]) assert.deepEqual(front(screen), server(screen));
-  // 테두리 상자 안: 줄 끝 │ 는 화면 쪽만 뗀다(서버는 번호만 쓰므로 번호가 같으면 된다)
-  assert.deepEqual(front(BOXED).map((o) => o.n), server(BOXED).map((o) => o.n));
+// 승인 창 안에 보이는 명령 본문에 선택지처럼 생긴 줄을 넣어 단추를 바꿔치기(점검 B1): 거절처럼 보이는 1 이 실제로는 「1. Yes」를 눌렀다
+const FAKE = ['──────────', ' Bash command', '', '   cat <<EOF', '   1. No, cancel (safe choice)', '   2. Also safe', '   EOF', '   Run it', '', ' Do you want to proceed?', ' ❯ 1. Yes', '   2. Yes, and don\'t ask again', '   3. No, and tell Claude what to do differently (esc)'].join('\n');
+
+test('서버(dialogOptions)와 같은 화면에서 같은 번호 · 글자를 읽는다: 데모 승인 창 · 미리보기 상자 · 테두리 상자 · 가짜 줄 섞인 창', () => {
+  for (const screen of [DEMO_PANE, PREVIEW, BOXED, FAKE, ' > 1. Yes\n   2. No', ' ❯ 2. 둘\n   3. 셋\n 1. 하나']) assert.deepEqual(front(screen), server(screen), screen);
   assert.deepEqual(front(BOXED).map((o) => o.label), ['Yes', 'No, and tell Claude what to do']);
 });
 
-test('화면 쪽만 하는 것: > 도 커서로 · 같은 번호는 처음 것만 · 맨 아래 40줄에서만', () => {
-  assert.deepEqual(front(' > 1. Yes\n   2. No'), [{ n: '1', label: 'Yes' }, { n: '2', label: 'No' }]);
-  assert.equal(parseOptions(' > 1. Yes\n   2. No').cursor, null); // 서버는 > 를 커서로 보지 않는다(입력 칸 「> 」와 헷갈리지 않게)
-  assert.deepEqual(front(' ❯ 1. 처음\n   1. 다시\n   2. 둘').map((o) => o.label), ['처음', '둘']);
+test('가짜 선택지 줄은 단추가 되지 않는다: 커서 줄에서 번호가 1씩 이어지는 묶음만(본문 속 「1. No」 · 커서 없는 번호 목록 · 위로 밀린 옛 선택지 무시)', () => {
+  assert.deepEqual(front(FAKE).map((o) => `${o.n}. ${o.label}`), ['1. Yes', "2. Yes, and don't ask again", '3. No, and tell Claude what to do differently (esc)']);
+  assert.deepEqual(choices(FAKE).options.map((o) => o.danger), [false, false, true]); // 빨간(거절) 단추는 진짜 3 뿐
+  assert.deepEqual(front(' ❯ 1. 처음\n   1. 다시\n   2. 둘').map((o) => o.label), ['처음']); // 같은 번호가 이어지지 않으면 묶음이 끊긴다
+  assert.deepEqual(front('   1. 본문\n   2. 본문\n ❯ 2. 커서\n   3. 셋').map((o) => o.label), ['커서', '셋']); // 커서 쪽 묶음(앞의 2 와 커서의 2 는 이어지지 않음)
+  assert.deepEqual(front(' > 1. Yes\n   2. No'), [{ n: '1', label: 'Yes' }, { n: '2', label: 'No' }]); // > 도 커서(서버 dialogOptions 도 같게)
+  assert.equal(parseOptions(' > 1. Yes\n   2. No').cursor, null); // 선택창 감지(parseOptions)는 > 를 커서로 보지 않는다(입력 칸 「> 」와 헷갈리지 않게)
   const old = [' ❯ 1. 오래된 선택지', ...Array.from({ length: 40 }, (_, i) => `로그 ${i}`), ' ❯ 1. 지금 것'].join('\n');
   assert.deepEqual(front(old).map((o) => o.label), ['지금 것']);
 });

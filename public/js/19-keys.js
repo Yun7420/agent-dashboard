@@ -42,20 +42,23 @@ function moveCursor(dir) {
   if (document.activeElement?.closest?.('#list .card')) card?.focus({ preventScroll: true }); // 카드에 포커스가 있었으면 함께 옮긴다
   if (open && next !== selected) select(next); // 패널이 열려 있으면 바로 그 세션으로
 }
+// 순수 판정(test/keys.test.mjs): 위험 표시가 있으면 숫자 키는 모두 두 번 — 단추 모양(빨간 거절)으로 건너뛰지 않는다.
+// 단추 글자는 화면에서 읽은 것이라 승인 창 속 가짜 「1. No」 줄로 거절처럼 꾸밀 수 있었다(점검 B1). 실제로 보낼 키가 Esc(거절)일 때만 바로
+const needsTwice = (key, pendingTool) => key !== 'Escape' && Boolean(pendingTool?.risks?.length);
 // 승인 창이 떠 있는 고른 세션에서만: 화면에 보이는 단추를 그대로 누른다(승인 API · 잠금 · 다시 그리기는 단추 처리 그대로)
 function approveKey(key) {
   const s = state?.sessions.find((x) => x.key === selected);
   if (!canApprove($('#drawer').classList.contains('open'), s, $('#approval').hidden)) return false;
   const btn = $(`#approve-btns [data-choice="${key === 'Escape' ? 'esc' : key}"]`);
   if (!btn || btn.disabled) return false;
-  const risky = key !== 'Escape' && Boolean(s.pendingTool?.risks?.length) && !btn.classList.contains('danger'); // 거절 쪽 단추는 바로
+  const risky = needsTwice(key, s.pendingTool);
   if (risky) {
     const r = armTwice(armed, { key, target: s.key, now: Date.now() });
     armed = r.state;
     if (!r.fire) {
       btn.classList.add('kb-arm');
       setTimeout(() => btn.classList.remove('kb-arm'), ARM_MS);
-      toast(`위험 표시가 있는 요청이에요 — 2초 안에 ${key} 키를 한 번 더 누르면 허락`);
+      toast(`위험 표시가 있는 요청이에요 — 2초 안에 ${key} 키를 한 번 더 누르면 보내요`);
       return true;
     }
   }
