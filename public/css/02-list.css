@@ -17,10 +17,10 @@ body.aside-folded .card { padding: 8px 0; margin: 4px 0; text-align: center; }
 body.aside-folded .card > :not(.ini) { display: none; }
 body.aside-folded .card .ini { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--dim); letter-spacing: .02em; }
 body.aside-folded .card.sel .ini { color: var(--text); }
-body.aside-folded .card.waiting { border-color: rgba(251, 111, 146, .5); }
+body.aside-folded .card.waiting { border-color: color-mix(in srgb, var(--waiting) 50%, transparent); }
 #list { padding: 0 8px 12px; }
 /* 재시동 복구 안내: 목록 맨 위 */
-#restore { margin: 0 8px 8px; padding: 12px; border: 1px solid rgba(139, 124, 246, .4); border-radius: var(--radius); background: rgba(139, 124, 246, .08); font-size: 12px; }
+#restore { margin: 0 8px 8px; padding: 12px; border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 8%, transparent); font-size: 12px; }
 #restore[hidden] { display: none; }
 #restore .r-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
 #restore .r-list { color: var(--dim); margin: 6px 0 10px; line-height: 1.6; }
@@ -40,14 +40,14 @@ body.aside-folded #ended-window { display: none; }
 .group-h { padding: 12px 8px 6px; color: var(--faint); font-size: 11px; font-weight: 600; letter-spacing: .04em; }
 .group-h.empty-hint { font-size: 12px; font-weight: 400; letter-spacing: 0; line-height: 1.6; color: var(--dim); white-space: normal; } /* 처음 설치 — 기록 폴더 없음 */
 .card { position: relative; padding: 10px 12px 10px; margin: 4px 0; border-radius: var(--radius); border: 1px solid transparent; cursor: pointer; transition: background .15s, border-color .15s; }
-.card { background: rgba(255, 255, 255, .025); border-color: rgba(255, 255, 255, .06) !important; }
-.card:hover { background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .12) !important; }
-.card.sel { border-color: rgba(139, 124, 246, .55) !important; }
-.card.waiting:not(.sel) { border-color: rgba(251, 111, 146, .45) !important; }
-.card.sel { background: var(--accent-soft); border-color: rgba(139, 124, 246, .45); }
+.card { background: color-mix(in srgb, var(--ink) 2%, transparent); border-color: color-mix(in srgb, var(--ink) 6%, transparent) !important; }
+.card:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); border-color: color-mix(in srgb, var(--ink) 12%, transparent) !important; }
+.card.sel { border-color: color-mix(in srgb, var(--accent) 55%, transparent) !important; }
+.card.waiting:not(.sel) { border-color: color-mix(in srgb, var(--waiting) 45%, transparent) !important; }
+.card.sel { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 /* 키보드(j/k)로 고른 카드 · 위험 요청에서 숫자를 한 번 누른 단추(한 번 더 누르면 허락) */
-.card.kb:not(.sel) { outline: 2px dashed rgba(139, 124, 246, .6); outline-offset: -2px; }
-#approve-btns button.kb-arm { outline: 2px solid var(--working); outline-offset: 2px; box-shadow: 0 0 0 6px rgba(245, 185, 66, .18); }
+.card.kb:not(.sel) { outline: 2px dashed color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: -2px; }
+#approve-btns button.kb-arm { outline: 2px solid var(--working); outline-offset: 2px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--working) 18%, transparent); }
 kbd { font: 11px var(--mono); padding: 0 5px; border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 4px; background: var(--surface-3); color: var(--text); }
 .card[draggable="true"] { cursor: grab; }
 .card.dragging { opacity: .35; }
@@ -59,22 +59,22 @@ kbd { font: 11px var(--mono); padding: 0 5px; border: 1px solid var(--border-str
 .card .status { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--dim); flex: none; }
 .card .status.working { color: var(--working); }
 .card .status.waiting { color: var(--waiting); }
-.card .status.background { color: #e9c77a; }
+.card .status.background { color: var(--working-text); }
 .card .sub { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--faint); font-size: 12px; white-space: nowrap; overflow: hidden; }
 .card .sub .proj { min-width: 2em; overflow: hidden; text-overflow: ellipsis; color: var(--dim); }
 .card .sub .ago { flex: none; }
-.ctx { height: 3px; margin-top: 8px; border-radius: 3px; background: rgba(255, 255, 255, .06); overflow: hidden; }
+.ctx { height: 3px; margin-top: 8px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 6%, transparent); overflow: hidden; }
 .ctx-bar { height: 100%; border-radius: 3px; background: var(--ok); }
 .ctx-bar.mid { background: var(--working); }
 .ctx-bar.high { background: var(--waiting); }
 .ctx-chip { display: inline-flex; align-items: center; gap: 6px; }
-.ctx-chip .mini { width: 46px; height: 4px; border-radius: 3px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.ctx-chip .mini { width: 46px; height: 4px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 8%, transparent); overflow: hidden; }
 .card .x { position: absolute; right: 8px; bottom: 8px; width: 24px; height: 24px; padding: 0; border-radius: 8px; font-size: 11px; line-height: 22px; color: var(--faint); background: var(--surface-3); border: 1px solid var(--border); opacity: 0; }
 .card:hover .x, .card:focus-within .x { opacity: 1; } /* 키보드로 카드 · ✕ 에 닿으면 보이게 */
 .card:focus-visible, .card .x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.card .x:hover { color: var(--waiting); border-color: rgba(251, 111, 146, .5); background: rgba(251, 111, 146, .1); }
+.card .x:hover { color: var(--waiting); border-color: color-mix(in srgb, var(--waiting) 50%, transparent); background: color-mix(in srgb, var(--waiting) 10%, transparent); }
 .badge { display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 6px; font-size: 11px; font-weight: 600; flex: none; }
-.tool.claude { background: rgba(224, 138, 104, .14); color: var(--claude); }
-.tool.codex { background: rgba(79, 209, 165, .14); color: var(--codex); }
-.badge-tmux { background: rgba(62, 207, 142, .12); color: var(--ok); }
+.tool.claude { background: color-mix(in srgb, var(--claude) 14%, transparent); color: var(--claude); }
+.tool.codex { background: color-mix(in srgb, var(--codex) 14%, transparent); color: var(--codex); }
+.badge-tmux { background: color-mix(in srgb, var(--ok) 12%, transparent); color: var(--ok); }
 .id { font-family: var(--mono); font-size: 11px; color: var(--faint); }

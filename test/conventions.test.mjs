@@ -71,6 +71,17 @@ test('화면 모양: @media 는 마지막 번호 css 에만', () => {
   assert.deepEqual(bad, []);
 });
 
+// 색은 00-base.css 의 토큰만: 구역 파일에 색을 직접 쓰면 밝은 판 · 어두운 판을 바꿀 때 그 자리만 남는다(투명도는 color-mix 로)
+test('화면 모양: 색은 토큰만 — 00-base.css 밖의 css 에 #hex · rgb() · rgba() 없음', () => {
+  const bad = [];
+  for (const f of STYLES.slice(1)) {
+    read(f).replace(/\/\*[\s\S]*?\*\//g, '').split('\n').forEach((line, i) => {
+      if (/#[0-9a-fA-F]{3,8}\b|\brgba?\(/.test(line)) bad.push(`${f}:${i + 1}`);
+    });
+  }
+  assert.deepEqual(bad, [], '00-base.css 의 토큰(var(--…))을 쓰고, 새 색이 필요하면 00-base.css 에 토큰을 더해 주세요');
+});
+
 test('화면 번호 순서 검사기: 주석 · 글자 · 객체 키 · 지역 이름에 속지 않고, 진짜 부르기는 잡는다', async () => {
   const dir = tmpDir('ad-conv-');
   fs.writeFileSync(path.join(dir, '01-a.js'), [

@@ -20,7 +20,7 @@
 <body>
 <header>
   <div class="brand">
-    <div class="logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5 6.5 17M12 11.5l5.5 5.5"/></svg></div>
+    <div class="logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5 6.5 17M12 11.5l5.5 5.5"/></svg></div>
     <h1>Agent <span>Dashboard</span></h1>
   </div>
   <div class="stats">
@@ -72,11 +72,11 @@
 <main>
   <svg id="graph">
     <defs>
-      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#a99bff"/></marker>
+      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="currentColor"/></marker>
     </defs>
     <g id="viewport"></g>
   </svg>
-  <div class="hint">드래그로 이동 · 휠로 확대 · 노드 클릭 시 프롬프트 기록 · <span style="color:#a99bff">보라 화살표</span> = 세션끼리 보낸 메시지</div>
+  <div class="hint">드래그로 이동 · 휠로 확대 · 노드 클릭 시 프롬프트 기록 · <span class="peer-t">파란 화살표</span> = 세션끼리 보낸 메시지</div>
   <div class="empty" id="empty" hidden>떠 있는 세션이 없어요</div>
   <section id="drawer">
     <div class="resize" id="resize" title="끌어서 폭 조절 · 더블클릭하면 기본 폭"></div>

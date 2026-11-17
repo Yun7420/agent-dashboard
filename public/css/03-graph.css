@@ -1,41 +1,43 @@
 /* 가운데 조직도: 노드 · 선 · 흐르는 점선 · 세션 사이 화살표 — 프로젝트 박스를 누르면 뜨는 폴더 열기 메뉴도 여기 */
 /* ---------- 가운데 조직도 ---------- */
-main { position: relative; overflow: hidden; background: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, .05) 1px, transparent 0) 0 0 / 22px 22px, var(--bg); }
+main { position: relative; overflow: hidden; background: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 5%, transparent) 1px, transparent 0) 0 0 / 22px 22px, var(--bg); }
 #graph { width: 100%; height: 100%; cursor: grab; }
 #graph.drag { cursor: grabbing; }
 .node { cursor: pointer; }
 .node rect { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1; transition: stroke .15s; }
-.node:hover rect { stroke: rgba(255, 255, 255, .3); }
-.node.group rect { fill: rgba(22, 25, 39, .7); stroke: rgba(255, 255, 255, .14); stroke-dasharray: 4 4; }
-.node.working rect { stroke: rgba(245, 185, 66, .75); filter: drop-shadow(0 0 10px rgba(245, 185, 66, .25)); }
+.node:hover rect { stroke: color-mix(in srgb, var(--ink) 30%, transparent); }
+.node.group rect { fill: color-mix(in srgb, var(--surface-2) 70%, transparent); stroke: color-mix(in srgb, var(--ink) 14%, transparent); stroke-dasharray: 4 4; }
+.node.working rect { stroke: color-mix(in srgb, var(--working) 75%, transparent); filter: drop-shadow(0 0 10px color-mix(in srgb, var(--working) 25%, transparent)); }
 .node.sub.working rect { filter: none; }
 .node.more rect { fill: transparent; stroke-dasharray: 3 3; }
 .node.more text { fill: var(--dim); opacity: 1 !important; }
 .node.more:hover rect { stroke: var(--accent); } /* 서브에이전트가 많을 때 그림자 효과가 화면을 무겁게 해서 테두리만 */
 .edge.stack.working { stroke-dashoffset: 0; }
-.node.waiting rect { stroke: var(--waiting); filter: drop-shadow(0 0 12px rgba(251, 111, 146, .4)); }
-.node.ended rect { stroke: rgba(255, 255, 255, .06); }
-.node.background rect { stroke: rgba(245, 185, 66, .55); stroke-dasharray: 4 3; }
+.node.waiting rect { stroke: var(--waiting); filter: drop-shadow(0 0 12px color-mix(in srgb, var(--waiting) 40%, transparent)); }
+.node.ended rect { stroke: color-mix(in srgb, var(--ink) 6%, transparent); }
+.node.background rect { stroke: color-mix(in srgb, var(--working) 55%, transparent); stroke-dasharray: 4 3; }
 .node.ended text { opacity: .45; }
-.node.sel rect { stroke: var(--accent); stroke-width: 1.6; filter: drop-shadow(0 0 14px rgba(139, 124, 246, .45)); }
+.node.sel rect { stroke: var(--accent); stroke-width: 1.6; filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 45%, transparent)); }
 .node text { fill: var(--text); font: 600 12px var(--sans); }
 .node text.t2 { fill: var(--faint); font: 500 10px var(--sans); letter-spacing: .04em; }
 /* 세션 상태는 점 대신 아래 줄(대기 · 작업 중 …) 글자색으로 */
 .node:not(.proj):not(.group).idle text.t2 { fill: var(--idle); }
 .node:not(.proj):not(.group).working text.t2 { fill: var(--working); }
-.node:not(.proj):not(.group).background text.t2 { fill: #e9c77a; }
+.node:not(.proj):not(.group).background text.t2 { fill: var(--working-text); }
 .node:not(.proj):not(.group).waiting text.t2 { fill: var(--waiting); font-weight: 700; }
-.edge { fill: none; stroke: rgba(255, 255, 255, .55); stroke-width: 1.1; stroke-dasharray: 3 4; }
+.edge { fill: none; stroke: color-mix(in srgb, var(--ink) 55%, transparent); stroke-width: 1.1; stroke-dasharray: 3 4; }
 /* 흐르는 점선은 CSS 애니메이션(초당 60번 다시 그림) 대신 스크립트가 초당 8번만 --flow 를 바꿔 움직인다 */
 .edge.working { stroke: var(--working); stroke-dashoffset: var(--flow, 0); }
-.dot { fill: #fff; opacity: .8; }
+.dot { fill: var(--text); opacity: .8; }
 .dot.working { fill: var(--working); opacity: 1; }
-.link { fill: none; stroke: #a99bff; opacity: .85; }
+.link { fill: none; stroke: var(--peer); opacity: .85; }
 .link.recent { stroke-dasharray: 6 5; stroke-dashoffset: var(--flow, 0); }
 .link-hit { fill: none; stroke: transparent; stroke-width: 12; cursor: help; }
-.link-label rect { fill: #2a2450; stroke: rgba(169, 155, 255, .6); }
-.link-label text { fill: #e4dfff; font: 600 10px var(--sans); }
-.hint { position: absolute; left: 16px; bottom: 12px; color: var(--faint); font-size: 12px; padding: 4px 10px; border-radius: 999px; background: rgba(16, 18, 28, .8); border: 1px solid var(--border); }
+.link-label rect { fill: var(--peer-bg); stroke: color-mix(in srgb, var(--peer) 60%, transparent); }
+.link-label text { fill: var(--peer-text); font: 600 10px var(--sans); }
+.hint { position: absolute; left: 16px; bottom: 12px; color: var(--faint); font-size: 12px; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 80%, transparent); border: 1px solid var(--border); }
+.peer-t { color: var(--peer); }
+#arrow path { fill: var(--peer); } /* 세션 사이 메시지 화살촉(index.html 의 marker) */
 .empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--faint); pointer-events: none; }
 .empty[hidden] { display: none; }
 

@@ -1,29 +1,90 @@
 /* 공통: 색 · 글꼴 변수(:root) · 화면 틀(body 격자) · 스크롤 막대 · 단추 · 입력 칸 같은 공통 컨트롤 */
+/* 색은 여기 토큰으로만(구역 파일은 var · color-mix 로 섞어 쓴다). 기본 = 어두운 초록, [data-theme=light] = 밝은 판 */
 :root {
-  --bg: #090a12;
-  --surface: #10121c;
-  --surface-2: #161927;
-  --surface-3: #1d2133;
-  --border: rgba(255, 255, 255, .07);
-  --border-strong: rgba(255, 255, 255, .13);
-  --text: #eceefa;
-  --dim: #a0a5c0;
-  --faint: #7980a6; /* 배경 대비 5.12 · surface-2 4.53(작은 글자 4.5:1 이상). 예전 #626887 은 3.62 · 3.20 */
-  --accent: #8b7cf6;
-  --accent-strong: #6c54f0; /* 주 버튼(새 세션·보내기) — 배경 위에서 또렷하게 */
-  --accent-soft: rgba(139, 124, 246, .14);
-  --working: #f5b942;
-  --waiting: #fb6f92;
-  --idle: #7d8cf8;
-  --ok: #3ecf8e;
-  --ended: #4a4f6a;
+  color-scheme: dark;
+  --bg: #0c0f0e;
+  --surface: #111614;
+  --surface-2: #161d1a;
+  --surface-3: #1e2723;
+  --ink: #ffffff; /* 선 · 옅은 칸을 섞는 바탕(어두운 판 = 흰색, 밝은 판 = 검정) */
+  --shade: #000000;
+  --border: color-mix(in srgb, var(--ink) 7%, transparent);
+  --border-strong: color-mix(in srgb, var(--ink) 13%, transparent);
+  --text: #e7eeea;
+  --dim: #a4b3ac;
+  --faint: #7f9088;
+  --accent: #10a36a;
+  --accent-2: #34d399;
+  --accent-strong: #10a36a;
+  --accent-hover: #14b877;
+  --accent-text: #5ee0a8;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+  --on-accent: #03140c;
+  --glow: color-mix(in srgb, var(--accent) 22%, transparent);
+  --title-a: #f5f7f6;
+  --title-b: #94a29b;
+  --working: #f2b84b;
+  --working-text: #f4cf85;
+  --waiting: #f2727f;
+  --waiting-text: #ffc9cf;
+  --waiting-bg: #2a1518;
+  --idle: #8ea4ba;
+  --ok: #3ddc97;
+  --ok-text: #b4f0d2;
+  --ended: #4b5752;
+  --peer: #6cc6e6;
+  --peer-bg: #10303a;
+  --peer-text: #d4f1fb;
+  --code-text: #cfdcd5;
+  --code-inline: #f6d3a8;
+  --reply-text: #d0dbd5;
+  --on-status: #0c0f0e;
   --claude: #e08a68;
-  --codex: #4fd1a5;
+  --codex: #7cb7ff;
   --radius: 12px;
   --bar-h: 52px; /* 왼쪽 목록 맨 윗줄과 오른쪽 패널 머리의 공통 높이 */
-  --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  --shadow: 0 10px 30px color-mix(in srgb, var(--shade) 35%, transparent);
   --sans: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', 'Inter', system-ui, sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, 'D2Coding', monospace;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f3f6f4;
+  --surface: #ffffff;
+  --surface-2: #eff4f1;
+  --surface-3: #e5ebe8;
+  --ink: #0b1a13;
+  --shade: #8fa199; /* 밝은 판의 안쪽 칸 · 그림자는 옅게 */
+  --text: #13201a;
+  --dim: #44554d;
+  --faint: #5a6b63;
+  --accent: #087a4e;
+  --accent-2: #10a36a;
+  --accent-strong: #087a4e;
+  --accent-hover: #066a43;
+  --accent-text: #087048;
+  --on-accent: #ffffff;
+  --glow: color-mix(in srgb, var(--accent) 12%, transparent);
+  --title-a: #13201a;
+  --title-b: #5f7068;
+  --working: #8a5500;
+  --working-text: #8a5600;
+  --waiting: #b42536;
+  --waiting-text: #8f1d2b;
+  --waiting-bg: #fdecee;
+  --idle: #4f6680;
+  --ok: #077346;
+  --ok-text: #065c3a;
+  --ended: #9aa69f;
+  --peer: #13668a;
+  --peer-bg: #e3f3fa;
+  --peer-text: #0d4a63;
+  --code-text: #23332b;
+  --code-inline: #8a3d00;
+  --reply-text: #23332b;
+  --on-status: #ffffff;
+  --claude: #973f1f;
+  --codex: #22599f;
 }
 * { box-sizing: border-box; }
 ::selection { background: var(--accent-soft); }
@@ -31,36 +92,36 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 body { display: grid; grid-template-columns: 296px 1fr; grid-template-rows: 60px 1fr 136px; height: 100vh; overflow: hidden; }
 code, .mono { font-family: var(--mono); font-size: .92em; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .08); border-radius: 12px; border: 3px solid transparent; background-clip: padding-box; }
-::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, .16); }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 8%, transparent); border-radius: 12px; border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--ink) 16%, transparent); }
 ::-webkit-scrollbar-track { background: transparent; }
 
 /* ---------- 공통 컨트롤 ---------- */
 button { font: inherit; cursor: pointer; background: var(--surface-2); color: var(--text); border: 1px solid var(--border-strong); border-radius: 8px; padding: 5px 12px; transition: background .15s, border-color .15s, color .15s; }
-button:hover:not(:disabled) { background: var(--surface-3); border-color: rgba(255, 255, 255, .2); }
+button:hover:not(:disabled) { background: var(--surface-3); border-color: color-mix(in srgb, var(--ink) 20%, transparent); }
 button:disabled { opacity: .4; cursor: not-allowed; }
-button.primary { background: var(--accent-strong); border-color: transparent; color: #fff; font-weight: 600; box-shadow: 0 2px 10px rgba(108, 84, 240, .35); }
-button.primary:hover:not(:disabled) { background: #7b66ff; }
+button.primary { background: var(--accent-strong); border-color: transparent; color: var(--on-accent); font-weight: 600; box-shadow: 0 2px 10px var(--glow); }
+button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 button.primary:disabled { background: var(--surface-3); color: var(--faint); box-shadow: none; opacity: 1; }
-button.danger { background: transparent; border-color: rgba(251, 111, 146, .35); color: var(--waiting); }
-button.danger:hover:not(:disabled) { background: rgba(251, 111, 146, .1); border-color: var(--waiting); }
+button.danger { background: transparent; border-color: color-mix(in srgb, var(--waiting) 35%, transparent); color: var(--waiting); }
+button.danger:hover:not(:disabled) { background: color-mix(in srgb, var(--waiting) 10%, transparent); border-color: var(--waiting); }
 button.ghost { background: transparent; border-color: transparent; color: var(--dim); }
 button.ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); border-color: transparent; }
 select { font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 8px; padding: 5px 28px 5px 10px; appearance: none; cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a0a5c0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237f9088' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 input, textarea { font: inherit; color: var(--text); }
 .switch { display: inline-flex; align-items: center; gap: 8px; color: var(--dim); cursor: pointer; user-select: none; font-size: 12px; }
 .switch input { display: none; }
 .switch .track { width: 30px; height: 18px; border-radius: 12px; background: var(--surface-3); border: 1px solid var(--border-strong); position: relative; transition: background .15s; }
 .switch .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--dim); transition: transform .15s, background .15s; }
 .switch input:checked + .track { background: var(--accent); border-color: transparent; }
-.switch input:checked + .track::after { transform: translateX(12px); background: #fff; }
+.switch input:checked + .track::after { transform: translateX(12px); background: var(--on-accent); }
 .dot-s { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; }
-.dot-s.working { background: var(--working); box-shadow: 0 0 0 3px rgba(245, 185, 66, .15); }
-.dot-s.waiting { background: var(--waiting); box-shadow: 0 0 0 3px rgba(251, 111, 146, .18); }
+.dot-s.working { background: var(--working); box-shadow: 0 0 0 3px color-mix(in srgb, var(--working) 15%, transparent); }
+.dot-s.waiting { background: var(--waiting); box-shadow: 0 0 0 3px color-mix(in srgb, var(--waiting) 18%, transparent); }
 .dot-s.idle { background: var(--idle); }
 .dot-s.background { background: transparent; border: 2px solid var(--working); width: 9px; height: 9px; }
 .dot-s.ended { background: var(--ended); }
-.dot-s.live { background: var(--ok); box-shadow: 0 0 0 3px rgba(62, 207, 142, .15); }
+.dot-s.live { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 15%, transparent); }
 @keyframes pulse { 50% { opacity: .35; } }
 .pulse { animation: pulse 1.4s ease-in-out infinite; }

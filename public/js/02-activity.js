@@ -39,7 +39,7 @@ function logLinks(links, sessions) {
       const p = prevLinks.get(`${l.from}>${l.to}`);
       if (p && p.count >= l.count) continue;
       const t = new Date().toLocaleTimeString('ko-KR', { hour12: false });
-      box.insertAdjacentHTML('afterbegin', `<div><span class="t">${t}</span> <span style="color:#a99bff">[${esc(names.get(l.from) ?? '?')} → ${esc(names.get(l.to) ?? '?')}] 메시지 › ${esc(l.lastText)}</span></div>`);
+      box.insertAdjacentHTML('afterbegin', `<div><span class="t">${t}</span> <span style="color:var(--peer)">[${esc(names.get(l.from) ?? '?')} → ${esc(names.get(l.to) ?? '?')}] 메시지 › ${esc(l.lastText)}</span></div>`);
     }
   }
   prevLinks = new Map(links.map((l) => [`${l.from}>${l.to}`, l]));

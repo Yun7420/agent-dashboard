@@ -47,9 +47,9 @@ function renderNow(s) {
   const html = reply ? mdOnce(reply) : working ? '<span class="spinner"></span>답변을 만들고 있어요…' : '아직 답변이 없어요';
   setHtml(el, html); // 1초마다 다시 그려도 스크롤·선택이 튀지 않게
   const stateHtml = working
-    ? `<span class="spinner" style="width:12px;height:12px"></span><span style="color:#f3d79c">${sentAt && s.status === 'idle' ? '전달됐어요 · 응답 기다리는 중' : `작업 중${s.lastTool ? ' · ' + esc(s.lastTool) : ''}`}</span>`
+    ? `<span class="spinner" style="width:12px;height:12px"></span><span style="color:var(--working-text)">${sentAt && s.status === 'idle' ? '전달됐어요 · 응답 기다리는 중' : `작업 중${s.lastTool ? ' · ' + esc(s.lastTool) : ''}`}</span>`
     : s.status === 'waiting' ? `<span class="dot-s waiting"></span><span style="color:var(--waiting)">승인 필요</span>`
-    : s.status === 'background' ? `<span class="dot-s background pulse"></span><span style="color:#e9c77a">백그라운드 작업 중</span>`
+    : s.status === 'background' ? `<span class="dot-s background pulse"></span><span style="color:var(--working-text)">백그라운드 작업 중</span>`
     : `<span class="dot-s ${esc(s.status)}"></span>${STATUS_KO[s.status] ?? esc(s.status)}`;
   if ($('#now-state').innerHTML !== stateHtml) $('#now-state').innerHTML = stateHtml;
   const from = working ? (sentAt && s.status === 'idle' ? sentAt : Date.parse(s.lastPromptAt || s.lastAt)) : Date.parse(s.lastAt);

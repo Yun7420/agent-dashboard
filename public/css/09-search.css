@@ -9,4 +9,4 @@
 .gs-head { display: flex; gap: 8px; align-items: baseline; font-size: 11px; color: var(--faint); }
 .gs-head b { color: var(--text); font-size: 13px; }
 .gs-snip { font-size: 12.5px; line-height: 1.6; color: var(--dim); word-break: break-word; }
-.gs-snip mark { background: rgba(139, 124, 246, .35); color: var(--text); border-radius: 3px; padding: 0 2px; }
+.gs-snip mark { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); border-radius: 3px; padding: 0 2px; }
