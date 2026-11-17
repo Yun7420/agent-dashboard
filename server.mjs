@@ -89,7 +89,7 @@ function findSession(key) {
 const env = createEnvCheck({
   demo: DEMO,
   demoEnv: demo.DEMO_ENV,
-  usageEnabled: () => usage.usageEnabled(),
+  usageEnabled: () => usage.usageEnabled(), bridgeNode: () => usage.bridgeNode(),
   tokenInfo: () => ({ createdNow: TOKEN_CREATED_NOW, path: tildify(TOKEN_FILE), createdAt: fs.statSync(TOKEN_FILE).birthtime.toISOString(), openCmd: OPEN_CMD, loginDays: SESSION_MS / 86400_000 }),
   detectEditors,
   dialogIssues,

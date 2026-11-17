@@ -41,6 +41,24 @@ test('켜짐 판단: 다리 복사본 · 패키지 원본 경로가 등록돼 �
   assert.equal(u.usageEnabled(), false); // 다른 패키지 폴더의 원본은 우리 다리가 아님
 });
 
+test('상태줄 node(점검 H3): 등록된 명령에서 node 경로를 읽고, 환경 점검 줄은 그 node 의 버전 · 실행 못 하면 경고', async () => {
+  const { usageEnvItem, probe } = await import('../lib/env.mjs');
+  writeSettings({ statusLine: { type: 'command', command: `"${process.execPath}" "${u.bridgeDst}"` } });
+  assert.equal(u.bridgeNode(), process.execPath);
+  writeSettings({ statusLine: { type: 'command', command: `node "${u.bridgeDst}"` } }); // 옛 모양: 따옴표 없음
+  assert.equal(u.bridgeNode(), 'node');
+  writeSettings({ statusLine: { type: 'command', command: '"/opt/x/node" my-own-statusline' } });
+  assert.equal(u.bridgeNode(), null); // 우리 다리가 아니면 보지 않는다
+  const ok = usageEnvItem({ enabled: true, node: process.execPath, version: await probe(process.execPath, ['--version']) });
+  assert.equal(ok.level, 'ok');
+  assert.ok(ok.detail.includes(`상태줄 node ${process.execPath} (${process.version})`), ok.detail);
+  const gone = path.join(HOME, 'Cellar', 'node', '20.0.0', 'bin', 'node'); // brew 로 올린 뒤 사라진 예전 경로
+  const bad = usageEnvItem({ enabled: true, node: gone, version: await probe(gone, ['--version']) });
+  assert.equal(bad.level, 'warn');
+  assert.match(bad.detail, /실행하지 못해요 — node 를 올린 뒤라면 대시보드를 다시 켜면/);
+  assert.equal(usageEnvItem({ enabled: false }).level, 'info');
+});
+
 test('기본 모델: 없으면 exists false, /model 이 바꾼 값을 원래대로 되돌린다(다른 설정은 그대로)', async () => {
   fs.rmSync(SETTINGS);
   fileCache.forget(SETTINGS);
