@@ -267,6 +267,7 @@ agent-dashboard/
 ├─ adapters/           # per-tool differences only — claude.mjs (+ claude/ pieces) · codex.mjs · index.mjs
 ├─ lib/                # one job per file
 │  ├─ state · procs · tmux · dialog · approval     build state · process list · tmux control · prompt detection · "what you're allowing" card
+│  ├─ dialog-watch · peer-links                   watching for prompts (every other tick · mismatch log) · linking messages between sessions
 │  ├─ commands · spawn · open-dir · env · launch  commands (chat · approve · new session …) · new-session args · open folder · environment check · hints matching how you started it
 │  ├─ body · uploads · respond · validate         request bodies · attachments · response shapes · input checks
 │  ├─ token · paths · perms                       secret token · paths (inside-folder checks) · file permissions

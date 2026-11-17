@@ -267,6 +267,7 @@ agent-dashboard/
 ├─ adapters/           # 도구별 차이만 여기 — claude.mjs(+ claude/ 조각) · codex.mjs · index.mjs
 ├─ lib/                # 구역별 일(파일 하나 = 한 가지 일)
 │  ├─ state · procs · tmux · dialog · approval     상태 조립 · 프로세스 목록 · tmux 조작 · 선택창 감지 · 허락할 내용 카드
+│  ├─ dialog-watch · peer-links                   선택창 감시(두 틱에 한 번 · 엇갈림 기록) · 세션 사이 메시지 잇기
 │  ├─ commands · spawn · open-dir · env · launch  명령(채팅 · 승인 · 새 세션 …) · 새 세션 인자 · 폴더 열기 · 환경 점검 · 켠 방법에 맞는 안내
 │  ├─ body · uploads · respond · validate         요청 본문 · 첨부 · 응답 모양 · 입력 검사
 │  ├─ token · paths · perms                       비밀 열쇠 · 경로(폴더 안 검사) · 파일 권한

@@ -90,6 +90,8 @@
 | 파일 | 하는 일 |
 |---|---|
 | `lib/state.mjs` | 상태 한 장 조립(`createStateBuilder` → `buildState`). 기록 + 프로세스 짝짓기 → 세션 카드 → 선택창 확인 → 승인 카드 → 세션 간 메시지 |
+| `lib/dialog-watch.mjs` | 선택창 감시(`createDialogWatch`): tmux 화면을 두 틱에 한 번(뜬 세션은 매번) 보고 「승인 필요」로, 공식 상태와 엇갈리면 두 번 연속일 때 한 번 기록(`dialogIssues`), 승인 카드 내용(`attachPendingTool`) |
+| `lib/peer-links.mjs` | 세션 사이 메시지(`createPeerLinks` → `buildLinks`): 받는 쪽 기록의 메시지를 보낸 세션에 잇기 — 이름(예전 이름 포함) · 한 번 본 PID |
 | `lib/procs.mjs` | `ps` · `lsof` · `tmux list-panes` 결과. 무거워서 6초 동안 재사용(`createProcesses`) |
 | `lib/tmux.mjs` | tmux 다루기: 창 목록(`listPanes`) · 프로세스의 창 찾기(`findPane`) · 화면 읽기(`capture`) · 입력(`sendText` · `sendKey`) · 새 세션(`newSession`) |
 
@@ -215,6 +217,8 @@
 | 만드는 함수 | 받는 것(일부) | 돌려주는 것 |
 |---|---|---|
 | `lib/state.mjs:createStateBuilder` | `adapters` · `tmux` · `processes` · `readStatus()` · `usageState(status)` · `keepCaches(listed)` | `buildState` · `projectName` · `dialogIssues` (상태 없는 `matchProcesses` · `mergeStatusline` 은 파일에서 바로 내보냄) |
+| `lib/dialog-watch.mjs:createDialogWatch` | `tmux` | `dialogPass` · `attachPendingTool` · `dialogIssues` |
+| `lib/peer-links.mjs:createPeerLinks` | `adapters` | `buildLinks` |
 | `lib/commands.mjs:createCommands` | `tmux` · `findSession(key)` · `hasState()` · `uploadDir` · `recent` · `restoreLock` · `openDir` · `onChanged()` | 명령 하나를 처리하는 함수(서버에선 `handleCommand`) |
 | `lib/procs.mjs:createProcesses` | `adapters` · `tmux` | `processes(sig)` · `panes(sig)` · `invalidate()` |
 | `lib/history-api.mjs:createHistoryApi` | `adapters` · `sessions()` · `projectName(cwd, s)` | `promptHistory` · `contextTrend` · `searchHistory` · `daySummary` · `keepCaches` |
@@ -231,9 +235,9 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
      ├─ matchProcesses                기록 ↔ 프로세스 짝짓기
      ├─ sessionsFromRecords           세션 카드(describe 로 요약, tmux 창 붙이기)
      ├─ orphanSessions                기록이 아직 없는 막 띄운 세션
-     ├─ dialogPass                    tmux 화면을 보고 선택창이면 「승인 필요」
-     ├─ attachPendingTool             승인 카드 내용(lib/approval.mjs)
-     ├─ buildLinks                    세션 사이 메시지(보라 화살표)
+     ├─ dialogPass                    tmux 화면을 보고 선택창이면 「승인 필요」(lib/dialog-watch.mjs)
+     ├─ attachPendingTool             승인 카드 내용(lib/dialog-watch.mjs → lib/approval.mjs)
+     ├─ buildLinks                    세션 사이 메시지(보라 화살표, lib/peer-links.mjs)
      └─ mergeStatusline               상태줄 다리 값(정확한 대화 창 · 한도)
  ├─ latest = 결과                    ← 명령은 이 「마지막 상태」를 기준으로 대상을 찾아요
  ├─ notifyTick · limitsRecorder.observe · saveSnapshot · recent.observe
@@ -344,6 +348,7 @@ server.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱)
 | `test/concurrent.test.mjs` | 같은 세션을 동시에 불러도 한 번 부른 결과와 같음(7절) |
 | `test/adapters.test.mjs` | 어댑터마다 필수 함수 · describe/history 결과 모양(`adapters/index.mjs` 머리 주석과 같게) |
 | `test/codex.test.mjs` · `claude-cache.test.mjs` · `claude-fields.test.mjs` | Codex 답 이어 붙이기 · 파일 교체(inode) · 합성 응답 · 기록 폴더 환경 변수 · 요청 가르기 |
+| `test/dialog-watch.test.mjs` · `peer-links.test.mjs` | 선택창 감시 · 세션 사이 메시지를 상태 조립 없이 바로(못 읽은 화면은 엇갈림 아님 · 같은 엇갈림은 한 번 · 사라진 PID 기억) |
 | `test/state.test.mjs` | 상태 조립: 기록 · 프로세스 짝짓기(`matchProcesses`), 작업 중 · 대기 · 끝남, 대화 창 크기 추정, 선택창 두 틱에 한 번 · 엇갈림 두 번 연속, 승인 카드, 세션 사이 메시지, 상태줄 덮어쓰기(`mergeStatusline`) |
 | `test/commands.test.mjs` | 명령 표: 409 · 400 · 503 문장, tmux 로 무엇을 보내는지(가짜 tmux) |
 | `test/token.test.mjs` · `perms.test.mjs` · `paths.test.mjs` | 토큰 파일 · 권한 600/700 · 폴더 안 검사 |
