@@ -20,8 +20,30 @@ export function promptText(d) {
   if (typeof c !== 'string') return null;
   const t = c.trim();
   if (!t || /^<(local-command|system-reminder|task-notification)/.test(t) || t.startsWith('This session is being continued from a previous conversation')) return null;
-  const cmd = t.match(/<command-name>(.*?)<\/command-name>[\s\S]*?<command-args>([\s\S]*?)<\/command-args>/);
-  return cmd ? `${cmd[1]} ${cmd[2]}`.trim() : t;
+  return slashCommand(t) ?? t;
+}
+
+// 슬래시 명령 줄(<command-name>/x</command-name> … <command-args>인자</command-args>)을 「/x 인자」로.
+// 예전 정규식은 줄바꿈 없는 긴 글에 태그가 여러 번 나오면 되짚기가 커져 70KB 에 14초 서버가 멈췄다 →
+// 찾는 자리(닫는 태그 · 줄바꿈)를 앞으로만 옮겨 글 길이에 비례하게. 결과는 예전 정규식과 같다(이름은 한 줄, 첫 번째로 맞는 것)
+const NAME = '<command-name>', NAME_END = '</command-name>', ARGS = '<command-args>', ARGS_END = '</command-args>';
+const NL = /[\n\r\u2028\u2029]/g; // 정규식의 「.」이 넘지 못하는 글자
+function slashCommand(t) {
+  let close = -1, nl = -1;
+  for (let a = t.indexOf(NAME); a >= 0; a = t.indexOf(NAME, a + 1)) {
+    const from = a + NAME.length;
+    if (close < from) close = t.indexOf(NAME_END, from);
+    if (close < 0) return null; // 뒤에 닫는 태그가 없으면 어느 자리에서도 없다
+    if (nl < from && nl !== Infinity) {
+      NL.lastIndex = from;
+      nl = NL.exec(t)?.index ?? Infinity;
+    }
+    if (nl < close) continue; // 이름이 줄을 넘는다 → 다음 <command-name> 에서
+    const c = t.indexOf(ARGS, close);
+    const d = c < 0 ? -1 : t.indexOf(ARGS_END, c);
+    return d < 0 ? null : `${t.slice(from, close)} ${t.slice(c + ARGS.length, d)}`.trim(); // 뒤 자리는 c · d 가 더 뒤라 마찬가지로 없다
+  }
+  return null;
 }
 
 // 새 턴의 시작: 사람이 친 요청, 또는 다른 세션이 SendMessage 로 보낸 메시지.
