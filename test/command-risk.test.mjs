@@ -51,7 +51,8 @@ test('위험 판별: 잡으면 안 되는 것 — 명령 자리가 아닌 글자
 });
 
 // 예전 정규식은 「git reset」 2만 번(120KB)에 1.2초, 「curl |」 2만 번에 2.6초 — 그동안 서버가 멈췄다(점검 B7).
-// 절대 시간(300ms)은 CI 기계에서 330ms 로 흔들려 실패했다 → 「길이가 4배면 시간도 4배쯤」을 본다(되짚기는 16배).
+// 절대 시간(300ms)은 CI 기계에서 330ms 로 흔들려 실패했다 → 길이를 8배로 늘려 시간이 24배 안인지 본다.
+// 줄 비례여도 캐시 · GC 탓에 8~14배까지 나오고(4배 길이 · 8배 상한은 CI 에서 8.5배로 실패), 되짚기는 64배라 사이가 넓다.
 // 비율이라 기계 속도와 상관없다. 벽시계 대신 이 프로세스가 쓴 CPU 시간을 잰다 — 테스트 파일이 함께 돌아 CPU 를 나눠 쓰면
 // 긴 쪽만 더 자주 밀려나 벽시계 비율이 8배를 넘었다. 작은 것 · 큰 것을 번갈아 여러 번 재 가장 작은 값끼리 비교한다
 const SHAPES = {
@@ -67,10 +68,10 @@ const once = (cmd) => {
   for (let k = 0; k < 3; k++) commandRisks(cmd); // 1ms 남짓한 값은 작은 흔들림에도 비율이 크게 바뀐다
   return (cpuMs() - t0) / 3;
 };
-test('처리 시간: 긴 명령 · 되짚기를 노린 모양도 글 길이에 비례(4배 길이 → 8배 미만), 너무 길면 앞부분만 보고 이유를 붙인다', () => {
-  const N = 5_000; // 4배(최대 18만 자)도 RISK_TEXT_MAX 안 — 잘리면 비율이 의미 없다
+test('처리 시간: 긴 명령 · 되짚기를 노린 모양도 글 길이에 비례(8배 길이 → 24배 미만), 너무 길면 앞부분만 보고 이유를 붙인다', () => {
+  const N = 2_500; // 8배(최대 18만 자)도 RISK_TEXT_MAX 안 — 잘리면 비율이 의미 없다
   for (const [name, make] of Object.entries(SHAPES)) {
-    const small = make(N), big = make(4 * N);
+    const small = make(N), big = make(8 * N);
     assert.ok(big.length <= RISK_TEXT_MAX, name);
     once(small); // 데우기(JIT)
     let a = Infinity, b = Infinity;
@@ -80,7 +81,7 @@ test('처리 시간: 긴 명령 · 되짚기를 노린 모양도 글 길이에 �
       if (b > 2000) break; // 되짚기로 몇 초씩 걸리면 더 잴 것 없이 실패
     }
     assert.ok(b < 2000, `${name}: ${Math.round(b)}ms — 너무 느림`);
-    assert.ok(b / Math.max(a, 0.2) < 8, `${name}: ${a.toFixed(1)}ms → ${b.toFixed(1)}ms (${(b / a).toFixed(1)}배)`);
+    assert.ok(b / Math.max(a, 0.2) < 24, `${name}: ${a.toFixed(1)}ms → ${b.toFixed(1)}ms (${(b / a).toFixed(1)}배)`);
   }
   assert.deepEqual(commandRisks('x'.repeat(RISK_TEXT_MAX + 1)), ['명령이 너무 길어 끝까지 확인하지 못했어요']);
 });
