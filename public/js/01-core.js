@@ -81,17 +81,17 @@ let selected = null;
 let promptLog = []; // 기록 첫 묶음(최신이 위, 검색과 상관없이) — 지금 탭의 마지막 요청용
 let historyTotal = 0; // 기록 전체 개수(기록 탭 숫자)
 let lastSelected = null;
-let kbKey = null; // 키보드(j/k)로 고른 세션 — 패널이 닫혀 있을 때 목록에 테두리로 표시(19-keys.js)
+let kbKey = null; // 키보드(j/k)로 고른 세션 — 패널이 닫혀 있을 때 목록에 테두리로 표시(20-keys.js)
 // 여러 파일이 같이 쓰는 화면 상태는 여기(맨 앞)에 둔다. let · const 는 선언한 줄이 실행되기 전에 쓰면 ReferenceError 라,
 // 뒤 번호 파일에 두면 앞 파일이 불러오는 도중에 쓰게 바뀌는 순간 화면이 멈춘다(docs/CONVENTIONS.md 「화면 번호 순서」)
 const view = { x: 0, y: 0, k: 1, init: false }; // 조직도 이동 · 확대(03-graph.js)
-let drawerTab = 'now'; // 패널 탭: 지금(현재 답변) / 기록(07-now.js 의 setTab)
-const openFiles = new Set(); // 1초마다 다시 그려도 펼친 파일은 펼친 채로(07-now.js)
+let drawerTab = 'now'; // 패널 탭: 지금(현재 답변) / 기록(08-now.js 의 setTab)
+const openFiles = new Set(); // 1초마다 다시 그려도 펼친 파일은 펼친 채로(08-now.js)
 const fullCmds = new Set(); // "전체 보기"로 펼친 명령
 let closedCmds = false; // 실행한 명령은 기본 펼침 — 사용자가 접으면 그 세션 동안 접힌 채로
-let sentAt = null; // 방금 보낸 메시지 — 세션이 작업을 시작하기 전까지 "전달됨" 표시(07-now.js 의 renderBusy)
-let canSend = false; // 지금 세션에 보낼 수 있는지(tmux·종료·승인 대기 여부, 08-attach.js 의 updateSendState)
-let envData = null; // 마지막 환경 점검 결과(09-env.js) — 목록 · 패널이 「없는 도구」 안내에 쓴다
+let sentAt = null; // 방금 보낸 메시지 — 세션이 작업을 시작하기 전까지 "전달됨" 표시(08-now.js 의 renderBusy)
+let canSend = false; // 지금 세션에 보낼 수 있는지(tmux·종료·승인 대기 여부, 09-attach.js 의 updateSendState)
+let envData = null; // 마지막 환경 점검 결과(10-env.js) — 목록 · 패널이 「없는 도구」 안내에 쓴다
 
 // 바뀐 곳만 다시 그리기: 요소마다 마지막으로 넣은 HTML 을 변수(WeakMap)에 기억해 같으면 건너뛴다.
 // 예전엔 data-src 속성에 HTML 을 통째로 넣어 비교해, 답변 · 조직도 SVG 만큼 같은 글자가 DOM 에 한 벌 더 있었다(데모에서 약 17KB)

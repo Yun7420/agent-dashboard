@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { loadFront } from './_helpers/vm.mjs';
 
 // 브라우저 파일이지만 판정 함수는 화면에 닿지 않는다 → 불러올 때 필요한 document.addEventListener 만 흉내 내고 node:vm 으로 시험
-const { ignoreKey, nextKey, armTwice, canApprove, needsTwice } = loadFront(['19-keys.js'], { document: { addEventListener() {} } }).run('({ ignoreKey, nextKey, armTwice, canApprove, needsTwice })');
+const { ignoreKey, nextKey, armTwice, canApprove, needsTwice } = loadFront(['20-keys.js'], { document: { addEventListener() {} } }).run('({ ignoreKey, nextKey, armTwice, canApprove, needsTwice })');
 const key = (k, extra = {}) => ({ key: k, keyCode: 0, ...extra });
 const body = { tagName: 'BODY' };
 

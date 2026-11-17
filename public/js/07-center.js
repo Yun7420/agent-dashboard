@@ -1,0 +1,153 @@
+// 가운데 칸: 탭 「구조(조직도) / 대화 창(사용률 큰 그래프)」 — 처음엔 「대화 창」, 고른 탭은 agent-deck 의 centerView 에
+// 큰 그래프는 지금 탭이 1초마다 다시 그릴 때(08-now.js 의 renderNow) 같이 불린다. 바뀐 게 없으면 그대로 둔다
+const centerTabs = [...document.querySelectorAll('.center-tabs .tab')];
+function applyCenterView() {
+  const ctx = pref.centerView !== 'org';
+  document.body.classList.toggle('cv-ctx', ctx);
+  for (const t of centerTabs) { t.classList.toggle('on', (t.dataset.view === 'ctx') === ctx); t.setAttribute('aria-selected', String((t.dataset.view === 'ctx') === ctx)); }
+}
+applyCenterView();
+for (const b of centerTabs) b.addEventListener('click', () => {
+  pref.centerView = b.dataset.view;
+  savePref(); applyCenterView();
+  if (b.dataset.view === 'ctx') { big.sig = ''; drawBig(); } else { view.init = false; renderGraph(); } // 숨어 있던 쪽을 지금 크기에 맞춰 다시
+});
+
+// 가운데 칸 위의 것(탭 · 큰 그래프)은 오른쪽 패널 왼쪽까지만 — 패널 폭을 --dw 로(좁은 창은 패널이 화면을 덮으니 0)
+const dwSync = () => $('main').style.setProperty('--dw', `${$('#drawer').classList.contains('open') && innerWidth > 860 ? $('#drawer').getBoundingClientRect().width : 0}px`);
+new ResizeObserver(dwSync).observe($('#drawer'));
+new MutationObserver(dwSync).observe($('#drawer'), { attributes: true, attributeFilter: ['class'] });
+
+// ---------- 대화 창 사용률 큰 그래프 ----------
+const big = { key: null, sig: '', cmpKey: '', cmp: null };
+const BIG_N = 160; // 세션이 바뀔 때 선이 부드럽게 옮겨 가도록(CSS transition: d) 늘 같은 개수의 점으로 다시 뽑는다
+const cpHm = (t) => new Date(t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+function resample(pts, win, x, y) {
+  const t0 = pts[0][0], t1 = pts.at(-1)[0];
+  const out = [];
+  for (let i = 0, j = 0; i < BIG_N; i++) {
+    const t = t0 + ((t1 - t0) * i) / (BIG_N - 1);
+    while (j < pts.length - 1 && pts[j + 1][0] <= t) j++;
+    out.push(`${x(t).toFixed(1)},${y(pts[j][1] / win).toFixed(1)}`);
+  }
+  return out;
+}
+async function loadCmp(key) {
+  big.cmpKey = key;
+  big.cmp = key ? await apiJson(`/api/trend?key=${encodeURIComponent(key)}`).catch(() => null) : null;
+  big.sig = '';
+  drawBig();
+}
+$('#cp-cmp').addEventListener('change', (e) => loadCmp(e.target.value));
+
+function drawBig() {
+  if (!state) return; // 첫 상태가 오기 전(크기 감시가 먼저 부를 때)
+  const s = state.sessions.find((x) => x.key === selected);
+  const box = $('#cp-chart');
+  $('#cp-who').textContent = s ? s.title || s.key : '세션을 고르세요';
+  // 겹쳐 볼 세션 목록(지금 세션 빼고 끝나지 않은 Claude 세션만)
+  const opts = state.sessions.filter((x) => x.key !== selected && x.tool === 'claude' && x.status !== 'ended');
+  const sel = $('#cp-cmp');
+  const want = ['<option value="">없음</option>', ...opts.map((x) => `<option value="${esc(x.key)}">${esc(x.title || x.key)}</option>`)].join('');
+  if (sel.dataset.sig !== want) { sel.innerHTML = want; sel.dataset.sig = want; sel.value = opts.some((x) => x.key === big.cmpKey) ? big.cmpKey : ''; }
+  const d = trend.key === s?.key ? trend.data : null;
+  if (s && !d && big.key) return; // 다른 세션의 기록을 받는 중 — 앞 선을 두었다가 새 선으로 옮겨 간다
+  const win = s?.context?.window;
+  if (!s || !d?.supported || !win || d.points.length < 2) {
+    const note = !s ? '왼쪽에서 세션을 고르면 대화 창이 얼마나 찼는지 보여 줘요' : d && !d.supported ? '대화 창 추이는 Claude Code 기록 기준이에요' : d ? '응답이 두 번 넘게 쌓이면 그려요' : '불러오는 중…';
+    if (big.sig !== note) { box.innerHTML = `<div class="empty-note">${note}</div>`; $('#cp-now').innerHTML = ''; }
+    Object.assign(big, { key: null, sig: note });
+    return;
+  }
+  const r = box.getBoundingClientRect();
+  const W = Math.max(200, r.width), H = Math.max(80, r.height);
+  const pts = d.points;
+  const cmpOn = Boolean(big.cmp?.supported && big.cmp.points.length > 1);
+  const sig = [s.key, pts.length, pts.at(-1).join(), win, W, H, cmpOn && big.cmpKey, cmpOn && big.cmp.points.length].join('|');
+  if (sig === big.sig) return; // 1초마다 불려도 바뀐 게 없으면 그대로
+  const L = 40, R = 14, T = 12, B = 22, t0 = pts[0][0], t1 = pts.at(-1)[0] || t0 + 1;
+  // 겹쳐 볼 땐 두 세션의 시간대가 달라 응답 순서(0 → 끝)로 맞춘다
+  const x = cmpOn ? (i) => L + (i / Math.max(1, pts.length - 1)) * (W - L - R) : (t) => L + ((t - t0) / Math.max(1, t1 - t0)) * (W - L - R);
+  const y = (f) => T + (1 - Math.min(1.05, f)) * (H - T - B);
+  const P = cmpOn ? pts.map((p, i) => [i, p[1]]) : pts;
+  const line = resample(P, win, x, y);
+  const area = `M${line[0].split(',')[0]},${y(0)} L${line.join(' L')} L${line.at(-1).split(',')[0]},${y(0)} Z`;
+  const grid = [0, 0.25, 0.5, 1].map((f) => `<line class="g" x1="${L}" x2="${W - R}" y1="${y(f)}" y2="${y(f)}"/><text class="gl" x="${L - 8}" y="${y(f) + 4}" text-anchor="end">${f * 100}%</text>`).join('');
+  const xl = cmpOn ? `<text class="gl" x="${L}" y="${H - 4}">첫 응답</text><text class="gl" x="${W - R}" y="${H - 4}" text-anchor="end">응답 순서로 맞춤 →</text>`
+    : [0, 0.5, 1].map((f) => `<text class="gl" x="${L + f * (W - L - R)}" y="${H - 4}" text-anchor="${['start', 'middle', 'end'][f * 2]}">${cpHm(t0 + f * (t1 - t0))}</text>`).join('');
+  // 앞 점보다 절반 넘게 줄어든 곳 = 자동 요약(06-history.js 의 작은 그래프와 같은 기준). 표시는 점 아래, 시각 글자에 닿으면 위로
+  const drops = pts.flatMap((p, i) => (i && p[1] < pts[i - 1][1] * 0.5 ? [i] : []));
+  const dropsSvg = drops.map((i) => { const px = x(P[i][0]), py = y(pts[i][1] / win), ly = py + 34 > H - B ? py - 32 : py + 10; return `<g class="drop fade" tabindex="0" role="button" aria-label="자동 요약됨 ${cpHm(pts[i][0])} — 눌러서 설명 보기" data-i="${i}"><line class="l80 dl" x1="${px}" x2="${px}" y1="${y(pts[i - 1][1] / win)}" y2="${py}"/><circle cx="${px}" cy="${py}" r="5"/><rect x="${px - 38}" y="${ly}" width="76" height="22" rx="11"/><text x="${px}" y="${ly + 15}" text-anchor="middle">자동 요약됨</text></g>`; }).join('');
+  let cmpPath = '';
+  if (cmpOn) {
+    const cw = state.sessions.find((x2) => x2.key === big.cmpKey)?.context?.window || win;
+    const cp = big.cmp.points.map((p, i) => [i, p[1]]);
+    const cx = (i) => L + (i / Math.max(1, cp.length - 1)) * (W - L - R);
+    cmpPath = `<path class="cmp" d="M${resample(cp, cw, cx, y).join(' L')}"/>`;
+  }
+  if (!box.querySelector('svg') || big.W !== W || big.H !== H) {
+    box.innerHTML = `<svg role="img" aria-label="대화 창 사용률 추이"><defs><linearGradient id="cp-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="stop-a"/><stop offset="1" class="stop-b"/></linearGradient></defs>
+      <g class="grid"></g><line class="l80" x1="${L}" x2="${W - R}" y1="${y(0.8)}" y2="${y(0.8)}"/><text class="l80t" x="${W - R}" y="${y(0.8) - 6}" text-anchor="end">80% · 여기쯤 차면 자동 요약</text>
+      <path class="area"/><g class="cmpg"></g><path class="line"/><g class="xl"></g><g class="drops"></g>
+      <line class="cross" y1="${T}" y2="${H - B}" visibility="hidden"/><circle class="hdot" r="4.5" visibility="hidden"/></svg>`;
+    // 처음 그릴 땐 바닥에서 올라오게, 세션을 바꾸면 앞 선에서 새 선으로 옮겨 간다(CSS transition: d)
+    const flat = `M${line.map((p) => `${p.split(',')[0]},${y(0)}`).join(' L')}`;
+    box.querySelector('.line').style.d = `path('${big.prevLine || flat}')`;
+    box.querySelector('.area').style.d = `path('${big.prevArea || `${flat} Z`}')`;
+    box.querySelector('.line').getBoundingClientRect(); // 시작 모양을 먼저 그려 둬야 바뀜이 움직임으로 보인다
+  }
+  const svg = box.querySelector('svg');
+  svg.querySelector('.grid').innerHTML = grid;
+  svg.querySelector('.line').style.d = `path('M${line.join(' L')}')`;
+  svg.querySelector('.area').style.d = `path('${area}')`;
+  svg.querySelector('.cmpg').innerHTML = cmpPath;
+  svg.querySelector('.drops').innerHTML = dropsSvg;
+  svg.querySelector('.xl').innerHTML = xl;
+  Object.assign(big, { key: s.key, sig, pts, P, win, x, y, W, H, prevLine: `M${line.join(' L')}`, prevArea: area });
+  const last = pts.at(-1)[1];
+  const cs = cmpOn && state.sessions.find((x2) => x2.key === big.cmpKey);
+  $('#cp-now').innerHTML = `<span><b>${Math.round((last / win) * 100)}%</b>지금 · ${fmtTok(last)} / ${fmtTok(win)} 토큰</span><span><b>${pts.length}</b>응답</span><span><b>${drops.length}</b>자동 요약</span>${cmpOn ? `<span class="key"><i></i>${esc(s.title || '')}</span><span class="key"><i class="cmp"></i>${esc(cs?.title || '')}</span>` : ''}`;
+}
+
+// 마우스 올림: 가장 가까운 응답의 시각 · % · 토큰 · 응답 번호
+$('#cp-chart').addEventListener('pointermove', (e) => {
+  const svg = $('#cp-chart svg');
+  if (!big.key || !svg || e.target.closest('.drop')) return;
+  const r = svg.getBoundingClientRect(), mx = e.clientX - r.left;
+  let best = 0, bd = Infinity;
+  big.P.forEach((p, i) => { const dd = Math.abs(big.x(p[0]) - mx); if (dd < bd) { bd = dd; best = i; } });
+  const [t, v] = big.pts[best], px = big.x(big.P[best][0]), py = big.y(v / big.win);
+  const cross = svg.querySelector('.cross'), dot = svg.querySelector('.hdot');
+  cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('visibility', 'visible');
+  dot.setAttribute('cx', px); dot.setAttribute('cy', py); dot.setAttribute('visibility', 'visible');
+  const tip = $('#cp-tip');
+  tip.innerHTML = `<b>${cpHm(t)}</b> · 응답 #${best + 1}<br><b>${Math.round((v / big.win) * 100)}%</b> <small>${fmtTok(v)} / ${fmtTok(big.win)} 토큰</small>`;
+  tip.hidden = false;
+  const pr = $('#ctx-panel').getBoundingClientRect();
+  tip.style.left = `${Math.min(r.left - pr.left + px + 12, pr.width - tip.offsetWidth - 8)}px`;
+  tip.style.top = `${Math.max(4, r.top - pr.top + py - 52)}px`;
+});
+$('#cp-chart').addEventListener('pointerleave', () => {
+  $('#cp-tip').hidden = true;
+  for (const el of document.querySelectorAll('#cp-chart .cross, #cp-chart .hdot')) el.setAttribute('visibility', 'hidden');
+});
+
+// 「자동 요약됨」을 누르면(또는 Enter) 무슨 일이었는지 설명
+function explainDrop(g) {
+  const i = Number(g.dataset.i), [t, v] = big.pts[i], before = big.pts[i - 1][1];
+  const pop = $('#cp-pop');
+  pop.innerHTML = `<h4>${cpHm(t)} 자동 요약됨 · ${Math.round((before / big.win) * 100)}% → ${Math.round((v / big.win) * 100)}%</h4>
+    <p>대화 창은 Claude 가 한 번에 기억하는 대화의 양이에요. 거의 차면(80% 근처) Claude Code 가 앞쪽 대화를 짧은 요약으로 바꿔 자리를 비워요.</p>
+    <p>그 뒤로는 요약에 없는 앞쪽의 자세한 내용(정확한 파일 내용 · 세부 지시)을 Claude 가 잊었을 수 있어요. 중요한 조건은 다시 알려 주면 좋아요.</p>
+    <button type="button" class="ghost" id="cp-pop-close">닫기</button>`;
+  const pr = $('#ctx-panel').getBoundingClientRect(), gr = g.getBoundingClientRect();
+  pop.style.left = `${Math.max(8, Math.min(gr.left - pr.left - 140, pr.width - 330))}px`;
+  pop.style.bottom = `${pr.bottom - gr.top + 8}px`;
+  pop.classList.add('show');
+  $('#cp-pop-close').focus();
+}
+$('#cp-chart').addEventListener('click', (e) => { const g = e.target.closest('.drop'); if (g) { e.stopPropagation(); explainDrop(g); } });
+$('#cp-chart').addEventListener('keydown', (e) => { const g = e.target.closest('.drop'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); explainDrop(g); } });
+$('#cp-pop').addEventListener('click', (e) => { if (e.target.id === 'cp-pop-close') $('#cp-pop').classList.remove('show'); });
+document.addEventListener('click', (e) => { if (!e.target.closest('#cp-pop')) $('#cp-pop').classList.remove('show'); });
+new ResizeObserver(() => { big.sig = ''; drawBig(); }).observe($('#cp-chart'));

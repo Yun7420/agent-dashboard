@@ -15,7 +15,8 @@
 <link rel="stylesheet" href="/css/08-log.css">
 <link rel="stylesheet" href="/css/09-search.css">
 <link rel="stylesheet" href="/css/10-day.css">
-<link rel="stylesheet" href="/css/11-narrow.css">
+<link rel="stylesheet" href="/css/11-center.css">
+<link rel="stylesheet" href="/css/12-narrow.css">
 </head>
 <body>
 <header>
@@ -85,6 +86,21 @@
   </svg>
   <div class="hint">드래그로 이동 · 휠로 확대 · 노드 클릭 시 프롬프트 기록 · <span class="peer-t">파란 화살표</span> = 세션끼리 보낸 메시지</div>
   <div class="empty" id="empty" hidden>떠 있는 세션이 없어요</div>
+  <div class="center-tabs" role="tablist" aria-label="가운데 보기">
+    <button type="button" class="tab" data-view="org" role="tab" aria-selected="false">구조</button>
+    <button type="button" class="tab on" data-view="ctx" role="tab" aria-selected="true">대화 창</button>
+  </div>
+  <section id="ctx-panel" aria-labelledby="ctx-title">
+    <div class="cp-head">
+      <h3 id="ctx-title">대화 창 사용률 <span>— Claude 가 기억하는 대화 양</span></h3>
+      <span class="grow"></span>
+      <span class="pill"><span class="dot-s live"></span><span id="cp-who">세션을 고르세요</span></span>
+    </div>
+    <div class="cp-row"><div class="cp-now" id="cp-now"></div><label class="cp-cmp">겹쳐 보기 <select id="cp-cmp"><option value="">없음</option></select></label></div>
+    <div class="cp-chart" id="cp-chart"><div class="empty-note">왼쪽에서 세션을 고르면 대화 창이 얼마나 찼는지 보여 줘요</div></div>
+    <div class="cp-tip" id="cp-tip" hidden></div>
+    <div class="cp-pop menu-pop" id="cp-pop" role="dialog" aria-label="자동 요약 설명"></div>
+  </section>
   <section id="drawer">
     <div class="resize" id="resize" title="끌어서 폭 조절 · 더블클릭하면 기본 폭"></div>
     <div class="head">
@@ -292,18 +308,19 @@
 <script src="/js/04-list.js"></script>
 <script src="/js/05-approval.js"></script>
 <script src="/js/06-history.js"></script>
-<script src="/js/07-now.js"></script>
-<script src="/js/08-attach.js"></script>
-<script src="/js/09-env.js"></script>
-<script src="/js/10-usage.js"></script>
-<script src="/js/11-panel.js"></script>
-<script src="/js/12-controls.js"></script>
-<script src="/js/13-collapse.js"></script>
-<script src="/js/14-notify.js"></script>
-<script src="/js/15-restore.js"></script>
-<script src="/js/16-live.js"></script>
-<script src="/js/17-search.js"></script>
-<script src="/js/18-day.js"></script>
-<script src="/js/19-keys.js"></script>
+<script src="/js/07-center.js"></script>
+<script src="/js/08-now.js"></script>
+<script src="/js/09-attach.js"></script>
+<script src="/js/10-env.js"></script>
+<script src="/js/11-usage.js"></script>
+<script src="/js/12-panel.js"></script>
+<script src="/js/13-controls.js"></script>
+<script src="/js/14-collapse.js"></script>
+<script src="/js/15-notify.js"></script>
+<script src="/js/16-restore.js"></script>
+<script src="/js/17-live.js"></script>
+<script src="/js/18-search.js"></script>
+<script src="/js/19-day.js"></script>
+<script src="/js/20-keys.js"></script>
 </body>
 </html>

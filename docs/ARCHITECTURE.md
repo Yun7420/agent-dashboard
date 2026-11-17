@@ -32,7 +32,7 @@
 
 ```
  ┌─────────────── 브라우저 (public/) ───────────────┐
- │ index.html + css/00~11 + js/00-md.js ~ 19-keys.js │
+ │ index.html + css/00~11 + js/00-md.js ~ 20-keys.js │
  └───────┬──────────────────────────────▲───────────┘
          │ ① fetch /api/… (쿠키 + 머리글) │ ② SSE /events (2초마다 바뀐 상태)
          ▼                              │
@@ -69,7 +69,7 @@
 | 3 | `adapters/index.mjs` → `adapters/codex.mjs` | 어댑터가 어떤 모양인지. codex 는 115줄이라 claude(입구 291줄 + `adapters/claude/` 조각 넷)보다 먼저. 둘 다 「줄 하나가 무슨 일인가」만 해석하고, 증분 읽기 · 턴 묶기는 `lib/history-core.mjs` 가 같이 해요 |
 | 4 | `lib/state.mjs` | 2초마다 상태 한 장을 만드는 곳. 머리 주석에 순서가 적혀 있어요 |
 | 5 | `lib/commands.mjs` | 「이름 → 처리 함수」 표. 승인 · 채팅이 여기서 tmux 로 가요 |
-| 6 | `public/js/01-core.js` → `16-live.js` → `12-controls.js` | 화면 쪽: 서버 요청(`api`) → 실시간 연결(`connect`) → 다시 그리기(`render`) |
+| 6 | `public/js/01-core.js` → `17-live.js` → `13-controls.js` | 화면 쪽: 서버 요청(`api`) → 실시간 연결(`connect`) → 다시 그리기(`render`) |
 | 7 | `test/live-server.test.mjs` | 가짜 tmux 로 서버를 통째로 시험하는 법. 위에서 읽은 것이 한꺼번에 움직여요 |
 
 ### 서버 입구
@@ -179,7 +179,7 @@
 
 ### public — 화면
 
-`index.html` 이 `js/` 파일을 **번호 순서대로** 불러요. 모두 같은 전역(한 페이지 안에서 함께 쓰는 변수 공간)을 써서, **뒤 파일이 앞 파일의 함수를 불러요.** 예를 들어 `16-live.js` 의 `connect` 는 `02-activity.js` 의 `logEvents`, `12-controls.js` 의 `render` 를 불러요. 여러 파일이 같이 쓰는 상태(`drawerTab` · `canSend` · `envData` …)와 도우미(`fmtTok` · `modelName` …)는 맨 앞 `01-core.js` 에 있어요.
+`index.html` 이 `js/` 파일을 **번호 순서대로** 불러요. 모두 같은 전역(한 페이지 안에서 함께 쓰는 변수 공간)을 써서, **뒤 파일이 앞 파일의 함수를 불러요.** 예를 들어 `17-live.js` 의 `connect` 는 `02-activity.js` 의 `logEvents`, `13-controls.js` 의 `render` 를 불러요. 여러 파일이 같이 쓰는 상태(`drawerTab` · `canSend` · `envData` …)와 도우미(`fmtTok` · `modelName` …)는 맨 앞 `01-core.js` 에 있어요.
 
 | 파일 | 하는 일 |
 |---|---|
@@ -190,21 +190,22 @@
 | `04-list.js` | 왼쪽 세션 목록(`renderList`) · 「N초 전」만 따로 갱신(`updateAgo`) |
 | `05-approval.js` | 승인 창: 「허락할 내용」 카드(`renderApproveCard`) · 터미널 화면과 선택지 단추(`renderApproval`) · 선택지 읽기(`approvalChoices`, 순수 함수) |
 | `06-history.js` | 오른쪽 서랍: 세션 고르기(`select`) · 기록 읽기(`loadHistory`) · 대화 창 추이(`renderTrend`) |
-| `07-now.js` | 지금 탭(`renderNow`) · 탭 바꾸기(`setTab`) · 바꾼 파일 diff · 실행한 명령(`renderChanges`) · 진행 표시(`renderBusy`) |
-| `08-attach.js` | 입력 칸: 세션별 임시 글 · 첨부(`useDraft` · `pruneDrafts`) · 첨부 · 보내기(`addFiles` · `sendMsg`) · 🎤 음성 입력 |
-| `09-env.js` | 환경 점검 화면(`renderEnv`) · 없는 도구면 단추 끄기(`applyTools`) |
-| `10-usage.js` | 머리의 계정 한도(`renderUsage`) · 한도 추이 그래프(`renderLimits`) |
-| `11-panel.js` | 패널 머리 메뉴 · 폭 · 폴더 열기 메뉴(`openDirMenu`) |
-| `12-controls.js` | 전체 다시 그리기(`render`) |
-| `13-collapse.js` | 활동 로그 · 왼쪽 목록 접기(`applyFold` · `applyAsideFold`) |
-| `14-notify.js` | 알림 판단 · 설정(`notifyChanges` · `saveNotifyCfg`) |
-| `15-restore.js` | 재시동 배너(`renderRestore`) · 복구 창(`loadRecent` · `renderRecent`) |
-| `16-live.js` | 서버와 실시간 연결(`connect`) |
-| `17-search.js` | 전체 기록 검색(`openSearch` · `runSearch`) |
-| `18-day.js` | 오늘 한 일(`loadDay` · `dayMarkdown`) |
-| `19-keys.js` | 키보드 단축키(`approveKey` · `armTwice` · `nextKey`) |
+| `07-center.js` | 가운데 탭 「구조 / 대화 창」(`applyCenterView`, 고른 탭은 `centerView`) · 대화 창 사용률 큰 그래프(`drawBig` — 지금 탭이 1초마다 부름, 바뀐 게 없으면 그대로) |
+| `08-now.js` | 지금 탭(`renderNow`) · 탭 바꾸기(`setTab`) · 바꾼 파일 diff · 실행한 명령(`renderChanges`) · 진행 표시(`renderBusy`) |
+| `09-attach.js` | 입력 칸: 세션별 임시 글 · 첨부(`useDraft` · `pruneDrafts`) · 첨부 · 보내기(`addFiles` · `sendMsg`) · 🎤 음성 입력 |
+| `10-env.js` | 환경 점검 화면(`renderEnv`) · 없는 도구면 단추 끄기(`applyTools`) |
+| `11-usage.js` | 머리의 계정 한도(`renderUsage`) · 한도 추이 그래프(`renderLimits`) |
+| `12-panel.js` | 패널 머리 메뉴 · 폭 · 폴더 열기 메뉴(`openDirMenu`) |
+| `13-controls.js` | 전체 다시 그리기(`render`) |
+| `14-collapse.js` | 활동 로그 · 왼쪽 목록 접기(`applyFold` · `applyAsideFold`) |
+| `15-notify.js` | 알림 판단 · 설정(`notifyChanges` · `saveNotifyCfg`) |
+| `16-restore.js` | 재시동 배너(`renderRestore`) · 복구 창(`loadRecent` · `renderRecent`) |
+| `17-live.js` | 서버와 실시간 연결(`connect`) |
+| `18-search.js` | 전체 기록 검색(`openSearch` · `runSearch`) |
+| `19-day.js` | 오늘 한 일(`loadDay` · `dayMarkdown`) |
+| `20-keys.js` | 키보드 단축키(`approveKey` · `armTwice` · `nextKey`) |
 
-모양(`css/`)도 `index.html` 이 **번호 순서대로** 불러요(`<link>`). 뒤 파일이 앞 파일을 덮을 수 있어서, 좁은 창 · 동작 줄이기(`@media`)는 맨 뒤 `11-narrow.css` 하나에만 둬요.
+모양(`css/`)도 `index.html` 이 **번호 순서대로** 불러요(`<link>`). 뒤 파일이 앞 파일을 덮을 수 있어서, 좁은 창 · 동작 줄이기(`@media`)는 맨 뒤 `12-narrow.css` 하나에만 둬요.
 
 | 파일 | 모양 |
 |---|---|
@@ -216,7 +217,8 @@
 | `05-approval.css` | 승인 창 · 허락할 내용 카드 |
 | `06-dialog.css` | 대화상자 · 토스트 · 복구 창 · 로그인 필요 안내 |
 | `07-onboarding.css` · `08-log.css` · `09-search.css` · `10-day.css` | 첫 실행 안내 · 활동 로그 · 전체 기록 검색 · 오늘 한 일 |
-| `11-narrow.css` | 좁은 창 · 휴대폰 · 동작 줄이기(`@media`) — 모든 구역의 덮어쓰기 |
+| `11-center.css` | 가운데 탭 · 대화 창 큰 그래프 |
+| `12-narrow.css` | 좁은 창 · 휴대폰 · 동작 줄이기(`@media`) — 모든 구역의 덮어쓰기 |
 
 ### test
 
@@ -275,18 +277,18 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 ### 화면 쪽 흐름
 
 ```
-16-live.js:connect  — EventSource('/events?token=…')
+17-live.js:connect  — EventSource('/events?token=…')
  ├─ onmessage(새 상태)
- │   ├─ 14-notify.js:notifyChanges    (알림 판단 · 탭 제목 숫자)
+ │   ├─ 15-notify.js:notifyChanges    (알림 판단 · 탭 제목 숫자)
  │   ├─ 02-activity.js:logEvents       (활동 로그 — 상태 변화)
  │   ├─ 02-activity.js:logLinks        (활동 로그 — 세션 사이 메시지)
  │   ├─ state = 새 상태
- │   ├─ 08-attach.js:pruneDrafts       (끝난 세션의 임시 글 · 첨부 정리)
+ │   ├─ 09-attach.js:pruneDrafts       (끝난 세션의 임시 글 · 첨부 정리)
  │   ├─ 01-core.js:prunePrefs          (오래 못 본 세션 열쇠 정리)
- │   ├─ 15-restore.js:renderRestore    (재시동 배너)
- │   ├─ 09-env.js:finishBoot           (처음 한 번: 연동 중 화면 닫기 · 환경 점검)
+ │   ├─ 16-restore.js:renderRestore    (재시동 배너)
+ │   ├─ 10-env.js:finishBoot           (처음 한 번: 연동 중 화면 닫기 · 환경 점검)
  │   ├─ 「갱신 시각」 글자
- │   ├─ 12-controls.js:render          (목록 · 조직도 · 패널 다시 그리기 — 바뀐 곳만)
+ │   ├─ 13-controls.js:render          (목록 · 조직도 · 패널 다시 그리기 — 바뀐 곳만)
  │   └─ 06-history.js:select           (막 띄운 세션이 나타났거나, 고른 세션에 새 요청이 오면)
  └─ onerror                            (서버가 꺼짐 → 「재연결 중…」, 멈췄으면 /api/perf 로 403 인지 확인)
 ```
@@ -312,7 +314,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
    - (미리보기가 붙은 질문 창은 숫자를 받지 않아서, `lib/dialog.mjs:parseOptions` 로 커서 위치를 읽고 화살표 + Enter 로 보내요)
 8. **응답** — `[200, 'ok']` → `sendText`. 성공이면 `processes.invalidate()` 와 `lastJson = ''` 로 다음 틱에 꼭 다시 보내게 해요.
 9. **다음 틱** — Claude Code 가 숫자를 받아 진행하면 기록 파일에 새 줄이 생기고, 화면의 선택창도 사라져요. `buildState` 가 이걸 보고 상태를 `working` 으로 바꿔 SSE 로 보내요.
-10. **화면 갱신** — `16-live.js:connect` → `render` → 승인 카드가 사라지고 「작업 중」으로 바뀌어요.
+10. **화면 갱신** — `17-live.js:connect` → `render` → 승인 카드가 사라지고 「작업 중」으로 바뀌어요.
 
 ### 예 ② 세션 기록 파일에 새 줄이 생긴다
 
@@ -475,13 +477,13 @@ GitHub Actions(`.github/workflows/test.yml`)가 push · PR 마다 Ubuntu · macO
 화면 js 는 번호 순서대로 불러오고 「뒤 파일이 앞 파일 것을 쓴다」가 규칙이에요([코드 규칙](CONVENTIONS.md) ④).
 
 - **let · const 는 예외 없이 0곳**이에요. let · const 는 정의한 줄이 실행되기 전에 쓰면 ReferenceError(TDZ)라서, 여러 파일이 같이 쓰는 상태는 `01-core.js` 에 모았어요(2026-11-16, 28곳 → 11곳). `07-changes.js` 를 승인(05) · 지금 탭(07) · 입력(08)으로 나누며 8곳이 됐어요.
-- 남은 8곳은 모두 **서로 부르는 function** 이에요. 오른쪽 서랍(06 고르기 · 07 지금 탭 · 08 입력 · 11 기록 패널)과 목록(04)이 고리처럼 서로 불러서, 번호를 어떻게 바꿔도 한쪽은 앞→뒤가 돼요. function 은 끌어올려져(hoisting) 불러오기가 끝난 뒤 부르면 안전해요.
+- 남은 8곳은 모두 **서로 부르는 function** 이에요. 오른쪽 서랍(06 고르기 · 08 지금 탭 · 09 입력 · 12 기록 패널)과 목록(04)이 고리처럼 서로 불러서, 번호를 어떻게 바꿔도 한쪽은 앞→뒤가 돼요. function 은 끌어올려져(hoisting) 불러오기가 끝난 뒤 부르면 안전해요.
 
 | 파일 | 부르는 이름 → 정의된 파일 | 되돌아오는 길(고리) |
 |---|---|---|
 | `04-list.js` | `select` → 06 | 06 이 04 `renderList` |
-| `06-history.js` | `setTab` · `renderNow` · `renderBusy` → 07, `useDraft` · `updateSendState` → 08, `renderHistory` → 11 | 07 이 06 `renderTrend`, 08 이 07 `renderBusy`, 11 이 06 `select` |
-| `07-now.js` | `renderHistory` → 11 | 11 → 06 → 07 |
+| `06-history.js` | `setTab` · `renderNow` · `renderBusy` → 08, `useDraft` · `updateSendState` → 09, `renderHistory` → 12 | 08 이 06 `renderTrend`, 09 가 08 `renderBusy`, 12 가 06 `select` |
+| `08-now.js` | `renderHistory` → 12 | 12 → 06 → 08 |
 
 - 이 목록은 `test/conventions.test.mjs` 가 지켜요(검사기 `test/_helpers/front-deps.mjs`). 새로 생기면 실패하고, 고친 곳은 허용 목록에서 지워야 해서 줄어들기만 해요. let · const 는 허용 목록 없이 0 이어야 해요.
 - 예전에 이 표를 「27곳 · let/const 12」로 적었는데 손으로 센 실수였어요(실제 28 · 11).

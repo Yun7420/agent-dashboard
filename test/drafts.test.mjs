@@ -1,4 +1,4 @@
-// 입력 칸의 세션별 임시 글 · 첨부(public/js/08-attach.js). 화면 파일을 node:vm 으로 불러, 쓰는 요소(입력 칸 · 첨부 목록 · 보내기 단추)만 흉내 낸다
+// 입력 칸의 세션별 임시 글 · 첨부(public/js/09-attach.js). 화면 파일을 node:vm 으로 불러, 쓰는 요소(입력 칸 · 첨부 목록 · 보내기 단추)만 흉내 낸다
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -12,7 +12,7 @@ function load() {
   const uploads = []; // 아직 끝나지 않은 업로드 { resolve }
   const revoked = [];
   let urlN = 0;
-  const { run } = loadFront(['00-md.js', '01-core.js', '08-attach.js'], {
+  const { run } = loadFront(['00-md.js', '01-core.js', '09-attach.js'], {
     window: {},
     document: { querySelector: el, hidden: true },
     localStorage: { getItem: (k) => stored[k] ?? null, setItem: (k, v) => (stored[k] = v) },
@@ -26,7 +26,7 @@ function load() {
       return Promise.resolve({ status: 200, ok: true, text: async () => 'ok' });
     },
   });
-  // 08 이 부르는 07-now 의 renderBusy · 01-core 의 toast 를 흉내(sentAt · canSend 는 01-core.js)
+  // 09 가 부르는 08-now 의 renderBusy · 01-core 의 toast 를 흉내(sentAt · canSend 는 01-core.js)
   run('function renderBusy() {}; function toast() {}; canSend = true;');
   const file = (name) => ({ name, size: 1, type: 'image/png' });
   return { els, el, stored, sent, uploads, revoked, run, file };
@@ -126,11 +126,11 @@ test('첨부를 빼면(✕) 미리보기 메모리를 돌려준다', async () =>
   assert.deepEqual(revoked, ['blob:1']);
 });
 
-// 새 세션에 넣지 못한 첫 프롬프트(서버 state.firstPrompts → 11-panel.js restoreFirstPrompts): 떠 있으면 그 세션 임시 글 앞에, 닫혔으면 활동 로그에 글, 둘 다 한 번만 · 받았다고 알림
+// 새 세션에 넣지 못한 첫 프롬프트(서버 state.firstPrompts → 12-panel.js restoreFirstPrompts): 떠 있으면 그 세션 임시 글 앞에, 닫혔으면 활동 로그에 글, 둘 다 한 번만 · 받았다고 알림
 test('restoreFirstPrompts: 떠 있는 세션은 임시 글로(쓰던 글은 뒤에 남김) · 닫힌 세션은 로그에 글 · 한 번만 · ack 보냄', async () => {
   const { run, stored, sent } = load();
   run("function logLine(cls, text) { (globalThis.__log ??= []).push([cls, text]); }"); // 02-activity.js 의 활동 로그 한 줄
-  run(fs.readFileSync(new URL('../public/js/11-panel.js', import.meta.url), 'utf8').match(/const fpSeen[\s\S]*?\n}\n/)[0]); // 11-panel 의 그 함수만
+  run(fs.readFileSync(new URL('../public/js/12-panel.js', import.meta.url), 'utf8').match(/const fpSeen[\s\S]*?\n}\n/)[0]); // 12-panel 의 그 함수만
   run(`pref.drafts['claude:a'] = '쓰던 글';`);
   const list = [{ key: 'claude:a', title: '일', text: '첫 메시지' }, { key: 'claude:b', title: null, text: '닫힌 세션 글' }];
   const restore = run('restoreFirstPrompts');

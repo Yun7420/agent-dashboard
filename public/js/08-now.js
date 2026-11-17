@@ -2,7 +2,7 @@
 // 패널 탭: 지금(현재 답변) / 기록 — 지금 탭 drawerTab 은 01-core.js
 function setTab(tab) {
   drawerTab = tab;
-  document.querySelectorAll('.tab').forEach((b) => {
+  document.querySelectorAll('.tabs .tab').forEach((b) => { // 패널 탭만(가운데 「구조 / 대화 창」 탭은 07-center.js)
     const on = b.dataset.tab === tab;
     b.classList.toggle('on', on);
     b.setAttribute('aria-selected', String(on));
@@ -16,7 +16,7 @@ document.querySelector('.tabs').addEventListener('click', (e) => { const b = e.t
 document.querySelector('.tabs').addEventListener('keydown', (e) => {
   if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
   e.preventDefault();
-  const tabs = [...document.querySelectorAll('.tab')];
+  const tabs = [...document.querySelectorAll('.tabs .tab')];
   const i = tabs.findIndex((b) => b.dataset.tab === drawerTab);
   const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
   setTab(next.dataset.tab);
@@ -59,6 +59,7 @@ function renderNow(s) {
   $('#stop').hidden = !(s.status === 'working' && s.tmux);
   renderChanges(s);
   renderTrend(s);
+  drawBig(); // 가운데 「대화 창」 큰 그래프(07-center.js)
   const ch = s.changes;
   document.querySelector('.now-card').classList.toggle('has-changes', Boolean(ch && (ch.edits.length || ch.commands.length)));
 }

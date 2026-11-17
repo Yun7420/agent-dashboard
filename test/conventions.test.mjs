@@ -34,13 +34,13 @@ function sameAsAllowed(found, allowed, what) {
 const CYCLE_CALLS = {
   // 「되돌아오는 길」: 뒤 파일이 이 앞 파일을 다시 부르는 곳(그래서 번호를 바꿔도 풀리지 않음)
   '04-list.js → select': '목록 ↔ 서랍 고르기 — 06 이 04 renderList 를 부름',
-  '06-history.js → setTab': '서랍 고르기 ↔ 지금 탭 — 07 이 06 renderTrend 를 부름',
-  '06-history.js → renderNow': '서랍 고르기 ↔ 지금 탭 — 07 이 06 renderTrend 를 부름',
-  '06-history.js → renderBusy': '서랍 고르기 ↔ 지금 탭(진행 표시) — 07 이 06 renderTrend 를 부름',
-  '06-history.js → useDraft': '서랍 고르기 → 입력 → 지금 탭 → 서랍 — 08 이 07 renderBusy, 07 이 06 renderTrend 를 부름',
-  '06-history.js → updateSendState': '서랍 고르기 → 입력 → 지금 탭 → 서랍 — 08 이 07 renderBusy, 07 이 06 renderTrend 를 부름',
-  '06-history.js → renderHistory': '서랍 고르기 ↔ 기록 패널 — 11 이 06 select · loadHistory 를 부름',
-  '07-now.js → renderHistory': '지금 탭 → 기록 패널 → 서랍 고르기 → 지금 탭 — 11 이 06 select, 06 이 07 setTab 을 부름',
+  '06-history.js → setTab': '서랍 고르기 ↔ 지금 탭 — 08 이 06 renderTrend 를 부름',
+  '06-history.js → renderNow': '서랍 고르기 ↔ 지금 탭 — 08 이 06 renderTrend 를 부름',
+  '06-history.js → renderBusy': '서랍 고르기 ↔ 지금 탭(진행 표시) — 08 이 06 renderTrend 를 부름',
+  '06-history.js → useDraft': '서랍 고르기 → 입력 → 지금 탭 → 서랍 — 09 가 08 renderBusy, 08 이 06 renderTrend 를 부름',
+  '06-history.js → updateSendState': '서랍 고르기 → 입력 → 지금 탭 → 서랍 — 09 가 08 renderBusy, 08 이 06 renderTrend 를 부름',
+  '06-history.js → renderHistory': '서랍 고르기 ↔ 기록 패널 — 12 가 06 select · loadHistory 를 부름',
+  '08-now.js → renderHistory': '지금 탭 → 기록 패널 → 서랍 고르기 → 지금 탭 — 12 가 06 select, 06 이 08 setTab 을 부름',
 };
 
 test('화면 번호 순서: 앞 번호 파일이 뒤 번호 파일의 let · const 를 쓰는 곳은 0(예외 없음)', () => {
@@ -172,12 +172,12 @@ test('모듈 부수 효과: lib · adapters 의 맨 바깥에서 process.exit ·
 });
 
 // ---------- 화면: 서버 요청은 apiFetch 한곳 · 토큰은 index.html 에만 ----------
-test('화면 파일: 서버 요청은 apiFetch 한곳으로 — 직접 fetch 는 01-core 와 실시간 연결 확인(16-live)뿐', () => {
+test('화면 파일: 서버 요청은 apiFetch 한곳으로 — 직접 fetch 는 01-core 와 실시간 연결 확인(17-live)뿐', () => {
   const direct = [];
   for (const f of FRONT) {
     read(f).split('\n').forEach((l, i) => { if (/(^|[^\w.])fetch\(/.test(l)) direct.push(`${path.basename(f)}:${i + 1}`); });
   }
-  assert.deepEqual(direct.map((x) => x.split(':')[0]).sort(), ['01-core.js', '16-live.js']); // 각 한 줄씩
+  assert.deepEqual(direct.map((x) => x.split(':')[0]).sort(), ['01-core.js', '17-live.js']); // 각 한 줄씩
 });
 
 // 화면 파일은 로그인 없이 누구나 받는다(같은 Mac 의 다른 계정 포함) → 토큰을 끼워 넣을 자리도, 토큰을 주소 · 머리글에 싣는 코드도 없어야 한다.

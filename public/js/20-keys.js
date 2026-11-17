@@ -66,13 +66,13 @@ function approveKey(key) {
   btn.click();
   return true;
 }
-// capture 로 먼저 받는다: Esc 는 승인 창이 있으면 거절, 없으면 원래대로(팝업 · 패널 닫기, 14-notify.js)에 넘긴다
+// capture 로 먼저 받는다: Esc 는 승인 창이 있으면 거절, 없으면 원래대로(팝업 · 패널 닫기, 15-notify.js)에 넘긴다
 document.addEventListener('keydown', (e) => {
   if (ignoreKey(e, document.activeElement, Boolean(document.querySelector('dialog[open]')))) return;
   let done = false;
   if (e.key === 'j' || e.key === 'k') { moveCursor(e.key === 'j' ? 1 : -1); done = true; }
   else if ((e.key === 'g' || e.key === 'Enter') && kbKey && !$('#drawer').classList.contains('open')) { select(kbKey); done = true; }
   else if (/^[1-9]$/.test(e.key)) done = approveKey(e.key);
-  else if (e.key === 'Escape' && !document.querySelector('#dir-menu.show, #more-menu.show, #d-meta.show, #notify-menu.show, #settings-menu.show, #limits-pop.show')) done = approveKey('Escape');
+  else if (e.key === 'Escape' && !document.querySelector('#dir-menu.show, #more-menu.show, #d-meta.show, #notify-menu.show, #settings-menu.show, #cp-pop.show, #limits-pop.show')) done = approveKey('Escape');
   if (done) { e.preventDefault(); e.stopImmediatePropagation(); }
 }, true);

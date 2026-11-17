@@ -29,8 +29,8 @@ function connect() {
     logEvents(next.sessions);
     logLinks(next.links || [], next.sessions);
     state = next;
-    pruneDrafts(next.sessions); // 끝난 · 사라진 세션의 임시 글 · 첨부 정리(08-attach.js)
-    restoreFirstPrompts(next.firstPrompts, next.sessions); // 넣지 못한 첫 프롬프트 → 입력 칸(11-panel.js)
+    pruneDrafts(next.sessions); // 끝난 · 사라진 세션의 임시 글 · 첨부 정리(09-attach.js)
+    restoreFirstPrompts(next.firstPrompts, next.sessions); // 넣지 못한 첫 프롬프트 → 입력 칸(12-panel.js)
     if (prunePrefs(pref, next.sessions.map((s) => s.key), Date.now())) savePref(); // 오래 못 본 세션 열쇠 정리(01-core.js)
     renderRestore();
     finishBoot();

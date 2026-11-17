@@ -1,0 +1,60 @@
+/* 가운데 칸: 탭 「구조 / 대화 창」 · 대화 창 사용률 큰 그래프(07-center.js). 좁은 창에선 조직도만(12-narrow.css) */
+main { --dw: 0px; } /* 오른쪽 패널 폭(07-center.js 가 채움) — 탭 · 큰 그래프는 그 왼쪽까지만 */
+.center-tabs { position: absolute; top: 12px; left: 16px; z-index: 3; display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1px solid var(--border); }
+/* 고른 탭: 초록 바탕 + 밑줄(색만으로 가르지 않게) */
+.center-tabs .tab.on { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+/* 「대화 창」 탭이면 조직도는 자리만 두고 숨긴다(돌아왔을 때 크기 계산이 맞게) */
+body:not(.cv-ctx) #ctx-panel { display: none; }
+body.cv-ctx #graph, body.cv-ctx .hint { visibility: hidden; }
+
+/* 알약: 초록 테두리 + 점 */
+.pill { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: 999px; font-size: 12px; white-space: nowrap; background: color-mix(in srgb, var(--accent) 6%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); color: var(--dim); }
+
+#ctx-panel { position: absolute; top: 60px; left: 16px; right: calc(var(--dw) + 16px); bottom: 16px; display: flex; flex-direction: column; padding: 14px 16px 10px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.cp-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cp-head .grow { flex: 1; }
+.cp-head .pill { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
+#ctx-title { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; min-width: 0; line-height: 1.35; color: var(--text); }
+#ctx-title span { font-weight: 500; font-size: 13px; color: var(--dim); }
+.cp-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin: 6px 0 2px; }
+.cp-cmp { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--faint); white-space: nowrap; }
+.cp-cmp select { font-size: 12px; padding: 3px 26px 3px 8px; max-width: 150px; }
+.cp-now { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12px; color: var(--faint); }
+.cp-now b { color: var(--text); font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; margin-right: 4px; }
+.cp-now .key { display: inline-flex; align-items: center; gap: 6px; }
+.cp-now .key i { width: 16px; height: 0; border-top: 2px solid var(--accent); }
+.cp-now .key i.cmp { border-top: 2px dashed var(--peer); } /* 겹쳐 본 세션은 색 + 점선(색만으로 가르지 않게) */
+#ctx-panel .empty-note { margin: auto; color: var(--faint); font-size: 13px; text-align: center; }
+
+/* 그래프: 선 · 면은 세션이 바뀌면 CSS transition(d)으로 옮겨 간다 */
+.cp-chart { position: relative; flex: 1; min-height: 0; display: flex; }
+.cp-chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.cp-chart .g { stroke: color-mix(in srgb, var(--ink) 6%, transparent); }
+.cp-chart .gl { fill: var(--faint); font: 11px var(--sans); }
+.cp-chart .l80 { stroke: var(--working); stroke-dasharray: 5 4; stroke-width: 1.2; }
+.cp-chart .drop .dl { stroke-dasharray: 2 3; }
+.cp-chart .l80t { fill: var(--working-text); font: 600 11px var(--sans); }
+.cp-chart .line { fill: none; stroke: var(--accent-2); stroke-width: 2; stroke-linejoin: round; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 60%, transparent)); transition: d .5s cubic-bezier(.3, .7, .2, 1); }
+.cp-chart .area { fill: url(#cp-fill); transition: d .5s cubic-bezier(.3, .7, .2, 1); }
+.cp-chart .cmp { fill: none; stroke: var(--peer); stroke-width: 1.6; stroke-dasharray: 6 4; }
+.cp-chart .stop-a { stop-color: var(--accent); stop-opacity: .32; }
+.cp-chart .stop-b { stop-color: var(--accent); stop-opacity: 0; }
+.cp-chart .cross { stroke: color-mix(in srgb, var(--ink) 35%, transparent); stroke-dasharray: 2 3; }
+.cp-chart .hdot { fill: var(--bg); stroke: var(--accent-2); stroke-width: 2; }
+/* 장식 · 선은 마우스를 가로채지 않게 — 「자동 요약됨」 표시만 누를 수 있다 */
+.cp-chart .line, .cp-chart .area, .cp-chart .cmpg, .cp-chart .grid, .cp-chart .l80, .cp-chart .l80t, .cp-chart .cross, .cp-chart .hdot, .cp-chart .xl { pointer-events: none; }
+.cp-chart .drop { cursor: pointer; }
+.cp-chart .drop circle { fill: var(--bg); stroke: var(--working); stroke-width: 2; }
+.cp-chart .drop rect { fill: var(--surface-3); stroke: color-mix(in srgb, var(--working) 55%, transparent); }
+.cp-chart .drop text { fill: var(--working-text); font: 600 11px var(--sans); }
+.cp-chart .drop:hover rect, .cp-chart .drop:focus-visible rect { stroke: var(--working); stroke-width: 2; }
+.cp-chart .drop:focus { outline: none; }
+.cp-chart .fade { animation: cp-in .45s ease-out; }
+@keyframes cp-in { from { opacity: 0; } }
+.cp-tip { position: absolute; z-index: 4; pointer-events: none; padding: 7px 10px; border-radius: 10px; font-size: 12px; line-height: 1.5; color: var(--dim); background: var(--surface-3); border: 1px solid var(--border-strong); box-shadow: var(--shadow); white-space: nowrap; }
+.cp-tip b { color: var(--text); font-variant-numeric: tabular-nums; }
+.cp-tip small { color: var(--faint); }
+.cp-pop { top: auto; right: auto; width: 320px; max-width: calc(100% - 16px); padding: 14px; font-size: 12.5px; line-height: 1.6; color: var(--dim); }
+.cp-pop h4 { margin: 0 0 6px; color: var(--working-text); font-size: 13px; }
+.cp-pop p { margin: 0 0 6px; }
+.cp-pop button { margin-top: 4px; }

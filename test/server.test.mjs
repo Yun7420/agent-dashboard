@@ -32,7 +32,7 @@ after(() => srv?.stop()); // 이 테스트가 띄운 서버만, 끝날 때까지
 test('화면 파일은 로그인 없이 열린다', async () => {
   assert.equal(await req('/'), 200);
   assert.equal(await req('/css/00-base.css'), 200);
-  assert.match((await request(PORT, '/css/11-narrow.css')).headers['content-type'], /^text\/css/); // 하위 폴더도 같은 MIME
+  assert.match((await request(PORT, '/css/12-narrow.css')).headers['content-type'], /^text\/css/); // 하위 폴더도 같은 MIME
   assert.equal(await req('/js/01-core.js'), 200);
 });
 

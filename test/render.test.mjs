@@ -32,7 +32,7 @@ test('setHtml: 같은 HTML 이면 innerHTML 을 다시 넣지 않고(false), DOM
 test('홈 줄이기 · esc · 검색 강조: 맥 · 리눅스 홈, 옆 폴더는 그대로, \' 도 바꾸고, 강조는 원문 길이 그대로', () => {
   const els = {};
   const el = () => ({ addEventListener() {}, classList: { add() {}, remove() {}, toggle() {} }, style: {}, dataset: {} });
-  const { run } = loadFront(['00-md.js', '01-core.js', '17-search.js'], browserStub({ document: { querySelector: (s) => (els[s] ??= el()), addEventListener() {} } }));
+  const { run } = loadFront(['00-md.js', '01-core.js', '18-search.js'], browserStub({ document: { querySelector: (s) => (els[s] ??= el()), addEventListener() {} } }));
   const tilde = run('tilde'), esc = run('esc'), mark = run('mark');
   assert.equal(tilde('/Users/me/work/a.ts', '/Users/me'), '~/work/a.ts');
   assert.equal(tilde('/home/me/work/a.ts', '/home/me'), '~/work/a.ts'); // 리눅스

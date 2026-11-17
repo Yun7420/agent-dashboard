@@ -25,8 +25,8 @@
 | 무엇 | 규칙 | 예 |
 |---|---|---|
 | 서버 쪽 파일 | `.mjs`, 소문자 낱말을 `-` 로 이음 | `lib/claude-settings.mjs` · `lib/open-dir.mjs` |
-| 화면 파일 | `public/js/NN-이름.js`, 번호 순서대로 불러옴 | `04-list.js` · `16-live.js` |
-| 화면 모양 | `public/css/NN-이름.css`, 번호 순서대로 불러옴(`<link>`) | `03-graph.css` · `11-narrow.css` |
+| 화면 파일 | `public/js/NN-이름.js`, 번호 순서대로 불러옴 | `04-list.js` · `17-live.js` |
+| 화면 모양 | `public/css/NN-이름.css`, 번호 순서대로 불러옴(`<link>`) | `03-graph.css` · `12-narrow.css` |
 | 테스트 | `test/<대상>.test.mjs`, 도우미는 `test/_helpers/` · `test/_*.mjs` | `test/paths.test.mjs` · `test/_history-full.mjs` |
 | 함수 · 변수 | camelCase | `buildState` · `pruneUploads` |
 | 고정값 | 대문자 + `_` | `SCAN_MS` · `ALLOWED_HOSTS` · `UPLOAD_MAX` |
@@ -87,14 +87,14 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
   - 여러 파일이 같이 쓰는 상태(`drawerTab` · `canSend` · `envData` …)와 도우미(`fmtTok` · `modelName` …)는 맨 앞 `01-core.js` 에 둬요.
   - 앞 파일이 뒤 파일 것을 쓰는 곳: let · const 는 0곳, 서로 부르는 function 8곳만 남았어요(ARCHITECTURE 8절 · 아래 2부 ④).
 - 서버 요청은 **`01-core.js` 의 `apiFetch`(`api` · `apiJson`) 한 길**로만 해요. 403 이면 서버가 준 「로그인이 필요해요 — … open」 안내를 한 곳에서 띄워요. 요청마다 `X-Dashboard-Request: 1` 을 붙여요(CSRF).
-  - 예외는 `16-live.js` 의 연결 확인(`/api/perf`) 하나예요.
+  - 예외는 `17-live.js` 의 연결 확인(`/api/perf`) 하나예요.
 - **인라인 스크립트 · `onclick=` 같은 속성 · `javascript:` 주소를 쓰지 않아요.** CSP(`script-src 'self'`)가 막아 단추가 조용히 죽어요. 동작은 js 파일에서 `addEventListener` 로 이어요(3부 테스트).
 - 서버에서 온 글자를 HTML 에 넣을 땐 **언제나 `esc()`** 를 거쳐요. 속성(`class="…"`) 자리도 마찬가지예요.
 - 다시 그릴 땐 `setHtml(el, html)` 을 써서 바뀐 곳만 바꿔요. 「N초 전」처럼 자주 바뀌는 글자는 따로 고쳐요(`updateAgo`).
 - 브라우저 저장 키는 `agent-deck` 하나예요. 바꾸면 사용자 설정이 초기화돼요.
 - **화면 파일(`public/`)에는 토큰이 없어요.** 화면은 로그인 없이 누구나 받을 수 있어서(같은 Mac 의 다른 계정 포함)요. 로그인은 `agent-dashboard open` 의 로그인 링크 → HttpOnly 쿠키(`lib/auth.mjs`)이고, 주소 · 머리글에 토큰을 싣지 않아요(2026-11-17, 사용자 승인).
 - 모양(css)도 **그 단추 · 칸이 있는 구역 파일**에 둬요(머리 단추가 여는 팝업은 `01-header.css`, 프로젝트 박스의 폴더 메뉴는 `03-graph.css`).
-- **`@media`(좁은 창 · 휴대폰 · 동작 줄이기)는 마지막 파일(`11-narrow.css`)에만** 둬요. 뒤 파일의 기본 규칙이 앞 파일의 `@media` 를 거꾸로 덮지 않게, 그리고 「좁은 화면에서 무엇이 빠지나」를 한곳에서 보게요(2026-11-17).
+- **`@media`(좁은 창 · 휴대폰 · 동작 줄이기)는 마지막 파일(`12-narrow.css`)에만** 둬요. 뒤 파일의 기본 규칙이 앞 파일의 `@media` 를 거꾸로 덮지 않게, 그리고 「좁은 화면에서 무엇이 빠지나」를 한곳에서 보게요(2026-11-17).
 
 ### 테스트
 
@@ -146,7 +146,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 
 ### ② 나누는 기준
 
-- **화면 기능은 그 단추 · 칸이 있는 화면 구역 파일에 둬요.** 예: 바꾼 파일 · 진행 표시는 지금 탭(`07-now.js`), 🎤 음성 입력은 입력 칸(`08-attach.js`), 승인 카드 · 단추는 승인 창(`05-approval.js`). 2026-11-16 `07-changes.js` 를 나눈 근거예요.
+- **화면 기능은 그 단추 · 칸이 있는 화면 구역 파일에 둬요.** 예: 바꾼 파일 · 진행 표시는 지금 탭(`08-now.js`), 🎤 음성 입력은 입력 칸(`09-attach.js`), 승인 카드 · 단추는 승인 창(`05-approval.js`). 2026-11-16 `07-changes.js` 를 나눈 근거예요.
 - **파일 하나 = 하는 일 하나.** 머리 주석의 「무엇을」이 「·」 세 개를 넘거나, 서로 부르지 않는 함수 묶음이 둘 이상이면 나눌 때예요.
 - 나눌 땐 **동작을 그대로** 두고, 원래 자리에 「어디로 옮겼는지」를 남기지 않아요. 지도(ARCHITECTURE 2절 표)를 고쳐요.
 - 화면은 새 파일을 끝 번호 뒤에 붙이지 말고 **쓰는 쪽보다 앞 번호**에 둬요(번호를 다시 매겨도 돼요).
@@ -219,7 +219,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 | 모듈 경계 | 없음 |
 | 외부 명령: `child_process` 는 `execFile` · `spawn`(+Sync) 만, `shell: true` 없음 | 없음 |
 | 모듈 부수 효과: `lib` · `adapters` 맨 바깥에 `process.exit` · `console.*` · fs 쓰기 없음 | 없음 |
-| 화면 서버 요청: 직접 `fetch` 는 `01-core` · `16-live` 각 한 줄 | 없음 |
+| 화면 서버 요청: 직접 `fetch` 는 `01-core` · `17-live` 각 한 줄 | 없음 |
 | 토큰 자리: `public` 어디에도 토큰 자리 · 토큰 머리글 · `?token=` 없음, 서버도 읽지 않음 | 없음 |
 | CSP 와 맞는 화면: 인라인 `<script>` 본문 · `on…=` 속성 · `javascript:` 없음 | 없음 |
 | 파일 쓰기: 서버 쪽에 `writeFileSync` · `appendFileSync` 없음(`writeAtomic`) | 없음 |

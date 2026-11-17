@@ -26,7 +26,7 @@ function syncDraftText() {
   clearTimeout(draftSaveTimer);
   draftSaveTimer = setTimeout(savePref, 400);
 }
-// 다른 곳에서 온 글을 그 세션의 임시 글 앞에 놓는다(넣지 못한 첫 프롬프트 — 11-panel.js). 쓰던 글이 있으면 지우지 않고 뒤에 둔다
+// 다른 곳에서 온 글을 그 세션의 임시 글 앞에 놓는다(넣지 못한 첫 프롬프트 — 12-panel.js). 쓰던 글이 있으면 지우지 않고 뒤에 둔다
 function putDraft(key, text) {
   const cur = pref.drafts[key] ?? '';
   pref.drafts[key] = (cur ? `${text}\n\n${cur}` : text).slice(0, 20000);
@@ -38,7 +38,7 @@ const staleKeys = (keys, sessions) => {
   const live = new Set(sessions.filter((s) => s.status !== 'ended').map((s) => s.key));
   return keys.filter((k) => !live.has(k));
 };
-// 새 상태를 받을 때마다(16-live.js): 끝난 세션의 글 · 첨부를 지우고 미리보기 메모리를 돌려준다
+// 새 상태를 받을 때마다(17-live.js): 끝난 세션의 글 · 첨부를 지우고 미리보기 메모리를 돌려준다
 function pruneDrafts(sessions) {
   const gone = staleKeys([...new Set([...drafts.keys(), ...Object.keys(pref.drafts)])], sessions);
   if (!gone.length) return;
