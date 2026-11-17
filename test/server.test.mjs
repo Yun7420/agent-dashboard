@@ -196,6 +196,9 @@ test('전체 기록 검색: 데모 기록에서 찾고 최신순으로 돌려준
   assert.ok(items.every((x, i) => i === 0 || Date.parse(items[i - 1].at) >= Date.parse(x.at)));
   const short = await (await fetch(`http://127.0.0.1:${PORT}/api/search?q=a`, { headers: { ...AUTH } })).json();
   assert.deepEqual(short, []); // 1글자는 찾지 않음
+  const long = await fetch(`http://127.0.0.1:${PORT}/api/search?q=${'가'.repeat(201)}`, { headers: { ...AUTH } });
+  assert.deepEqual([long.status, await long.text()], [400, '검색어는 200자까지예요']); // 글자마다 모든 기록과 견주므로 상한(점검 G1)
+  assert.equal((await fetch(`http://127.0.0.1:${PORT}/api/search?q=${'가'.repeat(200)}`, { headers: { ...AUTH } })).status, 200);
 });
 
 test('환경 점검에 「승인 감지」 줄이 붙는다(엇갈림이 없으면 ok)', async () => {

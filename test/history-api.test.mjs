@@ -4,13 +4,13 @@ import assert from 'node:assert/strict';
 import { createHistoryApi } from '../lib/history-api.mjs';
 
 const T = (h) => new Date(Date.UTC(2026, 10, 16, h)).toISOString();
-function setup({ sessions = [], files, demo = false } = {}) {
+function setup({ sessions = [], files, demo = false, delayMs = 0 } = {}) {
   const calls = { history: 0, daySummary: 0 };
   const scanned = files ?? [{ id: 'a', file: '/f/a', size: 10, mtimeMs: Date.parse(T(5)), birthtimeMs: Date.parse(T(1)) }];
   const claude = {
     id: 'claude',
     scan: async () => scanned,
-    history: async (s) => (calls.history++, [{ at: T(1), prompt: `${s.id} 첫 요청 필터`, reply: '답', tools: 0 }, { at: T(3), prompt: '둘째', reply: '필터를 고쳤어요', tools: 1, from: 'peer' }]),
+    history: async (s) => (delayMs && (await new Promise((r) => setTimeout(r, delayMs))), calls.history++, [{ at: T(1), prompt: `${s.id} 첫 요청 필터`, reply: '답', tools: 0 }, { at: T(3), prompt: '둘째', reply: '필터를 고쳤어요', tools: 1, from: 'peer' }]),
     contextTrend: async () => ({ points: Array.from({ length: 300 }, (_, i) => [i, 1000 + i]), total: 300, drops: 2 }),
     daySummary: async (s) => (calls.daySummary++, s.id === 'empty' ? { prompts: 0, files: [], commands: 0, tokens: { total: 0 } } : { prompts: 2, files: ['x'], commands: 1, lastAt: T(4) }),
     describe: async () => ({ title: '기록 제목', cwd: '/p/app' }),
@@ -91,4 +91,24 @@ test('경로 처리 함수: 세션 열쇠 · 날짜가 틀리면 400, 기록은 
   assert.equal((await call(api.getTrend, 'key=claude:a'))[1].points.length, 120);
   assert.equal((await call(api.getSearch, 'q=필터'))[0], 200);
   assert.equal((await call(api.getDay, 'date=2026-11-16'))[0], 200);
+});
+
+// 점검 G1: 기록 캐시(30개)를 넘는 기간이면 검색마다 처음부터 다시 읽는데, 글자를 칠 때마다 검색이 겹쳐 쌓였다
+test('searchHistory: 한 번에 하나 — 겹쳐 온 검색은 마지막 것만 끝까지, 앞의 것은 null(읽기를 멈춤) · 읽은 횟수는 한 번 검색만큼', async () => {
+  const files = Array.from({ length: 40 }, (_, i) => ({ id: `s${i}`, file: `/f/s${i}`, size: 10, mtimeMs: 0, birthtimeMs: 0 }));
+  const sessions = files.map((f) => ({ key: `claude:${f.id}`, title: f.id, project: 'p' }));
+  const { api, calls } = setup({ files, sessions });
+  const runs = ['필터', '필터 ', ' 필터', '필터'].map((q) => api.searchHistory(q));
+  const r = await Promise.all(runs);
+  assert.deepEqual(r.slice(0, 3), [null, null, null]);
+  assert.equal(r[3].length, 80); // 40개 세션 × 2(요청 · 답변) — 100개 상한 안
+  assert.equal(calls.history, 40); // 예전: 4번 × 40 = 160
+  // 하던 검색 도중에 새 검색이 오면, 하던 것은 다음 세션 앞에서 멈춘다
+  const slow = setup({ files, sessions, delayMs: 5 });
+  const first = slow.api.searchHistory('필터');
+  await new Promise((res) => setTimeout(res, 30)); // 몇 세션 읽은 뒤
+  const second = slow.api.searchHistory('요청');
+  assert.equal(await first, null);
+  assert.ok(slow.calls.history < 40, String(slow.calls.history));
+  assert.ok(Array.isArray(await second));
 });

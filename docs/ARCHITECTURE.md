@@ -100,7 +100,7 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `lib/history-api.mjs` | 세션 열쇠로 어댑터 · 기록 파일을 찾아 기록 탭(`promptHistory`) · 대화 창 추이(`contextTrend`) · 전체 기록 검색(`searchHistory`) · 오늘 한 일(`daySummary`). 크기가 같으면 다시 읽지 않는 캐시. 경로 처리 함수 `getHistory` · `getTrend` · `getDay` · `getSearch` |
+| `lib/history-api.mjs` | 세션 열쇠로 어댑터 · 기록 파일을 찾아 기록 탭(`promptHistory`) · 대화 창 추이(`contextTrend`) · 전체 기록 검색(`searchHistory` — 한 번에 하나, 새 검색이 오면 하던 것은 멈춤(409) · 검색어 200자 상한, 점검 G1) · 오늘 한 일(`daySummary`). 크기가 같으면 다시 읽지 않는 캐시. 경로 처리 함수 `getHistory` · `getTrend` · `getDay` · `getSearch` |
 | `lib/usage-bridge.mjs` | 상태줄 다리 켜기 · 끄기 · 켜질 때 맞추기(`enableUsage` · `sync`) · 상태줄 파일 읽기(`readStatusFiles` · `usageState`) · `/model` 뒤 기본 모델 되돌리기(`restoreDefaultModel`) |
 | `lib/dialog.mjs` | 화면 맨 아래를 보고 선택창인지(`hasDialog` · `detectDialog`), 선택지와 커서 위치(`parseOptions`), 승인 단추로 쓸 커서 묶음(`dialogOptions` · `cursorRun` — 화면 `05-approval.js:approvalChoices` 와 같은 규칙). 입력칸(가로줄 + `> `)보다 위는 답변이라 보지 않고, 줄마다 앞 500자만 본다 |
 | `lib/approval.mjs` | 승인 창 맨 위 「허락할 내용」 카드: 종류 · 내용 · 위험 이유(`summarizeTool` · `fileRisks`). 위험은 자르기 전 전체 명령으로 판정한 값(기록 · 화면에서 읽을 때 붙임)을 쓴다 |
