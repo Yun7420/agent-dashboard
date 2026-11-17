@@ -30,7 +30,8 @@
   #limits-pop { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; }
   #new-session { padding: 0 12px; }
   #new-session span { display: none; } /* 「+」만(이름은 title · aria-label) */
-  header { gap: 4px; } /* 390px 에서도 오른쪽 여백이 남게 */
+  header { gap: 3px; } /* 390px 에서도 오른쪽 여백이 남게(톱니 단추를 더해 아이콘 단추도 30px) */
+  header .icon-btn { width: 30px; }
   body, body.aside-folded { grid-template-columns: 56px 1fr; }
   /* 패널 머리: 이름 · 탭 · ⋯ · 닫기만 남겨 오른쪽 단추가 잘리지 않게 */
   #d-model, #wide, #d-info-btn { display: none; }
@@ -38,7 +39,7 @@
   #drawer .head-top .grow { display: none; }
 }
 
-@media (max-width: 600px) { #notify-menu { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; } } /* 좁은 화면에선 종 단추 기준으로 두면 왼쪽이 화면 밖으로 나간다 */
+@media (max-width: 600px) { #notify-menu, #settings-menu { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; } } /* 좁은 화면에선 종 단추 기준으로 두면 왼쪽이 화면 밖으로 나간다 */
 /* 「동작 줄이기」를 켠 사람: 깜빡임 · 도는 표시 · 녹음 깜빡임 · 화면 전환 효과를 멈춘다(흐르는 점선은 01-core.js 가 멈춤) */
 @media (prefers-reduced-motion: reduce) {
   .pulse, .spinner, #mic.rec { animation: none !important; }

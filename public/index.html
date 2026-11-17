@@ -53,6 +53,13 @@
       <p class="np-hint">macOS 알림은 시스템 설정 › 알림에서 '스크립트 편집기'(또는 터미널) 알림 권한이 필요할 수 있어요.</p>
     </div>
   </span>
+  <span class="info-wrap">
+    <button id="settings" class="ghost icon-btn" title="화면 설정" aria-label="화면 설정"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <div class="menu-pop" id="settings-menu">
+      <div class="np-title">화면 설정</div>
+      <div class="np-row"><label for="set-theme">화면 색<small>시스템 = macOS 의 밝게 · 어둡게를 따라가요</small></label><select id="set-theme"><option value="dark">어두운 초록</option><option value="light">밝은 판</option><option value="system">시스템 따라가기</option></select></div>
+    </div>
+  </span>
   <button id="help" class="ghost icon-btn" title="환경 점검 · 사용 안내" aria-label="도움말"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
   <button id="new-session" class="primary" title="새 세션" aria-label="새 세션">+<span> 새 세션</span></button>
   <span id="conn" role="status"><span class="dot-s"></span>연결 중…</span>

@@ -25,3 +25,20 @@ function render() {
     if (s) renderDrawerHead(s);
   }
 }
+
+// 화면 색(톱니 단추 → 설정 메뉴): 어두운 초록(기본) · 밝은 판 · 시스템 따라가기. 고른 값은 agent-deck 의 theme 에
+// 시스템을 따를 땐 macOS 가 낮 · 밤으로 바뀌면 바로 따라간다(00-base.css 의 :root[data-theme="light"])
+const themeOf = (choice, systemLight) => (choice === 'light' || (choice === 'system' && systemLight) ? 'light' : 'dark');
+const systemLight = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: light)') : { matches: false };
+function applyTheme() {
+  document.documentElement.dataset.theme = themeOf(pref.theme, systemLight.matches);
+  $('#set-theme').value = ['light', 'system'].includes(pref.theme) ? pref.theme : 'dark';
+}
+systemLight.addEventListener?.('change', applyTheme);
+applyTheme();
+$('#settings').addEventListener('click', (e) => { e.stopPropagation(); $('#settings-menu').classList.toggle('show'); });
+document.addEventListener('click', (e) => { if (!e.target.closest('#settings-menu')) $('#settings-menu').classList.remove('show'); });
+$('#set-theme').addEventListener('change', (e) => {
+  pref.theme = e.target.value === 'dark' ? undefined : e.target.value;
+  savePref(); applyTheme();
+});
