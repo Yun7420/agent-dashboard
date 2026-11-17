@@ -103,9 +103,9 @@ const notify = createNotifyApi({ demo: DEMO });
 const LIMITS_DIR = path.join(DATA_DIR, 'limits');
 const limitsRecorder = DEMO ? null : createRecorder({ dir: LIMITS_DIR });
 
-// 복구 단추: 최근 7일 안에 떠 있던 Claude 세션(tmux 밖 포함)을 기억(recent.json, 600). 데모는 파일을 읽지도 쓰지도 않는다
+// 꺼진 세션 다시 열기: 최근 7일 안에 떠 있던 Claude 세션(tmux 밖 포함)을 기억(recent.json, 600). 데모는 파일을 읽지도 쓰지도 않는다
 const recent = DEMO ? null : createRecent({ file: path.join(DATA_DIR, 'recent.json') });
-const restoreLock = createLock(); // 재시동 배너 · 복구 단추가 같이 쓰는 잠금 — 한 번에 하나의 복구만(같은 세션을 두 번 띄우지 않게)
+const restoreLock = createLock(); // 재시동 배너 · 「종료된 세션」의 다시 열기가 같이 쓰는 잠금 — 한 번에 하나의 복구만(같은 세션을 두 번 띄우지 않게)
 // 아직 첫 상태를 만들기 전(서버를 켠 직후)이면 null — 복구는 「무엇이 떠 있는지」를 알 때만 한다
 const liveIdSet = () => (feed.latest() ? new Set(feed.latest().sessions.filter((s) => s.status !== 'ended').map((s) => s.id)) : null);
 
@@ -123,7 +123,7 @@ const feed = createLiveFeed({
       latest.restore = restoreCandidates(liveIdSet()).map((e) => ({ id: e.id, title: e.title, cwd: e.cwd }));
       saveSnapshot(latest.sessions);
       const def = defaultAlias();
-      try { recent.observe(liveEntries(latest.sessions, (s) => { const m = modelAlias(s.model); return m === def ? null : m; })); } catch (e) { console.error('복구 목록 기억 실패:', e.message); }
+      try { recent.observe(liveEntries(latest.sessions, (s) => { const m = modelAlias(s.model); return m === def ? null : m; })); recent.markReopen(latest.sessions, liveIdSet()); } catch (e) { console.error('복구 목록 기억 실패:', e.message); }
     } else latest.restore = [];
   },
 });

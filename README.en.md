@@ -46,7 +46,7 @@ Agent Dashboard puts all of this on one screen.
 | 🗺️ | **Org chart** | This Mac → tool → project → session → subagent. Messages between sessions are **purple arrows** (count + last message) |
 | 💬 | **Chat · approve** | Send messages to tmux sessions (Enter), voice input, **file/image attachments**. Approval prompts show a **"what you're allowing" card** (warns on risky commands or files outside the folder), the real terminal screen and option buttons; multi-question prompts let you go back and forth |
 | ⌨️ | **Shortcuts** | `j`/`k` move between sessions · `/` search everything · `1`–`9` pick an approval option (risky requests need a second press) · `Esc` reject · close |
-| ♻️ | **Restore** | Reopen ended sessions in tmux — all at once after a Mac restart (`restore`), or pick from sessions that ended in the last 7 days with the restore button in the header |
+| ♻️ | **Restore** | Reopen ended sessions in tmux — all at once after a Mac restart (`restore`), or one at a time with "Reopen" on a card under "Ended sessions" |
 | 📂 | **Open the folder** | Click a project box to open that folder in VS Code · Cursor or reveal it in Finder — no hunting for the folder when you want to check what changed |
 | ■ | **Stop · close** | Stop only what a session is doing (the conversation stays), or close a session from the dashboard |
 | 📝 | **Live code diff** | Files changed in the current request with +/− counts and red/green diffs; commands with ✓ pass / ✕ fail and output |
@@ -112,10 +112,10 @@ It only starts things and never stops anything. Sessions that are already runnin
 
 If you open the dashboard first, the top of the list shows **"N sessions from before the restart · Reopen all"**. Sessions follow your default model; only ones you picked explicitly (Sonnet/Haiku) keep it. Conversations older than 30 days are cleaned up by Claude Code and can't be resumed.
 
-Even without a restart, if sessions stopped unexpectedly, click the **restore button (clock arrow)** in the header. It lists Claude sessions that were running in the last 7 days but aren't now (including ones started outside tmux), with name and folder; pick some or select all to reopen them in tmux.
-- Sessions that are running now aren't listed (no duplicates). Sessions you closed on purpose with "Close session" are grouped separately and not selected by default.
+Even without a restart, if sessions stopped unexpectedly, expand **"Ended sessions"** under the list. Claude sessions that were running in the last 7 days but aren't now (including ones started outside tmux) get a **"Reopen"** button on their card, which resumes the same conversation in tmux (for older ones, set the period next to it to "last 7 days").
+- Sessions that are running now or were just reopened have no button (no duplicates).
 - If the folder trust prompt appears, the dashboard doesn't answer it for you; it only tells you "trust confirmation needed".
-- The list lives in `~/.agent-dashboard/recent.json` (readable only by you). The page sends only the chosen session IDs; folders and names come only from the server's saved list.
+- The list lives in `~/.agent-dashboard/recent.json` (readable only by you). The page sends only the session ID; folders and names come only from the server's saved list.
 
 ### What's in the data folder
 
@@ -127,7 +127,7 @@ Everything the dashboard writes lives in `~/.agent-dashboard/` (it never writes 
 | `demo-token` | token for demo mode only | 600 |
 | `server.log` | server output written by the runner (`run`). Over 5MB it is rotated once to `server.log.1` (the previous one is dropped). Request URLs are logged as paths only (no token or search text) | 600 |
 | `restore.json` · `restore-prev.json` | restore-after-reboot lists (now · before the reboot) | 600 |
-| `recent.json` | sessions from the last 7 days, for the restore button | 600 |
+| `recent.json` | sessions from the last 7 days, for "Reopen" | 600 |
 | `notify.json` | notification settings | 600 |
 | `settings.backup.<time>.json` · `statusline-original.json` | backup of `~/.claude/settings.json` before turning on usage limits · your original status line | 600 |
 | `bin/statusline.mjs` | copy of the usage-limit status-line bridge | folder 700 · file 600 |

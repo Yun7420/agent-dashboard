@@ -17,7 +17,7 @@ async function loadEnv(refresh = false) {
 // 없는 도구에 맞춰 화면을 바꾼다: tmux 가 없으면 tmux 가 필요한 단추를 끄고 이유를 title 로(보내기 · 승인은 tmux 세션이 없어 이미 꺼짐),
 // Claude Code 기록 폴더가 없으면 빈 목록 대신 안내(04-list.js)
 const NO_TMUX = 'tmux 가 필요해요 — brew install tmux 뒤 다시 켜 주세요. 지금은 보기만 할 수 있어요';
-const TMUX_BUTTONS = ['#new-session', '#recent-btn', '#end-session'];
+const TMUX_BUTTONS = ['#new-session', '#end-session'];
 function applyTools() {
   const noTmux = envData?.tools?.tmux === false;
   document.body.classList.toggle('no-tmux', noTmux);

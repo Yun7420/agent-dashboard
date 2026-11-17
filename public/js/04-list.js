@@ -24,6 +24,7 @@ function renderList() {
         <div class="row"><div class="title">${esc(s.title)}</div><span class="status ${esc(s.status)}"><span class="dot-s ${esc(s.status)} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${STATUS_KO[s.status]}</span></div>
         <button class="x" data-close="${esc(s.key)}" title="${s.status === 'ended' ? '목록에서 숨기기' : '세션 종료'}" aria-label="${esc(s.title)} ${s.status === 'ended' ? '목록에서 숨기기' : '세션 종료'}">✕</button>
         <div class="sub"><span class="badge tool ${esc(s.tool)}">${esc(s.toolLabel)}</span>${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span class="proj">${esc(s.project)}</span><span class="ago" data-key="${esc(s.key)}"></span>${s.subagents?.length ? `<span class="ago">· 서브 ${s.subagents.length}</span>` : ''}</div>
+        ${s.reopen ? `<div class="re"><button type="button" class="reopen" data-reopen="${esc(s.id)}" aria-label="${esc(s.title)} 다시 열기">다시 열기</button></div>` : ''}
         ${s.context && s.status !== 'ended' ? `<div class="ctx" title="대화 창 사용량 ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)}${s.context.estimated ? ' (창 크기 추정)' : ''}"><div class="ctx-bar ${ctxLevel(s.context.percent)}" style="width:${s.context.percent}%"></div></div>` : ''}
       </div>`;
     }

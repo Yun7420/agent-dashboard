@@ -22,8 +22,9 @@ const home = createLiveHome({
   sessions: ({ CWD }) => [
     { id: ID[0], pid: PID[0], status: 'idle', pane: '%1', tmuxSession: 'sess-a', cwd: CWD, prompt: '요청 0' },
     { id: ID[1], pid: PID[1], status: 'waiting', pane: '%2', tmuxSession: 'sess-b', cwd: CWD, prompt: '요청 1' },
+    { id: ID[2], cwd: CWD, prompt: '옛 요청' }, // 기록만 있는 꺼진 세션 → 「종료된 세션」 카드
   ],
-  // 복구 단추 후보: 예전에 떠 있다 꺼진 세션 하나
+  // 다시 열기 후보: 예전에 떠 있다 꺼진 세션 하나
   recent: ({ CWD }) => [{ id: ID[2], title: '옛 세션', named: false, cwd: CWD, tmuxSession: 'old-a', model: null, lastSeen: Date.now() - 3600_000, closedAt: null }],
   // 사용 한도 보기가 옛 방식(저장소의 bin/statusline.mjs 를 직접 등록)으로 켜져 있던 설치
   settings: `${JSON.stringify({ model: 'opus[1m]', statusLine: { type: 'command', command: `"${fs.realpathSync(process.execPath)}" "${path.join(ROOT, 'bin', 'statusline.mjs')}"`, padding: 0 }, theme: 'dark' }, null, 2)}\n`,
@@ -180,8 +181,10 @@ test('spawn: tmux 세션 이름은 dash-<이름 조각>-<ID 4자리>, 이름이 
 });
 
 test('recent-restore: 동시에 두 번이면 하나는 409, 본문의 cwd 는 무시하고 기억한 폴더로, 방금 띄운 세션은 다시 안 띄움', async () => {
-  const cand = JSON.parse((await req('/api/recent', { headers: H })).text);
-  assert.deepEqual(cand.items.map((x) => x.id), [ID[2]]);
+  // 다시 열 수 있는 세션은 상태의 종료된 카드에 reopen 으로 — 기억해 둔 목록에 있고 지금 떠 있지 않은 것만
+  const reopen = async () => (await firstState()).sessions.filter((s) => s.reopen).map((s) => s.id);
+  assert.ok(await until(async () => (await reopen()).length > 0));
+  assert.deepEqual(await reopen(), [ID[2]]);
   const body = { ids: [ID[2]], cwd: '/etc', command: 'rm -rf ~' };
   const [a, b] = await Promise.all([cmd('recent-restore', body), cmd('recent-restore', body)]);
   assert.deepEqual([a.status, b.status].sort(), [200, 409]);
@@ -191,7 +194,8 @@ test('recent-restore: 동시에 두 번이면 하나는 409, 본문의 cwd 는 �
   assert.equal(args[args.indexOf('-c') + 1], CWD);
   assert.deepEqual(args.slice(args.indexOf('--') + 1), ['claude', '--resume', ID[2]]);
   assert.equal((await cmd('recent-restore', body)).status, 400); // 방금 띄운 것 → 후보에서 빠짐
-  assert.deepEqual(JSON.parse((await req('/api/recent', { headers: H })).text).items, []);
+  assert.ok(await until(async () => (await reopen()).length === 0));
+  assert.deepEqual(JSON.parse((await req('/api/recent', { headers: H })).text).launched.map((l) => l.id), [ID[2]]);
 });
 
 test('업로드: 임시 홈의 uploads 에 600 으로, 중간에 끊기면 .part 가 남지 않는다', async () => {

@@ -131,3 +131,17 @@ test('떠 있는 세션을 아직 모르면(서버를 켠 직후) 후보도 고�
   assert.deepEqual(r.pick({ ids: [ID(1)] }, null), []);
   assert.deepEqual(ids(r.candidates(new Set([ID(2)]))), [ID(1)]); // 알게 되면 평소대로
 });
+
+test('「종료된 세션」 카드의 다시 열기 표시: 기억해 둔 · 지금 떠 있지 않은 · 방금 띄우지 않은 종료 카드만', () => {
+  const now = clock(), r = createRecent({ file: tmpFile(), now });
+  r.observe(liveEntries([sess(1), sess(2), sess(3)]));
+  now.add(60_000);
+  r.observe(liveEntries([sess(1)]));
+  r.noteLaunched(ID(3), { title: 'x', tmuxSession: 't3' });
+  const cards = [sess(1), sess(2, { status: 'ended' }), sess(3, { status: 'ended' }), sess(4, { status: 'ended' })];
+  r.markReopen(cards, new Set([ID(1)]));
+  assert.deepEqual(cards.filter((s) => s.reopen).map((s) => s.id), [ID(2)]);
+  const early = [sess(2, { status: 'ended' })];
+  r.markReopen(early, null); // 떠 있는 세션을 아직 모르면 표시 없음
+  assert.equal(early[0].reopen, undefined);
+});

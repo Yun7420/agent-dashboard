@@ -1,4 +1,4 @@
-// 재시동 복구: 재시동 전에 떠 있던 세션을 한 번에 다시 열기
+// 재시동 복구: 재시동 전에 떠 있던 세션을 한 번에 다시 열기(재시동 직후 목록 위 안내 띠)
 function renderRestore() {
   const items = state?.restore ?? [];
   const box = $('#restore');
@@ -19,62 +19,23 @@ document.addEventListener('click', async (e) => {
   catch (err) { toast(err.message); e.target.disabled = false; }
 });
 
-// ---------- 복구 단추: 최근에 떠 있다가 꺼진 세션을 골라 다시 열기 ----------
-// 브라우저는 고른 세션 ID 만 보낸다(폴더 · 이름 · 모델은 서버가 기억해 둔 목록에서 꺼냄). 신뢰 확인 창은 대신 누르지 않고 안내만
-let recentData = null;
-let recentSeq = 0; // 늦게 온 응답이 새 것을 덮지 않게(다시 열기 뒤 3 · 8초 다시 읽기와 단추가 겹칠 수 있음)
-async function loadRecent() {
-  const seq = ++recentSeq;
+// ---------- 「종료된 세션」 카드의 「다시 열기」: 꺼진 세션을 같은 대화로(--resume) tmux 에 다시 띄우기 ----------
+// 브라우저는 세션 ID 만 보낸다(폴더 · 이름 · 모델은 서버가 기억해 둔 목록에서 꺼냄). 신뢰 확인 창은 대신 누르지 않고 안내만
+async function checkLaunched(id) {
   let d;
-  try { d = JSON.parse(await api('/api/recent')); } catch (err) { if (seq === recentSeq) toast(err.message); return; }
-  if (seq !== recentSeq) return;
-  recentData = d;
-  renderRecent();
+  try { d = JSON.parse(await api('/api/recent')); } catch { return; }
+  const l = d.launched.find((x) => x.id === id);
+  if (l?.state === 'trust') toast(`「${l.title}」 세션은 폴더 신뢰 확인이 필요해요. 목록에서 그 세션을 열거나 tmux attach -t ${l.tmuxSession} 로 들어가 직접 골라 주세요`);
+  else if (l?.state === 'gone') toast(`「${l.title}」 세션이 바로 꺼졌어요. 폴더가 옮겨졌거나 기록이 없을 수 있어요`);
 }
-function renderRecent() {
-  const d = recentData;
-  if (!d) return;
-  $('#rc-days').textContent = d.keepDays;
-  const keep = new Set([...document.querySelectorAll('#rc-list input:checked')].map((x) => x.value)); // 다시 그려도 고른 것 유지
-  const first = !$('#rc-list').dataset.drawn;
-  $('#rc-launched').innerHTML = d.launched.map((l) => l.state === 'trust'
-    ? `<div class="rc-msg trust">⚠ 「${esc(l.title)}」 세션은 <b>폴더 신뢰 확인이 필요해요.</b> 대신 누르지 않았어요 — 목록에서 그 세션을 열거나 <code>tmux attach -t ${esc(l.tmuxSession)}</code> 로 들어가 직접 골라 주세요.</div>`
-    : l.state === 'gone' ? `<div class="rc-msg">「${esc(l.title)}」 세션이 바로 꺼졌어요. 폴더가 옮겨졌거나 기록이 없을 수 있어요.</div>`
-    : `<div class="rc-msg">✓ 「${esc(l.title)}」 다시 띄웠어요 — 곧 목록에 나타나요</div>`).join('');
-  const row = (e) => `<label class="rc-item"><input type="checkbox" value="${esc(e.id)}" ${(first ? !e.closed : keep.has(e.id)) ? 'checked' : ''}><span>${esc(e.title || e.id.slice(0, 8))}<small>${esc(e.cwd)} · ${ago(new Date(e.lastSeen).toISOString())}에 봄</small></span></label>`;
-  const open = d.items.filter((e) => !e.closed), closed = d.items.filter((e) => e.closed);
-  $('#rc-list').innerHTML = d.loading ? '<div class="rc-empty">세션 목록을 읽는 중이에요. 잠시 뒤에 다시 열어 주세요.</div>'
-    : !d.items.length ? '<div class="rc-empty">다시 열 세션이 없어요. 최근에 떠 있던 세션이 모두 지금도 떠 있어요.</div>'
-    : open.map(row).join('') + (closed.length ? `<div class="rc-sub">대시보드에서 직접 닫은 세션(기본으로 고르지 않음)</div>${closed.map(row).join('')}` : '');
-  $('#rc-list').dataset.drawn = '1';
-  $('.rc-all').style.display = d.items.length ? '' : 'none'; // display:flex 라 hidden 속성이 먹지 않는다
-  syncRecentGo();
-}
-function syncRecentGo() {
-  const boxes = [...document.querySelectorAll('#rc-list input')];
-  const n = boxes.filter((x) => x.checked).length;
-  $('#rc-all').checked = boxes.length > 0 && n === boxes.length;
-  $('#rc-all').indeterminate = n > 0 && n < boxes.length;
-  $('#rc-go').disabled = !n;
-  $('#rc-go').textContent = n ? `${n}개 다시 열기` : '다시 열기';
-}
-$('#recent-btn').addEventListener('click', () => {
-  delete $('#rc-list').dataset.drawn;
-  recentData = null;
-  $('#rc-launched').innerHTML = '';
-  $('#rc-list').innerHTML = '<div class="rc-empty">읽는 중…</div>';
-  $('#recent-dlg').showModal();
-  loadRecent();
-});
-$('#rc-list').addEventListener('change', syncRecentGo);
-$('#rc-all').addEventListener('change', (e) => { document.querySelectorAll('#rc-list input').forEach((x) => (x.checked = e.target.checked)); syncRecentGo(); });
-$('#rc-go').addEventListener('click', async () => {
-  const ids = [...document.querySelectorAll('#rc-list input:checked')].map((x) => x.value);
-  if (!ids.length) return;
-  $('#rc-go').disabled = true;
-  try { toast(await api('/api/cmd/recent-restore', { ids })); }
-  catch (err) { toast(err.message); }
-  await loadRecent();
-  // 띄운 세션이 신뢰 확인 창에 멈췄는지 몇 초 뒤 다시 본다(창이 열려 있는 동안만)
-  for (const ms of [3000, 8000]) setTimeout(() => { if ($('#recent-dlg').open) loadRecent(); }, ms);
-});
+// 카드를 여는 클릭(12-panel.js)보다 먼저 받아 카드는 열지 않는다
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-reopen]');
+  if (!b) return;
+  e.stopPropagation();
+  b.disabled = true;
+  try { toast(await api('/api/cmd/recent-restore', { ids: [b.dataset.reopen] })); }
+  catch (err) { toast(err.message); b.disabled = false; return; }
+  // 띄운 세션이 신뢰 확인 창에 멈췄는지 몇 초 뒤 본다
+  for (const ms of [3000, 8000]) setTimeout(() => checkLaunched(b.dataset.reopen), ms);
+}, true);

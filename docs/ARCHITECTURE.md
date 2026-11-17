@@ -147,7 +147,7 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `lib/recent.mjs` | 복구 단추: 최근 7일 떠 있던 세션 기억(`createRecent` · `liveEntries`) |
+| `lib/recent.mjs` | 꺼진 세션 다시 열기: 최근 7일 떠 있던 세션 기억 · 종료 카드에 reopen 표시(`createRecent` · `liveEntries`) |
 | `lib/restore.mjs` | 재시동 복구: 떠 있는 tmux 세션 목록 저장(`saveSnapshot`) · 다시 띄우기(`restoreSessions`) |
 | `lib/restore-cli.mjs` | 한 줄 명령 복구(`restoreAll`) — `npm run restore` 와 `agent-dashboard restore` 가 같이 씀 |
 | `lib/runner.mjs` | 실행기: 서버가 죽으면 다시 켜기(`createRunner`) · 로그 5MB 넘으면 `.1` 로 돌리기 |
@@ -199,7 +199,7 @@
 | `13-controls.js` | 전체 다시 그리기(`render`) |
 | `14-collapse.js` | 활동 로그 · 왼쪽 목록 접기(`applyFold` · `applyAsideFold`) |
 | `15-notify.js` | 알림 판단 · 설정(`notifyChanges` · `saveNotifyCfg`) |
-| `16-restore.js` | 재시동 배너(`renderRestore`) · 복구 창(`loadRecent` · `renderRecent`) |
+| `16-restore.js` | 재시동 배너(`renderRestore`) · 종료된 세션 카드의 「다시 열기」(`checkLaunched`) |
 | `17-live.js` | 서버와 실시간 연결(`connect`) |
 | `18-search.js` | 전체 기록 검색(`openSearch` · `runSearch`) |
 | `19-day.js` | 오늘 한 일(`loadDay` · `dayMarkdown`) |
@@ -215,7 +215,7 @@
 | `03-graph.css` | 조직도 노드 · 선 · 흐르는 점선 · 세션 사이 화살표 · 폴더 열기 메뉴 |
 | `04-drawer.css` | 오른쪽 패널 틀 · 탭 · 지금 탭 · 기록 탭 · 입력 |
 | `05-approval.css` | 승인 창 · 허락할 내용 카드 |
-| `06-dialog.css` | 대화상자 · 토스트 · 복구 창 · 로그인 필요 안내 |
+| `06-dialog.css` | 대화상자 · 토스트 · 로그인 필요 안내 |
 | `07-onboarding.css` · `08-log.css` · `09-search.css` · `10-day.css` | 첫 실행 안내 · 활동 로그 · 전체 기록 검색 · 오늘 한 일 |
 | `11-center.css` | 가운데 탭 · 대화 창 큰 그래프 |
 | `12-narrow.css` | 좁은 창 · 휴대폰 · 동작 줄이기(`@media`) — 모든 구역의 덮어쓰기 |
