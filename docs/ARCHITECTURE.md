@@ -338,9 +338,9 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 | 토큰 전달 | `server.mjs:serveStatic` 이 `index.html` 의 `__DASHBOARD_TOKEN__` 만 바꿈 → `01-core.js` 의 `TOKEN` | js 파일에는 토큰이 없어요. 다른 사이트는 같은 출처 정책 때문에 이 페이지를 읽을 수 없어요 |
 | 토큰 파일 | `lib/token.mjs:loadToken` | `~/.agent-dashboard/token`(600). 링크면 거절, 새로 만들 땐 `link` 로 붙여 두 서버가 동시에 켜도 값이 하나 |
 | 화면 파일 경로 | `server.mjs:serveStatic` + `lib/paths.mjs:isInside` | `public/` 안의 일반 파일만. 폴더를 열다 서버가 죽던 경로도 막음 |
-| 첨부 경로 | `lib/commands.mjs` 의 `send` → `lib/paths.mjs:allInside` | 첨부는 uploads 폴더 안만. `uploads-x` 같은 옆 폴더도 거절 |
+| 첨부 경로 | `lib/commands.mjs` 의 `send` → `lib/paths.mjs:allInside` | 첨부는 uploads 폴더 안만. `uploads-x` 같은 옆 폴더 · 없는 파일 · 링크를 풀면 밖인 파일도 거절(`isInsideReal`) |
 | 폴더 열기 | `lib/commands.mjs` 의 `open-dir` 명령 | 지금 목록에 있는 세션의 폴더만 |
-| 홈 아래 폴더(링크 풀기) | `lib/paths.mjs:isInsideReal` ← `spawn` · `open-dir` · `lib/restore.mjs:restoreSessions` | 글자로 홈 아래인지 + 링크를 푼 실제 폴더도 홈 아래인지. `~/x → /etc` 같은 링크로 홈 밖에서 세션을 띄우거나 폴더를 열지 못하게 |
+| 홈 아래 폴더(링크 풀기) | `lib/paths.mjs:isInsideReal` ← `spawn` · `open-dir` · `lib/restore.mjs:restoreSessions` · 첨부(`allInside`) | 글자로 홈 아래인지 + 링크를 푼 실제 폴더도 홈 아래인지. `~/x → /etc` 같은 링크로 홈 밖에서 세션을 띄우거나 폴더를 열지 못하게 |
 | 복구 | `lib/commands.mjs` 의 `recent-restore` | 화면은 세션 ID 만 보내고, 폴더 · 이름은 서버가 기억한 목록에서만 |
 | 본문 상한 | `lib/body.mjs:readBody` · `saveUpload` | 큰 요청은 413 한 번, 그 뒤 본문은 쌓지 않음. 끊기면 바로 정리(`.part` 안 남김) |
 | 셸을 거치지 않기 | `lib/tmux.mjs`(`execFile` · `spawn` 인자 배열) · `lib/spawn.mjs:newSessionArgs` | 글자가 명령으로 해석되지 않게. 첫 프롬프트는 `--` 뒤라 `--permission-mode …` 같은 글도 옵션이 아님 |

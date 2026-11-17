@@ -237,7 +237,7 @@ A session already running in a terminal has no official way to receive input fro
 - **`~/.agent-dashboard/token`** — a secret token just for this dashboard. It's generated per machine on first run (readable only by you, 600), and **commands** like send, approve and close are accepted **only with this token**. Any website can send requests to localhost from your browser, so this stops a malicious page from sneaking commands in.
   - Don't share it. If it leaks, delete the file and restart to get a new one.
   - Older versions kept it in `.dashboard-token` inside the repo folder. On first start the value is moved to the new place once and the old file is deleted (open tabs keep working). A token file that is a symlink is never used.
-- Attachments outside `~/.agent-dashboard/uploads/` are rejected, and attachments are **deleted automatically after 14 days**.
+- Attachments outside `~/.agent-dashboard/uploads/` are rejected (symlinks are resolved first, and missing files are rejected too), and attachments are **deleted automatically after 14 days**.
 - Open folder (VS Code · Cursor · Finder) only opens **folders of sessions currently in the list**; any other path sent by the page is rejected.
 - New session · open folder · restore only use **folders under your home folder**. Symlinks are resolved first, so a link inside your home pointing outside it (e.g. to `/etc`) is rejected.
 - Aborted or oversized requests are rejected right away (body limit 413, attachments 25MB). If an upload is cut off midway, no half-written file (`.part`) is left behind.

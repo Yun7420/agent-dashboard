@@ -71,11 +71,18 @@ test('보안 층은 시험 모드에서도 그대로: 토큰 · Host · Origin 4
   assert.equal(ok.headers['x-frame-options'], 'DENY');
 });
 
-test('send: 첨부가 uploads 안이면 load-buffer → paste → Enter, uploads-x 면 400 이고 tmux 를 부르지 않는다', async () => {
+test('send: 첨부가 uploads 안이면 load-buffer → paste → Enter, uploads-x · 없는 파일 · 밖을 가리키는 링크면 400 이고 tmux 를 부르지 않는다', async () => {
   const before = fakeLog().length;
   assert.deepEqual([(await cmd('send', { key: `claude:${ID[0]}`, text: '안녕', files: [`${UPLOADS}-x/a.png`] })).status], [400]);
   assert.equal(fakeLog().slice(before).filter((x) => x.cmd === 'tmux' && x.args[0] !== 'list-panes' && x.args[0] !== 'capture-pane').length, 0);
-  const r = await cmd('send', { key: `claude:${ID[0]}`, text: ' 안녕 ', files: [path.join(UPLOADS, '2026-11-13', 'a.png')] });
+  const day = path.join(UPLOADS, '2026-11-13');
+  fs.mkdirSync(day, { recursive: true });
+  fs.writeFileSync(path.join(day, 'a.png'), 'x');
+  fs.writeFileSync(path.join(HOME, 'secret.txt'), 'x');
+  fs.symlinkSync(path.join(HOME, 'secret.txt'), path.join(day, 'out.png')); // uploads 안의 링크가 밖을 가리킴
+  for (const f of [path.join(day, '없는.png'), path.join(day, 'out.png')]) assert.equal((await cmd('send', { key: `claude:${ID[0]}`, text: '안녕', files: [f] })).status, 400, f);
+  assert.equal(fakeLog().slice(before).filter((x) => x.cmd === 'tmux' && x.args[0] !== 'list-panes' && x.args[0] !== 'capture-pane').length, 0);
+  const r = await cmd('send', { key: `claude:${ID[0]}`, text: ' 안녕 ', files: [path.join(day, 'a.png')] });
   assert.equal(r.status, 200);
   const load = tmuxCalls('load-buffer').at(-1);
   assert.equal(load.stdin, '안녕');

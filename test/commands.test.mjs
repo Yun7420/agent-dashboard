@@ -1,8 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import os from 'node:os';
+import path from 'node:path';
 import { createCommands } from '../lib/commands.mjs';
 import { createLock } from '../lib/lock.mjs';
+import { tmpDir } from './_helpers/tmp.mjs';
+
+const UP = tmpDir('ad-cmd-up-'); // 첨부는 실제로 있는 파일만 받는다(링크를 풀어 본다)
+fs.mkdirSync(path.join(UP, 'd'));
+fs.writeFileSync(path.join(UP, 'd', 'a.png'), 'x');
 
 // 가짜 tmux · 가짜 상태로 실제 모드 명령을 시험한다(실제 세션 · tmux 는 건드리지 않음)
 function setup({ sessions = [], hasState = true } = {}) {
@@ -19,7 +26,7 @@ function setup({ sessions = [], hasState = true } = {}) {
   const run = createCommands({
     demo: false, demoRecentRestore: () => '', tmux,
     findSession: (k) => sessions.find((s) => s.key === k) ?? null, sessions: () => sessions,
-    hasState: () => hasState, liveIdSet: () => new Set(), uploadDir: '/u',
+    hasState: () => hasState, liveIdSet: () => new Set(), uploadDir: UP,
     readDefaultModel: () => ({ exists: false, value: null }), restoreDefaultModel: () => calls.push(['restoreModel']),
     enableUsage: () => '켰어요', disableUsage: () => '껐어요', openDir: async () => {},
     recent, restoreLock, restoreSessions: async (e) => e.map((x) => ({ id: x.id, title: 'x', tmuxSession: 't' })), restoreCandidates: () => [],
@@ -59,9 +66,10 @@ test('send · approve · stop · close · model: 상태 검사 뒤 tmux 에 보�
   assert.deepEqual(w.calls, [['key', '%1', 'Escape']]);
   const i = setup({ sessions: [S('idle')] });
   assert.deepEqual(await i.run('send', { key: 'claude:a', text: '  ' }), [400, '빈 메시지']);
-  assert.deepEqual(await i.run('send', { key: 'claude:a', text: 'x', files: ['/u-x/a'] }), [400, '잘못된 첨부 경로']);
+  assert.deepEqual(await i.run('send', { key: 'claude:a', text: 'x', files: [`${UP}-x/a`] }), [400, '잘못된 첨부 경로']);
+  assert.deepEqual(await i.run('send', { key: 'claude:a', text: 'x', files: [path.join(UP, 'd', '없는.png')] }), [400, '잘못된 첨부 경로']);
   assert.deepEqual(await i.run('send', { key: 'claude:a', text: 'y'.repeat(20001) }), [400, '메시지가 너무 길어요']);
-  assert.deepEqual(await i.run('send', { key: 'claude:a', text: ' 안녕 ', files: ['/u/d/a.png'] }), [200, 'ok']);
+  assert.deepEqual(await i.run('send', { key: 'claude:a', text: ' 안녕 ', files: [path.join(UP, 'd', 'a.png')] }), [200, 'ok']);
   assert.deepEqual(await i.run('stop', { key: 'claude:a' }), [409, '지금 작업 중이 아니에요']);
   assert.deepEqual(await i.run('close', { key: 'claude:a' }), [200, 'ok']);
   assert.deepEqual(await i.run('model', { key: 'claude:a', model: 'sonnet' }), [200, 'ok']);

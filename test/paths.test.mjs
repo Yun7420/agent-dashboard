@@ -44,11 +44,20 @@ test('isInside: 자기 자신 · 아래는 안, 옆 폴더 · 부모 · .. 로 �
   assert.equal(isInside('/', '/etc'), true);
 });
 
-test('allInside: 첨부 경로 — uploads-x · 배열 아님은 거절', () => {
-  const up = path.join(DATA_DIR, 'uploads');
-  assert.equal(allInside(up, [path.join(up, 'd', 'a.png'), path.join(up, 'd', 'b.txt')]), true);
-  assert.equal(allInside(up, [path.join(up, 'd', 'a.png'), `${up}-x/b.png`]), false);
-  assert.equal(allInside(up, path.join(up, 'a')), false); // 문자열 하나
+test('allInside: 첨부 경로 — uploads-x · 배열 아님 · 없는 파일 · 밖을 가리키는 링크는 거절', () => {
+  const T = tmpDir('ad-up-');
+  const up = path.join(T, 'uploads'), d = path.join(up, 'd');
+  fs.mkdirSync(d, { recursive: true });
+  fs.mkdirSync(`${up}-x`);
+  for (const f of [path.join(d, 'a.png'), path.join(d, 'b.txt'), `${up}-x/b.png`, path.join(T, 'secret.txt')]) fs.writeFileSync(f, 'x');
+  fs.symlinkSync(path.join(T, 'secret.txt'), path.join(d, 'out.txt'));
+  fs.symlinkSync(path.join(d, 'a.png'), path.join(d, 'in.png'));
+  assert.equal(allInside(up, [path.join(d, 'a.png'), path.join(d, 'b.txt')]), true);
+  assert.equal(allInside(up, [path.join(d, 'a.png'), `${up}-x/b.png`]), false);
+  assert.equal(allInside(up, [path.join(d, '없는.png')]), false);
+  assert.equal(allInside(up, [path.join(d, 'out.txt')]), false); // 글자로는 uploads 안, 링크를 풀면 밖
+  assert.equal(allInside(up, [path.join(d, 'in.png')]), true);
+  assert.equal(allInside(up, path.join(d, 'a.png')), false); // 문자열 하나
   assert.equal(allInside(up, 5), false);
   assert.equal(allInside(up, []), true);
 });
