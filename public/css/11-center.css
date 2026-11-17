@@ -1,5 +1,26 @@
 /* 가운데 칸: 탭 「구조 / 대화 창」 · 대화 창 사용률 큰 그래프(07-center.js). 좁은 창에선 조직도만(12-narrow.css) */
-main { --dw: 0px; } /* 오른쪽 패널 폭(07-center.js 가 채움) — 탭 · 큰 그래프는 그 왼쪽까지만 */
+/* 배경 분위기: 아래쪽 초록 번짐 · 옅은 격자 · 점 입자 — 머리 · 목록 · 아래 칸은 반투명이라 번짐이 비친다 */
+body { background: radial-gradient(120% 70% at 50% 115%, var(--glow), transparent 62%), var(--bg); }
+header, aside, footer { background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(8px); }
+main {
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--accent-2) 22%, transparent) 1px, transparent 0) 7px 11px / 61px 53px,
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 10%, transparent) 1px, transparent 0) 0 0 / 37px 41px,
+    linear-gradient(color-mix(in srgb, var(--ink) 3%, transparent) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, color-mix(in srgb, var(--ink) 3%, transparent) 1px, transparent 1px) 0 0 / 44px 44px,
+    radial-gradient(90% 60% at 40% 110%, var(--glow), transparent 65%),
+    transparent;
+  --dw: 0px; /* 오른쪽 패널 폭(07-center.js 가 채움) — 탭 · 큰 그래프는 그 왼쪽까지만 */
+}
+/* 은색 제목 · 머리 통계 알약 · 보조 단추는 테두리만 */
+.brand h1, #ctx-title { background: linear-gradient(180deg, var(--title-a), var(--title-b)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.brand h1 span { background: inherit; -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 500; }
+.stat { background: color-mix(in srgb, var(--accent) 6%, transparent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+button:not(.primary):not(.ghost):not(.tab):not(.danger) { background: transparent; }
+/* 심전도 장식선: 「구조」 탭 왼쪽 아래(안내 문구 위) — 「대화 창」 탭 · 좁은 창에선 숨김 */
+.ecg { position: absolute; left: 24px; bottom: 48px; width: 300px; height: 50px; pointer-events: none; opacity: .5; }
+.ecg path { fill: none; stroke: var(--accent); stroke-width: 1.2; filter: drop-shadow(0 0 4px var(--accent)); }
+body.cv-ctx .ecg { display: none; }
 .center-tabs { position: absolute; top: 12px; left: 16px; z-index: 3; display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1px solid var(--border); }
 /* 고른 탭: 초록 바탕 + 밑줄(색만으로 가르지 않게) */
 .center-tabs .tab.on { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
@@ -15,7 +36,7 @@ body.cv-ctx #graph, body.cv-ctx .hint, body.cv-ctx .zoom-btns { visibility: hidd
 .cp-head .grow { flex: 1; }
 .cp-head .pill { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
 #ctx-title { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; min-width: 0; line-height: 1.35; color: var(--text); }
-#ctx-title span { font-weight: 500; font-size: 13px; color: var(--dim); }
+#ctx-title span { font-weight: 500; font-size: 13px; }
 .cp-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin: 6px 0 2px; }
 .cp-cmp { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--faint); white-space: nowrap; }
 .cp-cmp select { font-size: 12px; padding: 3px 26px 3px 8px; max-width: 150px; }

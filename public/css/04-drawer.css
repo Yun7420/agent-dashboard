@@ -1,6 +1,6 @@
 /* 오른쪽 패널: 틀 · 머리 · 탭 · 지금 탭(대화 창 추이 · 답변 · 바꾼 파일) · 기록 탭 · 입력 */
 /* ---------- 오른쪽 서랍 ---------- */
-#drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(540px, 92%); background: var(--surface); border-left: 1px solid var(--border); border-radius: 0; box-shadow: -12px 0 30px color-mix(in srgb, var(--shade) 25%, transparent); transform: translateX(calc(100% + 24px)); transition: transform .22s cubic-bezier(.2, .8, .2, 1); display: flex; flex-direction: column; overflow: hidden; }
+#drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(620px, 92%); background: var(--surface); border-left: 1px solid var(--border); border-radius: 0; box-shadow: -12px 0 30px color-mix(in srgb, var(--shade) 25%, transparent); transform: translateX(calc(100% + 24px)); transition: transform .22s cubic-bezier(.2, .8, .2, 1); display: flex; flex-direction: column; overflow: hidden; }
 #drawer.open { transform: none; }
 #drawer .head { position: relative; padding: 0 12px 0 16px; /* 오른쪽은 아이콘 버튼 자체 여백 때문에 12 */ border-bottom: 1px solid var(--border); }
 #drawer .head-top { display: flex; align-items: center; gap: 6px; height: calc(var(--bar-h) - 3px); }

@@ -5,7 +5,7 @@ document.addEventListener('click', (e) => {
   if (!e.target.closest('#d-meta')) $('#d-meta').classList.remove('show');
   if (!e.target.closest('#more-menu')) $('#more-menu').classList.remove('show');
 });
-const DRAWER_DEFAULT = 540;
+const DRAWER_DEFAULT = 620;
 function applyDrawerWidth() {
   const max = Math.max(380, $('main').clientWidth - 40);
   const w = Math.min(max, Math.max(380, pref.drawerW || DRAWER_DEFAULT));
