@@ -134,7 +134,7 @@
 |---|---|
 | `lib/token.mjs` | 비밀 토큰 파일 읽기 · 만들기 · 옛 자리에서 옮기기(`loadToken`) |
 | `lib/paths.mjs` | 데이터 폴더(`DATA_DIR`) · 시험 모드(`TEST_MODE`) · 폴더 안 검사(`isInside` · `allInside`) · 화면용 `~` 줄이기(`tildify`) |
-| `lib/perms.mjs` | `~/.agent-dashboard` 아래 파일을 600 으로 맞추기(`tightenFiles`) |
+| `lib/perms.mjs` | `~/.agent-dashboard` 아래 폴더를 700 · 파일을 600 으로 좁히기(`tightenTree` · `tightenFiles`) |
 | `lib/claude-settings.mjs` | `~/.claude/settings.json` 을 안전하게 고치기(`updateJson` · `writeAtomic`), 상태줄 켜기 · 끄기 |
 | `lib/bridge.mjs` | 상태줄 다리를 `~/.agent-dashboard/bin` 에 복사해 등록(`enableBridge` · `syncBridge`) |
 
@@ -346,7 +346,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 | 셸을 거치지 않기 | `lib/tmux.mjs`(`execFile` · `spawn` 인자 배열) · `lib/spawn.mjs:newSessionArgs` | 글자가 명령으로 해석되지 않게. 첫 프롬프트는 `--` 뒤라 `--permission-mode …` 같은 글도 옵션이 아님 |
 | 붙여넣기 버퍼 | `lib/tmux.mjs:sendText` | 보낼 때마다 새 이름(`agent-deck-<무작위>`)으로 넣고 붙이면서 지움(`-d`), 붙이기가 실패해도 지움. 두 세션에 거의 동시에 보내도 글이 섞이지 않고 tmux 에 남지 않게 |
 | 상태줄 명령 | `lib/bridge.mjs:bridgeCommand` | 경로에 따옴표 · `$` · `` ` `` 등이 있으면 켜지 않음(설정 파일 속 명령에 끼어들지 못하게) |
-| 파일 권한 | `lib/perms.mjs:tightenFiles` · `lib/runner.mjs` 의 `openLog` · `lib/body.mjs:saveUpload` | 폴더 700, 파일 600. 예전에 넓게 만든 파일도 켤 때 맞춤. 링크는 따라가지 않음 |
+| 파일 권한 | `lib/perms.mjs:tightenTree` · `lib/runner.mjs` 의 `openLog` · `lib/body.mjs:saveUpload` | 폴더 700, 파일 600. 예전에 넓게 만든 폴더 · 하위 폴더(uploads/<날짜> · status · limits · bin)와 파일도 켤 때 좁힘(넓히지는 않음 — mkdir 의 mode 는 이미 있던 폴더엔 닿지 않아서). 링크는 따라가지 않음 |
 | 첨부 정리 | `lib/uploads.mjs:pruneUploads` | 14일 지난 첨부 삭제(스크린샷에 민감한 화면이 남지 않게) |
 | 시험 모드 조건 | `lib/paths.mjs:TEST_MODE` | `DASHBOARD_TEST=1` 이고 데모가 아닐 때만 `DASHBOARD_HOME` 등 시험용 값을 읽어요. 평소엔 무시 — 환경 변수 하나로 토큰 위치를 바꾸지 못하게 |
 | 오류 문장 | `lib/respond.mjs:friendly` · `server.mjs` 의 500 처리 | 시스템 오류 원문(경로가 섞일 수 있음)은 로그에만, 화면엔 짧은 한국어 |

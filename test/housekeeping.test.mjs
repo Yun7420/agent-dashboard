@@ -1,4 +1,4 @@
-// 켤 때 · 6시간마다 정리(lib/housekeeping.mjs)를 임시 홈으로: 넓은 권한 600 으로 · 14일 지난 첨부 · 30일 지난 한도 기록 지우기, 하나가 실패해도 나머지는 한다
+// 켤 때 · 6시간마다 정리(lib/housekeeping.mjs)를 임시 홈으로: 넓은 권한 폴더 700 · 파일 600 으로 · 14일 지난 첨부 · 30일 지난 한도 기록 지우기, 하나가 실패해도 나머지는 한다
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -19,8 +19,11 @@ test('켤 때: 권한 정리 · 오래된 첨부 · 한도 기록을 지우고, 
   const limits = path.join(DATA, 'limits');
   const status = path.join(DATA, 'status');
   for (const d of [up, limits, status]) fs.mkdirSync(d, { recursive: true, mode: 0o700 });
-  fs.chmodSync(DATA, 0o700);
+  fs.chmodSync(DATA, 0o755); // 예전에 넓게 만들어져 있던 폴더(mkdir 의 mode 는 이미 있던 폴더엔 닿지 않는다)
+  fs.chmodSync(status, 0o755);
   fs.writeFileSync(path.join(DATA, 'run.log'), 'x', { mode: 0o644 });
+  fs.writeFileSync(path.join(status, 's.json'), '{}');
+  fs.chmodSync(path.join(status, 's.json'), 0o644);
   fs.writeFileSync(path.join(up, 'old.png'), 'x', { mode: 0o600 });
   old(path.join(up, 'old.png'));
   fs.writeFileSync(path.join(up, 'new.png'), 'x', { mode: 0o600 });
@@ -32,7 +35,10 @@ test('켤 때: 권한 정리 · 오래된 첨부 · 한도 기록을 지우고, 
   const timer = startHousekeeping({ limitsDir: limits, statusDir: status, log });
   clearInterval(timer);
   assert.equal(fs.statSync(path.join(DATA, 'run.log')).mode & 0o777, 0o600);
-  assert.ok(lines.some((l) => /^권한 정리\(600\): \d+개$/.test(l)), lines.join('|'));
+  assert.equal(fs.statSync(DATA).mode & 0o777, 0o700);
+  assert.equal(fs.statSync(status).mode & 0o777, 0o700);
+  assert.equal(fs.statSync(path.join(status, 's.json')).mode & 0o777, 0o600);
+  assert.ok(lines.some((l) => /^권한 정리\(폴더 700 · 파일 600\): \d+개$/.test(l)), lines.join('|'));
   assert.deepEqual(fs.readdirSync(up), ['new.png']);
   assert.deepEqual(fs.readdirSync(limits), [`${today}.jsonl`]);
   assert.ok(!lines.some((l) => l.startsWith('오류')), lines.join('|'));
