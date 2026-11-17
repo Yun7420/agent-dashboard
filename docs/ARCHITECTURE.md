@@ -103,7 +103,8 @@
 | `lib/history-api.mjs` | 세션 열쇠로 어댑터 · 기록 파일을 찾아 기록 탭(`promptHistory`) · 대화 창 추이(`contextTrend`) · 전체 기록 검색(`searchHistory`) · 오늘 한 일(`daySummary`). 크기가 같으면 다시 읽지 않는 캐시. 경로 처리 함수 `getHistory` · `getTrend` · `getDay` · `getSearch` |
 | `lib/usage-bridge.mjs` | 상태줄 다리 켜기 · 끄기 · 켜질 때 맞추기(`enableUsage` · `sync`) · 상태줄 파일 읽기(`readStatusFiles` · `usageState`) · `/model` 뒤 기본 모델 되돌리기(`restoreDefaultModel`) |
 | `lib/dialog.mjs` | 화면 맨 아래를 보고 선택창인지(`hasDialog` · `detectDialog`), 선택지와 커서 위치(`parseOptions`), 승인 단추로 쓸 커서 묶음(`dialogOptions` · `cursorRun` — 화면 `05-approval.js:approvalChoices` 와 같은 규칙). 입력칸(가로줄 + `> `)보다 위는 답변이라 보지 않고, 줄마다 앞 500자만 본다 |
-| `lib/approval.mjs` | 승인 창 맨 위 「허락할 내용」 카드: 종류 · 내용 · 위험 이유(`summarizeTool` · `commandRisks` · `fileRisks`) |
+| `lib/approval.mjs` | 승인 창 맨 위 「허락할 내용」 카드: 종류 · 내용 · 위험 이유(`summarizeTool` · `fileRisks`). 위험은 자르기 전 전체 명령으로 판정한 값(기록 · 화면에서 읽을 때 붙임)을 쓴다 |
+| `lib/command-risk.mjs` | 명령 위험 판정(`commandRisks`): 낱말 단위 — 이름 정리(`/bin/rm` · `\rm` · `"rm"`), 앞에 붙는 명령(sudo · env · xargs …) 건너뛰기, `sh -c` · `eval` 안까지, 다른 삭제(find -delete) · git(push --force · clean -f · checkout .) · 디스크 · 내려받아 실행 · 보이지 않는 글자. 글 길이에 비례, 20만 자 넘으면 앞부분만 |
 | `lib/usage.mjs` | 토큰 수 세기(`usageOf` · `addUsage`) · 대화 창 추이 줄이기(`thinTrend`) |
 | `lib/status.mjs` | 상태줄 다리가 세션마다 남기는 파일 정리(`pruneStatusFiles`) |
 
@@ -370,7 +371,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 | 파일 | 지키는 것 |
 |---|---|
 | `test/dialog.test.mjs` | 선택창 감지: 맨 아래 안내 문구만, 대화 속 같은 문구에 속지 않기 |
-| `test/approval.test.mjs` | 위험 판별(`rm -rf` · `curl \| sh` · 폴더 밖 파일 · `.env`)과 잡으면 안 되는 것 |
+| `test/approval.test.mjs` · `test/command-risk.test.mjs` | 위험 판별(`rm -rf` · `curl \| sh` · 폴더 밖 파일 · `.env`)과 잡으면 안 되는 것 · 우회 모양 40여 가지 · 처리 시간 · 잘린 명령도 전체로 판정 · 화면 추정은 본문 전체로 |
 | `test/history.test.mjs` · `describe.test.mjs` · `day.test.mjs` | 기록 읽기 · 답변 이어 붙이기 · 커밋 제목 · 오늘 한 일 |
 | `test/concurrent.test.mjs` | 같은 세션을 동시에 불러도 한 번 부른 결과와 같음(7절) |
 | `test/adapters.test.mjs` | 어댑터마다 필수 함수 · describe/history 결과 모양(`adapters/index.mjs` 머리 주석과 같게) |

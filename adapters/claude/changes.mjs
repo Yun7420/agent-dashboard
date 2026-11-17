@@ -1,6 +1,7 @@
 // 이번 턴에 고친 파일 · 실행한 명령(지금 탭의 diff)과 아직 결과가 없는 도구 호출(승인 카드). describe 가 줄마다 부른다
 import { clip } from '../../lib/util.mjs';
 import { turnStart } from './prompts.mjs';
+import { commandRisks } from '../../lib/command-risk.mjs';
 
 // 이번 턴(마지막 사람 프롬프트 이후)에 고친 파일·실행한 명령. 화면에서 diff 로 보여 준다.
 const EDIT_TOOLS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit']);
@@ -43,6 +44,11 @@ function slimInput(input = {}) {
   for (const k of PENDING_KEYS) {
     if (input[k] == null) continue;
     out[k] = k === 'questions' ? (input.questions ?? []).slice(0, 4).map((q) => ({ question: clip(q?.question, 500) })) : clip(String(input[k]), k === 'command' ? 2000 : 500);
+  }
+  // 위험은 자르기 전 전체 명령으로(뒤쪽 rm -rf 가 잘려 사라지지 않게 — 점검 B2). 카드(lib/approval.mjs)는 이 값을 쓴다
+  if (input.command != null) {
+    out.risks = commandRisks(input.command);
+    out.truncated = String(input.command).length > 2000;
   }
   if (Array.isArray(input.edits)) out.edits = input.edits.map(() => ({})); // 몇 곳 고치는지만
   return out;

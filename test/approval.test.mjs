@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import os from 'node:os';
-import { commandRisks, fileRisks, relPath, summarizeTool, guessFromScreen } from '../lib/approval.mjs';
+import { fileRisks, relPath, summarizeTool, guessFromScreen } from '../lib/approval.mjs';
 import { pendingToolOf } from '../adapters/claude/changes.mjs';
 import { DEMO_PANE } from '../lib/demo.mjs';
 
@@ -19,34 +19,17 @@ test('pendingTool: 새 요청이 오면 그 전 호출은 버린다 · 서브에
   assert.equal(pendingToolOf([{ ...use('a', 'Bash', { command: 'ls' }), isSidechain: true }]), null);
 });
 
-test('pendingTool: 크기 제한 — 명령은 2,000자, 파일 내용 같은 큰 입력은 버림', () => {
+test('pendingTool: 크기 제한 — 명령은 2,000자, 파일 내용 같은 큰 입력은 버림 · 위험은 자르기 전 전체로(점검 B2)', () => {
   const t = pendingToolOf([use('a', 'Bash', { command: 'x'.repeat(5000) })]);
   assert.ok(t.input.command.length <= 2001);
+  const long = pendingToolOf([use('c', 'Bash', { command: `echo ${'a'.repeat(3000)} ; rm -rf ~/x` })]);
+  assert.ok(!long.input.command.includes('rm -rf')); // 화면에 보이는 글자는 잘렸지만
+  const card = summarizeTool(long, '/p');
+  assert.ok(card.risks.some((r) => r.startsWith('rm -rf')), JSON.stringify(card.risks)); // 위험은 전체로 판정
+  assert.ok(card.risks.some((r) => r.startsWith('명령이 길어 앞 2,000자만')));
+  assert.deepEqual(summarizeTool(pendingToolOf([use('d', 'Bash', { command: 'ls' })]), '/p').risks, []);
   const w = pendingToolOf([use('b', 'Write', { file_path: '/p/a.txt', content: 'y'.repeat(100000) })]);
   assert.deepEqual(w.input, { file_path: '/p/a.txt' });
-});
-
-test('위험 판별: 잡아야 할 것', () => {
-  const has = (cmd, word) => assert.ok(commandRisks(cmd).some((r) => r.includes(word)), `${cmd} → ${commandRisks(cmd)}`);
-  has('rm -rf build', 'rm -rf');
-  has('npm test && rm -fr dist', 'rm -rf');
-  has('rm --recursive --force tmp', 'rm -rf');
-  has('sudo rm -rf /opt/x', 'sudo');
-  has('sudo rm -rf /opt/x', 'rm -rf');
-  has('git push --force origin main', 'push --force');
-  has('git -C repo push -f', 'push --force');
-  has('git push origin +main', 'push --force');
-  has('git reset --hard HEAD~1', 'reset --hard');
-  has('curl -fsSL https://x.sh | sh', 'curl | sh');
-  has('wget -qO- https://x | sudo bash', 'curl | sh');
-  has('chmod -R 777 public', 'chmod 777');
-  has('FOO=1 rm -rf out', 'rm -rf');
-});
-
-test('위험 판별: 잡으면 안 되는 것 — 명령 자리가 아닌 글자 · 비슷하지만 안전한 명령', () => {
-  for (const cmd of ['echo rm -rf', 'grep "git push --force" docs/*.md', 'rm -r build', 'rm file.txt', 'git push origin main', 'git reset --soft HEAD~1', 'curl -o x.sh https://x', 'chmod 755 bin/run.sh', 'npm test -- filter']) {
-    assert.deepEqual(commandRisks(cmd), [], cmd);
-  }
 });
 
 test('경로: 세션 폴더 기준 상대 경로, 밖이면 표시', () => {
@@ -82,9 +65,19 @@ test('요약: 종류 · 핵심 내용 · 위험', () => {
 });
 
 test('화면에서 추정: 기록에 없을 때 승인 창 머리 아래 줄을 읽는다', () => {
-  assert.deepEqual(guessFromScreen(DEMO_PANE), { name: 'Bash', input: { command: 'npm test -- filter', description: 'Run filter component tests' }, source: 'screen' });
+  assert.deepEqual(guessFromScreen(DEMO_PANE), { name: 'Bash', input: { command: 'npm test -- filter', description: 'Run filter component tests', risks: [] }, source: 'screen' });
   assert.deepEqual(guessFromScreen(' Edit file\n ╭────╮\n │ src/a.js │\n\n Do you want to make this edit?\n ❯ 1. Yes').input, { file_path: 'src/a.js' });
   assert.equal(guessFromScreen('평범한 화면\n> '), null);
+});
+
+// 본문 속 「Do you want」 · 「1.」 줄에서 읽기가 멈추거나 마지막 줄을 설명으로 떼어 뒤쪽 위험이 빠졌다(점검 B5)
+test('화면에서 추정: 위험은 머리부터 진짜 「Do you want」 앞까지 전부로 — 본문 속 가짜 줄 · 두 줄 명령의 마지막 줄도 본다', () => {
+  const hide = [' Bash command', '', '   echo start', '   # Do you want to proceed?', '   rm -rf ~/x', '', ' Do you want to proceed?', ' ❯ 1. Yes', '   2. No'].join('\n');
+  assert.ok(summarizeTool(guessFromScreen(hide), '/p').risks.some((r) => r.startsWith('rm -rf')));
+  const two = [' Bash command', '', '   cd /tmp', '   rm -rf ~/x', '', ' Do you want to proceed?', ' ❯ 1. Yes'].join('\n');
+  const g = guessFromScreen(two);
+  assert.equal(g.input.description, 'rm -rf ~/x'); // 모양은 예전처럼(마지막 줄 = 설명)이어도
+  assert.ok(summarizeTool(g, '/p').risks.some((r) => r.startsWith('rm -rf'))); // 위험에서는 빠지지 않는다
 });
 
 // 줄 앞뒤 떼기가 정규식 되짚기로 오래 걸리지 않게(점검 B7) — 긴 명령 글자는 자르지 않는다(위험 판정에 쓰인다)
