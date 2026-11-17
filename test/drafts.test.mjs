@@ -1,6 +1,7 @@
 // 입력 칸의 세션별 임시 글 · 첨부(public/js/08-attach.js). 화면 파일을 node:vm 으로 불러, 쓰는 요소(입력 칸 · 첨부 목록 · 보내기 단추)만 흉내 낸다
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { loadFront } from './_helpers/vm.mjs';
 
 function load() {
@@ -123,4 +124,21 @@ test('첨부를 빼면(✕) 미리보기 메모리를 돌려준다', async () =>
   const i = list.findIndex((a) => a.id === id);
   run('revoke')(list.splice(i, 1));
   assert.deepEqual(revoked, ['blob:1']);
+});
+
+// 새 세션에 넣지 못한 첫 프롬프트(서버 state.firstPrompts → 11-panel.js restoreFirstPrompts): 떠 있으면 그 세션 임시 글 앞에, 닫혔으면 활동 로그에 글, 둘 다 한 번만 · 받았다고 알림
+test('restoreFirstPrompts: 떠 있는 세션은 임시 글로(쓰던 글은 뒤에 남김) · 닫힌 세션은 로그에 글 · 한 번만 · ack 보냄', async () => {
+  const { run, stored, sent } = load();
+  run("function logLine(cls, text) { (globalThis.__log ??= []).push([cls, text]); }"); // 02-activity.js 의 활동 로그 한 줄
+  run(fs.readFileSync(new URL('../public/js/11-panel.js', import.meta.url), 'utf8').match(/const fpSeen[\s\S]*?\n}\n/)[0]); // 11-panel 의 그 함수만
+  run(`pref.drafts['claude:a'] = '쓰던 글';`);
+  const list = [{ key: 'claude:a', title: '일', text: '첫 메시지' }, { key: 'claude:b', title: null, text: '닫힌 세션 글' }];
+  const restore = run('restoreFirstPrompts');
+  restore(list, [{ key: 'claude:a', status: 'idle' }]);
+  restore(list, [{ key: 'claude:a', status: 'idle' }]); // 다음 틱에 또 와도 한 번만
+  await flush();
+  assert.equal(run("pref.drafts['claude:a']"), '첫 메시지\n\n쓰던 글');
+  assert.match(stored['agent-deck'], /첫 메시지/);
+  assert.deepEqual(JSON.parse(JSON.stringify(run('globalThis.__log'))), [['x', '[일] 첫 메시지를 넣지 못해 입력 칸에 돌려놨어요 — 확인하고 보내 주세요'], ['x', '[b] 세션이 닫혀 첫 메시지를 보내지 못했어요 — 보내려던 글: 닫힌 세션 글']]);
+  assert.deepEqual(sent.map((x) => x.key), ['claude:a', 'claude:b']);
 });

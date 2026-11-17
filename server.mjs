@@ -2,9 +2,8 @@
 // 의존성 없음(Node 18+). 훅·전역 설정을 건드리지 않고, 각 도구가 남기는 세션 기록 파일과 프로세스 목록만 읽는다.
 // 도구별 차이는 adapters/ 에만 있다 — 새 에이전트는 어댑터 파일 하나로 붙인다.
 //
-// 보안: 127.0.0.1 에만 열고, Host 헤더를 확인해(DNS 리바인딩 차단) 다른 사이트가 이 서버를 못 부르게 한다.
-// 명령(채팅·승인·새 세션)은 서버가 켜질 때 만든 비밀 토큰이 있어야 받는다. 토큰은 이 페이지에만 심겨 있고,
-// 다른 사이트는 브라우저의 같은 출처 정책 때문에 이 페이지를 읽을 수 없어 토큰을 알 수 없다.
+// 보안: 127.0.0.1 · [::1] 에만 열고 Host · 출처를 확인한다(DNS 리바인딩 · 다른 사이트). /events · /api 는 로그인 쿠키(토큰 HMAC 서명,
+// lib/auth.mjs)가 있어야 받고, 토큰은 화면 파일에 넣지 않는다 — 로그인 링크는 토큰 파일을 읽을 수 있는 `agent-dashboard open` 만 만든다.
 //
 // 이 파일: 서버 켜기 · 요청 입구의 보안 검사(handle · authorized · 보안 헤더) · 토큰 · 경로 표(ROUTES) · 화면 파일 · 각 구역을 잇는 일.
 // 구역별 일은 lib/ 에: 상태 조립 state · 프로세스 procs · 2초 틱과 SSE live-feed · 명령 commands · 기록 · 검색 · 오늘 한 일 history-api ·
@@ -23,6 +22,7 @@ import { createLock } from './lib/lock.mjs';
 import { createCommands } from './lib/commands.mjs';
 import { createProcesses } from './lib/procs.mjs';
 import { createStateBuilder } from './lib/state.mjs';
+import { createSpawned } from './lib/spawn.mjs';
 import { createEnvCheck, startupNotices } from './lib/env.mjs';
 import { detectEditors, openDir } from './lib/open-dir.mjs';
 import { UPLOAD_DIR, UPLOAD_MAX } from './lib/uploads.mjs';
@@ -57,7 +57,7 @@ const PUBLIC_DIR = path.join(ROOT, 'public');
 
 // ---------- 세션 상태 ----------
 // 프로세스 목록(lib/procs.mjs)과 상태 조립(lib/state.mjs). 상태 조립에 필요한 것만 이름 붙여 넘긴다
-const spawnedNames = new Map(); // 대시보드에서 연 세션의 이름 (기록 파일이 생기기 전까지 표시용)
+const spawned = createSpawned(); // 대시보드에서 연 세션의 이름 · 첫 프롬프트 상태(lib/spawn.mjs)
 const processes = createProcesses({ adapters, tmux });
 const { buildState, projectName, dialogIssues } = createStateBuilder({
   demo: DEMO,
@@ -65,7 +65,7 @@ const { buildState, projectName, dialogIssues } = createStateBuilder({
   adapters,
   tmux,
   processes,
-  spawnedNames,
+  spawned,
   readDefaultModel: () => usage.readDefaultModel(),
   readStatus: () => usage.readStatusFiles(),
   usageState: (status) => usage.usageState(status),
@@ -194,7 +194,7 @@ const handleCommand = createCommands({
   restoreLock,
   restoreSessions,
   restoreCandidates,
-  spawnedNames,
+  spawned,
   onChanged: feed.invalidate,
 });
 

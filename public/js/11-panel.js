@@ -92,6 +92,21 @@ $('#spawn-form').addEventListener('submit', async (e) => {
   } catch (err) { toast(err.message); }
 });
 let pendingSelect = null;
+// 새 세션에 첫 프롬프트를 넣지 못했으면(입력칸이 10분 안에 안 뜸 · 창이 닫힘 — 서버 state.firstPrompts) 쓴 글이 사라지지 않게
+// 그 세션의 입력 칸 임시 글로 돌려놓고 활동 로그에 한 줄. 받았다고 알리면 서버는 글을 지운다(상태에 오래 남지 않게)
+const fpSeen = new Set();
+function restoreFirstPrompts(list, sessions) {
+  for (const f of list ?? []) {
+    if (fpSeen.has(f.key)) continue;
+    fpSeen.add(f.key);
+    const name = f.title || f.key.split(':')[1].slice(0, 8);
+    if (sessions.some((s) => s.key === f.key)) {
+      putDraft(f.key, f.text);
+      logLine('x', `[${name}] 첫 메시지를 넣지 못해 입력 칸에 돌려놨어요 — 확인하고 보내 주세요`);
+    } else logLine('x', `[${name}] 세션이 닫혀 첫 메시지를 보내지 못했어요 — 보내려던 글: ${f.text.slice(0, 300)}`);
+    api('/api/cmd/first-prompt-ack', { key: f.key }).catch(() => fpSeen.delete(f.key));
+  }
+}
 // 마크다운 변환 md() 는 00-md.js
 // 길면 처음 몇 줄만 보여 주고 "더 보기"로 펼친다
 const LONG = (s) => s.length > 400 || s.split('\n').length > 7;

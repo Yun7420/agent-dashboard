@@ -132,6 +132,23 @@ test('spawn: 홈 밖은 400, 첫 프롬프트는 claude 인자에 없고 입력�
   assert.ok(!fakeLog().some((x) => x.cmd === 'claude' && x.args.includes('--permission-mode'))); // claude 를 직접 실행하지 않음(tmux 안에서만)
 });
 
+// 창이 바로 닫히면(capture 실패) 첫 프롬프트를 넣지 못한다 → 상태 firstPrompts 로 글이 화면에 가고, ack 하면 빠진다
+test('spawn: 첫 프롬프트를 못 넣으면 다음 상태의 firstPrompts 에 이름 · 글, ack 뒤에는 없음', async () => {
+  const failFile = path.join(home.FAKE_DIR, 'fail.txt');
+  fs.writeFileSync(failFile, 'capture-pane\n');
+  try {
+    const r = await cmd('spawn', { cwd: '~/proj', name: '닫힐 일', prompt: '돌려받을 글' });
+    const key = JSON.parse(r.text).key;
+    let st = null;
+    assert.ok(await until(async () => (st = await firstState()).firstPrompts?.some((f) => f.key === key)));
+    assert.deepEqual(st.firstPrompts.find((f) => f.key === key), { key, title: '닫힐 일', text: '돌려받을 글' });
+    assert.equal((await cmd('first-prompt-ack', { key })).status, 200);
+    assert.ok(await until(async () => !(await firstState()).firstPrompts.some((f) => f.key === key)));
+  } finally {
+    fs.rmSync(failFile, { force: true });
+  }
+});
+
 test('spawn: 폴더가 아닌 것(파일 · 없는 폴더 · .. 로 홈 밖 · 홈 밖을 가리키는 링크)은 400, tmux 를 부르지 않는다', async () => {
   const file = path.join(CWD, 'notes.txt');
   fs.writeFileSync(file, 'x');

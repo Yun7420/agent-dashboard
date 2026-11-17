@@ -26,6 +26,13 @@ function syncDraftText() {
   clearTimeout(draftSaveTimer);
   draftSaveTimer = setTimeout(savePref, 400);
 }
+// 다른 곳에서 온 글을 그 세션의 임시 글 앞에 놓는다(넣지 못한 첫 프롬프트 — 11-panel.js). 쓰던 글이 있으면 지우지 않고 뒤에 둔다
+function putDraft(key, text) {
+  const cur = pref.drafts[key] ?? '';
+  pref.drafts[key] = (cur ? `${text}\n\n${cur}` : text).slice(0, 20000);
+  savePref();
+  if (key === draftKey) { $('#msg').value = pref.drafts[key]; updateSendState(); }
+}
 // 떠 있지 않은(끝난 · 목록에서 사라진) 세션의 열쇠 — 순수 판정(test/drafts.test.mjs)
 const staleKeys = (keys, sessions) => {
   const live = new Set(sessions.filter((s) => s.status !== 'ended').map((s) => s.key));

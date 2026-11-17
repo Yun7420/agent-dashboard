@@ -113,7 +113,7 @@
 | 파일 | 하는 일 |
 |---|---|
 | `lib/commands.mjs` | `/api/cmd/<이름>` 처리 표(`createCommands`). tmux 가 필요한 명령은 세션 찾기 · tmux 확인을 앞에서 한 번에 |
-| `lib/spawn.mjs` | 새 세션 claude 인자(`newSessionArgs`, 첫 프롬프트 없음) · 첫 프롬프트 넣기(`deliverFirstPrompt`: 입력칸이 보이면 tmux 버퍼로 — 인자는 `ps` 에 보여서, 점검 C5) |
+| `lib/spawn.mjs` | 새 세션 claude 인자(`newSessionArgs`, 첫 프롬프트 없음) · 첫 프롬프트 넣기(`deliverFirstPrompt`: 입력칸이 보이면 tmux 버퍼로 — 인자는 `ps` 에 보여서, 점검 C5) · 연 세션 기억(`createSpawned`: 이름 · 첫 프롬프트 기다림 / 못 넣은 글은 상태 `firstPrompts` 로 화면 입력 칸에 돌려놓고 ack · 30분 뒤 지움) |
 | `lib/open-dir.mjs` | 폴더를 VS Code · Cursor · Finder 로 열기(`openDir`), 설치된 앱 찾기(`detectEditors`) |
 | `lib/env.mjs` | 환경 점검(`createEnvCheck`) · 시작 로그 안내(`startupNotices`) |
 | `lib/node-check.mjs` | 켤 때 Node 버전 확인(`nodeCheck`): engines 보다 낮으면 한국어 안내 후 종료, 지원 끝난 버전(짝수 LTS 중 18 · 20, 홀수 전부 — `isEol`)은 한 줄 안내. bin · server.mjs 가 맨 앞에서 `checkNode()` 를 부른다(불러오기만 해서는 아무것도 안 함) |

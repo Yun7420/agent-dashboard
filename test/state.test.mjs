@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { HOME } from '../lib/paths.mjs';
+import { createSpawned } from '../lib/spawn.mjs';
 import { createStateBuilder, matchProcesses, mergeStatusline } from '../lib/state.mjs';
 
 const cwdKey = (dir) => dir.replace(/[/.]/g, '-');
@@ -58,7 +59,7 @@ test('mergeStatusline: 상태줄 값이 있으면 덮어쓰고, 0% 는 기록 �
 });
 
 // buildState 를 가짜 의존물로. 화면(screens)은 tmux 대상 → 글자
-function builder({ records = [], describe = {}, procs = [], live, peers, panes = {}, screens = {}, defaultModel = null, status = new Map(), spawned = new Map() } = {}) {
+function builder({ records = [], describe = {}, procs = [], live, peers, panes = {}, screens = {}, defaultModel = null, status = new Map(), spawned = createSpawned() } = {}) {
   const captures = [];
   const claude = adapter('claude', {
     scan: async () => records.map(({ tool, key, ...r }) => r),
@@ -67,13 +68,13 @@ function builder({ records = [], describe = {}, procs = [], live, peers, panes =
     ...(peers ? { peers: async (s) => peers[s.id] ?? null } : {}),
   });
   const b = createStateBuilder({
-    demo: false, adapters: [claude], spawnedNames: spawned,
+    demo: false, adapters: [claude], spawned,
     processes: { processes: async () => ({ procs, parentOf: new Map() }), panes: async () => [] },
     tmux: { findPane: (pid) => panes[pid] ?? null, capture: async (t) => (captures.push(t), screens[t] ?? '') },
     readDefaultModel: () => ({ value: defaultModel }),
     readStatus: () => ({ bySession: status }), usageState: () => ({ ok: true }), keepCaches: () => {},
   });
-  return { b, captures, run: async () => (await b.buildState(24)).sessions };
+  return { b, captures, run: async () => (await b.buildState(24)).sessions, state: () => b.buildState(24) };
 }
 const ago = (ms) => new Date(Date.now() - ms).toISOString();
 const pane = (n) => ({ target: `%${n}`, session: `s${n}` });
@@ -116,7 +117,8 @@ test('대화 창 크기 추정: 20만 넘음 · 기본 모델이 같은 계열�
 
 test('기록 없는 세션: 화면에 확인 창이 있으면 「시작 확인」 대기, 대시보드에서 연 이름 · 공식 목록의 ID 를 쓴다', async () => {
   const live = [{ pid: 7, sessionId: 'new-id', status: 'idle' }];
-  const spawned = new Map([['claude:new-id', '새 일']]);
+  const spawned = createSpawned();
+  spawned.names.set('claude:new-id', '새 일');
   const { run } = builder({ procs: [proc(6, { cwd: '/w/b' })], live, spawned, panes: { 6: pane(6) }, screens: { '%6': 'Do you trust?\n❯ 1. Yes\n  2. No\nEnter to confirm · Esc to cancel' } });
   const by = Object.fromEntries((await run()).map((s) => [s.id, s]));
   assert.equal(by['pid-6'].status, 'waiting');
@@ -199,4 +201,22 @@ test('projectName: 홈은 「~ (홈)」, 폴더가 없으면 기록 폴더 열�
 test('데모면 가짜 상태를 그대로', async () => {
   const b = createStateBuilder({ demo: true, demoState: () => ({ demo: 1 }), adapters: [] });
   assert.deepEqual(await b.buildState(24), { demo: 1 });
+});
+
+// 첫 프롬프트를 들고 기다리는 새 세션(점검 C5 뒤): 카드에 「확인 뒤 보내요」, 넣지 못한 글은 상태(firstPrompts)로 — 받으면 지움
+test('첫 프롬프트: 기다리는 세션의 확인 창은 「신뢰 확인을 기다리는 중」, 넣지 못한 글은 firstPrompts 에 이름과 함께 · ack 뒤 빠짐', async () => {
+  const live = [{ pid: 7, sessionId: 'new-id', status: 'idle' }];
+  const spawned = createSpawned();
+  spawned.names.set('claude:new-id', '새 일');
+  spawned.pending('claude:new-id');
+  const trust = ' Is this a project you trust?\n ❯ No, exit\n   Yes, I trust this folder\n Enter to confirm · Esc to cancel';
+  const { run, state } = builder({ procs: [proc(7, { cwd: '/w/b' })], live, spawned, panes: { 7: pane(7) }, screens: { '%7': trust } });
+  const s = (await run()).find((x) => x.id === 'new-id');
+  assert.equal(s.waitingFor, '신뢰 확인을 기다리는 중 — 첫 메시지는 확인 뒤 보내요');
+  assert.deepEqual((await state()).firstPrompts, []);
+  spawned.failed('claude:new-id', '보내려던 글');
+  assert.deepEqual((await state()).firstPrompts, [{ key: 'claude:new-id', title: '새 일', text: '보내려던 글' }]);
+  assert.equal((await run()).find((x) => x.id === 'new-id').waitingFor, '시작 확인'); // 더는 들고 있지 않음
+  spawned.ack('claude:new-id');
+  assert.deepEqual((await state()).firstPrompts, []);
 });

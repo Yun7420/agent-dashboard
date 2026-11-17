@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createCommands } from '../lib/commands.mjs';
 import { createLock } from '../lib/lock.mjs';
+import { createSpawned } from '../lib/spawn.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 
 const UP = tmpDir('ad-cmd-up-'); // 첨부는 실제로 있는 파일만 받는다(링크를 풀어 본다)
@@ -12,12 +13,13 @@ fs.mkdirSync(path.join(UP, 'd'));
 fs.writeFileSync(path.join(UP, 'd', 'a.png'), 'x');
 
 // 가짜 tmux · 가짜 상태로 실제 모드 명령을 시험한다(실제 세션 · tmux 는 건드리지 않음)
-function setup({ sessions = [], hasState = true } = {}) {
+function setup({ sessions = [], hasState = true, screen = '────────\n❯ ' } = {}) {
   const calls = [];
+  const spawned = createSpawned();
   const tmux = {
     sendText: async (t, x) => calls.push(['text', t, x]),
     sendKey: async (t, k) => calls.push(['key', t, k]),
-    capture: async () => '────────\n❯ ',
+    capture: async () => { if (screen instanceof Error) throw screen; return screen; },
     newSession: async (o) => { calls.push(['new', o.name, o.command]); return '%9'; },
   };
   const recent = { launchedIds: () => new Set(), noteLaunched: (id) => calls.push(['noted', id]), pick: () => [], markClosed: (id) => calls.push(['closed', id]) };
@@ -30,9 +32,9 @@ function setup({ sessions = [], hasState = true } = {}) {
     readDefaultModel: () => ({ exists: false, value: null }), restoreDefaultModel: () => calls.push(['restoreModel']),
     enableUsage: () => '켰어요', disableUsage: () => '껐어요', openDir: async () => {},
     recent, restoreLock, restoreSessions: async (e) => e.map((x) => ({ id: x.id, title: 'x', tmuxSession: 't' })), restoreCandidates: () => [],
-    spawnedNames: new Map(), onChanged: () => (changed += 1),
+    spawned, onChanged: () => (changed += 1),
   });
-  return { run, calls, restoreLock, changed: () => changed };
+  return { run, calls, restoreLock, spawned, changed: () => changed };
 }
 const S = (status, tmux = { target: '%1' }) => ({ key: 'claude:a', id: 'a', status, tmux, cwd: os.homedir() });
 
@@ -100,4 +102,27 @@ test('복구 · 폴더 열기 · 새 세션 · 사용 한도: 예전 응답 그�
   assert.deepEqual(t.calls.findLast((c) => c[0] === 'text'), ['text', '%9', '--x']); // 입력칸이 보여 새 창(%9)에 붙여 넣음
   assert.deepEqual(await t.run('usage-on', {}), [200, '켰어요']);
   assert.deepEqual(await t.run('usage-off', {}), [200, '껐어요']);
+});
+
+// 첫 프롬프트를 넣지 못하면(창이 닫힘) 글을 상태용 목록에 돌려주고, 화면이 받았다고 하면(first-prompt-ack) 지운다
+test('spawn 첫 프롬프트: 넣으면 기록 없음 · 창이 닫혀 못 넣으면 firstPrompts 로 · ack 로 지움, 로그에 글 없음', async () => {
+  const ok = setup();
+  const key = JSON.parse((await ok.run('spawn', { cwd: '~', name: '일', prompt: '할 일' }))[1]).key;
+  await new Promise((r) => setImmediate(r));
+  assert.deepEqual([ok.spawned.isPending(key), ok.spawned.failedList()], [false, []]);
+  const gone = setup({ screen: new Error("can't find pane") });
+  const logs = [];
+  const orig = console.error;
+  console.error = (...a) => logs.push(a.join(' '));
+  try {
+    const k2 = JSON.parse((await gone.run('spawn', { cwd: '~', name: '일2', prompt: '비밀 계획' }))[1]).key;
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(gone.spawned.failedList(), [{ key: k2, title: '일2', text: '비밀 계획' }]);
+    assert.ok(gone.changed() >= 1); // 화면을 바로 다시 그리게
+    assert.deepEqual(await gone.run('first-prompt-ack', { key: k2 }), [200, '받았어요']);
+    assert.deepEqual(gone.spawned.failedList(), []);
+  } finally {
+    console.error = orig;
+  }
+  assert.ok(logs.length && !logs.some((l) => l.includes('비밀 계획')));
 });
