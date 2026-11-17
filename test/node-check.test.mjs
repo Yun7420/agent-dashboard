@@ -32,10 +32,15 @@ test('checkNode: 부를 때만 안내 · 종료(불러오기만 해서는 아무
   assert.equal(run('v22.0.0').message, null);
   assert.deepEqual(exits, [1]);
   assert.equal(out.length, 2);
+  assert.match(out[1], /22 이상으로 올리면 좋아요/);
+  checkNode({ version: 'v20.0.0', log: (m) => out.push(m), exit: (c) => exits.push(c), notice: false }); // 안내 끔: 지원 종료 한 줄은 없음
+  assert.equal(out.length, 2);
+  checkNode({ version: 'v16.0.0', log: (m) => out.push(m), exit: (c) => exits.push(c), notice: false }); // 멈출 땐 안내 끔이어도 말한다
+  assert.deepEqual([out.length, exits], [3, [1, 1]]);
 });
 
 // 실제로 켜는 길(서버 · 실행 명령)에서 맨 먼저 확인하는지: Node 16 인 척하면 서버를 열기 전에 1 로 끝난다
-test('켜는 길: node server.mjs · bin 둘 다 Node 16 이면 안내 후 종료 코드 1, Node 20 이면 한 줄 안내 후 그대로', () => {
+test('켜는 길: node server.mjs · bin 둘 다 Node 16 이면 안내 후 종료 코드 1, 서버를 켜지 않는 명령(--version)은 Node 20 이어도 지원 종료 안내 없이 그대로', () => {
   const dir = tmpDir('ad-nodev-');
   const fake = (v) => {
     const f = path.join(dir, `v${v}.mjs`);
@@ -52,6 +57,6 @@ test('켜는 길: node server.mjs · bin 둘 다 Node 16 이면 안내 후 종�
   }
   const ok = run(20, ['bin/agent-dashboard.mjs', '--version']);
   assert.equal(ok.status, 0);
-  assert.match(ok.stderr, /Node 20 은 지원이 끝난 버전이에요/);
+  assert.doesNotMatch(ok.stderr, /지원이 끝난/); // 지원 종료 한 줄은 서버를 켜는 명령(start · run · restore)에서만
   assert.equal(ok.stdout.trim(), JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version);
 });

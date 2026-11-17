@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkNode } from '../lib/node-check.mjs';
 
-checkNode(); // 맨 먼저: Node 가 낮으면 안내하고 끝낸다
+checkNode({ notice: [undefined, 'start', 'run', 'restore'].includes(process.argv[2]) }); // 맨 먼저: Node 가 낮으면 안내하고 끝낸다(지원 종료 한 줄은 서버를 켜는 명령에서만)
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url))); // bin/ 의 부모 = 저장소(패키지) 폴더
 const { name, version, homepage } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));

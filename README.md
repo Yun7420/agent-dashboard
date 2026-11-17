@@ -76,8 +76,11 @@ Agent Dashboard는 이걸 한 화면에 모읍니다.
 ```bash
 git clone https://github.com/Yun7420/agent-dashboard.git
 cd agent-dashboard
-npm start          # → 브라우저에서 http://localhost:4545
+npm start          # → 터미널에 나온 「로그인 링크(10분)」를 브라우저로 열기
+node bin/agent-dashboard.mjs open   # 링크가 지났거나 다른 브라우저 · 30일이 지났을 때: 로그인 링크를 브라우저로 열어 줘요
 ```
+
+화면 주소는 `http://localhost:4545` 이지만, 처음 한 번은 **로그인 링크**로 들어와야 해요. 그 브라우저는 30일 동안 로그인돼요(아래 「보안」).
 
 같은 일을 `node bin/agent-dashboard.mjs` 로도 할 수 있어요(`--help` 로 도움말). 나중에 npm 으로 내놓을 때 쓸 실행 명령이에요.
 
@@ -234,15 +237,19 @@ node bin/agent-dashboard.mjs restore   # 같은 일(대시보드는 run 실행�
 ## 보안
 
 - **`127.0.0.1` 전용** — 주소(Host)가 localhost 가 아니면 거절해요(DNS 리바인딩 차단). 프롬프트·코드 경로가 그대로 보이니 다른 사람과 주소를 공유하지 마세요.
-- **`~/.agent-dashboard/token`** — 이 대시보드 전용 비밀 열쇠예요. 처음 실행할 때 컴퓨터마다 자동으로 만들어지고(본인만 읽기 가능, 600), 메시지·승인·종료 같은 **명령은 이 열쇠가 맞을 때만** 받아요. 브라우저에선 아무 웹사이트나 localhost 로 요청을 보낼 수 있어서, 악성 사이트가 몰래 명령을 넣는 걸 막는 용도예요.
-  - 공유하지 마세요. 새어 나갔다면 파일을 지우고 다시 켜면 새 열쇠로 바뀌어요.
+- **`~/.agent-dashboard/token`** — 이 대시보드 전용 비밀 열쇠예요. 처음 실행할 때 컴퓨터마다 자동으로 만들어지고(본인만 읽기 가능, 600), **화면에는 넣지 않아요**(화면 파일은 누구나 받을 수 있어서 — 같은 Mac 의 다른 계정 포함).
+  - **로그인**: 이 열쇠로 만든 **로그인 링크**(10분)로 들어온 브라우저에만 쿠키를 줘요. 켤 때 터미널에 링크가 나오고, 나중엔 `node bin/agent-dashboard.mjs open`(설치했으면 `agent-dashboard open`)이 링크를 브라우저로 열어 줘요. 링크는 들어오자마자 `/` 로 바뀌어 주소창 · 방문 기록에 남지 않아요.
+  - 쿠키는 화면 스크립트도 못 읽고(HttpOnly), 다른 사이트에서 오는 요청엔 붙지 않고(SameSite=Strict), 30일이 지나면 끝나요. 값은 열쇠가 아니라 열쇠로 만든 서명이에요.
+  - 기록을 보거나 메시지 · 승인 · 종료 같은 명령을 보내려면 로그인이 필요해요. 화면의 요청에는 다른 사이트가 붙일 수 없는 머리글을 붙이고, 같은 Mac 의 다른 포트 페이지에서 온 요청도 거절해요.
+  - `open` 은 링크를 넘기기 전에 그 포트의 서버가 진짜 이 대시보드인지(열쇠로 서명한 답) 확인해요. 다른 프로그램이 포트를 먼저 잡고 있으면 링크를 보내지 않아요. 서버는 `127.0.0.1` 과 `[::1]` 을 함께 열어, 다른 프로그램이 `localhost` 의 IPv6 쪽을 가로채지 못하게 해요.
+  - 공유하지 마세요. 새어 나갔다면 파일을 지우고 다시 켜면 새 열쇠로 바뀌고 모든 로그인이 끊겨요.
   - 예전 버전은 저장소 폴더의 `.dashboard-token` 에 두었어요. 처음 켤 때 그 값을 새 자리로 한 번 옮기고 옛 파일은 지워요(열려 있던 탭은 그대로). 링크로 된 토큰 파일은 쓰지 않아요.
 - 첨부 파일은 `~/.agent-dashboard/uploads/` 밖의 경로를 받지 않고(링크도 풀어서 확인 · 없는 파일도 거절), **14일이 지나면 자동으로 지워요.**
 - 폴더 열기(VS Code · Cursor · Finder)는 **지금 목록에 있는 세션의 폴더만** 열어요. 화면이 보낸 다른 경로는 거절해요.
 - 새 세션 · 폴더 열기 · 복구는 **홈 폴더 아래 폴더만** 써요. 홈 안의 링크(바로가기)가 홈 밖(`/etc` 등)을 가리키면 링크를 풀어 확인하고 거절해요.
 - 끊긴 요청 · 너무 큰 요청은 바로 거절해요(본문 상한 413, 첨부 25MB). 업로드가 중간에 끊기면 반쯤 쓴 파일(`.part`)을 남기지 않아요.
 - `~/.agent-dashboard` 폴더는 본인만 열 수 있고(700), 안의 파일(로그 · 설정 백업 · 재시동 목록)도 본인만 읽어요(600). 서버를 켤 때 예전에 넓게 만들어진 폴더 · 하위 폴더 · 파일도 맞춰요(좁히기만 하고, 링크는 따라가지 않음).
-- 대화 목록·기록을 보는 요청도 명령과 같은 토큰이 있어야 해요(같은 Mac 의 다른 계정·프로그램이 내 대화를 읽지 못하게).
+- 대화 목록·기록을 보는 요청도 명령과 같은 로그인이 있어야 해요(같은 Mac 의 다른 계정·프로그램이 내 대화를 읽지 못하게).
 - 다른 웹사이트가 이 화면을 몰래 띄워(iframe) 승인 단추를 누르게 속이지 못하게, 모든 응답에 화면 끼워 넣기 금지(`X-Frame-Options: DENY` · `frame-ancestors 'none'`)와 `nosniff` 를 붙여요.
 - 권한 모드는 각자 Claude 설정을 그대로 따라요. 권한 건너뛰기 옵션을 쓰지 않아요.
 - 새 세션의 첫 프롬프트는 `--` 뒤에 넘겨서, `-` 로 시작하는 글(예: `--permission-mode …`)이 claude 옵션으로 읽히지 않아요.
@@ -264,14 +271,14 @@ node bin/agent-dashboard.mjs restore   # 같은 일(대시보드는 run 실행�
 
 ```
 agent-dashboard/
-├─ server.mjs          # 서버 켜기 · 요청 입구의 보안 검사 · 토큰 · 경로 표(ROUTES) · 화면 파일 · 구역 잇기
+├─ server.mjs          # 서버 켜기 · 요청 입구의 보안 검사(Host · 출처 · 로그인) · 경로 표(ROUTES) · 화면 파일 · 구역 잇기
 ├─ adapters/           # 도구별 차이만 여기 — claude.mjs(+ claude/ 조각) · codex.mjs · index.mjs
 ├─ lib/                # 구역별 일(파일 하나 = 한 가지 일)
 │  ├─ live-feed · state · procs · tmux · dialog · approval   2초 틱 · SSE · 상태 조립 · 프로세스 목록 · tmux 조작 · 선택창 감지 · 허락할 내용 카드
 │  ├─ dialog-watch · peer-links                   선택창 감시(두 틱에 한 번 · 엇갈림 기록) · 세션 사이 메시지 잇기
 │  ├─ commands · spawn · open-dir · env · launch  명령(채팅 · 승인 · 새 세션 …) · 새 세션 인자 · 폴더 열기 · 환경 점검 · 켠 방법에 맞는 안내
 │  ├─ body · uploads · respond · validate         요청 본문 · 첨부 · 응답 모양 · 입력 검사
-│  ├─ token · paths · perms                       비밀 열쇠 · 경로(폴더 안 검사) · 파일 권한
+│  ├─ token · auth · login-open · paths · perms    비밀 열쇠 · 로그인 링크 · 쿠키 · open(서버 확인) · 경로(폴더 안 검사) · 파일 권한
 │  ├─ usage-bridge · claude-settings · bridge · status · limits · usage   사용 한도(상태줄 다리 · 기본 모델 지키기 · 한도 기록 · 토큰 합계)
 │  ├─ recent · restore · restore-cli · runner     복구 · 재시동 복구 · 실행기
 │  ├─ history-core · history-api · git-commits    기록 읽기 공용(새로 붙은 줄만 · 턴 묶기 — 어댑터는 줄 해석만) · 기록 탭 · 검색 · 오늘 한 일 · 커밋 제목 읽기
@@ -280,10 +287,10 @@ agent-dashboard/
 │  └─ demo                                        데모 데이터
 ├─ bin/                # agent-dashboard.mjs(실행 명령: start · run · restore) · run.sh(예전 실행기) · restore.mjs(npm run restore) · statusline.mjs(상태줄 다리 원본)
 ├─ public/             # 화면 (바닐라 HTML/CSS/JS, 빌드 없음)
-│  ├─ index.html       # 뼈대(토큰은 서버가 여기에만 끼워 넣음)
+│  ├─ index.html       # 뼈대(토큰 없음 — 로그인은 쿠키)
 │  ├─ css/00-base.css ~ 11-narrow.css   # 모양(구역별, 번호 순서대로 불러옴 — 좁은 창 @media 는 맨 뒤 파일)
 │  └─ js/00-md.js ~ 19-keys.js   # 동작 — 구역별(목록 · 조직도 · 기록 · 첨부 · 알림 · 복구 · 검색 · 오늘 한 일 · 단축키 …), 번호 순서대로 불러옴
-└─ test/               # node --test 54개 파일 · _helpers(임시 폴더 · 서버 띄우기 · 요청) · fake-bin(가짜 tmux · claude · ps · lsof · open · osascript)
+└─ test/               # node --test 58개 파일 · _helpers(임시 폴더 · 서버 띄우기 · 요청) · fake-bin(가짜 tmux · claude · ps · lsof · open · osascript)
 ```
 
 파일마다 하는 일 · 요청 하나가 지나가는 길 · 보안 검사 위치는 [코드 지도(docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)에 있어요.
@@ -306,7 +313,7 @@ DEMO=1 PORT=4646 npm start
 npm test
 ```
 
-Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없어요. 테스트 311개(2026-11-17): 기록 읽기 · 선택창 감지 · 승인 카드 위험 판별 · 보안 검사(토큰 · Host · Origin · 경로 · 파일 권한) · 명령 · 복구 · 실행기 등.
+Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없어요. 테스트 338개(2026-11-17): 기록 읽기 · 선택창 감지 · 승인 카드 위험 판별 · 보안 검사(토큰 · Host · Origin · 경로 · 파일 권한) · 명령 · 복구 · 실행기 등.
 - 시험 서버는 4692 · 4694~4699 포트를 잠깐 써요. 진짜 세션 · tmux 대신 임시 홈 폴더와 `test/fake-bin` 의 가짜 명령(tmux · claude · ps · lsof · open · osascript)을 써서, 내 `~/.claude` · `~/.agent-dashboard` 는 건드리지 않아요.
 - GitHub Actions 가 main 에 push 하거나 PR 이 올 때마다 Ubuntu · macOS × Node 18 · 20 · 22 · 24 에서 `npm test` 를 돌려요(위 배지). 진짜 macOS 알림(osascript)은 macOS 에서만 시험하고, 「승인 필요 → 알림」 연결은 가짜 osascript 로 리눅스에서도 시험해요.
 

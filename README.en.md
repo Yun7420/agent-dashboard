@@ -76,8 +76,11 @@ You need: **macOS · Node 18+ · tmux · Claude Code**. If something is missing 
 ```bash
 git clone https://github.com/Yun7420/agent-dashboard.git
 cd agent-dashboard
-npm start          # → open http://localhost:4545
+npm start          # → open the "login link (10 min)" printed in the terminal
+node bin/agent-dashboard.mjs open   # link expired, another browser, or after 30 days: opens a fresh login link in your browser
 ```
+
+The page lives at `http://localhost:4545`, but the first visit has to come through a **login link**. That browser then stays logged in for 30 days (see "Security").
 
 You can also run `node bin/agent-dashboard.mjs` (see `--help`); it's the command a future npm release will use.
 
@@ -234,15 +237,19 @@ A session already running in a terminal has no official way to receive input fro
 ## Security
 
 - **`127.0.0.1` only** — requests whose Host isn't localhost are rejected (blocks DNS rebinding). Prompts and code paths are visible, so don't share the address.
-- **`~/.agent-dashboard/token`** — a secret token just for this dashboard. It's generated per machine on first run (readable only by you, 600), and **commands** like send, approve and close are accepted **only with this token**. Any website can send requests to localhost from your browser, so this stops a malicious page from sneaking commands in.
-  - Don't share it. If it leaks, delete the file and restart to get a new one.
+- **`~/.agent-dashboard/token`** — a secret token just for this dashboard. It's generated per machine on first run (readable only by you, 600) and is **never put in the page** (anyone can fetch the page files — including other accounts on the same Mac).
+  - **Login**: only a browser that arrives through a **login link** (valid 10 minutes) made from this token gets a cookie. The link is printed in the terminal on start; later `node bin/agent-dashboard.mjs open` (or `agent-dashboard open` when installed) opens one for you. The link immediately redirects to `/`, so it doesn't stay in the address bar or history.
+  - The cookie can't be read by page scripts (HttpOnly), isn't sent with requests from other sites (SameSite=Strict) and expires after 30 days. Its value is a signature made with the token, not the token itself.
+  - Reading history and sending commands (send, approve, close …) require login. The page's requests carry a header other sites can't add, and requests from pages on other ports of this Mac are rejected too.
+  - Before handing over the link, `open` checks that the server on that port really is this dashboard (an answer signed with the token). If another program grabbed the port, the link is not sent. The server listens on both `127.0.0.1` and `[::1]` so another program can't take over the IPv6 side of `localhost`.
+  - Don't share it. If it leaks, delete the file and restart: you get a new token and every login is ended.
   - Older versions kept it in `.dashboard-token` inside the repo folder. On first start the value is moved to the new place once and the old file is deleted (open tabs keep working). A token file that is a symlink is never used.
 - Attachments outside `~/.agent-dashboard/uploads/` are rejected (symlinks are resolved first, and missing files are rejected too), and attachments are **deleted automatically after 14 days**.
 - Open folder (VS Code · Cursor · Finder) only opens **folders of sessions currently in the list**; any other path sent by the page is rejected.
 - New session · open folder · restore only use **folders under your home folder**. Symlinks are resolved first, so a link inside your home pointing outside it (e.g. to `/etc`) is rejected.
 - Aborted or oversized requests are rejected right away (body limit 413, attachments 25MB). If an upload is cut off midway, no half-written file (`.part`) is left behind.
 - The `~/.agent-dashboard` folder is yours only (700), and the files in it (log, settings backups, restore list) are readable only by you (600). On start the server also tightens older folders, subfolders and files that were created wider (only narrowing; symlinks are not followed).
-- Reading the session list and history also requires the same token as commands (so other accounts or programs on the same Mac can't read your conversations).
+- Reading the session list and history also requires the same login as commands (so other accounts or programs on the same Mac can't read your conversations).
 - Every response carries `X-Frame-Options: DENY`, `frame-ancestors 'none'` and `nosniff`, so another website can't load this page in a hidden iframe and trick you into clicking approve.
 - Permission modes follow your own Claude settings. The dashboard never uses permission-skipping flags.
 - A new session's first prompt is passed after `--`, so text starting with `-` (e.g. `--permission-mode …`) is never read as a claude option.
@@ -264,14 +271,14 @@ It doesn't touch hooks or global settings — it **only reads** (except for one 
 
 ```
 agent-dashboard/
-├─ server.mjs          # start the server · security checks at the request entry · token · route table (ROUTES) · static files · wiring the areas together
+├─ server.mjs          # start the server · security checks at the request entry (Host · origin · login) · route table (ROUTES) · static files · wiring the areas together
 ├─ adapters/           # per-tool differences only — claude.mjs (+ claude/ pieces) · codex.mjs · index.mjs
 ├─ lib/                # one job per file
 │  ├─ live-feed · state · procs · tmux · dialog · approval   2-second tick · SSE · build state · process list · tmux control · prompt detection · "what you're allowing" card
 │  ├─ dialog-watch · peer-links                   watching for prompts (every other tick · mismatch log) · linking messages between sessions
 │  ├─ commands · spawn · open-dir · env · launch  commands (chat · approve · new session …) · new-session args · open folder · environment check · hints matching how you started it
 │  ├─ body · uploads · respond · validate         request bodies · attachments · response shapes · input checks
-│  ├─ token · paths · perms                       secret token · paths (inside-folder checks) · file permissions
+│  ├─ token · auth · login-open · paths · perms    secret token · login link · cookie · open (server check) · paths (inside-folder checks) · file permissions
 │  ├─ usage-bridge · claude-settings · bridge · status · limits · usage   usage limits (status-line bridge · keeping the default model · limit history · token totals)
 │  ├─ recent · restore · restore-cli · runner     restore · restore after reboot · runner
 │  ├─ history-core · history-api · git-commits    shared transcript reading (new lines only · grouping into turns — adapters only interpret lines) · history tab · search · today's work · commit titles
@@ -280,10 +287,10 @@ agent-dashboard/
 │  └─ demo                                        demo data
 ├─ bin/                # agent-dashboard.mjs (start · run · restore) · run.sh (older runner) · restore.mjs (npm run restore) · statusline.mjs (status-line bridge source)
 ├─ public/             # UI (vanilla HTML/CSS/JS, no build)
-│  ├─ index.html       # structure (the server injects the token here only)
+│  ├─ index.html       # structure (no token — login is a cookie)
 │  ├─ css/00-base.css ~ 11-narrow.css   # styles, one file per area, loaded in number order (narrow-screen @media in the last file)
 │  └─ js/00-md.js ~ 19-keys.js   # behavior, one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
-└─ test/               # node --test, 54 files · _helpers (temp folders · starting servers · requests) · fake-bin (fake tmux · claude · ps · lsof · open · osascript)
+└─ test/               # node --test, 58 files · _helpers (temp folders · starting servers · requests) · fake-bin (fake tmux · claude · ps · lsof · open · osascript)
 ```
 
 ### Adding another agent
@@ -305,7 +312,7 @@ Shows the UI with fake data (Project1, Lead Manager, …). No commands are execu
 npm test
 ```
 
-Uses Node's built-in test runner (`node --test`), nothing to install. 311 tests (2026-11-17): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
+Uses Node's built-in test runner (`node --test`), nothing to install. 338 tests (2026-11-17): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
 - Test servers briefly use ports 4692 and 4694–4699. Instead of real sessions and tmux they use a temporary home folder and the fake commands in `test/fake-bin` (tmux · claude · ps · lsof · open · osascript), so your `~/.claude` and `~/.agent-dashboard` are never touched.
 - GitHub Actions runs `npm test` on every push to main and every PR, on Ubuntu · macOS × Node 18 · 20 · 22 · 24 (badge above). Real macOS notifications (osascript) are tested only on macOS; the "approval needed → notification" wiring is also tested on Linux with a fake osascript.
 

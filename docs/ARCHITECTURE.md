@@ -34,10 +34,10 @@
  ┌─────────────── 브라우저 (public/) ───────────────┐
  │ index.html + css/00~11 + js/00-md.js ~ 19-keys.js │
  └───────┬──────────────────────────────▲───────────┘
-         │ ① fetch /api/…  (토큰 헤더)    │ ② SSE /events (2초마다 바뀐 상태)
+         │ ① fetch /api/… (쿠키 + 머리글) │ ② SSE /events (2초마다 바뀐 상태)
          ▼                              │
  ┌──────────────────────── server.mjs ─────────────────────────┐
- │ handle(): Host → Origin · 토큰 검사 → ROUTES 표 → 처리 함수     │
+ │ handle(): Host → 출처 · 로그인 검사 → ROUTES 표 → 처리 함수     │
  │ feed(lib/live-feed): 2초마다 buildState → 바뀌었으면 SSE 로    │
  └──┬──────────────┬───────────────┬──────────────┬─────────────┘
     │              │               │              │
@@ -134,6 +134,8 @@
 | 파일 | 하는 일 |
 |---|---|
 | `lib/token.mjs` | 비밀 토큰 파일 읽기 · 만들기 · 옛 자리에서 옮기기(`loadToken`) |
+| `lib/auth.mjs` | 로그인(`createAuth`): 로그인 링크(`loginUrl` · `/login`) · 쿠키 확인(`loggedIn`) · 서버 확인 답(`/hello`). 토큰은 HMAC 열쇠로만 |
+| `lib/login-open.mjs` | `agent-dashboard open`(`openLogin`): 127.0.0.1 · [::1] 서버가 진짜인지 확인한 뒤 로그인 링크를 브라우저로 |
 | `lib/paths.mjs` | 데이터 폴더(`DATA_DIR`) · 시험 모드(`TEST_MODE`) · 폴더 안 검사(`isInside` · `allInside`) · 화면용 `~` 줄이기(`tildify`) |
 | `lib/perms.mjs` | `~/.agent-dashboard` 아래 폴더를 700 · 파일을 600 으로 좁히기(`tightenTree` · `tightenFiles`) |
 | `lib/claude-settings.mjs` | `~/.claude/settings.json` 을 안전하게 고치기(`updateJson` · `writeAtomic`), 상태줄 켜기 · 끄기 |
@@ -180,7 +182,7 @@
 | 파일 | 하는 일 |
 |---|---|
 | `00-md.js` | 답변 마크다운 일부만 그리기(`md`) · 글자 안전하게 바꾸기(`esc`) |
-| `01-core.js` | 공통: 토큰(`TOKEN`) · 서버 요청 한 길(`apiFetch` · `api` · `apiJson`, 403 이면 `tokenGone`) · 바뀐 곳만 그리기(`setHtml`) · 토스트(`toast`) · 설정 저장(`savePref`) · 오래된 설정 정리(`prunePrefs`) · 여러 파일이 같이 쓰는 화면 상태(`view` · `drawerTab` · `openFiles` · `sentAt` · `canSend` · `envData` …) · 도우미(`fmtTok` · `ctxLevel` · `modelName` · `initials`) |
+| `01-core.js` | 공통: 서버 요청 한 길(`apiFetch` · `api` · `apiJson`, 요청 머리글 `REQ_HEADER`, 403 이면 `loginNeeded` — 연동 카드 또는 위쪽 고정 안내) · 바뀐 곳만 그리기(`setHtml`) · 토스트(`toast`) · 설정 저장(`savePref`) · 오래된 설정 정리(`prunePrefs`) · 여러 파일이 같이 쓰는 화면 상태(`view` · `drawerTab` · `openFiles` · `sentAt` · `canSend` · `envData` …) · 도우미(`fmtTok` · `ctxLevel` · `modelName` · `initials`) |
 | `02-activity.js` | 아래 활동 로그(`logEvents` · `logLinks`) |
 | `03-graph.js` | 가운데 조직도(`renderGraph` · `layout`) |
 | `04-list.js` | 왼쪽 세션 목록(`renderList`) · 「N초 전」만 따로 갱신(`updateAgo`) |
@@ -210,13 +212,13 @@
 | `03-graph.css` | 조직도 노드 · 선 · 흐르는 점선 · 세션 사이 화살표 · 폴더 열기 메뉴 |
 | `04-drawer.css` | 오른쪽 패널 틀 · 탭 · 지금 탭 · 기록 탭 · 입력 |
 | `05-approval.css` | 승인 창 · 허락할 내용 카드 |
-| `06-dialog.css` | 대화상자 · 토스트 · 복구 창 · 토큰이 바뀜 안내 |
+| `06-dialog.css` | 대화상자 · 토스트 · 복구 창 · 로그인 필요 안내 |
 | `07-onboarding.css` · `08-log.css` · `09-search.css` · `10-day.css` | 첫 실행 안내 · 활동 로그 · 전체 기록 검색 · 오늘 한 일 |
 | `11-narrow.css` | 좁은 창 · 휴대폰 · 동작 줄이기(`@media`) — 모든 구역의 덮어쓰기 |
 
 ### test
 
-54개 파일, 311개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+58개 파일, 338개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -294,11 +296,11 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 ### 예 ① 화면에서 승인 「1」 단추를 누른다
 
 1. **단추 클릭** — `public/js/05-approval.js` 의 승인 단추 처리에서 `api('/api/cmd/approve', { key: selected, choice: '1' })` 를 불러요.
-2. **요청 만들기** — `public/js/01-core.js:api` 가 `fetch` 로 POST 를 보내요. 헤더에 `X-Dashboard-Token` 을 넣어요. 403 이면 「새로고침해 주세요」 토스트가 떠요.
-3. **보안 헤더** — `server.mjs` 의 `http.createServer` 콜백이 모든 응답에 `SECURITY_HEADERS` 를 먼저 붙여요.
+2. **요청 만들기** — `public/js/01-core.js:api` 가 `fetch` 로 POST 를 보내요. 로그인 쿠키는 브라우저가 붙이고, 화면은 `X-Dashboard-Request: 1` 만 넣어요. 403 이면 서버가 준 「로그인이 필요해요 — … open」 안내가 떠요(`loginNeeded`).
+3. **보안 헤더** — `server.mjs` 의 `onRequest`(127.0.0.1 · [::1] 두 서버가 같이 씀)가 모든 응답에 `SECURITY_HEADERS` 를 먼저 붙여요.
 4. **입구 검사** — `server.mjs:handle`
    - Host 가 `ALLOWED_HOSTS`(`localhost:포트` · `127.0.0.1:포트`)가 아니면 403
-   - `/api/` 로 시작하면 `authorized` 로 Origin · 토큰 검사, 틀리면 403
+   - `/api/` 로 시작하면 `authorized` 로 출처(Origin · Sec-Fetch-Site) · 머리글(`X-Dashboard-Request`) · 로그인 쿠키(`lib/auth.mjs:loggedIn`) 검사, 틀리면 403
 5. **경로 표** — `ROUTES` 에서 `prefix: '/api/cmd/'` · `method: 'POST'` 줄을 찾아 `server.mjs:postCommand` 로 가요.
 6. **본문 읽기** — `lib/body.mjs:jsonBody` → `readBody`(실패 응답은 `bodyFail`). 너무 크면 413, 끊기면 499(응답 없이 소켓만 닫음), 모양이 틀리면 400.
 7. **명령 처리** — `handleCommand('approve', body)` = `lib/commands.mjs:createCommands` 가 돌려준 함수
@@ -331,13 +333,15 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 
 | 검사 | 어디서 | 왜 |
 |---|---|---|
-| 127.0.0.1 에만 열기 | `server.mjs` 의 `server.listen(PORT, '127.0.0.1')` | 같은 와이파이의 다른 기기가 접속하지 못하게. 이 컴퓨터의 다른 주소로 붙어 보는 테스트가 있어요(`test/server.test.mjs`) |
-| 보안 헤더 | `server.mjs:SECURITY_HEADERS` (`createServer` 콜백 맨 앞) | 다른 사이트가 이 화면을 숨은 iframe 으로 띄워 승인 단추를 누르게 속이는 클릭재킹 막기 · 내용 종류 짐작 금지(nosniff) |
+| 127.0.0.1 · [::1] 에만 열기 | `server.mjs` 의 `server.listen(PORT, '127.0.0.1')` · `server6.listen(PORT, '::1')` | 같은 와이파이의 다른 기기가 접속하지 못하게. 이 컴퓨터의 다른 주소로 붙어 보는 테스트가 있어요(`test/server.test.mjs`). [::1] 도 같이 여는 건 다른 프로그램이 먼저 [::1]:포트 를 열면 브라우저의 `localhost` 가 그쪽(가짜 화면)으로 갔기 때문(2026-11-17 점검 C2). 이미 차 있으면 「주의」를 남기고 127.0.0.1 로 계속(`test/login-open.test.mjs`) |
+| 보안 헤더 | `server.mjs:SECURITY_HEADERS` (`onRequest` 맨 앞) | 다른 사이트가 이 화면을 숨은 iframe 으로 띄워 승인 단추를 누르게 속이는 클릭재킹 막기 · 내용 종류 짐작 금지(nosniff) · 다른 곳으로 갈 때 주소 안 붙이기(`Referrer-Policy: no-referrer`) |
 | Host 검사 | `server.mjs:handle` + `ALLOWED_HOSTS` | DNS 리바인딩(나쁜 사이트 주소가 내 컴퓨터 127.0.0.1 을 가리키게 바꾸는 공격) 막기 |
-| Origin 검사 | `server.mjs:authorized` | 내 브라우저에 열린 다른 웹사이트가 보낸 요청 거절 |
-| 토큰 | `server.mjs:authorized` (`crypto.timingSafeEqual`) | `/events` 와 `/api/*` 전부. 비교 시간으로 토큰을 알아내지 못하게 일정한 시간 비교. 경로 표(`ROUTES`)를 읽어 모든 경로를 토큰 없이 불러 보는 테스트가 있어요 — 경로가 늘면 따라가고, `/events` · `/api/` 밖 경로는 실패(`test/server.test.mjs`). 서버를 여는 곳(`createServer` · `listen`)은 `server.mjs` 하나(`test/conventions.test.mjs`) |
-| 토큰 전달 | `server.mjs:serveStatic` 이 `index.html` 의 `__DASHBOARD_TOKEN__` 만 바꿈 → `01-core.js` 의 `TOKEN` | js 파일에는 토큰이 없어요. 다른 사이트는 같은 출처 정책 때문에 이 페이지를 읽을 수 없어요 |
+| 출처 검사 | `server.mjs:authorized` | 내 브라우저에 열린 다른 웹사이트가 보낸 요청 거절: Origin 이 있으면 이 서버여야 하고, `Sec-Fetch-Site` 가 있으면 `same-origin` 이어야 해요. 같은 Mac 의 다른 포트 페이지(`localhost:3000`)는 「같은 사이트」라 쿠키가 같이 가서, SameSite 만으론 못 막는 것을 이걸로 막아요 |
+| 로그인 쿠키 | `server.mjs:authorized` → `lib/auth.mjs:loggedIn` | `/events` 와 `/api/*` 전부. 쿠키 `ad_session_<포트>=<만료>.<서명>`(HttpOnly · SameSite=Strict · Path=/ · 30일). 서명은 토큰을 열쇠로 한 HMAC(`종류|포트|만료`)이라 값이 새어도 토큰은 모르고, 서버를 다시 켜도 통하며, 토큰 파일을 지우면 모두 끊겨요. 모양 · 길이를 먼저 보고 일정한 시간 비교(비ASCII 값도 500 없이 403 — 점검 A1). 경로 표(`ROUTES`)를 읽어 모든 경로를 로그인 없이 불러 보는 테스트가 있어요 — 경로가 늘면 따라가고, `/events` · `/api/` · 로그인 없는 두 경로(`/login` · `/hello`) 밖은 실패(`test/server.test.mjs`). 서버를 여는 곳(`createServer` · `listen`)은 `server.mjs` 하나(`test/conventions.test.mjs`) |
+| CSRF 머리글 | `server.mjs:authorized` · `01-core.js:REQ_HEADER` | `/api/*` 는 `X-Dashboard-Request: 1` 이 있어야 해요. 다른 사이트의 form · img · script 요청은 이 머리글을 붙일 수 없어요(붙이려면 CORS 사전 확인이 필요한데 허락하지 않음). SSE(`/events`)는 머리글을 못 붙여 쿠키 · 출처만 |
+| 로그인 링크 | `lib/auth.mjs:loginUrl` · `loginRoute`(`/login`) · `lib/login-open.mjs`(`agent-dashboard open`) | 화면 파일에는 토큰이 없어요 — 예전엔 `index.html` 에 넣어서 같은 Mac 의 다른 계정 · 프로세스가 `curl` 한 번으로 얻었어요(점검 C1). 토큰 파일(600)을 읽을 수 있는 이 계정만 링크(`/login?t=<만료>.<서명>`, 10분)를 만들고, 들어오면 쿠키를 주고 `/` 로 303 — 주소창 · 기록엔 `/` 만. `open` 은 넘기기 전에 127.0.0.1 · [::1] 의 서버에 무작위 값을 보내 토큰 서명으로 답하는지(`/hello`) 확인해, 서버가 꺼진 사이 포트를 잡은 다른 프로그램에게 링크를 주지 않아요(C3). 켤 때 로그에도 10분짜리 링크를 남겨요(지나면 쓸모없음) |
 | 토큰 파일 | `lib/token.mjs:loadToken` | `~/.agent-dashboard/token`(600). 링크면 거절, 새로 만들 땐 `link` 로 붙여 두 서버가 동시에 켜도 값이 하나 |
+| 로그인 · 쿠키의 남은 위험 | — | ① 쿠키는 포트를 가리지 않아, 로그인한 브라우저로 같은 Mac 의 다른 포트 페이지(`localhost:3000`)를 열면 그 페이지의 서버가 쿠키를 받아요. 그 서버(다른 프로그램)가 쿠키를 우리 서버에 그대로 보내면 30일 동안 통해요 — 브라우저 요청은 출처 검사로 막지만, 서버끼리 보내는 건 못 막아요. 이름 · 서명에 포트를 넣어 다른 대시보드(데모 4646)와는 섞이지 않고, 쿠키 값으로 토큰을 알아낼 수는 없어요. 막으려면 토큰 파일을 지우고 다시 켜기(모든 로그인 끊김). ② localhost 권한이 있는 브라우저 확장은 화면을 조작할 수 있어요(HttpOnly 라 쿠키 값은 못 읽음). ③ 이 계정과 같은 사용자로 도는 프로그램은 원래 토큰 파일을 읽을 수 있어요 |
 | 화면 파일 경로 | `server.mjs:serveStatic` + `lib/paths.mjs:isInside` | `public/` 안의 일반 파일만. 폴더를 열다 서버가 죽던 경로도 막음 |
 | 첨부 경로 | `lib/commands.mjs` 의 `send` → `lib/paths.mjs:allInside` | 첨부는 uploads 폴더 안만. `uploads-x` 같은 옆 폴더 · 없는 파일 · 링크를 풀면 밖인 파일도 거절(`isInsideReal`) |
 | 폴더 열기 | `lib/commands.mjs` 의 `open-dir` 명령 | 지금 목록에 있는 세션의 폴더만 |
@@ -375,6 +379,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 | `test/state.test.mjs` | 상태 조립: 기록 · 프로세스 짝짓기(`matchProcesses`), 작업 중 · 대기 · 끝남, 대화 창 크기 추정, 선택창 두 틱에 한 번 · 엇갈림 두 번 연속, 승인 카드, 세션 사이 메시지, 상태줄 덮어쓰기(`mergeStatusline`) |
 | `test/commands.test.mjs` | 명령 표: 409 · 400 · 503 문장, tmux 로 무엇을 보내는지(가짜 tmux) |
 | `test/token.test.mjs` · `perms.test.mjs` · `paths.test.mjs` | 토큰 파일 · 권한 600/700 · 폴더 안 검사 |
+| `test/auth.test.mjs` · `test/login-open.test.mjs` (4690 · 4691) | 로그인 링크 10분 · 쿠키 30일 · 포트 · 서명 위조 · 이상한 값 / open 이 127.0.0.1 · [::1] 의 가짜 서버에 링크를 넘기지 않음 · 서버가 [::1] 도 열고 차 있으면 「주의」 · 실행 명령 open 으로 실제 로그인 |
 | `test/body.test.mjs` | 본문 상한 413 · 끊긴 요청 · `.part` 안 남김 · 실패 응답(`bodyFail` — 낯선 오류 문구는 안 보냄) |
 | `test/live-feed.test.mjs` | 틱: 첫 상태 · 바뀐 것만 SSE · `invalidate` 면 다시 · 탭을 닫으면 안 보냄 · `afterBuild` 실패 틱은 안 보냄 · 기간 400/204 · 성능 값 |
 | `test/notify-api.test.mjs` · `housekeeping.test.mjs` | 알림 설정(데모는 메모리만 · 값 검사 400 · 파일 600 · osascript 인자 배열 · macOS 밖은 안 보냄) · 켤 때 정리(하나가 실패해도 나머지는 함) |
