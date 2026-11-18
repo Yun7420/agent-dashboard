@@ -103,8 +103,6 @@
     <div class="cp-note" id="cp-note"></div>
   </section>
   <section id="drawer">
-    <!-- 폭 손잡이: 왼쪽 가장자리 가운데 세로 알약 — 끌면 폭, 최소보다 더 끌면 접힘, 두 번 누르면 기본 폭, ← → 폭 · Enter 접기 -->
-    <button type="button" class="drawer-handle" id="resize" title="Drag to resize · double-click for default width" aria-label="Panel width (← → resize · Enter fold)"></button>
     <div class="head">
       <div class="head-top">
         <span class="dot-s" id="d-dot"></span>
@@ -168,6 +166,9 @@
       </div>
     </form>
   </section>
+  <!-- 폭 손잡이: 패널 테두리선 위에 걸친 둥근 탭(⋮⋮) — 끌면 폭, 최소보다 더 끌면 접힘, 두 번 누르면 기본 폭, ← → 폭 · Enter 접기.
+       패널 밖(형제)에 둔다 — 안에 두면 패널의 overflow 에 잘려 안쪽 스크롤 막대 자리와 겹쳐 보였다 -->
+  <button type="button" class="drawer-handle" id="resize" title="Drag to resize · double-click for default width" aria-label="Panel width (← → resize · Enter fold)"><span class="dh-tab"><svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor" aria-hidden="true"><circle cx="2" cy="3" r="1.1"/><circle cx="6" cy="3" r="1.1"/><circle cx="2" cy="7" r="1.1"/><circle cx="6" cy="7" r="1.1"/><circle cx="2" cy="11" r="1.1"/><circle cx="6" cy="11" r="1.1"/></svg></span></button>
 </main>
 <dialog id="notify-dlg" class="modal" aria-labelledby="notify-t">
   <div class="modal-h"><h3 id="notify-t">Notifications</h3><button type="button" class="ghost icon-btn modal-x" data-close-modal title="Close" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
