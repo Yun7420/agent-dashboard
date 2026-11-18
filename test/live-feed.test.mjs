@@ -101,3 +101,36 @@ test('성능: 틱 수 · 가운데 · 최대 시간, 보낸 크기', async () =>
   assert.equal(typeof p.medianMs, 'number');
   assert.equal(p.payloadKB, 0); // 작은 가짜 상태
 });
+
+// 점검 P2: 이번 턴 변경 본문(changes)은 목록 상태에 싣지 않고 표식(changesSig)만 — 본문은 /api/changes 로 고른 세션 것만
+test('changes: SSE 엔 표식만(처음 · 틱 · 영어 탭 모두), 본문은 getChanges 로 · 명령이 끝나면 표식이 바뀐다', async () => {
+  const cmd = (done) => ({ id: 'c1', at: '2026-11-18T01:00:00Z', command: 'npm test', done, error: false, output: done ? 'ok' : '' });
+  const ch = (done) => ({ edits: [{ at: '2026-11-18T00:59:00Z', file: '/p/a.js', tool: 'Edit', old: 'a', new: 'b' }], commands: [cmd(done)] });
+  const { feed, setSessions } = setup();
+  setSessions([{ key: 'claude:a', status: 'working', changes: ch(false) }, { key: 'claude:b', status: 'idle', changes: null }]);
+  await feed.start();
+  const ko = fakeRes(), en = fakeRes(), enReq = new EventEmitter();
+  enReq.url = '/events?lang=en'; enReq.headers = {};
+  await feed.openEvents(new EventEmitter(), ko);
+  await feed.openEvents(enReq, en);
+  const first = JSON.parse(ko.writes[0].slice(6)).sessions;
+  assert.equal(first[0].changes, undefined);
+  assert.equal(first[1].changesSig, '');
+  const sig0 = first[0].changesSig;
+  assert.ok(sig0);
+  setSessions([{ key: 'claude:a', status: 'working', changes: ch(true) }, { key: 'claude:b', status: 'idle', changes: null }]);
+  await feed.start();
+  for (const r of [ko, en]) {
+    const s = JSON.parse(r.writes.at(-1).slice(6)).sessions[0];
+    assert.equal(s.changes, undefined);
+    assert.ok(s.changesSig && s.changesSig !== sig0);
+  }
+  const res = fakeRes();
+  await feed.getChanges({}, res, new URL('http://x/api/changes?key=claude:a'));
+  const body = JSON.parse(res.body);
+  assert.equal(body.commands[0].output, 'ok');
+  assert.equal(body.sig, JSON.parse(ko.writes.at(-1).slice(6)).sessions[0].changesSig); // 화면이 비교하는 표식과 같은 값
+  const none = fakeRes();
+  await feed.getChanges({}, none, new URL('http://x/api/changes?key=claude:zz'));
+  assert.deepEqual(JSON.parse(none.body), { sig: '', edits: [], commands: [] });
+});

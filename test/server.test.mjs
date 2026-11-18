@@ -61,6 +61,8 @@ test('경로 표의 모든 경로는 로그인 쿠키가 없거나 틀리면 403
 
 test('로그인하면 열린다 (쿠키 + 머리글 · SSE 는 쿠키만) — 예전 방식(주소 ?token= · X-Dashboard-Token)은 이제 통하지 않는다', async () => {
   assert.equal(await req('/api/perf', { headers: AUTH }), 200);
+  assert.equal(await req('/api/changes?key=claude:x', { headers: AUTH }), 200); // 변경 본문 경로도 같은 입구 검사(아래 쿠키 없음 403 과 짝)
+  assert.equal(await req('/api/changes?key=claude:x'), 403);
   assert.equal(await req('/events', { headers: { cookie: AUTH.cookie } }), 200);
   assert.equal(await req(`/events?token=${TOKEN}`), 403);
   assert.equal(await req('/api/perf', { headers: { 'x-dashboard-token': TOKEN } }), 403);

@@ -199,8 +199,7 @@ const handleCommand = createCommands({
 });
 
 // ---------- 경로 표: 주소 → 처리 함수 ----------
-// method 가 적힌 경로는 그 방식만 받고(다른 방식은 화면 파일 쪽으로 떨어져 404), 없으면 방식을 가리지 않는다.
-// 처리 함수는 (req, res, url) 을 받는다. 바뀌는 값을 가진 구역(틱 feed · 알림 notify · 기록 history)은 그 모듈의 함수를, 나머지는 아래 함수를 가리킨다.
+// method 가 적힌 경로는 그 방식만(다른 방식은 화면 파일 쪽으로 떨어져 404). 처리 함수 (req, res, url) 는 바뀌는 값을 가진 구역(틱 feed · 알림 notify · 기록 history)이면 그 모듈에, 나머지는 아래에.
 // 이 표에 오기 전에 handle 이 로그인을 본다 — 처리 함수가 어느 파일에 있든 /events · /api/ 경로는 모두 검사를 거친다
 const ROUTES = [
   { path: '/login', method: 'GET', handler: auth.loginRoute }, // 로그인 없이 받는 두 경로(링크 확인 · 서버 확인, lib/auth.mjs) — 토큰 · 기록은 주지 않는다
@@ -213,6 +212,7 @@ const ROUTES = [
   { path: '/api/limits', handler: limitsRoute({ dir: LIMITS_DIR, demoLimits: DEMO ? demo.demoLimits : null }) },
   { path: '/api/recent', handler: async (req, res) => sendJson(res, 200, DEMO ? demo.demoRecent() : await recentInfo({ recent, liveIds: liveIdSet(), capture: tmux.capture })) },
   { path: '/api/perf', handler: feed.getPerf },
+  { path: '/api/changes', handler: feed.getChanges }, // 고른 세션의 이번 턴 변경 본문(목록엔 표식만)
   { path: '/api/window', handler: feed.windowRoute },
   { path: '/api/history', handler: history.getHistory },
   { path: '/api/trend', handler: history.getTrend },

@@ -58,8 +58,24 @@ function renderNow(s) {
   $('#stop').hidden = !(s.status === 'working' && s.tmux);
   renderChanges(s);
   renderTrend(s);
-  const ch = s.changes;
-  document.querySelector('.now-card').classList.toggle('has-changes', Boolean(ch && (ch.edits.length || ch.commands.length)));
+}
+
+// 이번 턴 변경 본문은 고른 세션 것만 /api/changes 로 받는다 — 목록 상태엔 짧은 표식(changesSig)만(점검 P2, lib/live-feed.mjs).
+// 표식이 바뀌면 다시 받고, 받는 동안은 같은 세션의 지난 본문을 그대로 보여 준다
+const chg = { want: '', key: null, data: null };
+function changesOf(s) {
+  if (!s.changesSig) return null;
+  const want = `${s.key}|${s.changesSig}`;
+  if (chg.want !== want) {
+    chg.want = want;
+    apiJson(`/api/changes?key=${encodeURIComponent(s.key)}`).then((d) => {
+      if (chg.want !== want) return; // 그사이 다른 세션 · 새 표식
+      Object.assign(chg, { key: s.key, data: d });
+      const cur = state.sessions.find((x) => x.key === selected);
+      if (cur?.key === s.key) renderChanges(cur);
+    }).catch(() => { if (chg.want === want) chg.want = ''; }); // 실패면 다음 상태 때 다시
+  }
+  return chg.key === s.key ? chg.data : null;
 }
 
 // ---------- 이번 턴에 바꾼 파일 · 실행한 명령 ----------
@@ -82,8 +98,9 @@ function lineDiff(a, b) {
 }
 // 펼친 파일 · 명령(openFiles · fullCmds · closedCmds)은 01-core.js — 세션을 고를 때(06-history.js) 비운다
 function renderChanges(s) {
-  const ch = s.changes;
+  const ch = changesOf(s);
   const box = $('#now-changes');
+  document.querySelector('.now-card').classList.toggle('has-changes', Boolean(ch && (ch.edits.length || ch.commands.length)));
   if (!ch || (!ch.edits.length && !ch.commands.length)) { setHtml(box, ''); box.dataset.sig = ''; return; } // 비울 때도 기억을 맞춰, 같은 변경이 다시 와도 그리게
   const sig = `${s.key}|${s.status}|${ch.commands.filter((c) => c.done).length}|${ch.edits.length}|${ch.commands.length}|${ch.edits.at(-1)?.at ?? ''}|${ch.commands.at(-1)?.at ?? ''}|${[...openFiles].join(',')}|${[...fullCmds].join(',')}|${closedCmds}`;
   if (box.dataset.sig === sig) return;
