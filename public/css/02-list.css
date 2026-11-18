@@ -24,10 +24,6 @@ body.aside-folded { --aw: 64px; }
 body.aside-folded .sort-bar { padding: 0 var(--sp-2); justify-content: center; }
 body.aside-folded .list-tabs, body.aside-folded .group-h { display: none; }
 body.aside-folded #list { padding: 0 var(--sp-2) var(--sp-3); }
-body.aside-folded .card { padding: var(--sp-2) 0; margin: var(--sp-1) 0; text-align: center; }
-body.aside-folded .card > :not(.ini) { display: none; }
-body.aside-folded .card .ini { display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); font-size: 11px; font-weight: 700; color: var(--dim); letter-spacing: .02em; }
-body.aside-folded .card.sel .ini { color: var(--text); }
 #list { padding: 0 8px 12px; }
 body.aside-folded .card { padding: 8px 0; margin: 4px 0; text-align: center; }
 body.aside-folded .card > :not(.ini) { display: none; }
