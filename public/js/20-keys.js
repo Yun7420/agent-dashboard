@@ -43,8 +43,9 @@ function moveCursor(dir) {
   if (open && next !== selected) select(next); // 패널이 열려 있으면 바로 그 세션으로
 }
 // 순수 판정(test/keys.test.mjs): 위험 표시가 있으면 숫자 키는 모두 두 번 — 단추 모양(빨간 거절)으로 건너뛰지 않는다.
-// 단추 글자는 화면에서 읽은 것이라 승인 창 속 가짜 「1. No」 줄로 거절처럼 꾸밀 수 있었다(점검 B1). 실제로 보낼 키가 Esc(거절)일 때만 바로
-const needsTwice = (key, pendingTool) => key !== 'Escape' && Boolean(pendingTool?.risks?.length);
+// 단추 글자는 화면에서 읽은 것이라 승인 창 속 가짜 「1. No」 줄로 거절처럼 꾸밀 수 있었다(점검 B1).
+// Esc(거절)는 늘 두 번 — 처음 쓰는 사람은 Esc 를 「닫기」로 알아 한 번에 거절해 버렸다(출시 전 점검 R2)
+const needsTwice = (key, pendingTool) => key === 'Escape' || Boolean(pendingTool?.risks?.length);
 // 승인 창이 떠 있는 고른 세션에서만: 화면에 보이는 단추를 그대로 누른다(승인 API · 잠금 · 다시 그리기는 단추 처리 그대로)
 function approveKey(key) {
   const s = state?.sessions.find((x) => x.key === selected);
@@ -58,7 +59,7 @@ function approveKey(key) {
     if (!r.fire) {
       btn.classList.add('kb-arm');
       setTimeout(() => btn.classList.remove('kb-arm'), ARM_MS);
-      toast(t('This request is marked risky — press {k} again within 2 seconds to send', { k: key }));
+      toast(key === 'Escape' ? t('Press Esc again within 2 seconds to reject') : t('This request is marked risky — press {k} again within 2 seconds to send', { k: key }));
       return true;
     }
   }
@@ -66,7 +67,7 @@ function approveKey(key) {
   btn.click();
   return true;
 }
-// capture 로 먼저 받는다: Esc 는 승인 창이 있으면 거절, 없으면 원래대로(팝업 · 패널 닫기, 15-notify.js)에 넘긴다
+// capture 로 먼저 받는다: Esc 는 승인 창이 있으면 거절(2초 안에 두 번), 없으면 원래대로(팝업 · 패널 닫기, 15-notify.js)에 넘긴다
 document.addEventListener('keydown', (e) => {
   if (ignoreKey(e, document.activeElement, Boolean(document.querySelector('dialog[open]')))) return;
   let done = false;

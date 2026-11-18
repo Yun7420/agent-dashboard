@@ -94,6 +94,7 @@ const KO_UI2 = {
   "Copy code": "코드 복사",
   "Copied": "복사됨",
   "This request is marked risky — press {k} again within 2 seconds to send": "위험 표시가 있는 요청이에요 — 2초 안에 {k} 키를 한 번 더 누르면 보내요",
+  "Press Esc again within 2 seconds to reject": "한 번 더 누르면 거절해요 — 2초 안에 Esc",
   "+ New task": "+ 새 작업", // 빈 화면 단추(01-core.js · index.html) — 로고의 「Agent」와 겹치지 않게 「+」까지 한 덩어리
   // 가운데 바탕 그래프(07-center.js)
   "none": "없음",

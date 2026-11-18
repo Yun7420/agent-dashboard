@@ -6,7 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { nodeCheck, checkNode, isEol } from '../lib/node-check.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
-import { ROOT, demoEnv } from './_helpers/server.mjs';
+import { ROOT, demoEnv, startServer } from './_helpers/server.mjs';
 
 test('nodeCheck: engines 보다 낮으면 멈춤 + 한국어 안내, 지원 끝난 18 · 20 · 홀수 버전은 한 줄 안내 후 계속, 22 · 24 는 조용히', () => {
   const low = nodeCheck('v16.20.0', '>=18');
@@ -59,4 +59,15 @@ test('켜는 길: node server.mjs · bin 둘 다 Node 16 이면 안내 후 종�
   assert.equal(ok.status, 0);
   assert.doesNotMatch(ok.stderr, /지원이 끝난/); // 지원 종료 한 줄은 서버를 켜는 명령(start · run · restore)에서만
   assert.equal(ok.stdout.trim(), JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version);
+});
+
+// bin 이 지원 종료 한 줄을 찍었으면 서버(start 는 같은 프로세스, run 은 실행기의 자식)는 다시 찍지 않는다 — 예전엔 켤 때마다 두 줄(출시 전 점검 R3)
+test('지원 종료 안내는 켤 때 한 번만: bin start(Node 20 인 척) → 한 줄, 서버만 바로 켜면(node server.mjs) 서버가 한 줄', async () => {
+  const dir = tmpDir('ad-nodeonce-');
+  const f = path.join(dir, 'v20.mjs');
+  fs.writeFileSync(f, "Object.defineProperty(process, 'version', { value: 'v20.0.0' });\n");
+  for (const args of [['bin/agent-dashboard.mjs', 'start'], ['server.mjs']]) {
+    const s = await startServer({ args: ['--import', f, ...args], env: demoEnv({ home: path.join(dir, 'home'), port: 4683 }), name: args.join(' '), ready: async (x) => /login\?t=/.test(x.log()) });
+    try { assert.equal(s.log().match(/지원이 끝난 버전/g)?.length, 1, args.join(' ')); } finally { await s.stop(); }
+  }
 });

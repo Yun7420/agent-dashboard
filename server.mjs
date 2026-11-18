@@ -42,7 +42,7 @@ import { saveSnapshot, restoreCandidates, restoreSessions, modelAlias, defaultAl
 import { createRecent, liveEntries, recentInfo } from './lib/recent.mjs';
 import { checkNode } from './lib/node-check.mjs';
 import { termLog, termErr, createLangRoute } from './lib/lang-pref.mjs';
-checkNode(); // 맨 먼저(import 다음): Node 가 낮으면 안내하고 끝낸다(lib/node-check.mjs)
+checkNode({ notice: !process.env.DASHBOARD_NODE_NOTICED }); // 맨 먼저(import 다음): Node 가 낮으면 안내하고 끝낸다. bin 이 이미 안내했으면 한 줄 참고는 생략
 const DEMO = process.env.DEMO === '1'; // 가짜 데이터로 화면만 보여 주는 모드(스크린샷용)
 const PORT = Number(process.env.PORT ?? 4545);
 const ROOT = dirOf(import.meta.url); // 저장소(패키지) 폴더 — 공백 · 한글 폴더에서도 맞게(lib/paths.mjs)

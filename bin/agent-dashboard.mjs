@@ -8,7 +8,9 @@ import { checkNode } from '../lib/node-check.mjs';
 import { tr } from '../lib/i18n.mjs';
 import { termLang } from '../lib/lang-pref.mjs';
 
-checkNode({ notice: [undefined, 'start', 'run', 'restore'].includes(process.argv[2]) }); // 맨 먼저: Node 가 낮으면 안내하고 끝낸다(지원 종료 한 줄은 서버를 켜는 명령에서만)
+// 맨 먼저: Node 가 낮으면 안내하고 끝낸다(지원 종료 한 줄은 서버를 켜는 명령에서만). 여기서 찍었으면 서버(같은 프로세스 · 실행기의 자식)는
+// 다시 찍지 않게 환경 변수로 알린다 — 예전엔 bin · server.mjs 가 둘 다 찍어 켤 때마다 두 줄이었다(출시 전 점검 R3)
+if (checkNode({ notice: [undefined, 'start', 'run', 'restore'].includes(process.argv[2]) }).message) process.env.DASHBOARD_NODE_NOTICED = '1';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url))); // bin/ 의 부모 = 저장소(패키지) 폴더
 const { name, version, homepage } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -20,7 +22,7 @@ const HELP_KO = `Agent Dashboard ${version} — 내 Mac 에 떠 있는 AI 코딩
   agent-dashboard start      위와 같아요
   agent-dashboard run        실행기: 서버가 꺼지면 다시 켜요(로그 ~/.agent-dashboard/server.log). tmux 안에서 띄워 두면 좋아요
   agent-dashboard restore    맥을 다시 켠 뒤: 재시동 전 tmux 세션을 다시 띄우고 실행기도 tmux 'dashboard' 로 켜요
-  agent-dashboard open       로그인 링크를 브라우저로 열어요(이 브라우저는 30일 동안 로그인 — 처음 · 만료 · 다른 브라우저일 때)
+  agent-dashboard open       로그인 링크를 브라우저로 열어요(이 브라우저는 7일 동안 로그인 — 처음 · 만료 · 다른 브라우저일 때)
   agent-dashboard --help     이 도움말
   agent-dashboard --version  버전
 
@@ -33,7 +35,7 @@ Usage
   agent-dashboard start      Same as above
   agent-dashboard run        Runner: restarts the server when it stops (log ~/.agent-dashboard/server.log). Good to keep in tmux
   agent-dashboard restore    After rebooting the Mac: reopens the tmux sessions from before and starts the runner in tmux 'dashboard'
-  agent-dashboard open       Opens the login link in the browser (that browser stays logged in for 30 days — first time, expired, or another browser)
+  agent-dashboard open       Opens the login link in the browser (that browser stays logged in for 7 days — first time, expired, or another browser)
   agent-dashboard --help     This help
   agent-dashboard --version  Version
 

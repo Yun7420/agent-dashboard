@@ -64,10 +64,10 @@ test('숫자 · Esc 는 승인 창이 떠 있는 고른 세션에서만', () => 
   assert.equal(canApprove(true, null, false), false);
 });
 
-test('위험 요청 두 번 누르기: 보낼 키 기준 — 숫자는 단추가 거절처럼 보여도 두 번, Esc 만 바로, 위험 표시가 없으면 한 번', () => {
+test('두 번 누르기: 위험 표시가 있으면 숫자는 단추가 거절처럼 보여도 두 번, Esc(거절)는 늘 두 번, 위험 표시 없는 숫자는 한 번', () => {
   const risky = { risks: ['rm -rf — 폴더째 지우고 되돌릴 수 없음'] };
   for (const k of ['1', '2', '3']) assert.equal(needsTwice(k, risky), true, k);
-  assert.equal(needsTwice('Escape', risky), false);
+  for (const p of [risky, { risks: [] }, null]) assert.equal(needsTwice('Escape', p), true); // Esc 를 「닫기」로 알고 한 번에 거절하던 문제(R2)
   assert.equal(needsTwice('1', { risks: [] }), false);
   assert.equal(needsTwice('1', null), false);
 });

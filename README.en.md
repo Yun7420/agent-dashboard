@@ -45,7 +45,7 @@ Agent Dashboard puts all of this on one screen.
 | 👀 | **Live status** | Working · **background task** · idle · **needs approval** · ended, plus the current tool and elapsed time |
 | 🗺️ | **Org chart** | This Mac → tool → project → session → subagent. Messages between sessions are **blue arrows** (count + last message) |
 | 💬 | **Chat · approve** | Send messages to tmux sessions (Enter), **file/image attachments**. Approval prompts show a **"what you're allowing" card** (warns on risky commands or files outside the folder), the real terminal screen and option buttons; multi-question prompts let you go back and forth |
-| ⌨️ | **Shortcuts** | `j`/`k` move between sessions · `/` search everything · `1`–`9` pick an approval option (risky requests need a second press) · `Esc` reject · close |
+| ⌨️ | **Shortcuts** | `j`/`k` move between sessions · `/` search everything · `1`–`9` pick an approval option (risky requests need a second press) · `Esc` twice to reject · close |
 | ♻️ | **Restore** | Reopen ended sessions in tmux — all at once after a Mac restart (`restore`), or one at a time with "Reopen" on a card in the list's "Ended" tab |
 | 📂 | **Open the folder** | Click a project box to open that folder in VS Code · Cursor or reveal it in Finder — no hunting for the folder when you want to check what changed |
 | ■ | **Stop · close** | Stop only what a session is doing (the conversation stays), or close a session from the dashboard |
@@ -54,7 +54,7 @@ Agent Dashboard puts all of this on one screen.
 | 🔔 | **Notifications** | Alert when approval is needed or a task over 1 minute finishes — **macOS notifications that arrive even with the tab closed** (choose a sound), or browser notifications when not on macOS; pending approvals in the tab title |
 | 🛡️ | **Local-only security** | 127.0.0.1 only, Host/Origin checks, a secret token generated per machine (`~/.agent-dashboard/token`), no framing (clickjacking), path checks for attachments and folders |
 
-![Session panel — current answer, file diffs, commands · structure tab](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/session-panel-en.png)
+![Session panel — current answer, file diffs, commands · org chart](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/session-panel-en.png)
 
 ![Approval — "what you're allowing" card (amber when risky) + the real terminal screen + option buttons](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/approval-en.png)
 
@@ -208,7 +208,7 @@ A session already running in a terminal has no official way to receive input fro
   | `g` · `Enter` | Open the chosen session's panel |
   | `/` | Search all history |
   | `1`–`9` | Pick that numbered option in an approval prompt. **For requests flagged as risky, press the same number again within 2 seconds** |
-  | `Esc` | Reject if an approval prompt is shown, otherwise close popups / the panel |
+  | `Esc` | With an approval prompt shown, press twice within 2 seconds to reject (the first press only says "press again to reject"), otherwise close popups / the panel |
   | `Enter` · `Shift+Enter` | In the message box: send · new line |
   | `←` `→` · `Enter` | With the panel handle focused: resize · fold |
 

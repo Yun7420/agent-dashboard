@@ -77,7 +77,7 @@ test('카드는 이름 · 상태 · 흐린 한 줄(폴더 · 시간)만 — 대�
 
 test('카드 사이 구분선: 다음 카드 위에만(마지막 아래 없음) · 안쪽 여백만큼 들임 · 칠해진 카드 위아래 · 접힌 띠엔 숨김', async () => {
   const fs = await import('node:fs');
-  const css = fs.readFileSync(new URL('../public/css/02-list.css', import.meta.url), 'utf8');
+  const css = fs.readFileSync(new URL('../public/css/02-list.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   assert.match(css, /\.card \+ \.card::before \{ content: ''; position: absolute; left: var\(--sp-3\); right: var\(--sp-3\); top: -3px; height: 1px; background: var\(--card-line\);/);
   assert.match(css, /\.card:is\(\.sel, :hover, \.waiting\)::before, \.card:is\(\.sel, :hover, \.waiting\) \+ \.card::before, body\.aside-folded \.card::before \{ display: none; \}/);
   assert.match(fs.readFileSync(new URL('../public/css/00-base.css', import.meta.url), 'utf8'), /--card-line: color-mix\(in srgb, var\(--border\) \d+%, transparent\)/);
@@ -119,4 +119,14 @@ test('접힌 띠는 종료 탭을 골라 두었어도 활성만(조직도도 종
   assert.deepEqual([...run('visible()')].map((s) => s.key), ['w', 'i']);
   const open = load({ listTab: 'ended' });
   assert.deepEqual([...open.run('visible()')].map((s) => s.key).sort(), ['e1', 'i', 'w']); // 펼친 종료 탭이면 조직도에 종료도
+});
+
+// 860 이하는 목록이 늘 접힌 띠(aside-folded)라, 「목록 빈 줄 숨김」이 가운데 #empty(떠 있는 세션 없음 + 새 작업)까지 숨겨 빈 화면이었다(점검 R1)
+test('접힌 띠에서 숨기는 빈 줄은 목록(aside) 안 것만 — 가운데 빈 상태 · 「+ 새 작업」은 그대로', async () => {
+  const fs = await import('node:fs');
+  const css = fs.readFileSync(new URL('../public/css/02-list.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const rules = [...css.matchAll(/([^{}]*\.empty-line[^{}]*)\{[^}]*display: none/g)].map((m) => m[1].trim());
+  assert.deepEqual(rules, ['body.aside-folded aside .empty-line']);
+  const html = fs.readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
+  assert.match(html, /<main[\s\S]*<div class="empty" id="empty" hidden><div class="empty-line">[\s\S]*data-new-session/); // #empty 는 aside 밖(main)
 });

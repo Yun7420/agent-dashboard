@@ -60,3 +60,16 @@ test('parseCookies · proof: 쿠키 머리글 나누기, 서버 확인 답은 32
   for (const bad of [null, '', 'f'.repeat(31), 'g'.repeat(32), `${n}\n`]) assert.equal(auth.proof(bad), null, String(bad));
   assert.match(tOf(loginUrl({ token: TOKEN, port: 1 })), /^\d+\.[0-9a-f]{64}$/);
 });
+
+// 쿠키 기간을 바꾸면 화면 도움말 · 실행 명령 도움말도 같이 — 30일 → 7일 때 도움말에만 30일이 남았다. 낡은 이름(「구조 탭」)도 막는다(점검 R4)
+test('도움말(두 언어) · 실행 명령 도움말의 로그인 기간은 SESSION_MS 와 같고, 조직도를 옛 이름으로 부르지 않는다', async () => {
+  const fs = await import('node:fs');
+  const read = (f) => fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
+  const days = SESSION_MS / 86400_000;
+  const texts = { ko: read('public/js/00-dict-page.js'), en: read('public/index.html'), bin: read('bin/agent-dashboard.mjs') };
+  for (const [what, s] of Object.entries(texts)) {
+    const said = [...s.matchAll(/(\d+)(?:일 동안 로그인| days)/g)].map((m) => Number(m[1]));
+    assert.ok(said.length >= 1 && said.every((n) => n === days), `${what}: ${said}`);
+  }
+  assert.doesNotMatch(texts.ko + texts.en, /구조 탭|Structure tab/);
+});

@@ -34,8 +34,8 @@ body.aside-folded .card.waiting { border-color: color-mix(in srgb, var(--waiting
 body.aside-folded #restore { display: none; }
 .group-h { padding: 12px 8px 6px; color: var(--faint); font-size: 11px; font-weight: 600; letter-spacing: .04em; }
 .empty-line { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-4) var(--sp-2); color: var(--dim); font-size: 13px; line-height: 1.6; white-space: normal; }
-.empty .empty-line { align-items: center; pointer-events: auto; } /* 가운데 칸(구조 탭) — 바탕 칸은 마우스를 통과시키지만 단추는 누를 수 있게 */
-body.aside-folded .empty-line { display: none; }
+.empty .empty-line { align-items: center; pointer-events: auto; } /* 가운데 조직도 칸 — 바탕 칸은 마우스를 통과시키지만 단추는 누를 수 있게 */
+body.aside-folded aside .empty-line { display: none; } /* 접힌 띠(64px)에는 글이 안 들어가 목록 쪽만 숨긴다. 가운데 #empty 까지 숨기면 860 이하 · 세션 0개가 빈 화면이었다 */
 /* 카드는 테두리 없이 면 차이로: 평소 = 목록 바탕, 올림 = 한 단계 밝게, 고름 = 두 단계 + 왼쪽 초록 줄. 승인 필요만 테두리로 눈에 띄게 */
 .card { position: relative; padding: var(--sp-2) var(--sp-3); margin: var(--sp-1) 0; border-radius: var(--radius); border: 1px solid transparent; background: transparent; cursor: pointer; transition: background .15s, border-color .15s; }
 .card:hover { background: var(--surface-2); }
