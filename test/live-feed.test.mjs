@@ -122,7 +122,7 @@ test('patch: 바뀐 세션만 보내고 화면이 합친 결과 = 전체 상태(
   const { run } = loadFront(['01-core.js', '17-live.js'], browserStub({ EventSource: class { close() {} }, window: { addEventListener() {} }, updateAgo() {} }));
   const applyPatch = run('applyPatch');
   const S = (key, status, extra = {}) => ({ key, status, title: key, changes: null, ...extra });
-  let st = { sessions: [S('a', 'idle'), S('b', 'idle'), S('c', 'working')], links: [], usage: { five: 10 }, restore: null };
+  let st = { sessions: [S('a', 'idle'), S('b', 'idle'), S('c', 'working')], links: [], usage: { five: 10 }, restore: null, firstPrompts: [] }; // 실제 상태처럼 firstPrompts 는 늘 목록(lib/state.mjs)
   let fail = false;
   const feed = createLiveFeed({ buildState: async () => ({ generatedAt: 'g', host: 'h', home: '/h', tools: [], ...structuredClone(st) }), afterBuild: () => { if (fail) throw new Error('x'); }, scanMs: 60_000 });
   feed.stop();
@@ -141,7 +141,7 @@ test('patch: 바뀐 세션만 보내고 화면이 합친 결과 = 전체 상태(
   const same = async (why) => {
     sync();
     const want = await fresh(), wantEn = await fresh(Object.assign(new EventEmitter(), { url: '/events?lang=en', headers: {} }));
-    for (const [v, w] of [[view.ko, want], [view.en, wantEn]]) for (const f of ['sessions', 'links', 'usage', 'restore']) assert.deepEqual(v[f], w[f], `${why}: ${f}`);
+    for (const [v, w] of [[view.ko, want], [view.en, wantEn]]) for (const f of ['sessions', 'links', 'usage', 'restore', 'firstPrompts']) assert.deepEqual(v[f], w[f], `${why}: ${f}`);
   };
   const last = (r) => JSON.parse(r.writes.at(-1).slice(6));
   await same('처음');
@@ -172,4 +172,35 @@ test('patch: 바뀐 세션만 보내고 화면이 합친 결과 = 전체 상태(
   await same('못 보낸 틱 뒤');
   assert.equal(applyPatch(null, { patch: true, order: ['a'], sessions: [] }), null); // 지난 상태가 없거나
   assert.equal(applyPatch({ sessions: [] }, { patch: true, order: ['zz'], sessions: [] }), null); // 모르는 세션이면 → 새로 연결해 전체
+});
+
+// B2: 넣지 못한 첫 프롬프트(firstPrompts)는 새로 연 탭만이 아니라 **이미 열린 연결**이 틱으로 받아야 한다(못 받으면 30분 뒤 글이 사라졌다)
+test('firstPrompts: 열린 연결이 틱(patch)으로 받고, 세션이 안 바뀐 다음 patch 에도 화면이 합친 값이 남는다 · 지워지면 빈 목록이 간다', async () => {
+  const { run } = loadFront(['01-core.js', '17-live.js'], browserStub({ EventSource: class { close() {} }, window: { addEventListener() {} }, updateAgo() {} }));
+  const applyPatch = run('applyPatch');
+  let st = { sessions: [{ key: 'claude:a', status: 'idle', title: 'a' }], links: [], usage: null, restore: null, firstPrompts: [] };
+  const feed = createLiveFeed({ buildState: async () => ({ generatedAt: 'g', host: 'h', home: '/h', tools: [], ...structuredClone(st) }), scanMs: 60_000 });
+  feed.stop();
+  await feed.start();
+  const res = fakeRes();
+  await feed.openEvents(new EventEmitter(), res); // 먼저 연 탭(글이 생기기 전)
+  let view = null, seen = 0;
+  const sync = () => { for (; seen < res.writes.length; seen++) view = JSON.parse(JSON.stringify(applyPatch(view, JSON.parse(res.writes[seen].slice(6))))); };
+  sync();
+  assert.deepEqual(view.firstPrompts, []);
+  const fp = [{ key: 'claude:a', title: 'a', text: '첫 글' }];
+  st = { ...st, firstPrompts: fp };
+  await feed.start(); // 세션은 그대로 — 첫 프롬프트만 생김
+  assert.equal(res.writes.length, 2); // 바뀐 게 firstPrompts 뿐이어도 보낸다
+  sync();
+  assert.deepEqual(view.firstPrompts, fp);
+  st = { ...st, sessions: [{ key: 'claude:a', status: 'working', title: 'a' }] };
+  await feed.start(); // 세션만 바뀐 patch — firstPrompts 는 싣지 않지만 화면은 지난 값을 이어 받는다
+  assert.equal('firstPrompts' in JSON.parse(res.writes.at(-1).slice(6)), false);
+  sync();
+  assert.deepEqual(view.firstPrompts, fp);
+  st = { ...st, firstPrompts: [] };
+  await feed.start(); // 받았다고 알려 서버가 지움
+  sync();
+  assert.deepEqual(view.firstPrompts, []);
 });

@@ -4,7 +4,7 @@
 let liveES = null;
 // 연결 상태는 끊겼을 때만 머리에 경고로 보인다(잘 붙어 있으면 아무것도 안 보임)
 const connState = (cls, text) => { $('#conn').innerHTML = `<span class="dot-s ${cls}"></span>${text}`; $('#conn').title = text; $('#conn').hidden = cls === 'live'; };
-// 서버는 보통 바뀐 세션만 담은 patch 를 보낸다(lib/live-feed.mjs) — order 순서대로 지난 상태와 합친다. links · usage · restore 는 없으면 그대로.
+// 서버는 보통 바뀐 세션만 담은 patch 를 보낸다(lib/live-feed.mjs) — order 순서대로 지난 상태와 합친다. links · usage · restore · firstPrompts 는 없으면 그대로.
 // 모르는 세션이 order 에 있으면(어긋남) null → 새로 연결해서 전체를 받는다
 function applyPatch(prev, d) {
   if (!d.patch) return d;
@@ -13,7 +13,7 @@ function applyPatch(prev, d) {
   for (const s of d.sessions) by.set(s.key, s);
   if (d.order.some((k) => !by.has(k))) return null;
   const { patch, order, ...rest } = d;
-  return { links: prev.links, usage: prev.usage, restore: prev.restore, ...rest, sessions: order.map((k) => by.get(k)) };
+  return { links: prev.links, usage: prev.usage, restore: prev.restore, firstPrompts: prev.firstPrompts, ...rest, sessions: order.map((k) => by.get(k)) };
 }
 function connect() {
   liveES?.close();
