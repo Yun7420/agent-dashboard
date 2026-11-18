@@ -19,7 +19,7 @@ button:not(.primary):not(.ghost):not(.tab):not(.danger):not(.drawer-handle):not(
 /* 아래 모서리: 상태 숫자 칸(왼쪽) · 에이전트 종류 범례(오른쪽, 패널 왼쪽까지). 좁은 폭에선 숨김(12-narrow.css) */
 .status-col, .kinds { position: absolute; bottom: var(--sp-4); z-index: var(--z-float); display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-2); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
 .status-col { left: calc(var(--aw) + var(--sp-4)); transition: left var(--slide); }
-.kinds { right: calc(var(--dw) + var(--sp-4)); max-width: calc(100% - var(--aw) - var(--dw) - 2 * var(--sp-4)); overflow: hidden; font-size: 13px; color: var(--dim); transition: right var(--slide); } /* 보이는 칸이 좁으면 목록 판 위로 넘지 않고 잘린다 */
+.kinds { right: calc(var(--dw) + var(--sp-4)); max-width: calc(100% - var(--aw) - var(--dw) - 2 * var(--sp-4)); overflow: hidden; font-size: 13px; color: var(--dim); transition: right var(--slide), bottom var(--slide); } /* 보이는 칸이 좁으면 목록 판 위로 넘지 않고 잘린다 */
 main:has(#drawer.dragging) :is(.kinds, .drawer-handle) { transition: none; } /* 폭을 끄는 동안엔 손을 바로 따라오게 */
 .kinds:empty { display: none; }
 .kind { display: inline-flex; align-items: center; gap: var(--sp-2); height: 28px; padding: 0 var(--sp-2); }
@@ -36,6 +36,12 @@ button.k-use:hover:not(:disabled) { background: var(--surface-2); border-color: 
 .status-col button:hover:not(:disabled) { background: var(--surface-2); color: var(--text); border-color: transparent; }
 .status-col .sl { flex: 1; }
 .status-col b { min-width: 2ch; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+/* 보이는 칸이 좁을 때(main.tight, 13-controls.js): 상태 칸은 점 + 숫자 세로 한 줄(글자는 화면 읽기 · title 로 남김),
+   그래도 범례와 가로로 겹치면 범례가 상태 칸 위로(.stack — --sc-h = 상태 칸 높이) */
+main.tight .status-col button { gap: var(--sp-2); padding: 0 var(--sp-2); }
+main.tight .status-col .sl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+main.tight .kind { gap: 0; padding: 0 var(--sp-1); }
+.kinds.stack { bottom: calc(var(--sp-4) + var(--sc-h) + var(--sp-2)); }
 /* 종류 표식: 머리글자 + --kind-<id> 색(02-kinds.js 가 --k 로 넣음) */
 .kmark { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border-radius: 50%; font: 700 11px/1 var(--sans); vertical-align: 1px; color: var(--k); background: color-mix(in srgb, var(--k) 18%, transparent); flex: none; }
 .km circle { fill: color-mix(in srgb, var(--k) 18%, var(--surface-2)); stroke: none; }

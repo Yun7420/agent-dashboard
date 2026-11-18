@@ -65,6 +65,11 @@
   --bar-h: 52px; /* 왼쪽 목록 맨 윗줄과 오른쪽 패널 머리의 공통 높이 */
   --shadow: 0 10px 30px color-mix(in srgb, var(--shade) 35%, transparent);
   --shadow-panel: 0 0 30px color-mix(in srgb, var(--shade) 25%, transparent); /* 조직도 위에 뜬 판(목록 · 패널) 한 단계 */
+  /* 스위치(iOS · macOS 꼴): 손잡이는 두 판 모두 흰색 + 옅은 그림자 한 단계. 흰 손잡이와 바탕 대비 켜짐 5.3 · 꺼짐 3.4(비텍스트 3:1 이상) */
+  --switch-knob: #ffffff;
+  --switch-knob-shadow: 0 1px 2px color-mix(in srgb, var(--shade) 30%, transparent);
+  --switch-on: var(--primary);
+  --switch-off: #868c89;
   --slide: .22s cubic-bezier(.2, .8, .2, 1); /* 판 열고 닫기 · 접기 — 판 가장자리에 붙은 단추 · 범례도 같은 시간으로 */
   --sans: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', 'Inter', system-ui, sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, 'D2Coding', monospace;
@@ -138,10 +143,10 @@ input, textarea { font: inherit; color: var(--text); }
 .switch { display: inline-flex; align-items: center; gap: 8px; color: var(--dim); cursor: pointer; user-select: none; font-size: 12px; }
 .switch input { display: none; }
 button.switch { background: transparent; border-color: transparent; } /* 단추로 된 스위치(role=switch · aria-checked) — 사용 한도 보기 */
-.switch .track { width: 30px; height: 18px; border-radius: 12px; background: var(--surface-3); border: 1px solid var(--border-strong); position: relative; transition: background .15s; }
-.switch .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--dim); transition: transform .15s, background .15s; }
-.switch input:checked + .track, .switch[aria-checked="true"] .track { background: var(--accent); border-color: transparent; }
-.switch input:checked + .track::after, .switch[aria-checked="true"] .track::after { transform: translateX(12px); background: var(--on-accent); }
+.switch .track { flex: none; width: 30px; height: 18px; border-radius: 12px; background: var(--switch-off); position: relative; transition: background .15s; }
+.switch .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--switch-knob); box-shadow: var(--switch-knob-shadow); transition: transform .15s; }
+.switch input:checked + .track, .switch[aria-checked="true"] .track { background: var(--switch-on); }
+.switch input:checked + .track::after, .switch[aria-checked="true"] .track::after { transform: translateX(12px); }
 .dot-s { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; }
 .dot-s.working { background: var(--working); box-shadow: 0 0 0 3px color-mix(in srgb, var(--working) 15%, transparent); }
 .dot-s.waiting { background: var(--waiting); box-shadow: 0 0 0 3px color-mix(in srgb, var(--waiting) 18%, transparent); }

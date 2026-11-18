@@ -8,14 +8,42 @@ function render() {
   $('#c-waiting').textContent = count('waiting');
   $('#appr-count').hidden = !count('waiting');
   for (const st of ['waiting', 'working', 'idle', 'ended']) $(`#n-${st}`).textContent = st === 'working' ? count('working') + count('background') : count(st);
-  // Claude Code 항목에는 계정 사용 한도를 붙인다(11-usage.js) — 마우스를 올리면 초기화 시각 · 추이
-  setHtml($('#kinds'), runningKinds(state.tools, state.sessions).map((k) => (k.id === 'claude' ? `<span class="kind" data-lp>${kmark(k.id)}${esc(k.label)}${usageHtml()}</span>` : `<span class="kind">${kmark(k.id)}${esc(k.label)}</span>`)).join(''));
+  renderKinds();
   renderList();
   renderGraph();
   if (selected) {
     const s = state.sessions.find((x) => x.key === selected);
     if (s) renderDrawerHead(s);
   }
+}
+
+// 범례: Claude Code 항목에는 계정 사용 한도를 붙인다(11-usage.js) — 마우스를 올리면 초기화 시각 · 추이.
+// 보이는 칸(목록 판 · 패널 사이)이 480px 이하면 main.tight — 범례는 표식 + 숫자 「C · 68% · 79%」, 상태 칸은 점 + 숫자만(12 · 11-center.css)
+function renderKinds() {
+  const tight = $('main').classList.contains('tight');
+  setHtml($('#kinds'), runningKinds(state.tools, state.sessions).map((k) => `<span class="kind"${k.id === 'claude' ? ' data-lp' : ''}>${kmark(k.id)}${tight ? '' : esc(k.label)}${k.id === 'claude' ? usageHtml(tight && 'tight') : ''}</span>`).join(''));
+  stackSync();
+}
+// 줄여도 범례가 상태 칸과 가로로 겹치면 범례를 상태 칸 위로 올린다(숨기지 않음 — 한도는 꼭 봐야 하는 정보).
+// 위치는 판이 미끄러지는 중의 사각형이 아니라 끝난 자리로 셈한다(--aw · --dw 와 두 칸의 폭)
+const TIGHT_W = 480;
+const dwOf = () => parseFloat($('main').style.getPropertyValue?.('--dw')) || 0;
+const visibleW = () => $('main').clientWidth - asideW() - dwOf();
+function stackSync() {
+  const kinds = $('#kinds'), col = $('#status-col'), gap = 16;
+  const kindsLeft = $('main').clientWidth - dwOf() - gap - kinds.offsetWidth;
+  const on = kinds.offsetWidth > 0 && kindsLeft < asideW() + gap + col.offsetWidth + 8;
+  kinds.classList.toggle('stack', on);
+  if (on) kinds.style.setProperty('--sc-h', `${col.offsetHeight}px`);
+}
+function tightSync() {
+  const on = visibleW() <= TIGHT_W;
+  if ($('main').classList.contains('tight') !== on) { $('main').classList.toggle('tight', on); if (state) renderKinds(); }
+  else stackSync();
+}
+if (typeof ResizeObserver === 'function') { // 브라우저에서만(단위 테스트의 가짜 문서엔 없음)
+  for (const el of [$('main'), $('aside')]) new ResizeObserver(tightSync).observe(el);
+  new MutationObserver(tightSync).observe($('main'), { attributes: true, attributeFilter: ['style'] }); // 패널 폭(--dw)이 바뀔 때(07-center.js 의 dwSync)
 }
 
 // 화면 색(톱니 단추 → 설정 메뉴): 어두운 초록(기본) · 밝은 판 · 시스템 따라가기. 고른 값은 agent-deck 의 theme 에
