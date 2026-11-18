@@ -22,9 +22,11 @@ import fs from 'node:fs'; import net from 'node:net';
 fs.appendFileSync(${JSON.stringify(path.join(dir, 'count'))}, 'x\\n');
 if (${JSON.stringify(mode)} === 'crash') { console.log('가짜 서버 시작'); process.exit(3); }
 if (${JSON.stringify(mode)} === 'port') { console.error('4545 포트를 이미 쓰고 있어요 — PORT=4546 npm start 처럼 다른 포트로 켜 주세요'); process.exit(1); }
-fs.writeFileSync(${JSON.stringify(path.join(dir, 'pid'))}, String(process.pid));
 const srv = net.createServer().listen(${port}, '127.0.0.1');
 process.on('SIGTERM', () => { fs.writeFileSync(${JSON.stringify(path.join(dir, 'signal'))}, 'SIGTERM'); srv.close(); process.exit(0); });
+// pid 는 신호 처리를 단 뒤에, 다 쓴 파일을 이름만 바꿔 놓는다 — 먼저 적으면 테스트가 처리 전에 SIGTERM 을 보내 기본 동작으로 죽고(signal 파일 없음),
+// 쓰는 도중에 읽으면 빈 글자를 읽는다(2026-11-18 CI macOS Node 22 에서 ENOENT …/signal)
+fs.writeFileSync(${JSON.stringify(path.join(dir, 'pid.tmp'))}, String(process.pid)); fs.renameSync(${JSON.stringify(path.join(dir, 'pid.tmp'))}, ${JSON.stringify(path.join(dir, 'pid'))});
 setInterval(() => {}, 1000);
 `);
   return f;
@@ -75,6 +77,7 @@ test('run: 자식 서버만 밖에서 SIGTERM 으로 끄면 실행기가 다시 
     const first = Number(fs.readFileSync(path.join(dir, 'pid'), 'utf8'));
     process.kill(first, 'SIGTERM');
     assert.ok(await until(() => count(dir) >= 2 && Number(fs.readFileSync(path.join(dir, 'pid'), 'utf8')) !== first));
+    assert.ok(await until(() => fs.existsSync(path.join(dir, 'signal'))), '가짜 서버가 SIGTERM 을 받지 못했다');
     assert.equal(fs.readFileSync(path.join(dir, 'signal'), 'utf8'), 'SIGTERM');
   } finally {
     r.stop();
