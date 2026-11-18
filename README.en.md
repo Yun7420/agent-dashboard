@@ -88,6 +88,8 @@ On first launch you'll see an **environment check** and a short guide, with fixe
 
 The **UI language** follows your browser at first (Korean for Korean, English otherwise); pick 한국어 · English under **⋯ → Display → Language**. The choice also applies to terminal logs, macOS notifications and the status line.
 
+Pick the **colors** under **⋯ → Display → Theme**: dark **Green** (default) · **Gray** · **Blue night**, light **Light** · **Warm light**, or **Follow system** (Green when macOS is dark, Light when it's light). Every theme follows the same eye-strain rules (body text 7–10:1, secondary text 4.5:1 or more).
+
 ### Keep it running (recommended)
 
 Run it inside tmux with the auto-restart runner; if the server stops it comes back after 2 seconds. Logs go to `~/.agent-dashboard/server.log` (readable only by you).

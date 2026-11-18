@@ -277,3 +277,36 @@ test('더 볼 게 있는 곳: data-tip 은 모두 tabindex="0"(또는 단추), �
   for (const ev of ["'mouseover'", "'click'", "'keydown'"]) assert.ok(tips.includes(`document.addEventListener(${ev}`), ev);
   assert.match(read('public/js/15-notify.js'), /if \(tip\.el\) \{ tipHide\(\);/); // Esc 로 닫기
 });
+
+// ---------- 테마 대비 ----------
+// 모든 테마(00-base.css 의 :root 와 :root[data-theme])가 눈 피로 규칙을 지키는지 — docs/CONVENTIONS.md 「화면 디자인 규칙」 색 · 대비.
+// 본문 7~10:1(네 면 모두) · 보조 · 강조 · 상태 글자 4.5 이상 · 주 단추 글자 4.5 이상 · 점 · 강조 · 스위치(비텍스트) 3 이상
+test('테마 대비: 초록 · 회색 · 푸른 밤 · 밝음 · 따뜻한 밝음 모두 본문 7~10 · 보조 4.5 · 비텍스트 3 이상', () => {
+  const css = read('public/css/00-base.css');
+  const block = (sel) => { const i = css.indexOf(`${sel} {`); assert.ok(i >= 0, sel); return css.slice(i, css.indexOf('\n}', i)); };
+  const tokens = (body) => Object.fromEntries([...body.matchAll(/--([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
+  const base = tokens(block(':root'));
+  const lightBase = { ...base, ...tokens(block(':root[data-theme="light"], :root[data-theme="warm"]')) };
+  const themes = {
+    dark: base,
+    gray: { ...base, ...tokens(block(':root[data-theme="gray"]')) },
+    night: { ...base, ...tokens(block(':root[data-theme="night"]')) },
+    light: lightBase,
+    warm: { ...lightBase, ...tokens(block(':root[data-theme="warm"]')) },
+  };
+  const lum = (hex) => { const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0); };
+  const bad = [];
+  for (const [name, t] of Object.entries(themes)) {
+    const hex = (k) => { let v = t[k]; for (let i = 0; i < 3 && /^var\(--/.test(v); i++) v = t[v.slice(6, -1)]; assert.match(v, /^#[0-9a-f]{6}$/, `${name} --${k}`); return v; };
+    const ratio = (a, b) => { const [x, y] = [lum(hex(a)), lum(hex(b))].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+    const need = (a, b, lo, hi = Infinity) => { const r = ratio(a, b); if (r < lo || r > hi) bad.push(`${name}: ${a}/${b} ${r.toFixed(2)}`); };
+    for (const s of ['bg', 'surface', 'surface-2', 'surface-3']) {
+      need('text', s, 7, 10.05);
+      for (const k of ['dim', 'faint', 'accent-text', 'working-text', 'waiting-text']) need(k, s, 4.5);
+    }
+    need('on-primary', 'primary', 4.5);
+    for (const k of ['accent', 'working', 'waiting', 'idle', 'ok']) need(k, 'bg', 3);
+    for (const k of ['switch-on', 'switch-off']) need('switch-knob', k, 3);
+  }
+  assert.deepEqual(bad, []);
+});

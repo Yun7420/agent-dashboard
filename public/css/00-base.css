@@ -1,5 +1,6 @@
 /* 공통: 색 · 글꼴 변수(:root) · 화면 틀(body 격자) · 스크롤 막대 · 단추 · 입력 칸 같은 공통 컨트롤 */
-/* 색은 여기 토큰으로만(구역 파일은 var · color-mix 로 섞어 쓴다). 기본 = 아주 옅은 초록기가 도는 중성 짙은 회색, [data-theme=light] = 옅은 초록기 미색
+/* 색은 여기 토큰으로만(구역 파일은 var · color-mix 로 섞어 쓴다). 테마(화면 설정)는 아래 :root[data-theme] 가 토큰만 덮어쓴다 —
+   어두운 판: 초록(기본, :root) · 회색 · 푸른 밤 / 밝은 판: 밝음 · 따뜻한 밝음. 모든 테마가 같은 대비 규칙(test/conventions.test.mjs 「테마 대비」)
    오래 보는 화면이라 눈 피로를 줄인다: 순흰 · 순검정 없음, 본문 대비 7~10:1 · 큰 면 약 11:1 이하 · 보조 글자 4.5:1 이상,
    강조는 차분한 초록 하나(단추 · 선 · 점에만, 넓은 면엔 쓰지 않음), 칸 구분은 테두리보다 면의 밝기 차이로 — 표는 docs/CONVENTIONS.md 「화면 디자인 규칙」 */
 :root {
@@ -81,41 +82,48 @@
   --sans: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', 'Inter', system-ui, sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, 'D2Coding', monospace;
 }
-:root[data-theme="light"] {
-  color-scheme: light;
-  --bg: #f2f3ee;
-  --surface: #f8f9f5;
-  --surface-2: #e9ebe5;
-  --surface-3: #e0e3dc;
-  --ink: #2a2f2c;
-  --shade: #8f938c; /* 밝은 판의 안쪽 칸 · 그림자는 옅게 */
-  --text: #3a403d;
-  --dim: #555c58;
-  --faint: #5c635f;
-  --accent: #2c7a57;
-  --accent-2: #3f8f6a;
-  --accent-text: #23694a;
-  --on-accent: #f7f6f1;
-  --glow: color-mix(in srgb, var(--accent) 6%, transparent);
-  --working: #85580f;
-  --working-text: #7d5410;
-  --waiting: #a83a45;
-  --waiting-text: #8a2e38;
-  --waiting-bg: #f7e6e3;
-  --idle: #52657a;
-  --ok: #2c6e4f;
-  --ok-text: #245c42;
-  --ended: #a2a59e;
-  --peer: #2a6580;
-  --peer-bg: #e2eef1;
-  --peer-text: #1f4f63;
-  --code-text: #3a403d;
-  --code-inline: #84431a;
-  --reply-text: #3a403d;
-  --on-status: #f8f9f5;
-  --claude: #92482b;
-  --codex: #2f5a8f;
-  --kind-gemini: #5b4a92;
+/* 회색: 초록기 없는 중성 짙은 회색(강조는 초록 그대로) */
+:root[data-theme="gray"] {
+  --bg: #18191a; --surface: #1d1e20; --surface-2: #242527; --surface-3: #2c2d30; --ink: #e2e3e5;
+  --shade: #08090a; --text: #c0c2c5; --dim: #a3a6aa; --faint: #97999e; --switch-off: #888a8e;
+  --code-text: #c2c4c7; --reply-text: #bec0c3; --on-status: #18191a;
+}
+/* 푸른 밤: 푸른 남색 바탕 + 파란 강조(주 단추 · 스위치도 파랑) */
+:root[data-theme="night"] {
+  --bg: #151a22; --surface: #1a202a; --surface-2: #212833; --surface-3: #29313d; --ink: #dde3ec;
+  --shade: #06080c; --text: #bcc4cf; --dim: #9fa9b6; --faint: #939daa; --accent: #4d84b6;
+  --accent-2: #6a9dcb; --accent-text: #93bbe0; --primary: #2b6496; --primary-hover: #275b89; --on-accent: #0c131c;
+  --switch-off: #848c97; --code-text: #bec6d0; --reply-text: #bac2cd; --on-status: #151a22;
+}
+:root[data-theme="light"], :root[data-theme="warm"] {
+  color-scheme: light; --bg: #f2f3ee; --surface: #f8f9f5; --surface-2: #e9ebe5; --surface-3: #e0e3dc;
+  --ink: #2a2f2c; --shade: #8f938c; /* 밝은 판의 안쪽 칸 · 그림자는 옅게 */ --text: #3a403d; --dim: #555c58; --faint: #5c635f;
+  --accent: #2c7a57; --accent-2: #3f8f6a; --accent-text: #23694a; --on-accent: #f7f6f1; --glow: color-mix(in srgb, var(--accent) 6%, transparent);
+  --working: #85580f; --working-text: #7d5410; --waiting: #a83a45; --waiting-text: #8a2e38; --waiting-bg: #f7e6e3;
+  --idle: #52657a; --ok: #2c6e4f; --ok-text: #245c42; --ended: #a2a59e; --peer: #2a6580;
+  --peer-bg: #e2eef1; --peer-text: #1f4f63; --code-text: #3a403d; --code-inline: #84431a; --reply-text: #3a403d;
+  --on-status: #f8f9f5; --claude: #92482b; --codex: #2f5a8f; --kind-gemini: #5b4a92;
+}
+/* 따뜻한 밝음: 밝은 판 위에 누런 미색 바탕 + 갈색 강조 */
+:root[data-theme="warm"] {
+  --bg: #f3efe7;
+  --surface: #f9f6f0;
+  --surface-2: #ebe6dc;
+  --surface-3: #e2dccf;
+  --ink: #2e2a25;
+  --shade: #948e84;
+  --text: #45403a;
+  --dim: #5a534a;
+  --faint: #60594f;
+  --accent: #9a5b25;
+  --accent-2: #a86a33;
+  --accent-text: #7f4a1c;
+  --primary: #8a4f1e;
+  --primary-hover: #7d471b;
+  --on-accent: #faf7f1;
+  --code-text: #45403a;
+  --reply-text: #45403a;
+  --on-status: #f9f6f0;
 }
 * { box-sizing: border-box; }
 ::selection { background: var(--accent-soft); }

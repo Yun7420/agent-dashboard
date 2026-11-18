@@ -48,13 +48,14 @@ if (typeof ResizeObserver === 'function') { // 브라우저에서만(단위 테�
   new MutationObserver(floatSync).observe($('main'), { attributes: true, attributeFilter: ['style'] }); // 패널 폭(--dw)이 바뀔 때(07-center.js 의 dwSync)
 }
 
-// 화면 색(톱니 단추 → 설정 메뉴): 어두운 초록(기본) · 밝은 판 · 시스템 따라가기. 고른 값은 agent-deck 의 theme 에
-// 시스템을 따를 땐 macOS 가 낮 · 밤으로 바뀌면 바로 따라간다(00-base.css 의 :root[data-theme="light"])
-const themeOf = (choice, systemLight) => (choice === 'light' || (choice === 'system' && systemLight) ? 'light' : 'dark');
+// 화면 색(⋯ → 화면 설정): 테마 목록 — 어두운 판 초록(기본 dark) · 회색 · 푸른 밤, 밝은 판 밝음 · 따뜻한 밝음, 시스템 따라가기(어두우면 초록 · 밝으면 밝음).
+// 고른 값은 agent-deck 의 theme 에(초록은 비움). 예전 값 dark · light · system 은 이름이 같아 그대로 이어진다. 색은 00-base.css 의 :root[data-theme] 토큰
+const THEMES = ['dark', 'gray', 'night', 'light', 'warm'];
+const themeOf = (choice, systemLight) => (choice === 'system' ? (systemLight ? 'light' : 'dark') : THEMES.includes(choice) ? choice : 'dark');
 const systemLight = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: light)') : { matches: false };
 function applyTheme() {
   document.documentElement.dataset.theme = themeOf(pref.theme, systemLight.matches);
-  $('#set-theme').value = ['light', 'system'].includes(pref.theme) ? pref.theme : 'dark';
+  $('#set-theme').value = [...THEMES, 'system'].includes(pref.theme) ? pref.theme : 'dark';
 }
 systemLight.addEventListener?.('change', applyTheme);
 applyTheme();
