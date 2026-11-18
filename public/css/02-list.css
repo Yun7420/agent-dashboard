@@ -50,7 +50,9 @@ body.aside-folded .ended-toggle b { font-size: 11px; }
 body.aside-folded .ended-toggle .chev { display: none; }
 body.aside-folded #ended-window { display: none; }
 .group-h { padding: 12px 8px 6px; color: var(--faint); font-size: 11px; font-weight: 600; letter-spacing: .04em; }
-.group-h.empty-hint { font-size: 12px; font-weight: 400; letter-spacing: 0; line-height: 1.6; color: var(--dim); white-space: normal; } /* 처음 설치 — 기록 폴더 없음 */
+.empty-line { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-4) var(--sp-2); color: var(--dim); font-size: 13px; line-height: 1.6; white-space: normal; }
+.empty .empty-line { align-items: center; pointer-events: auto; } /* 가운데 칸(구조 탭) — 바탕 칸은 마우스를 통과시키지만 단추는 누를 수 있게 */
+body.aside-folded .empty-line { display: none; }
 /* 카드는 테두리 없이 면 차이로: 평소 = 목록 바탕, 올림 = 한 단계 밝게, 고름 = 두 단계 + 왼쪽 초록 줄. 승인 필요만 테두리로 눈에 띄게 */
 .card { position: relative; padding: var(--sp-3); margin: var(--sp-1) 0; border-radius: var(--radius); border: 1px solid transparent; background: transparent; cursor: pointer; transition: background .15s, border-color .15s; }
 .card:hover { background: var(--surface-2); }

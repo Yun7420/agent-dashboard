@@ -33,7 +33,7 @@ function renderList() {
   }
   // 기록 폴더가 아예 없으면(처음 설치) 「떠 있는 세션이 없어요」 대신 무엇을 하면 되는지 안내
   const noRecords = !state.sessions.length && envData?.tools?.claudeRecords === false;
-  const emptyHint = noRecords ? `<div class="group-h empty-hint">${t('No Claude Code session logs yet — run claude once in a terminal and it shows up here')}</div>` : `<div class="group-h">${t('No sessions running')}</div>`;
+  const emptyHint = noRecords ? emptyLine(t('No Claude Code session logs yet — run claude once in a terminal and it shows up here')) : emptyLine(t('No sessions running'), newSessionBtn());
   const listHtml = (live.length ? '' : emptyHint) + html;
   // 다시 그리면 요소가 바뀌어 키보드 위치(포커스)가 사라진다 → 같은 카드(또는 그 ✕)로 돌려놓는다
   const f = document.activeElement?.closest?.('#list .card');

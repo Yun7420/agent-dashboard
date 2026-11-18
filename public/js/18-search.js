@@ -31,8 +31,9 @@ async function runSearch() {
   try { results = await apiJson(`/api/search?q=${encodeURIComponent(q)}`); }
   catch (e) { if (seq === gs.seq) { $('#gs-meta').textContent = `${t('Search failed')} — ${e.message}`; $('#gs-list').innerHTML = ''; } return; } // 「찾은 기록이 없어요」와 구분
   if (seq !== gs.seq) return; // 더 최근 검색이 있으면 버린다
-  $('#gs-meta').textContent = results.length ? `${t('{n} found', { n: results.length })}${results.length === 100 ? ` (${t('latest 100 only')})` : ''}` : t('Nothing found');
-  $('#gs-list').innerHTML = results.map((r) => `
+  $('#gs-meta').textContent = results.length ? `${t('{n} found', { n: results.length })}${results.length === 100 ? ` (${t('latest 100 only')})` : ''}` : '';
+  $('#gs-list').innerHTML = results.length ? '' : emptyLine(t('Nothing found'));
+  if (results.length) $('#gs-list').innerHTML = results.map((r) => `
     <button type="button" class="gs-item" data-key="${esc(r.key)}">
       <span class="gs-head"><b>${esc(r.title)}</b><span>${esc(r.project ?? '')}</span><span class="${r.from ? 'gs-peer' : ''}">${r.where === 'reply' ? t('Reply') : r.from ? `↙ ${esc(r.from.name)}` : t('Request')}</span><span>${new Date(r.at).toLocaleString(LOCALE)}</span></span>
       <span class="gs-snip">${mark(r.snippet, q)}</span>

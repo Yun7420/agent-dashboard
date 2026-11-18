@@ -69,6 +69,7 @@ $('#close-dlg').addEventListener('close', async () => {
 });
 
 // 새 세션
+document.addEventListener('click', (e) => { if (e.target.closest('[data-new-session]')) $('#new-session').click(); }); // 빈 상태의 「+ 새 세션」
 $('#new-session').addEventListener('click', () => {
   const dirs = [...new Set((state?.sessions || []).map((s) => s.cwd).filter(Boolean))];
   $('#cwd-list').innerHTML = dirs.map((d) => `<option value="${esc(d)}">`).join('');
@@ -131,7 +132,7 @@ function renderHistory() {
       <div class="m"><span class="sha">#${h.n}</span><span>${new Date(h.at).toLocaleString(LOCALE)}</span><span class="tools">${t('tools {n}×', { n: h.tools })}</span></div>
       ${h.from ? `<div class="who peer">↙ ${esc(h.from.name)}</div>${foldable('p peer', h.prompt)}` : foldable('p', h.prompt)}
       ${h.reply ? `<div class="who">CLAUDE</div>${foldable('r', h.reply)}` : ''}
-    </div>`).join('') + more || `<div class="commit"><span class="m">${t('No prompts')}</span></div>`;
+    </div>`).join('') + more || emptyLine(hist.q ? t('No matching prompts') : t('No prompts yet'));
 }
 $('#log-list').addEventListener('click', async (e) => {
   if (e.target.id !== 'hist-more' || !selected) return;
