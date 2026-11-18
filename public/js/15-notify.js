@@ -72,7 +72,7 @@ function notifyChanges(prevSessions, next) {
 // Esc: 열린 팝업 → 패널 순서로 닫기
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  if (tip.el) { tipHide(); e.stopPropagation(); return; } // 말풍선이 먼저(모달 안이면 모달은 그대로)
+  if (tip.el) { tipHide(); e.stopPropagation(); e.preventDefault(); return; } // 말풍선이 먼저 — 모달 안이면 모달은 그대로(preventDefault 가 없으면 브라우저가 Esc 로 모달도 닫았다)
   if (document.querySelector('dialog[open]')) return;
   if ($('#dir-menu').classList.contains('show')) { $('#dir-menu').classList.remove('show'); return; }
   if ($('#app-menu').classList.contains('show')) { $('#app-menu').classList.remove('show'); $('#app-more').focus(); return; }
