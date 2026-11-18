@@ -23,8 +23,6 @@ const KO_UI = {
   "End session": "세션 종료",
   "sub {n}": "서브 {n}",
   "Reopen": "다시 열기",
-  "Context window": "대화 창 사용량",
-  "window size estimated": "창 크기 추정",
   "No Claude Code session logs yet — run claude once in a terminal and it shows up here": "아직 Claude Code 세션 기록이 없어요 — 터미널에서 claude 를 한 번 실행하면 여기에 보여요",
   "No sessions running": "떠 있는 세션이 없어요",
   "Outside session folder": "세션 폴더 밖",

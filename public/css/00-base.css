@@ -149,6 +149,9 @@ input, textarea { font: inherit; color: var(--text); }
 .switch { display: inline-flex; align-items: center; gap: 8px; color: var(--dim); cursor: pointer; user-select: none; font-size: 12px; }
 .switch input { display: none; }
 button.switch { background: transparent; border-color: transparent; } /* 단추로 된 스위치(role=switch · aria-checked) — 사용 한도 보기 */
+.ctx-bar { height: 100%; border-radius: 3px; background: var(--ok); } /* 채움 막대(패널 머리 대화 창 · 세션 정보 · 한도 팝업) — 60 · 85% 에서 색만 */
+.ctx-bar.mid { background: var(--working); }
+.ctx-bar.high { background: var(--waiting); }
 .switch .track { flex: none; width: 30px; height: 18px; border-radius: 12px; background: var(--switch-off); position: relative; transition: background .15s; }
 .switch .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--switch-knob); box-shadow: var(--switch-knob-shadow); transition: transform .15s; }
 .switch input:checked + .track, .switch[aria-checked="true"] .track { background: var(--switch-on); }

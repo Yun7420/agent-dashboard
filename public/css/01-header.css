@@ -1,4 +1,4 @@
-/* 머리: 로고 · 통계 · 사용 한도 표시 · 단추 — 머리 단추가 여는 팝업(한도 추이 · 알림 설정)도 여기 */
+/* 머리: 로고 · 승인 필요 칩 · 검색 · 단추 — 머리 단추가 여는 팝업(알림 설정)과 범례 위로 열리는 사용 한도 팝업(#limits-pop)도 여기 */
 /* ---------- 헤더 ---------- */
 header { grid-column: 1 / -1; position: relative; z-index: var(--z-head); display: flex; align-items: center; gap: 14px; padding: 0 20px; border-bottom: 1px solid var(--border); background: var(--surface); }
 .brand { display: flex; align-items: center; gap: 10px; margin-right: 8px; }

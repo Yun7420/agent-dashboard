@@ -69,12 +69,6 @@ kbd { font: 11px var(--mono); padding: 0 5px; border: 1px solid var(--border-str
 .card .sub { display: flex; align-items: center; gap: 6px; margin-top: var(--sp-2); color: var(--faint); font-size: 12px; white-space: nowrap; overflow: hidden; }
 .card .sub .proj { min-width: 2em; overflow: hidden; text-overflow: ellipsis; }
 .card .sub .ago { flex: none; }
-.ctx { height: 3px; margin-top: 8px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 6%, transparent); overflow: hidden; }
-.ctx-bar { height: 100%; border-radius: 3px; background: var(--ok); }
-.ctx-bar.mid { background: var(--working); }
-.ctx-bar.high { background: var(--waiting); }
-.ctx-chip { display: inline-flex; align-items: center; gap: 6px; }
-.ctx-chip .mini { width: 46px; height: 4px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 8%, transparent); overflow: hidden; }
 .card .x { position: absolute; right: 8px; bottom: 8px; width: 24px; height: 24px; padding: 0; border-radius: 8px; font-size: 11px; line-height: 22px; color: var(--faint); background: var(--surface-3); border: 1px solid var(--border); opacity: 0; }
 .card:hover .x, .card:focus-within .x { opacity: 1; } /* 키보드로 카드 · ✕ 에 닿으면 보이게 */
 .card:focus-visible, .card .x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

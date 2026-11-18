@@ -1,4 +1,5 @@
 // 왼쪽 세션 목록
+// 카드는 이름 · 상태 · 흐린 한 줄(폴더 · 시간)만 — 대화 창은 조직도 물 채우기(전체 비교)와 패널 머리 %(정확한 숫자)가 맡는다.
 // 꼬리표는 기본값이 아닐 때만: tmux 밖(보기만 되는) 세션에만 「보기만」. 에이전트 종류는 이름 앞 표식(02-kinds.js 의 kmark)
 const tags = (s) => (s.tmux ? '' : `<span class="badge badge-view" title="${t('Started outside tmux — chat · approve are off')}">${t('View only')}</span>`);
 // 탭: 활성 = 지금 떠 있는 세션(정렬 · 끌기) / 종료 = 최근 24시간에 끝난 세션(서버가 24시간만 보낸다) · 다시 열기.
@@ -29,7 +30,6 @@ function renderList() {
         <span class="ini"><span class="dot-s ${esc(s.status)} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${esc(initials(s.title))}</span>
         <div class="row"><div class="title">${kmark(s.tool)}${esc(s.title)}</div><span class="status ${esc(s.status)}"><span class="dot-s ${esc(s.status)} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${STATUS_KO[s.status]}</span></div>
         <button class="x" data-close="${esc(s.key)}" title="${s.status === 'ended' ? t('Hide from list') : t('End session')}" aria-label="${esc(s.title)} ${s.status === 'ended' ? t('Hide from list') : t('End session')}">✕</button>
-        ${s.context && s.status !== 'ended' ? `<div class="ctx" title="${t('Context window')} ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)}${s.context.estimated ? ` (${t('window size estimated')})` : ''}"><div class="ctx-bar ${ctxLevel(s.context.percent)}" style="width:${s.context.percent}%"></div></div>` : ''}
         <div class="sub">${tags(s)}<span class="proj">${esc(s.project)}</span><span class="ago" data-key="${esc(s.key)}"></span>${s.subagents?.length ? `<span class="ago">· ${t('sub {n}', { n: s.subagents.length })}</span>` : ''}</div>
         ${s.reopen ? `<div class="re"><button type="button" class="reopen" data-reopen="${esc(s.id)}" aria-label="${esc(s.title)} ${t('Reopen')}">${t('Reopen')}</button></div>` : ''}
       </div>`;

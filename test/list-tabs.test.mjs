@@ -48,6 +48,16 @@ test('활성 탭: 떠 있는 세션만, 탭 숫자는 활성 2 · 종료 1(목�
   assert.deepEqual([els['#tab-live'].attrs['aria-selected'], els['#tab-ended'].attrs['aria-selected']], ['true', 'false']);
 });
 
+test('카드는 이름 · 상태 · 흐린 한 줄(폴더 · 시간)만 — 대화 창 막대 없음(조직도 물 채우기 · 패널 머리 % 가 맡음)', () => {
+  const { run, els, keys } = load();
+  run("state.sessions[0].context = { percent: 72, used: 144000, window: 200000 }");
+  keys();
+  const card = els['#list'].innerHTML.split('<div class="card ')[1];
+  assert.match(card, /class="title">.*Work<\/div>.*class="status working"/s);
+  assert.match(card, /class="sub">.*class="proj">p<\/span><span class="ago"/s);
+  assert.doesNotMatch(els['#list'].innerHTML, /ctx|72%/);
+});
+
 test('종료 탭: 종료 카드만 + 다시 열기, 비면 「최근 24시간 안에 종료된 세션이 없어요」', () => {
   const { run, els, keys } = load({ listTab: 'ended' });
   assert.deepEqual(keys(), ['e1']);

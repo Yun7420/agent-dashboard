@@ -170,7 +170,7 @@ A session already running in a terminal has no official way to receive input fro
 
 - Sort: **manual** (drag cards to fix the order) · by status (recent first)
 - Sorting is the small icon at the top right of the list
-- Card: name · status · context bar (green → yellow → red) + one faint line (folder · time). Tags only when not the default (Codex · "View only" outside tmux)
+- Card: name · status + one faint line (folder · time). Context use is shown by the water fill in the org chart nodes (to compare sessions) and "Context N%" in the panel header (exact number). Tags only when not the default (Codex · "View only" outside tmux)
 - **Collapse the list** with the ‹ tab at the middle of its right edge — a thin rail keeps status dots + initials (› to expand, click to open)
 - List tabs **Active N** · **Ended N** — the Ended tab shows sessions that ended in the last 24 hours (with "Reopen"); your tab is remembered. The folded strip shows active sessions only
 - Hover for ✕ — close the session (with confirmation) / hide an ended session
