@@ -25,7 +25,8 @@
   </div>
   <button type="button" id="appr-count" class="appr-count" hidden><span class="dot-s waiting"></span>Needs approval <em id="c-waiting">0</em></button>
   <span id="conn" role="status" hidden></span>
-  <span class="spacer"></span>
+  <!-- 맨 위 가운데 통합 검색: 모양은 입력칸, 누르거나 / 를 누르면 검색 모달이 열려 바로 입력(18-search.js). 좁은 화면은 🔍 만 -->
+  <button type="button" id="gs-open" class="gs-open" title="Search history ( / )" aria-label="Search history" aria-keyshortcuts="/"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="gs-ph">Search history…</span><kbd>/</kbd></button>
   <span class="info-wrap">
     <button id="usage" class="usage-pill" title="Claude account usage limits"></button>
     <div class="menu-pop" id="limits-pop">
@@ -34,7 +35,6 @@
       <div class="lp-foot"><span class="lp-key"><i class="k5"></i>5h <i class="k7"></i>Weekly <i class="kr"></i>Reset</span><button type="button" class="ghost" id="limits-setup">Setup…</button></div>
     </div>
   </span>
-  <button id="search-btn" class="ghost icon-btn" title="Search all logs ( / )" aria-label="Search all logs"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
   <button id="new-session" class="primary" title="Run agent" aria-label="Run agent">+<span data-th="btn.agent"> Agent</span></button>
   <span class="info-wrap">
     <button type="button" id="app-more" class="ghost icon-btn" title="More" aria-label="More" aria-haspopup="menu" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
@@ -217,13 +217,12 @@
     <div class="row"><button value="cancel">Close</button></div>
   </form>
 </dialog>
-<dialog id="search-dlg">
+<dialog id="search-dlg" class="modal" aria-labelledby="search-t">
   <form method="dialog">
-    <h3>Search all logs</h3>
+    <div class="modal-h"><h3 id="search-t">Search all logs</h3><button type="button" class="ghost icon-btn modal-x" data-close-modal title="Close" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <input id="gs-q" type="search" maxlength="200" placeholder="Find in every session's requests · replies (2+ characters)" autocomplete="off">
     <div id="gs-meta"></div>
     <div id="gs-list"></div>
-    <div class="row"><button value="cancel">Close</button></div>
   </form>
 </dialog>
 <dialog id="close-dlg">

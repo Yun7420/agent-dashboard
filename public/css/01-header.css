@@ -10,10 +10,8 @@ header { grid-column: 1 / 3; position: relative; z-index: var(--z-head); display
 .appr-count:hover:not(:disabled) { background: var(--waiting-bg); border-color: var(--waiting); }
 .appr-count[hidden] { display: none; } /* 위 display 가 hidden 속성을 이기지 않게 */
 .appr-count em { font-style: normal; font-weight: 600; font-variant-numeric: tabular-nums; }
-header .spacer { flex: 1; }
 /* 머리는 늘 한 줄: 글자는 줄바꿈하지 않고, 자리가 모자라면 좁은 창 규칙이 덜 중요한 것부터 줄인다 */
 header > *, header .usage-pill { white-space: nowrap; flex-shrink: 0; }
-header .spacer { flex-shrink: 1; }
 /* 연결은 끊겼을 때만 경고로(잘 붙어 있으면 숨김) */
 #conn { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--waiting-text); font-size: 13px; }
 #conn[hidden] { display: none; }

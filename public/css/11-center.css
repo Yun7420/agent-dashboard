@@ -3,7 +3,7 @@
 header, aside { background: var(--surface); }
 main { --dw: 0px; } /* 오른쪽 패널 폭(07-center.js 가 채움) — 바탕 그래프 · 큰 % · 범례는 그 왼쪽까지만 */
 /* 보조 단추는 테두리만 */
-button:not(.primary):not(.ghost):not(.tab):not(.danger):not(.drawer-handle):not(.edge-tab) { background: transparent; }
+button:not(.primary):not(.ghost):not(.tab):not(.danger):not(.drawer-handle):not(.edge-tab):not(.gs-open) { background: transparent; }
 
 /* 바탕 그래프: 면 위주로 아주 흐리게, 마우스는 통과(조직도 끌기 · 확대를 막지 않게). 조직도 svg 가 그 위(같은 층, 뒤 순서) */
 .ctx-bg { position: absolute; top: 0; left: 0; bottom: 0; right: var(--dw); pointer-events: none; transition: opacity .2s ease-out; }

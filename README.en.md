@@ -154,7 +154,7 @@ A session already running in a terminal has no official way to receive input fro
 [Dashboard] ────┘   (manages the input channel)
 ```
 
-- **New session** — use **+ Run agent** in the dashboard (folder · name · model · first prompt); it opens inside tmux automatically.
+- **New session** — use the **+ Agent** button in the dashboard (folder · name · model · first prompt); it opens inside tmux automatically.
 - **Move an existing session** — `/exit` in that session, then in a **regular shell**:
   ```bash
   cd <folder where the session started> && tmux new -s name claude --resume <session-id>
@@ -177,10 +177,11 @@ A session already running in a terminal has no official way to receive input fro
 </details>
 
 <details open>
-<summary><b>Center — context · structure</b></summary>
+<summary><b>Center — structure + context</b></summary>
 
-- **Context** tab (the default): a big chart of the chosen session's context-window usage — big % · line · dashed 80% · auto-compact dots (click for details). Hover the big % for tokens · replies · compactions, the line for time · tokens
-- **Structure** tab (org chart): drag to pan · wheel to zoom · double-click to fit · **click empty space = close the right panel**
+- One screen: the **org chart** sits on a faint background chart of the chosen session's **context-window usage over the last 24 hours** — right edge = now, a line every 2 hours, dashed 80%, auto-compact dots. Hours with no replies stay empty
+- Hover the **big %** (top right) for tokens · replies · compactions · last compaction time. Status counts sit bottom left, agent kinds bottom right
+- Org chart: drag to pan · wheel to zoom · double-click to fit · **click empty space = close the right panel** (the background chart never blocks the mouse)
 - Dashed line = working in the same folder, yellow = working, **purple arrow = messages between sessions**
 - **Status text color** under each session box: idle = purple · working = yellow · background = light yellow · **needs approval = pink (bold)**
 - **Click a project box** to open that folder in **VS Code · Cursor, or reveal it in Finder** (only installed apps are shown; only folders of listed sessions can be opened)
@@ -197,7 +198,7 @@ A session already running in a terminal has no official way to receive input fro
 - **History** tab: past prompts and answers, search, "load more". Turns started by a message from another session (SendMessage) are split out and shown as a **dashed bubble labelled "↙ sender"** (same in the Now tab and global search)
 - **What I did today**: ⋯ at the top right → Today's work → per session: prompts, edited files, command count, **commit titles** and **tokens** (input · output · cache read · cache write · subagents, plus a daily total) (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts). Each response is counted once, and tokens are never converted to money (pricing differs by plan)
 - **Context trend** (narrow screens up to 860px): a small chart under the Now tab — context-window usage per response, dashed line = 80%, amber dot = where auto-compact dropped it
-- **Search all history**: the magnifier at the top (or the `/` key) searches prompts and answers across all sessions → picking a result opens that session's History tab with the same query
+- **Search all history**: the **search bar** at the top center (or the `/` key; 🔍 on narrow screens) searches prompts and answers across all sessions → picking a result opens that session's History tab with the same query
 - **Keyboard shortcuts** (also under ⋯ → Help)
 
   | Key | Action |
@@ -223,7 +224,7 @@ A session already running in a terminal has no official way to receive input fro
 <details open>
 <summary><b>Header — approval · limits · ⋯ menu</b></summary>
 
-- "Needs approval N" (hidden at 0, click to open the first waiting session) · "5h % · Weekly %" (hover for reset times, click for the trend) · 🔍 search all · + Run agent · ⋯
+- "Needs approval N" (hidden at 0, click to open the first waiting session) · "5h % · Weekly %" (hover for reset times, click for the trend) · search bar · + Agent (run agent) · ⋯
 - The connection shows only when it drops
 - **Esc**: close popups → press again to collapse the panel
 - ⋯ → Notifications: notification settings (approval needed · task over 1 minute finished) — browser notifications (while this tab is open) · macOS notifications (even with the tab closed, sent by the server) · sound · test notification. When macOS notifications are on, browser notifications are skipped so you don't get two. The same session and reason alerts at most once a minute, and simultaneous alerts are merged into one. Settings live in `~/.agent-dashboard/notify.json` (readable only by you). macOS notifications may need notification permission for Script Editor (or Terminal)
@@ -231,7 +232,7 @@ A session already running in a terminal has no official way to receive input fro
 
 ## Model · usage
 
-- **Model** — choose in + Run agent; change a running tmux session's model from the panel header (sends `/model`). Claude's `/model` also saves your default model, so when you change it from the dashboard **only that session** changes and your default is restored automatically.
+- **Model** — choose in + Agent (the run-agent window); change a running tmux session's model from the panel header (sends `/model`). Claude's `/model` also saves your default model, so when you change it from the dashboard **only that session** changes and your default is restored automatically.
 - **Account usage limits (5-hour · weekly)** — turn on with **Show usage limits** in the header. Claude Code only passes this to the status line, so turning it on registers a status line (`bin/statusline.mjs`) in `~/.claude/settings.json`.
   - Every Claude session gets one line at the bottom: `model · context % · 5-hour limit %` (if you already had a status line, it keeps showing yours).
   - Your previous settings are backed up to `~/.agent-dashboard/` and **restored exactly** when you turn it off. While on, context usage becomes exact instead of estimated.

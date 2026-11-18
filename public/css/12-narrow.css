@@ -21,6 +21,8 @@
   #more-menu .narrow-only { display: flex; }
   .status-col, .kinds { display: none; } /* 좁은 폭에선 구조 노드를 가리지 않게 숨김(숫자는 목록 · 머리 승인 칩으로) */
   #more-menu #wide { display: none; } /* 패널이 이미 화면 전체 */
+  .gs-open { flex: none; width: 32px; height: 32px; margin: 0 0 0 auto; padding: 0; justify-content: center; border-color: transparent; background: transparent; cursor: pointer; } /* 🔍 하나로 */
+  .gs-open .gs-ph, .gs-open kbd { display: none; }
   /* 바탕 그래프 · 큰 % 는 넓은 화면에서만 — 좁으면 조직도만, 대화 창 추이는 지금 탭 아래 작은 그래프로 */
   .ctx-bg, .cp-card, .zoom-btns { display: none !important; }
 }
@@ -38,7 +40,7 @@
   #new-session span { display: none; } /* 「+」만(이름은 title · aria-label) */
   header { gap: var(--sp-1); }
   /* 휴대폰은 손가락으로 누르니 아이콘 · 주 단추의 누를 자리를 40px 로(docs/CONVENTIONS.md 「화면 디자인 규칙」) */
-  .icon-btn, .icon-btn.sm, #new-session, .appr-count { min-width: 40px; height: 40px; }
+  .icon-btn, .icon-btn.sm, #new-session, .appr-count, .gs-open { min-width: 40px; height: 40px; }
   body, body.aside-folded { grid-template-columns: 56px 1fr; }
   /* 패널 머리: 이름 · 탭 · ⋯ · 닫기만 남겨 오른쪽 단추가 잘리지 않게 */
   #d-model { display: none; }

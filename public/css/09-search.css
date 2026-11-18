@@ -1,6 +1,11 @@
 /* 전체 기록 검색 */
 /* ---------- 전체 기록 검색 ---------- */
 #search-dlg { width: min(720px, 94vw); }
+/* 맨 위 가운데 검색칸: 약 360px, 남는 폭에 맞춰 줄어든다 · 오른쪽 끝에 / 키 표시 */
+.gs-open { flex: 0 1 360px; min-width: 0; margin: 0 auto; display: flex; align-items: center; gap: var(--sp-2); height: 34px; padding: 0 var(--sp-2) 0 var(--sp-3); border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--border); color: var(--faint); font-size: 13px; text-align: left; cursor: text; }
+.gs-open:hover { border-color: var(--border-strong); color: var(--dim); }
+.gs-open .gs-ph { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gs-open kbd { flex: none; min-width: 20px; height: 20px; display: grid; place-items: center; border-radius: 5px; border: 1px solid var(--border-strong); color: var(--dim); font: 600 11px var(--mono); }
 #gs-q { width: 100%; height: 40px; padding: 0 12px; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font-size: 14px; }
 #gs-meta { color: var(--faint); font-size: 12px; margin: 10px 2px 6px; min-height: 16px; }
 #gs-list { max-height: min(60vh, 520px); overflow: auto; display: flex; flex-direction: column; gap: 6px; }

@@ -1,10 +1,11 @@
 // 전체 기록 검색: 모든 세션의 요청 · 답변에서 찾고, 고르면 그 세션의 기록 탭을 같은 검색어로 연다
 const gs = { timer: null, seq: 0 };
+// 맨 위 가운데 검색칸(모양만 칸)을 누르거나 / → 같은 모달 틀로 열고 바로 입력. 닫히면 연 자리로 초점이 돌아간다(01-core.js 의 openModal)
 function openSearch() {
-  $('#search-dlg').showModal();
+  openModal($('#search-dlg'), document.activeElement === document.body ? $('#gs-open') : document.activeElement);
   $('#gs-q').select();
 }
-$('#search-btn').addEventListener('click', openSearch);
+$('#gs-open').addEventListener('click', openSearch);
 // '/' 로 열기 — 글을 쓰는 중에는 무시
 document.addEventListener('keydown', (e) => {
   if (e.key !== '/' || e.metaKey || e.ctrlKey || document.querySelector('dialog[open]')) return;
