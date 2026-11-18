@@ -1,4 +1,4 @@
-// 패널 머리: ⋯ 메뉴(세션 정보 · 넓게 · 세션 종료) · 폭 손잡이
+// 패널 머리: ⋯ 메뉴(세션 정보 · 세션 종료) · 폭 손잡이(넓히기는 손잡이로만 — 간추리기 B8)
 // 메뉴 항목을 누르면 메뉴는 닫는다(항목 단추가 stopPropagation 해도 닫히게 잡기 단계에서)
 $('#more-btn').addEventListener('click', (e) => { e.stopPropagation(); $('#d-meta').classList.remove('show'); $('#more-menu').classList.toggle('show'); });
 $('#more-menu').addEventListener('click', () => $('#more-menu').classList.remove('show'), true);
@@ -12,13 +12,7 @@ function applyDrawerWidth() {
   const max = Math.max(380, $('main').clientWidth - 40);
   const w = Math.min(max, Math.max(380, pref.drawerW || DRAWER_DEFAULT));
   $('#drawer').style.width = window.innerWidth <= 860 ? '' : `${w}px`;
-  $('#wide-t').textContent = w > DRAWER_DEFAULT + 40 ? t('Default width') : t('Wide');
 }
-$('#wide').addEventListener('click', () => {
-  const wide = (pref.drawerW || DRAWER_DEFAULT) > DRAWER_DEFAULT + 40;
-  pref.drawerW = wide ? DRAWER_DEFAULT : Math.round($('main').clientWidth * 0.66);
-  savePref(); applyDrawerWidth(); view.init = false; renderGraph();
-});
 window.addEventListener('resize', applyDrawerWidth);
 applyDrawerWidth();
 

@@ -190,7 +190,7 @@ A session already running in a terminal has no official way to receive input fro
 <details open>
 <summary><b>Right — session panel</b></summary>
 
-- Header: status dot · name · **Now / History** tabs · model · ⋯ (ⓘ session info · ⤢ wide · end session)
+- Header: status dot · name · **Now / History** tabs · model · ⋯ (ⓘ session info · end session) — widen with the panel edge handle
 - A **⋮⋮ handle** on the middle of the panel border: drag to resize, drag past the minimum to fold the panel, double-click for the default width, or focus it and use ← → to resize · Enter to fold. The width is remembered; click a session to reopen (narrow screens: ⋯ → Close panel)
 - **Now** tab: last request + **current answer** + **file diffs** + **commands** (✓/✕, output, "show all" for long ones)
 - While working, **■ Stop** on the answer card stops the current task only (sends Esc); the session and conversation stay

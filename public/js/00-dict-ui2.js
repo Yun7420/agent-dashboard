@@ -25,8 +25,6 @@ const KO_UI2 = {
   "Limits only come with Claude.ai plans (Pro · Max).": "한도는 Claude.ai 요금제(Pro · Max)에서만 나와요.",
   "Turn off": "끄기",
   "Turn on": "켜기",
-  "Default width": "기본 폭으로",
-  "Wide": "넓게 보기",
   "Stopped. The session and conversation are kept": "멈췄어요. 세션과 대화는 그대로예요",
   "Hidden from the list (the log is kept)": "목록에서 숨겼어요 (기록은 그대로예요)",
   "This session runs in an editor. Close its tab in Cursor": "에디터에서 띄운 세션이에요. Cursor 에서 탭을 닫아 주세요",

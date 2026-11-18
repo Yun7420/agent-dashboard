@@ -99,3 +99,10 @@ test('목록 접기 탭: 누르면 얇은 띠(aside-folded) · 이름 · aria-ex
   assert.equal(body.cls.has('aside-folded'), false);
   assert.equal(run('pref.asideFolded'), false);
 });
+
+test('패널 ⋯ 메뉴에 「넓게 보기」는 없다(간추리기 B8) — 넓히기는 손잡이로만', async () => {
+  const html = (await import('node:fs')).readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
+  const menu = html.slice(html.indexOf('id="more-menu"'), html.indexOf('</div>', html.indexOf('id="more-menu"')));
+  assert.doesNotMatch(menu, /id="wide"/);
+  assert.match(menu, /id="d-info-btn"/);
+});
