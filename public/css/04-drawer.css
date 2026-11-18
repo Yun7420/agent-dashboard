@@ -76,7 +76,7 @@
 .stop-btn { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; font-size: 12px; border-radius: 8px; background: transparent; color: var(--waiting); border: 1px solid color-mix(in srgb, var(--waiting) 40%, transparent); }
 .stop-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--waiting) 12%, transparent); border-color: var(--waiting); }
 .stop-btn[hidden] { display: none; }
-.now-reply { font-size: 14px; line-height: 1.75; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.now-reply { font-size: 15px; line-height: 1.65; color: var(--text); white-space: pre-wrap; word-break: break-word; }
 .now-card { position: relative; }
 /* 빈 상태 문구는 카드(머리 아래 영역)의 정가운데에 — 스크롤 영역 높이와 상관없이 */
 .now-reply.empty { position: absolute; inset: 44px 0 0 0; color: var(--faint); font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; }

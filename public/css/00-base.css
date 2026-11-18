@@ -1,39 +1,34 @@
 /* 공통: 색 · 글꼴 변수(:root) · 화면 틀(body 격자) · 스크롤 막대 · 단추 · 입력 칸 같은 공통 컨트롤 */
-/* 색은 여기 토큰으로만(구역 파일은 var · color-mix 로 섞어 쓴다). 기본 = 어두운 초록, [data-theme=light] = 밝은 판(미색)
-   오래 보는 화면이라 눈 피로를 줄인다: 순흰 · 순검정 없음, 본문 대비 4.5:1 이상 · 큰 면 약 13:1 이하, 초록 · 경고색은 채도를 낮춤 */
+/* 색은 여기 토큰으로만(구역 파일은 var · color-mix 로 섞어 쓴다). 기본 = 아주 옅은 초록기가 도는 중성 짙은 회색, [data-theme=light] = 옅은 초록기 미색
+   오래 보는 화면이라 눈 피로를 줄인다: 순흰 · 순검정 없음, 본문 대비 7~10:1 · 큰 면 약 11:1 이하 · 보조 글자 4.5:1 이상,
+   강조는 차분한 초록 하나(단추 · 선 · 점에만, 넓은 면엔 쓰지 않음), 칸 구분은 테두리보다 면의 밝기 차이로 — 표는 docs/CONVENTIONS.md 「화면 디자인 규칙」 */
 :root {
   color-scheme: dark;
-  --bg: #121614;
-  --surface: #161b18;
-  --surface-2: #1b211e;
-  --surface-3: #222a26;
-  --ink: #dfe5e1; /* 선 · 옅은 칸을 섞는 바탕(어두운 판 = 밝은 회색, 밝은 판 = 짙은 회색) — 순흰 · 순검정은 쓰지 않는다 */
+  --bg: #171a19;
+  --surface: #1c201f;
+  --surface-2: #232726;
+  --surface-3: #2b302e;
+  --ink: #dfe4e1; /* 선 · 옅은 칸을 섞는 바탕(어두운 판 = 밝은 회색, 밝은 판 = 짙은 회색) — 순흰 · 순검정은 쓰지 않는다 */
   --shade: #070908;
-  --border: color-mix(in srgb, var(--ink) 7%, transparent);
-  --border-strong: color-mix(in srgb, var(--ink) 13%, transparent);
-  --text: #d2d8d4;
-  --dim: #a3aea8;
-  --faint: #8c9892;
-  --accent: #3a9a72;
-  --accent-2: #5fb892;
-  --accent-strong: #3a9a72;
-  --accent-hover: #44a87d;
-  --accent-text: #7fcca8;
+  --border: color-mix(in srgb, var(--ink) 6%, transparent);
+  --border-strong: color-mix(in srgb, var(--ink) 11%, transparent);
+  --text: #bec4c1;
+  --dim: #a0a8a4;
+  --faint: #949c98;
+  --accent: #3f8c6b;
+  --accent-2: #5aa585;
+  --accent-strong: #4a9677;
+  --accent-hover: #52a281;
+  --accent-text: #86c2a6;
   --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
-  --on-accent: #0e1a14;
+  --on-accent: #0e1714;
   --glow: color-mix(in srgb, var(--accent) 9%, transparent);
-  /* 배경 장식(11-center.css): 격자 · 점 · 심전도 선 — 눈에 걸리지 않게 아주 옅게 */
-  --deco-grid: color-mix(in srgb, var(--ink) 2%, transparent);
-  --deco-dot: color-mix(in srgb, var(--ink) 6%, transparent);
-  --deco-dot-2: color-mix(in srgb, var(--accent-2) 12%, transparent);
   --deco-line: color-mix(in srgb, var(--accent) 30%, transparent);
-  --title-a: #d4dad6;
-  --title-b: #8f9b95;
   --working: #d9aa5c;
-  --working-text: #e2c590;
+  --working-text: #d8bb88;
   --waiting: #dc7a82;
-  --waiting-text: #f0c6ca;
-  --waiting-bg: #2a1b1d;
+  --waiting-text: #e6b9bd;
+  --waiting-bg: #2b1f21;
   --idle: #93a5b6;
   --ok: #6cc49c;
   --ok-text: #b9e0cb;
@@ -41,10 +36,10 @@
   --peer: #7bb8d0;
   --peer-bg: #15303a;
   --peer-text: #cfe5ee;
-  --code-text: #c9d2cd;
+  --code-text: #bfc6c2;
   --code-inline: #e3c8a4;
-  --reply-text: #cbd4cf;
-  --on-status: #121614;
+  --reply-text: #bcc2bf;
+  --on-status: #171a19;
   --claude: #d39072;
   --codex: #8db6e6;
   --radius: 12px;
@@ -68,15 +63,15 @@
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f4f2ec;
-  --surface: #faf8f3;
-  --surface-2: #efece5;
-  --surface-3: #e6e3db;
+  --bg: #f2f3ee;
+  --surface: #f8f9f5;
+  --surface-2: #e9ebe5;
+  --surface-3: #e0e3dc;
   --ink: #2a2f2c;
   --shade: #8f938c; /* 밝은 판의 안쪽 칸 · 그림자는 옅게 */
-  --text: #2b302d;
-  --dim: #4e5550;
-  --faint: #5b625d;
+  --text: #3a403d;
+  --dim: #555c58;
+  --faint: #5c635f;
   --accent: #2c7a57;
   --accent-2: #3f8f6a;
   --accent-strong: #2c7a57;
@@ -84,8 +79,6 @@
   --accent-text: #23694a;
   --on-accent: #f7f6f1;
   --glow: color-mix(in srgb, var(--accent) 6%, transparent);
-  --title-a: #2b302d;
-  --title-b: #59625c;
   --working: #85580f;
   --working-text: #7d5410;
   --waiting: #a83a45;
@@ -98,16 +91,16 @@
   --peer: #2a6580;
   --peer-bg: #e2eef1;
   --peer-text: #1f4f63;
-  --code-text: #2f3632;
+  --code-text: #3a403d;
   --code-inline: #84431a;
-  --reply-text: #2f3632;
-  --on-status: #faf8f3;
+  --reply-text: #3a403d;
+  --on-status: #f8f9f5;
   --claude: #92482b;
   --codex: #2f5a8f;
 }
 * { box-sizing: border-box; }
 ::selection { background: var(--accent-soft); }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
 body { display: grid; grid-template-columns: 296px 1fr; grid-template-rows: 60px 1fr; height: 100vh; overflow: hidden; }
 code, .mono { font-family: var(--mono); font-size: .92em; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }

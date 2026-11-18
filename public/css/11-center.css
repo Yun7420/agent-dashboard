@@ -1,20 +1,8 @@
 /* 가운데 칸: 탭 「구조 / 대화 창」 · 대화 창 사용률 큰 그래프(07-center.js). 좁은 창에선 조직도만(12-narrow.css) */
-/* 배경 분위기: 아래쪽 초록 번짐 · 옅은 격자 · 점 입자 — 머리 · 목록은 반투명이라 번짐이 비친다 */
-body { background: radial-gradient(120% 70% at 50% 115%, var(--glow), transparent 62%), var(--bg); }
-header, aside { background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(8px); }
-main {
-  background:
-    radial-gradient(circle at 1px 1px, var(--deco-dot-2) 1px, transparent 0) 7px 11px / 61px 53px,
-    radial-gradient(circle at 1px 1px, var(--deco-dot) 1px, transparent 0) 0 0 / 37px 41px,
-    linear-gradient(var(--deco-grid) 1px, transparent 1px) 0 0 / 44px 44px,
-    linear-gradient(90deg, var(--deco-grid) 1px, transparent 1px) 0 0 / 44px 44px,
-    radial-gradient(90% 60% at 40% 110%, var(--glow), transparent 65%),
-    transparent;
-  --dw: 0px; /* 오른쪽 패널 폭(07-center.js 가 채움) — 탭 · 큰 그래프는 그 왼쪽까지만 */
-}
-/* 은색 제목 · 보조 단추는 테두리만 */
-.brand h1, #ctx-title { background: linear-gradient(180deg, var(--title-a), var(--title-b)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.brand h1 span { background: inherit; -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 500; }
+/* 바탕은 장식 없이 한 가지 면(점 · 격자 · 번짐은 눈에 걸려서 뺐다). 머리 · 목록은 한 단계 밝은 면 */
+header, aside { background: var(--surface); }
+main { --dw: 0px; } /* 오른쪽 패널 폭(07-center.js 가 채움) — 탭 · 큰 그래프는 그 왼쪽까지만 */
+/* 보조 단추는 테두리만 */
 button:not(.primary):not(.ghost):not(.tab):not(.danger):not(.drawer-handle):not(.edge-tab) { background: transparent; }
 .center-tabs { position: absolute; top: 12px; left: 16px; z-index: var(--z-float); display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1px solid var(--border); }
 /* 고른 탭: 초록 바탕 + 밑줄(색만으로 가르지 않게) */
