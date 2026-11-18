@@ -1,4 +1,4 @@
-// 입력 칸: 세션별 임시 글 · 첨부 · 보내기 · 🎤 음성 입력
+// 입력 칸: 세션별 임시 글 · 첨부 · 보내기
 // ---------- 세션별 임시 글 · 첨부 ----------
 // 입력 칸의 글과 첨부는 세션마다 따로 기억한다 — 세션을 바꾼 뒤 앞 세션에 쓰던 글 · 첨부를 다른 세션으로 잘못 보내지 않게.
 // 글은 새로고침해도 남도록 브라우저 저장(agent-deck 의 drafts)에 둔다(긴 글을 실수로 날리는 쪽이 더 아파서).
@@ -16,7 +16,7 @@ function useDraft(key) {
   $('#msg').value = pref.drafts[key] ?? '';
   renderAttachments();
 }
-// 쓰던 글을 저장(바뀐 때만 · 잠시 모아서) — 입력 · 음성 · 보내기 뒤 모두 updateSendState 를 거친다
+// 쓰던 글을 저장(바뀐 때만 · 잠시 모아서) — 입력 · 보내기 뒤 모두 updateSendState 를 거친다
 let draftSaveTimer = null;
 function syncDraftText() {
   if (!draftKey) return;
@@ -102,7 +102,6 @@ function updateSendState() {
 $('#msg').addEventListener('input', updateSendState);
 
 async function sendMsg() {
-  if (rec) rec.stop();
   const key = draftKey; // 보내는 동안 세션을 바꿔도 이 세션의 글 · 첨부만
   const list = curFiles();
   if (list.some((a) => a.uploading)) { toast(t('Files are still uploading. Send again in a moment')); return; }
@@ -138,50 +137,3 @@ $('#d-model').addEventListener('change', async (e) => {
   try { await api('/api/cmd/model', { key: selected, model }); toast(t('Switched this session to {m}. It applies from the next reply (the default model is unchanged)', { m: model })); }
   catch (err) { toast(err.message); }
 });
-
-// 🎤 음성 입력 — 버튼을 눌렀을 때만 듣는다. 크롬 음성 인식은 소리를 구글 서버로 보내 글자로 바꾼다.
-const MIC_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>';
-const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null;
-// 처음 누를 때 한 번, 소리가 구글 서버로 간다는 것을 알린다(점검 H2). 「다시 보지 않기」는 저장 키(agent-deck) 안 micNoticeOk
-function micNotice() {
-  if (pref.micNoticeOk) return Promise.resolve(true);
-  const dlg = $('#mic-dlg');
-  return new Promise((resolve) => {
-    dlg.addEventListener('close', () => {
-      const ok = dlg.returnValue === 'ok';
-      if (ok && $('#mic-dont').checked) { pref.micNoticeOk = true; savePref(); }
-      resolve(ok);
-    }, { once: true });
-    dlg.returnValue = '';
-    dlg.showModal();
-  });
-}
-if (Recognition) {
-  $('#mic').hidden = false;
-  $('#mic').addEventListener('click', async () => {
-    if (rec) { rec.stop(); return; }
-    if (!(await micNotice()) || rec) return;
-    rec = new Recognition();
-    rec.lang = LOCALE;
-    rec.interimResults = true;
-    rec.continuous = true;
-    const base = $('#msg').value ? $('#msg').value.replace(/\s*$/, ' ') : '';
-    let done = '';
-    rec.onresult = (e) => {
-      let interim = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) done += e.results[i][0].transcript;
-        else interim += e.results[i][0].transcript;
-      }
-      $('#msg').value = base + done + interim;
-      updateSendState(); // 음성으로 채운 글도 보내기 버튼에 반영
-    };
-    rec.onerror = (e) => toast(e.error === 'not-allowed' ? t('Please allow microphone access') : `${t('Speech recognition error')}: ${e.error}`);
-    rec.onend = () => { rec = null; $('#mic').classList.remove('rec'); $('#mic').innerHTML = MIC_ICON; $('#msg').focus(); };
-    rec.start();
-    $('#mic').classList.add('rec');
-    $('#mic').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
-    toast(t('Listening… press the ■ button when you are done'));
-  });
-}

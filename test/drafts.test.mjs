@@ -4,10 +4,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { loadFront } from './_helpers/vm.mjs';
 
-function load() {
+function load(init = {}) {
   const els = {};
   const el = (sel) => (els[sel] ??= { sel, value: '', innerHTML: '', textContent: '', disabled: false, hidden: false, dataset: {}, style: {}, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0, bottom: 0 }) });
-  const stored = {};
+  const stored = { ...init };
   const sent = [];
   const uploads = []; // 아직 끝나지 않은 업로드 { resolve }
   const revoked = [];
@@ -144,22 +144,12 @@ test('restoreFirstPrompts: 떠 있는 세션은 임시 글로(쓰던 글은 뒤�
   assert.deepEqual(sent.map((x) => x.key), ['claude:a', 'claude:b']);
 });
 
-test('음성 입력 안내(점검 H2): 처음엔 창을 띄우고, 취소면 듣지 않고, 「다시 보지 않기」로 시작하면 agent-deck 에 기억해 다음엔 창 없이', async () => {
-  const { el, stored, run } = load();
-  const dlg = el('#mic-dlg');
-  let shown = 0, onClose = null;
-  dlg.addEventListener = (type, fn) => { if (type === 'close') onClose = fn; };
-  dlg.showModal = () => shown++;
-  const ask = (answer, dont) => { const p = run('micNotice')(); el('#mic-dont').checked = dont; dlg.returnValue = answer; onClose(); return p; };
-  assert.equal(await ask('cancel', true), false);
-  assert.equal(JSON.parse(stored['agent-deck'] ?? '{}').micNoticeOk, undefined);
-  assert.equal(await ask('ok', false), true); // 체크를 풀고 시작하면 이번만
-  assert.equal(JSON.parse(stored['agent-deck'] ?? '{}').micNoticeOk, undefined);
-  assert.equal(await ask('ok', true), true);
-  assert.equal(JSON.parse(stored['agent-deck']).micNoticeOk, true);
-  assert.equal(shown, 3);
-  assert.equal(await run('micNotice')(), true);
-  assert.equal(shown, 3);
+test('음성 입력은 없앴다(간추리기 B3): 단추 · 안내 창 · 저장값 micNoticeOk 없음', () => {
+  const html = fs.readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
+  assert.doesNotMatch(html, /id="mic|SpeechRecognition/);
+  const { stored, run } = load({ 'agent-deck': JSON.stringify({ micNoticeOk: true, drafts: {} }) });
+  run('savePref()');
+  assert.equal('micNoticeOk' in JSON.parse(stored['agent-deck']), false);
 });
 
 // 입력 칸 밑 안내 줄 대신 placeholder 한 문장(public/js/06-history.js 의 renderComposer): 승인 대기 중엔 보내기를 막고 까닭을 칸 안에,

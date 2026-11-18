@@ -170,6 +170,5 @@ function renderComposer(s) {
   $('#msg').placeholder = composerHint(s);
   canSend = Boolean(can);
   updateSendState();
-  $('#mic').disabled = !can;
   $('#attach').disabled = !can;
 }

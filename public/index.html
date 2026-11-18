@@ -147,7 +147,6 @@
         <div class="bar">
           <div class="actions">
         <button type="button" id="attach" class="icon-btn" title="Attach files · images" aria-label="Attach"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg></button>
-        <button type="button" id="mic" class="icon-btn" title="Voice input (press and talk · press again to stop)" aria-label="Voice input" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg></button>
         <button class="primary icon-btn" id="send" title="Send (Enter)" aria-label="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></button>
           </div>
         </div>
@@ -221,14 +220,6 @@
     <h3><span class="badge tool claude" style="vertical-align:2px">Claude</span> account usage limits</h3>
     <div id="usage-body" style="color:var(--dim);font-size:13px;line-height:1.75"></div>
     <div class="row"><button value="cancel">Close</button><button class="primary" id="usage-act" value="act"></button></div>
-  </form>
-</dialog>
-<dialog id="mic-dlg">
-  <form method="dialog">
-    <h3>Voice input</h3>
-    <div style="color:var(--dim);font-size:13px;line-height:1.7">Chrome speech recognition sends audio to Google servers to turn it into text. What you say leaves this computer, so don't say passwords or work secrets.</div>
-    <label class="check"><input type="checkbox" id="mic-dont" checked> Don't show again</label>
-    <div class="row"><button value="cancel">Cancel</button><button class="primary" value="ok">Start listening</button></div>
   </form>
 </dialog>
 <div class="menu-pop" id="dir-menu"></div>
