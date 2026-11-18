@@ -43,7 +43,7 @@ Agent Dashboard puts all of this on one screen.
 | | Feature | Description |
 |---|---|---|
 | 👀 | **Live status** | Working · **background task** · idle · **needs approval** · ended, plus the current tool and elapsed time |
-| 🗺️ | **Org chart** | This Mac → tool → project → session → subagent. Messages between sessions are **purple arrows** (count + last message) |
+| 🗺️ | **Org chart** | This Mac → tool → project → session → subagent. Messages between sessions are **blue arrows** (count + last message) |
 | 💬 | **Chat · approve** | Send messages to tmux sessions (Enter), **file/image attachments**. Approval prompts show a **"what you're allowing" card** (warns on risky commands or files outside the folder), the real terminal screen and option buttons; multi-question prompts let you go back and forth |
 | ⌨️ | **Shortcuts** | `j`/`k` move between sessions · `/` search everything · `1`–`9` pick an approval option (risky requests need a second press) · `Esc` reject · close |
 | ♻️ | **Restore** | Reopen ended sessions in tmux — all at once after a Mac restart (`restore`), or one at a time with "Reopen" on a card in the list's "Ended" tab |
@@ -183,7 +183,7 @@ A session already running in a terminal has no official way to receive input fro
 - The org chart fills the whole screen below the header, and the session list and right panel float over it. Opening, closing, resizing or folding a panel **keeps the chart's zoom and position**; only when the chosen session's node ends up behind a panel does the chart slide just enough to show it, at the same zoom.
 - Org chart controls: drag to pan · **wheel (two-finger scroll), trackpad pinch or the + − buttons at bottom right (keys `+` · `-`) to zoom** (the wheel stops at 0.75×) · **⌖ Recenter (key `0`)** = put the chosen session in the middle of the visible area at 1×, or fit everything when nothing is chosen · double-click to fit · **click empty space = close the right panel**. Fitting uses the visible area between the panels and never shrinks node text below 12px (if it overflows, the chosen session stays in view and you drag for the rest)
 - Session nodes **fill up from the bottom with the context window used** (colour changes at 60% and 85%, the short line on the right = 80%). Hover for "Context 33% · 331K / 1M tokens"
-- Dashed line = working in the same folder, yellow = working, **purple arrow = messages between sessions**
+- Dashed line = working in the same folder, yellow = working, **blue arrow = messages between sessions** (when a new message arrives, a glowing dot flies along the arrow once; none with reduced motion)
 - **Status text color** under each session box: idle = purple · working = yellow · background = light yellow · **needs approval = pink (bold)**
 - **Click a project box** to open that folder in **VS Code · Cursor, or reveal it in Finder** (only installed apps are shown; only folders of listed sessions can be opened)
 - Subagents: all running ones, finished ones folded into one **"N done"** box (click to expand)

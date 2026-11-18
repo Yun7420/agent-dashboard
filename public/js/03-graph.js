@@ -133,7 +133,7 @@ function drawLinks(tree) {
     const mx = (x1 + x2) / 2, my = y1 - h * 0.75;
     const tip = `${names.get(l.from) ?? '?'} → ${names.get(l.to) ?? '?'} · ${t('{n} times', { n: l.count })}\n${t('Last')} (${new Date(l.lastAt).toLocaleString(LOCALE)}): ${l.lastText}`;
     out += `<g><title>${esc(tip)}</title>
-      <path class="link ${recent ? 'recent' : ''}" d="${d}" stroke-width="${w}" marker-end="url(#arrow)"/>
+      <path class="link ${recent ? 'recent' : ''}" data-link="${esc(`${l.from}>${l.to}`)}" data-n="${l.count}" d="${d}" stroke-width="${w}" marker-end="url(#arrow)"/>
       <path class="link-hit" d="${d}"/>
       <g class="link-label" transform="translate(${mx},${my})"><rect x="-20" y="-9" width="40" height="18" rx="9"/><text text-anchor="middle" y="3.5">${leftToRight ? '→' : '←'} ${l.count > 99 ? '99+' : l.count}</text></g>
     </g>`;

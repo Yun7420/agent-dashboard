@@ -82,6 +82,32 @@ $('#graph').addEventListener('pointermove', (e) => {
   spotIdle = setTimeout(spotOff, 2000);
 });
 $('#graph').addEventListener('pointerleave', spotOff);
+// 메시지 점: 세션 사이 메시지 수가 늘면(새 화살표 포함) 그 파란 화살표를 따라 빛나는 점이 한 번 1초 날아간다 — 계속 도는 효과 없음.
+// 한 번에 셋까지(넘치면 건너뜀), 움직임은 transform · opacity 만(경로 위 25점을 미리 재서 키프레임으로). 처음 그릴 때 · 동작 줄이기면 없음
+const DOT_MS = 1000, DOT_MAX = 3, lastN = new Map();
+let linksSeen = false, dotsLive = 0;
+function msgDot(path) {
+  if (dotsLive >= DOT_MAX) return;
+  const len = path.getTotalLength(), steps = 24;
+  const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  dot.setAttribute('r', '3.5');
+  dot.setAttribute('class', 'msg-dot');
+  path.parentNode.insertBefore(dot, path.nextSibling); // 숫자 꼬리표 아래로 지나가게
+  dotsLive++;
+  dot.animate(Array.from({ length: steps + 1 }, (_, i) => {
+    const pt = path.getPointAtLength((len * i) / steps);
+    return { transform: `translate(${pt.x}px, ${pt.y}px)`, opacity: i === 0 || i === steps ? 0 : 1 };
+  }), { duration: DOT_MS, easing: 'ease-in-out', fill: 'forwards' });
+  setTimeout(() => { dot.remove(); dotsLive--; }, DOT_MS + 50); // 조직도를 다시 그려 점이 먼저 사라져도 수는 맞게
+}
+function msgDots() {
+  for (const p of document.querySelectorAll('#graph .link[data-link]')) {
+    const k = p.dataset.link, n = Number(p.dataset.n);
+    if (n > (lastN.get(k) ?? (linksSeen ? 0 : n)) && !reduceMotion.matches) msgDot(p);
+    lastN.set(k, n);
+  }
+  linksSeen = true;
+}
 // 조직도를 다시 그릴 때마다(바뀐 곳이 있을 때만 setHtml) 상태가 바뀐 노드에 bump — 동작 줄이기면 CSS 가 끈다
 const lastSt = new Map();
 let lastSel = null;
@@ -92,5 +118,6 @@ new MutationObserver(() => {
     if (lastSt.has(k) && lastSt.get(k) !== st) g.classList.add('bump');
     lastSt.set(k, st);
   }
+  msgDots();
   if (!$('#graph .node:hover')) $('#graph').classList.remove('hl'); // 새로 그린 노드엔 on 표시가 없으니 강조도 푼다
 }).observe($('#viewport'), { childList: true });
