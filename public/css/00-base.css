@@ -1,46 +1,52 @@
 /* 공통: 색 · 글꼴 변수(:root) · 화면 틀(body 격자) · 스크롤 막대 · 단추 · 입력 칸 같은 공통 컨트롤 */
-/* 색은 여기 토큰으로만(구역 파일은 var · color-mix 로 섞어 쓴다). 기본 = 어두운 초록, [data-theme=light] = 밝은 판 */
+/* 색은 여기 토큰으로만(구역 파일은 var · color-mix 로 섞어 쓴다). 기본 = 어두운 초록, [data-theme=light] = 밝은 판(미색)
+   오래 보는 화면이라 눈 피로를 줄인다: 순흰 · 순검정 없음, 본문 대비 4.5:1 이상 · 큰 면 약 13:1 이하, 초록 · 경고색은 채도를 낮춤 */
 :root {
   color-scheme: dark;
-  --bg: #0c0f0e;
-  --surface: #111614;
-  --surface-2: #161d1a;
-  --surface-3: #1e2723;
-  --ink: #ffffff; /* 선 · 옅은 칸을 섞는 바탕(어두운 판 = 흰색, 밝은 판 = 검정) */
-  --shade: #000000;
+  --bg: #121614;
+  --surface: #161b18;
+  --surface-2: #1b211e;
+  --surface-3: #222a26;
+  --ink: #dfe5e1; /* 선 · 옅은 칸을 섞는 바탕(어두운 판 = 밝은 회색, 밝은 판 = 짙은 회색) — 순흰 · 순검정은 쓰지 않는다 */
+  --shade: #070908;
   --border: color-mix(in srgb, var(--ink) 7%, transparent);
   --border-strong: color-mix(in srgb, var(--ink) 13%, transparent);
-  --text: #e7eeea;
-  --dim: #a4b3ac;
-  --faint: #7f9088;
-  --accent: #10a36a;
-  --accent-2: #34d399;
-  --accent-strong: #10a36a;
-  --accent-hover: #14b877;
-  --accent-text: #5ee0a8;
+  --text: #d2d8d4;
+  --dim: #a3aea8;
+  --faint: #8c9892;
+  --accent: #3a9a72;
+  --accent-2: #5fb892;
+  --accent-strong: #3a9a72;
+  --accent-hover: #44a87d;
+  --accent-text: #7fcca8;
   --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
-  --on-accent: #03140c;
-  --glow: color-mix(in srgb, var(--accent) 22%, transparent);
-  --title-a: #f5f7f6;
-  --title-b: #94a29b;
-  --working: #f2b84b;
-  --working-text: #f4cf85;
-  --waiting: #f2727f;
-  --waiting-text: #ffc9cf;
-  --waiting-bg: #2a1518;
-  --idle: #8ea4ba;
-  --ok: #3ddc97;
-  --ok-text: #b4f0d2;
-  --ended: #4b5752;
-  --peer: #6cc6e6;
-  --peer-bg: #10303a;
-  --peer-text: #d4f1fb;
-  --code-text: #cfdcd5;
-  --code-inline: #f6d3a8;
-  --reply-text: #d0dbd5;
-  --on-status: #0c0f0e;
-  --claude: #e08a68;
-  --codex: #7cb7ff;
+  --on-accent: #0e1a14;
+  --glow: color-mix(in srgb, var(--accent) 9%, transparent);
+  /* 배경 장식(11-center.css): 격자 · 점 · 심전도 선 — 눈에 걸리지 않게 아주 옅게 */
+  --deco-grid: color-mix(in srgb, var(--ink) 2%, transparent);
+  --deco-dot: color-mix(in srgb, var(--ink) 6%, transparent);
+  --deco-dot-2: color-mix(in srgb, var(--accent-2) 12%, transparent);
+  --deco-line: color-mix(in srgb, var(--accent) 30%, transparent);
+  --title-a: #d4dad6;
+  --title-b: #8f9b95;
+  --working: #d9aa5c;
+  --working-text: #e2c590;
+  --waiting: #dc7a82;
+  --waiting-text: #f0c6ca;
+  --waiting-bg: #2a1b1d;
+  --idle: #93a5b6;
+  --ok: #6cc49c;
+  --ok-text: #b9e0cb;
+  --ended: #55605b;
+  --peer: #7bb8d0;
+  --peer-bg: #15303a;
+  --peer-text: #cfe5ee;
+  --code-text: #c9d2cd;
+  --code-inline: #e3c8a4;
+  --reply-text: #cbd4cf;
+  --on-status: #121614;
+  --claude: #d39072;
+  --codex: #8db6e6;
   --radius: 12px;
   --bar-h: 52px; /* 왼쪽 목록 맨 윗줄과 오른쪽 패널 머리의 공통 높이 */
   --shadow: 0 10px 30px color-mix(in srgb, var(--shade) 35%, transparent);
@@ -49,42 +55,42 @@
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f3f6f4;
-  --surface: #ffffff;
-  --surface-2: #eff4f1;
-  --surface-3: #e5ebe8;
-  --ink: #0b1a13;
-  --shade: #8fa199; /* 밝은 판의 안쪽 칸 · 그림자는 옅게 */
-  --text: #13201a;
-  --dim: #44554d;
-  --faint: #5a6b63;
-  --accent: #087a4e;
-  --accent-2: #10a36a;
-  --accent-strong: #087a4e;
-  --accent-hover: #066a43;
-  --accent-text: #087048;
-  --on-accent: #ffffff;
-  --glow: color-mix(in srgb, var(--accent) 12%, transparent);
-  --title-a: #13201a;
-  --title-b: #5f7068;
-  --working: #8a5500;
-  --working-text: #8a5600;
-  --waiting: #b42536;
-  --waiting-text: #8f1d2b;
-  --waiting-bg: #fdecee;
-  --idle: #4f6680;
-  --ok: #077346;
-  --ok-text: #065c3a;
-  --ended: #9aa69f;
-  --peer: #13668a;
-  --peer-bg: #e3f3fa;
-  --peer-text: #0d4a63;
-  --code-text: #23332b;
-  --code-inline: #8a3d00;
-  --reply-text: #23332b;
-  --on-status: #ffffff;
-  --claude: #973f1f;
-  --codex: #22599f;
+  --bg: #f4f2ec;
+  --surface: #faf8f3;
+  --surface-2: #efece5;
+  --surface-3: #e6e3db;
+  --ink: #2a2f2c;
+  --shade: #8f938c; /* 밝은 판의 안쪽 칸 · 그림자는 옅게 */
+  --text: #2b302d;
+  --dim: #4e5550;
+  --faint: #5b625d;
+  --accent: #2c7a57;
+  --accent-2: #3f8f6a;
+  --accent-strong: #2c7a57;
+  --accent-hover: #256a4b;
+  --accent-text: #23694a;
+  --on-accent: #f7f6f1;
+  --glow: color-mix(in srgb, var(--accent) 6%, transparent);
+  --title-a: #2b302d;
+  --title-b: #59625c;
+  --working: #85580f;
+  --working-text: #7d5410;
+  --waiting: #a83a45;
+  --waiting-text: #8a2e38;
+  --waiting-bg: #f7e6e3;
+  --idle: #52657a;
+  --ok: #2c6e4f;
+  --ok-text: #245c42;
+  --ended: #a2a59e;
+  --peer: #2a6580;
+  --peer-bg: #e2eef1;
+  --peer-text: #1f4f63;
+  --code-text: #2f3632;
+  --code-inline: #84431a;
+  --reply-text: #2f3632;
+  --on-status: #faf8f3;
+  --claude: #92482b;
+  --codex: #2f5a8f;
 }
 * { box-sizing: border-box; }
 ::selection { background: var(--accent-soft); }
@@ -124,4 +130,4 @@ input, textarea { font: inherit; color: var(--text); }
 .dot-s.ended { background: var(--ended); }
 .dot-s.live { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 15%, transparent); }
 @keyframes pulse { 50% { opacity: .35; } }
-.pulse { animation: pulse 1.4s ease-in-out infinite; }
+.pulse { animation: pulse 1.4s ease-in-out 1; } /* 계속 깜빡이지 않게 — 나타날 때(상태가 바뀌어 다시 그릴 때) 한 번만 */

@@ -145,5 +145,4 @@
 #busy { display: none !important; align-items: center; gap: 10px; margin: 0 14px 10px; padding: 9px 12px; border-radius: 12px; background: color-mix(in srgb, var(--working) 7%, transparent); border: 1px solid color-mix(in srgb, var(--working) 25%, transparent); color: var(--working-text); font-size: 13px; }
 #busy[hidden] { display: none; }
 #busy-time { margin-left: auto; color: var(--faint); font-size: 12px; }
-.spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--working) 25%, transparent); border-top-color: var(--working); animation: spin .8s linear infinite; flex: none; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--working) 25%, transparent); border-top-color: var(--working); flex: none; } /* 돌지 않는 고리(계속 움직이는 효과 없음) — 옆 글자가 「작업 중」을 말한다 */

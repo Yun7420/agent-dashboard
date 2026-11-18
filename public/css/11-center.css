@@ -4,10 +4,10 @@ body { background: radial-gradient(120% 70% at 50% 115%, var(--glow), transparen
 header, aside, footer { background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(8px); }
 main {
   background:
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--accent-2) 22%, transparent) 1px, transparent 0) 7px 11px / 61px 53px,
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 10%, transparent) 1px, transparent 0) 0 0 / 37px 41px,
-    linear-gradient(color-mix(in srgb, var(--ink) 3%, transparent) 1px, transparent 1px) 0 0 / 44px 44px,
-    linear-gradient(90deg, color-mix(in srgb, var(--ink) 3%, transparent) 1px, transparent 1px) 0 0 / 44px 44px,
+    radial-gradient(circle at 1px 1px, var(--deco-dot-2) 1px, transparent 0) 7px 11px / 61px 53px,
+    radial-gradient(circle at 1px 1px, var(--deco-dot) 1px, transparent 0) 0 0 / 37px 41px,
+    linear-gradient(var(--deco-grid) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, var(--deco-grid) 1px, transparent 1px) 0 0 / 44px 44px,
     radial-gradient(90% 60% at 40% 110%, var(--glow), transparent 65%),
     transparent;
   --dw: 0px; /* 오른쪽 패널 폭(07-center.js 가 채움) — 탭 · 큰 그래프는 그 왼쪽까지만 */
@@ -18,8 +18,8 @@ main {
 .stat { background: color-mix(in srgb, var(--accent) 6%, transparent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
 button:not(.primary):not(.ghost):not(.tab):not(.danger) { background: transparent; }
 /* 심전도 장식선: 「구조」 탭 왼쪽 아래(안내 문구 위) — 「대화 창」 탭 · 좁은 창에선 숨김 */
-.ecg { position: absolute; left: 24px; bottom: 48px; width: 300px; height: 50px; pointer-events: none; opacity: .5; }
-.ecg path { fill: none; stroke: var(--accent); stroke-width: 1.2; filter: drop-shadow(0 0 4px var(--accent)); }
+.ecg { position: absolute; left: 24px; bottom: 48px; width: 300px; height: 50px; pointer-events: none; }
+.ecg path { fill: none; stroke: var(--deco-line); stroke-width: 1.2; }
 body.cv-ctx .ecg { display: none; }
 .center-tabs { position: absolute; top: 12px; left: 16px; z-index: 3; display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1px solid var(--border); }
 /* 고른 탭: 초록 바탕 + 밑줄(색만으로 가르지 않게) */
@@ -55,7 +55,7 @@ body.cv-ctx #graph, body.cv-ctx .hint, body.cv-ctx .zoom-btns { visibility: hidd
 .cp-chart .l80 { stroke: var(--working); stroke-dasharray: 5 4; stroke-width: 1.2; }
 .cp-chart .drop .dl { stroke-dasharray: 2 3; }
 .cp-chart .l80t { fill: var(--working-text); font: 600 11px var(--sans); }
-.cp-chart .line { fill: none; stroke: var(--accent-2); stroke-width: 2; stroke-linejoin: round; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 60%, transparent)); transition: d .5s cubic-bezier(.3, .7, .2, 1); }
+.cp-chart .line { fill: none; stroke: var(--accent-2); stroke-width: 2; stroke-linejoin: round; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 28%, transparent)); transition: d .5s cubic-bezier(.3, .7, .2, 1); }
 .cp-chart .area { fill: url(#cp-fill); transition: d .5s cubic-bezier(.3, .7, .2, 1); }
 .cp-chart .cmp { fill: none; stroke: var(--peer); stroke-width: 1.6; stroke-dasharray: 6 4; }
 .cp-chart .stop-a { stop-color: var(--accent); stop-opacity: .32; }
@@ -87,4 +87,4 @@ body.cv-ctx #graph, body.cv-ctx .hint, body.cv-ctx .zoom-btns { visibility: hidd
 #graph .node, #graph .edge, #graph .dot { transition: opacity .2s; }
 #graph .node.on rect { stroke: var(--accent); }
 .node.bump rect { animation: bump 1.2s ease-out; }
-@keyframes bump { 0% { filter: drop-shadow(0 0 0 var(--accent)); } 30% { filter: drop-shadow(0 0 14px var(--accent)); } 100% { filter: none; } }
+@keyframes bump { 0% { filter: drop-shadow(0 0 0 var(--accent)); } 30% { filter: drop-shadow(0 0 8px var(--deco-line)); } 100% { filter: none; } }

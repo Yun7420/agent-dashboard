@@ -1,15 +1,21 @@
-// 접근성 판정(화면 파일을 node:vm 으로): 「동작 줄이기」면 흐르는 점선을 멈춤(01-core.js) · 포커스가 세션 카드면 Enter 는 그 카드 몫(20-keys.js)
+// 접근성 판정: 계속 움직이는 효과 없음 · 「동작 줄이기」(css) · 포커스가 세션 카드면 Enter 는 그 카드 몫(20-keys.js, 화면 파일을 node:vm 으로)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { loadFront, browserStub } from './_helpers/vm.mjs';
 
-test('흐르는 점선: 탭이 숨었거나 · 동작 줄이기 · 움직일 선이 없으면 멈춤(null), 아니면 2px 씩 되감기', () => {
-  const flowStep = loadFront(['01-core.js'], browserStub()).run('flowStep');
-  assert.equal(flowStep(0, { hidden: false, reduce: false, moving: true }), -2);
-  assert.equal(flowStep(-152, { hidden: false, reduce: false, moving: true }), -0); // 154 주기로 되감음
-  assert.equal(flowStep(-10, { hidden: false, reduce: true, moving: true }), null);
-  assert.equal(flowStep(-10, { hidden: true, reduce: false, moving: true }), null);
-  assert.equal(flowStep(-10, { hidden: false, reduce: false, moving: false }), null);
+// 오래 보는 화면이라 계속 깜빡이거나 움직이는 효과는 두지 않는다 — 애니메이션은 한 번만, 「동작 줄이기」면 그것도 끈다(12-narrow.css)
+test('움직임: css 에 끝없이 도는 애니메이션 없음 · 애니메이션을 쓰는 곳은 모두 「동작 줄이기」 목록에 · 흐르는 점선 타이머 없음', () => {
+  const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
+  const css = fs.readdirSync(path.join(dir, 'css')).map((f) => fs.readFileSync(path.join(dir, 'css', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')).join('\n');
+  assert.doesNotMatch(css, /infinite/);
+  const reduce = css.slice(css.indexOf('prefers-reduced-motion'));
+  for (const m of css.matchAll(/([^{}]+)\{[^{}]*animation:\s*(?!none)[^;}]+/g)) {
+    for (const sel of m[1].split(',').map((x) => x.trim())) assert.ok(reduce.includes(sel), `「동작 줄이기」에 없음: ${sel}`);
+  }
+  assert.doesNotMatch(fs.readFileSync(path.join(dir, 'js', '01-core.js'), 'utf8'), /--flow/);
 });
 
 test('단축키: 포커스가 세션 카드(role=button)면 Enter 는 카드 몫(키보드로 고른 다른 카드를 열지 않게), j/k 는 그대로', () => {

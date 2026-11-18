@@ -7,17 +7,17 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 .node rect { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1; transition: stroke .15s; }
 .node:hover rect { stroke: color-mix(in srgb, var(--ink) 30%, transparent); }
 .node.group rect { fill: color-mix(in srgb, var(--surface-2) 70%, transparent); stroke: color-mix(in srgb, var(--ink) 14%, transparent); stroke-dasharray: 4 4; }
-.node.working rect { stroke: color-mix(in srgb, var(--working) 75%, transparent); filter: drop-shadow(0 0 10px color-mix(in srgb, var(--working) 25%, transparent)); }
+.node.working rect { stroke: color-mix(in srgb, var(--working) 75%, transparent); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--working) 14%, transparent)); }
 .node.sub.working rect { filter: none; }
 .node.more rect { fill: transparent; stroke-dasharray: 3 3; }
 .node.more text { fill: var(--dim); opacity: 1 !important; }
 .node.more:hover rect { stroke: var(--accent); } /* 서브에이전트가 많을 때 그림자 효과가 화면을 무겁게 해서 테두리만 */
 .edge.stack.working { stroke-dashoffset: 0; }
-.node.waiting rect { stroke: var(--waiting); filter: drop-shadow(0 0 12px color-mix(in srgb, var(--waiting) 40%, transparent)); }
+.node.waiting rect { stroke: var(--waiting); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--waiting) 22%, transparent)); }
 .node.ended rect { stroke: color-mix(in srgb, var(--ink) 6%, transparent); }
 .node.background rect { stroke: color-mix(in srgb, var(--working) 55%, transparent); stroke-dasharray: 4 3; }
 .node.ended text { opacity: .45; }
-.node.sel rect { stroke: var(--accent); stroke-width: 1.6; filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 45%, transparent)); }
+.node.sel rect { stroke: var(--accent); stroke-width: 1.6; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 24%, transparent)); }
 .node text { fill: var(--text); font: 600 12px var(--sans); }
 .node text.t2 { fill: var(--faint); font: 500 10px var(--sans); letter-spacing: .04em; }
 /* 세션 상태는 점 대신 아래 줄(대기 · 작업 중 …) 글자색으로 */
@@ -26,12 +26,12 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 .node:not(.proj):not(.group).background text.t2 { fill: var(--working-text); }
 .node:not(.proj):not(.group).waiting text.t2 { fill: var(--waiting); font-weight: 700; }
 .edge { fill: none; stroke: color-mix(in srgb, var(--ink) 55%, transparent); stroke-width: 1.1; stroke-dasharray: 3 4; }
-/* 흐르는 점선은 CSS 애니메이션(초당 60번 다시 그림) 대신 스크립트가 초당 8번만 --flow 를 바꿔 움직인다 */
-.edge.working { stroke: var(--working); stroke-dashoffset: var(--flow, 0); }
+/* 작업 중 · 방금 오간 메시지 선은 점선으로만(흐르게 움직이지 않음 — 오래 보는 화면이라 눈이 끌리지 않게) */
+.edge.working { stroke: var(--working); }
 .dot { fill: var(--text); opacity: .8; }
 .dot.working { fill: var(--working); opacity: 1; }
 .link { fill: none; stroke: var(--peer); opacity: .85; }
-.link.recent { stroke-dasharray: 6 5; stroke-dashoffset: var(--flow, 0); }
+.link.recent { stroke-dasharray: 6 5; }
 .link-hit { fill: none; stroke: transparent; stroke-width: 12; cursor: help; }
 .link-label rect { fill: var(--peer-bg); stroke: color-mix(in srgb, var(--peer) 60%, transparent); }
 .link-label text { fill: var(--peer-text); font: 600 10px var(--sans); }
