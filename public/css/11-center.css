@@ -1,61 +1,37 @@
-/* 가운데 칸: 탭 「구조 / 대화 창」 · 대화 창 사용률 큰 그래프(07-center.js). 좁은 창에선 조직도만(12-narrow.css) */
+/* 가운데 칸: 조직도 + 고른 세션의 대화 창 사용률을 흐린 바탕 그래프로(07-center.js). 좁은 창에선 조직도만(12-narrow.css) */
 /* 바탕은 장식 없이 한 가지 면(점 · 격자 · 번짐은 눈에 걸려서 뺐다). 머리 · 목록은 한 단계 밝은 면 */
 header, aside { background: var(--surface); }
-main { --dw: 0px; } /* 오른쪽 패널 폭(07-center.js 가 채움) — 탭 · 큰 그래프는 그 왼쪽까지만 */
+main { --dw: 0px; } /* 오른쪽 패널 폭(07-center.js 가 채움) — 바탕 그래프 · 큰 % · 범례는 그 왼쪽까지만 */
 /* 보조 단추는 테두리만 */
 button:not(.primary):not(.ghost):not(.tab):not(.danger):not(.drawer-handle):not(.edge-tab) { background: transparent; }
-.center-tabs { position: absolute; top: 12px; left: 16px; z-index: var(--z-float); display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1px solid var(--border); }
-/* 고른 탭: 초록 바탕 + 밑줄(색만으로 가르지 않게) */
-.center-tabs .tab.on { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
-/* 「대화 창」 탭이면 조직도는 자리만 두고 숨긴다(돌아왔을 때 크기 계산이 맞게) */
-body:not(.cv-ctx) #ctx-panel { display: none; }
-body.cv-ctx #graph, body.cv-ctx .zoom-btns { visibility: hidden; }
 
+/* 바탕 그래프: 면 위주로 아주 흐리게, 마우스는 통과(조직도 끌기 · 확대를 막지 않게). 조직도 svg 가 그 위(같은 층, 뒤 순서) */
+.ctx-bg { position: absolute; top: 0; left: 0; bottom: 0; right: var(--dw); pointer-events: none; transition: opacity .2s ease-out; }
+.ctx-bg.swap { opacity: 0; transition-duration: .16s; }
+.ctx-bg svg { display: block; width: 100%; height: 100%; }
+.ctx-bg .area { fill: color-mix(in srgb, var(--accent) 9%, transparent); }
+.ctx-bg .line { fill: none; stroke: color-mix(in srgb, var(--accent) 30%, transparent); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.ctx-bg .tick { stroke: color-mix(in srgb, var(--ink) 4%, transparent); vector-effect: non-scaling-stroke; }
+.ctx-bg .l80 { stroke: color-mix(in srgb, var(--working) 28%, transparent); stroke-dasharray: 5 5; vector-effect: non-scaling-stroke; }
+.ctx-bg .drop { fill: color-mix(in srgb, var(--working) 35%, transparent); }
+#graph { position: relative; } /* 바탕 그래프 위에 그려지게(층 토큰 없이 문서 순서로) */
 
-#ctx-panel { position: absolute; top: 60px; left: 16px; right: calc(var(--dw) + 16px); bottom: 16px; display: flex; flex-direction: column; padding: 14px 16px 10px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1px solid var(--border); box-shadow: var(--shadow); }
-.cp-head { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
-.cp-head .grow { flex: 1; }
-#ctx-title { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; line-height: 1.35; color: var(--text); flex: none; }
-#cp-who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dim); font-size: 15px; }
-#cp-who:not(:empty)::before { content: '· '; color: var(--faint); }
-.cp-about { width: 300px; left: 0; top: 30px; z-index: var(--z-pop); font-size: 13px; line-height: 1.6; color: var(--dim); white-space: normal; }
-.cp-now { flex: none; cursor: default; }
-.cp-now b { color: var(--text); font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
-#ctx-panel .empty-note { margin: auto; color: var(--faint); font-size: 13px; text-align: center; }
+/* 오른쪽 위: 세션 이름 · ⓘ / 큰 % — % 에 마우스를 올리거나 키보드로 가면 자세히 */
+.cp-card { position: absolute; top: var(--sp-3); right: calc(var(--dw) + var(--sp-4)); z-index: var(--z-float); display: grid; grid-template-columns: minmax(0, auto) auto; align-items: center; justify-items: end; max-width: 300px; padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-3); border-radius: var(--radius); background: color-mix(in srgb, var(--bg) 70%, transparent); }
+.cp-card[hidden] { display: none; }
+#cp-who { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dim); font-size: 13px; }
+.cp-big { grid-column: 1 / -1; padding-right: var(--sp-2); }
+.cp-now { cursor: default; border-radius: 6px; line-height: 1.1; }
+.cp-now b { color: var(--text); font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.cp-note { grid-column: 1 / -1; padding-right: var(--sp-2); color: var(--faint); font-size: 12px; }
+.cp-note:empty { display: none; }
+.cp-card .info-pop { left: auto; right: 0; top: calc(100% + 4px); width: 300px; flex-direction: column; gap: 2px; font-size: 13px; line-height: 1.6; color: var(--dim); white-space: normal; text-align: left; }
+.cp-card .info-wrap:focus-within .info-pop { display: flex; }
+.cp-detail b { color: var(--text); font-variant-numeric: tabular-nums; }
+.cp-detail small { margin-top: var(--sp-1); color: var(--faint); font-size: 12px; }
 
-/* 그래프: 선 · 면은 세션이 바뀌면 CSS transition(d)으로 옮겨 간다 */
-.cp-chart { position: relative; flex: 1; min-height: 0; display: flex; }
-.cp-chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.cp-chart .g { stroke: color-mix(in srgb, var(--ink) 6%, transparent); }
-.cp-chart .gl { fill: var(--faint); font: 11px var(--sans); }
-.cp-chart .l80 { stroke: var(--working); stroke-dasharray: 5 4; stroke-width: 1.2; }
-.cp-chart .drop .dl { stroke-dasharray: 2 3; }
-.cp-chart .l80t { fill: var(--working-text); font: 600 11px var(--sans); }
-.cp-chart .line { fill: none; stroke: var(--accent-2); stroke-width: 2; stroke-linejoin: round; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 28%, transparent)); transition: d .5s cubic-bezier(.3, .7, .2, 1); }
-.cp-chart .area { fill: url(#cp-fill); transition: d .5s cubic-bezier(.3, .7, .2, 1); }
-.cp-chart .stop-a { stop-color: var(--accent); stop-opacity: .32; }
-.cp-chart .stop-b { stop-color: var(--accent); stop-opacity: 0; }
-.cp-chart .cross { stroke: color-mix(in srgb, var(--ink) 35%, transparent); stroke-dasharray: 2 3; }
-.cp-chart .hdot { fill: var(--bg); stroke: var(--accent-2); stroke-width: 2; }
-/* 장식 · 선은 마우스를 가로채지 않게 — 「자동 요약됨」 표시만 누를 수 있다 */
-.cp-chart .line, .cp-chart .area, .cp-chart .grid, .cp-chart .l80, .cp-chart .l80t, .cp-chart .cross, .cp-chart .hdot, .cp-chart .xl { pointer-events: none; }
-.cp-chart .drop { cursor: pointer; }
-.cp-chart .drop circle { fill: var(--bg); stroke: var(--working); stroke-width: 2; }
-.cp-chart .drop .hit { fill: transparent; stroke: none; }
-.cp-chart .drop:hover circle:not(.hit), .cp-chart .drop:focus-visible circle:not(.hit) { stroke-width: 3; fill: var(--working); }
-.cp-chart .drop:focus { outline: none; }
-.cp-chart .fade { animation: cp-in .45s ease-out; }
-@keyframes cp-in { from { opacity: 0; } }
-.cp-tip { position: absolute; z-index: var(--z-tip); pointer-events: none; padding: 7px 10px; border-radius: 10px; font-size: 12px; line-height: 1.5; color: var(--dim); background: var(--surface-3); border: 1px solid var(--border-strong); box-shadow: var(--shadow); white-space: nowrap; }
-.cp-tip b { color: var(--text); font-variant-numeric: tabular-nums; }
-.cp-tip small { color: var(--faint); }
-.cp-pop { top: auto; right: auto; width: 320px; max-width: calc(100% - 16px); padding: 14px; font-size: 12.5px; line-height: 1.6; color: var(--dim); }
-.cp-pop h4 { margin: 0 0 6px; color: var(--working-text); font-size: 13px; }
-.cp-pop p { margin: 0 0 6px; }
-.cp-pop button { margin-top: 4px; }
-
-/* 조직도: 확대 단추(오른쪽 위) · 마우스 올린 노드와 그 위아래 줄기만 또렷하게 · 상태가 바뀐 노드는 한 번 은은히 빛남 */
-.zoom-btns { position: absolute; top: 12px; right: calc(var(--dw) + 12px); z-index: var(--z-float); display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1px solid var(--border); }
+/* 조직도: 확대 단추(왼쪽 위 — 오른쪽 위는 큰 %, 아래 두 모서리는 상태 칸 · 범례) · 마우스 올린 노드와 그 위아래 줄기만 또렷하게 · 상태가 바뀐 노드는 한 번 은은히 빛남 */
+.zoom-btns { position: absolute; top: var(--sp-3); left: var(--sp-4); z-index: var(--z-float); display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1px solid var(--border); }
 .zoom-btns button { font-size: 16px; line-height: 1; }
 #graph.hl .node:not(.on), #graph.hl .edge:not(.on), #graph.hl .dot:not(.on) { opacity: .28; }
 #graph .node, #graph .edge, #graph .dot { transition: opacity .2s; }
@@ -63,7 +39,7 @@ body.cv-ctx #graph, body.cv-ctx .zoom-btns { visibility: hidden; }
 .node.bump rect { animation: bump 1.2s ease-out; }
 @keyframes bump { 0% { filter: drop-shadow(0 0 0 var(--accent)); } 30% { filter: drop-shadow(0 0 8px var(--deco-line)); } 100% { filter: none; } }
 
-/* 구조 탭 아래 모서리: 상태 숫자 칸(왼쪽) · 에이전트 종류 범례(오른쪽, 패널 왼쪽까지). 「대화 창」 탭 · 휴대폰 폭에선 숨김(12-narrow.css) */
+/* 아래 모서리: 상태 숫자 칸(왼쪽) · 에이전트 종류 범례(오른쪽, 패널 왼쪽까지). 좁은 폭에선 숨김(12-narrow.css) */
 .status-col, .kinds { position: absolute; bottom: var(--sp-4); z-index: var(--z-float); display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-2); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
 .status-col { left: var(--sp-4); }
 .kinds { right: calc(var(--dw) + var(--sp-4)); font-size: 13px; color: var(--dim); }
@@ -73,7 +49,6 @@ body.cv-ctx #graph, body.cv-ctx .zoom-btns { visibility: hidden; }
 .status-col button:hover:not(:disabled) { background: var(--surface-2); color: var(--text); border-color: transparent; }
 .status-col .sl { flex: 1; }
 .status-col b { min-width: 2ch; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
-body.cv-ctx .status-col, body.cv-ctx .kinds { display: none; }
 /* 종류 표식: 머리글자 + --kind-<id> 색(02-kinds.js 가 --k 로 넣음) */
 .kmark { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border-radius: 50%; font: 700 11px/1 var(--sans); vertical-align: 1px; color: var(--k); background: color-mix(in srgb, var(--k) 18%, transparent); flex: none; }
 .km circle { fill: color-mix(in srgb, var(--k) 18%, var(--surface-2)); stroke: none; }

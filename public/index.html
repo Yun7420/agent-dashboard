@@ -35,7 +35,7 @@
     </div>
   </span>
   <button id="search-btn" class="ghost icon-btn" title="Search all logs ( / )" aria-label="Search all logs"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
-  <button id="new-session" class="primary" title="Run agent" aria-label="Run agent">+<span> Run agent</span></button>
+  <button id="new-session" class="primary" title="Run agent" aria-label="Run agent">+<span data-th="btn.agent"> Agent</span></button>
   <span class="info-wrap">
     <button type="button" id="app-more" class="ghost icon-btn" title="More" aria-label="More" aria-haspopup="menu" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
     <div class="menu-pop" id="app-menu" role="menu">
@@ -63,13 +63,15 @@
 </aside>
 <button type="button" class="edge-tab" id="aside-fold" title="Fold list" aria-label="Fold list" aria-expanded="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>
 <main>
+  <!-- 바탕: 고른 세션의 대화 창 사용률(최근 24시간)을 흐리게 — 마우스는 조직도가 받는다(07-center.js) -->
+  <div class="ctx-bg" id="ctx-bg" aria-hidden="true"></div>
   <svg id="graph">
     <defs>
       <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="currentColor"/></marker>
     </defs>
     <g id="viewport"></g>
   </svg>
-  <!-- 구조 탭 아래 모서리: 왼쪽 = 상태 숫자 칸(누르면 그 상태의 첫 세션), 오른쪽 = 지금 떠 있는 에이전트 종류 범례(13-controls.js) -->
+  <!-- 아래 모서리: 왼쪽 = 상태 숫자 칸(누르면 그 상태의 첫 세션), 오른쪽 = 지금 떠 있는 에이전트 종류 범례(13-controls.js) -->
   <div class="status-col" id="status-col" role="group" aria-label="Sessions by status">
     <button type="button" data-st="waiting"><span class="dot-s waiting"></span><span class="sl">Needs approval</span><b id="n-waiting">0</b></button>
     <button type="button" data-st="working"><span class="dot-s working"></span><span class="sl">Working</span><b id="n-working">0</b></button>
@@ -77,30 +79,24 @@
     <button type="button" data-st="ended"><span class="dot-s ended"></span><span class="sl">Ended</span><b id="n-ended">0</b></button>
   </div>
   <div class="kinds" id="kinds" aria-label="Agent kinds"></div>
-  <div class="empty" id="empty" hidden><div class="empty-line"><span>No sessions running</span><button type="button" class="primary" data-new-session>+ <span>Run agent</span></button></div></div>
-  <div class="center-tabs" role="tablist" aria-label="Center view">
-    <button type="button" class="tab" data-view="org" role="tab" aria-selected="false">Structure</button>
-    <button type="button" class="tab on" data-view="ctx" role="tab" aria-selected="true">Context</button>
-  </div>
+  <div class="empty" id="empty" hidden><div class="empty-line"><span>No sessions running</span><button type="button" class="primary" data-new-session aria-label="Run agent" title="Run agent">+ Agent</button></div></div>
   <div class="zoom-btns" role="group" aria-label="Org chart zoom">
     <button type="button" class="ghost icon-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
     <button type="button" class="ghost icon-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
     <button type="button" class="ghost icon-btn" id="zoom-fit" title="Fit to screen (same as double-click)" aria-label="Fit to screen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
   </div>
-  <section id="ctx-panel" aria-labelledby="ctx-title">
-    <div class="cp-head">
-      <h3 id="ctx-title">Context window</h3>
-      <span id="cp-who"></span>
-      <span class="info-wrap">
-        <button type="button" class="ghost icon-btn sm" id="cp-info" aria-label="About the context window" title="About the context window"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></button>
-        <div class="info-pop cp-about">How much conversation Claude remembers at once. Near 80% Claude Code auto-compacts the earlier part (a dot on the line). Hover the line for time · tokens.</div>
-      </span>
-      <span class="grow"></span>
-      <div class="cp-now" id="cp-now"></div>
-    </div>
-    <div class="cp-chart" id="cp-chart"><div class="empty-note">Pick a session on the left to see how full its context window is</div></div>
-    <div class="cp-tip" id="cp-tip" hidden></div>
-    <div class="cp-pop menu-pop" id="cp-pop" role="dialog" aria-label="About auto-compact"></div>
+  <!-- 오른쪽 위: 고른 세션 이름 · 대화 창 큰 % · ⓘ — % 에 마우스를 올리면 토큰 · 응답 수 · 자동 요약(07-center.js) -->
+  <section class="cp-card" id="cp-card" aria-labelledby="cp-who" hidden>
+    <span id="cp-who"></span>
+    <span class="info-wrap">
+      <button type="button" class="ghost icon-btn sm" id="cp-info" aria-label="About the context window" title="About the context window"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></button>
+      <div class="info-pop cp-about">How much conversation Claude remembers at once. Near 80% Claude Code auto-compacts the earlier part, and details that are not in the summary may be forgotten. The faint background shows the last 24 hours (right edge = now).</div>
+    </span>
+    <span class="info-wrap cp-big">
+      <span class="cp-now" id="cp-now" tabindex="0" aria-describedby="cp-detail"></span>
+      <div class="info-pop cp-detail" id="cp-detail" role="tooltip"></div>
+    </span>
+    <div class="cp-note" id="cp-note"></div>
   </section>
   <section id="drawer">
     <!-- 폭 손잡이: 왼쪽 가장자리 가운데 세로 알약 — 끌면 폭, 최소보다 더 끌면 접힘, 두 번 누르면 기본 폭, ← → 폭 · Enter 접기 -->
@@ -276,7 +272,7 @@
       <h4>Good to know</h4>
       <ul>
         <li data-th="help.local"><b>This computer only.</b> It opens on 127.0.0.1 alone, and prompts and code paths are shown as they are, so don't share the address with anyone.</li>
-        <li data-th="help.tmux"><b>Chat · approve · end</b> work only for <b>sessions started in tmux</b>. Sessions from a plain terminal or editor (Cursor etc.) are view-only. <b>+ Run agent</b> opens one inside tmux for you.</li>
+        <li data-th="help.tmux"><b>Chat · approve · end</b> work only for <b>sessions started in tmux</b>. Sessions from a plain terminal or editor (Cursor etc.) are view-only. The <b>+ Agent</b> button runs one inside tmux for you.</li>
         <li data-th="help.approve"><b>Approve buttons</b> grant real permissions. Check the terminal screen (command · file) in the panel before you press.</li>
         <li data-th="help.auto">If a session's default permission mode is <b>auto</b>, most actions are allowed automatically and approval prompts rarely appear.</li>
         <li data-th="help.graph"><b>Structure tab</b>: drag to move · wheel or the + − buttons to zoom · double-click to fit · click a node for its prompts. A <span class="peer-t">blue arrow</span> means messages between sessions.</li>

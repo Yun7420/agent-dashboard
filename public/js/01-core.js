@@ -133,7 +133,7 @@ if (typeof document !== 'undefined' && document.querySelectorAll) {
 }
 // 빈 · 오류 상태는 어디서나 같은 모양: 한 줄 안내 + 할 일 하나(없으면 안내만) — docs/CONVENTIONS.md 「화면 디자인 규칙」
 const emptyLine = (text, action = '') => `<div class="empty-line"><span>${text}</span>${action}</div>`;
-const newSessionBtn = () => `<button type="button" class="primary" data-new-session>+ ${t('Run agent')}</button>`; // 누르면 머리의 「+ 에이전트 실행」과 같은 창(12-panel.js)
+const newSessionBtn = () => `<button type="button" class="primary" data-new-session aria-label="${t('Run agent')}" title="${t('Run agent')}">${t('+ Agent')}</button>`; // 누르면 머리의 「+ 에이전트」와 같은 창(12-panel.js)
 // 토큰 수 읽기 쉽게: 625843 → 626K, 1000000 → 1M
 function fmtTok(n) {
   if (n >= 1e6) return `${(n / 1e6).toFixed(n % 1e6 ? 1 : 0)}M`;

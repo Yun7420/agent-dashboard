@@ -46,6 +46,7 @@
 .trend .tr-line { fill: none; stroke: var(--accent); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
 .trend .tr-80 { stroke: color-mix(in srgb, var(--working) 45%, transparent); stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
 .trend .tr-drop { fill: var(--working); }
+.trend .tr-tick { stroke: color-mix(in srgb, var(--ink) 7%, transparent); vector-effect: non-scaling-stroke; } /* 2시간마다 짝수 정각 */
 #drawer .now { margin-top: 12px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; max-height: 160px; overflow: auto; resize: vertical; }
 #drawer .search { position: relative; margin-top: 10px; }
 #drawer .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--faint); }

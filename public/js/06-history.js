@@ -30,28 +30,64 @@ async function loadTrend(key) {
   const s = state.sessions.find((x) => x.key === key);
   if (s) renderTrend(s);
 }
-// 지금 탭 아래(모든 화면 너비에서 보이게). 2초마다 불려도 바뀐 게 없으면 그대로
+// 가로축은 「최근 24시간」 — 오른쪽 끝 = 지금, 눈금은 이 컴퓨터 시각의 짝수 정각(2시간마다). 가운데 바탕 그래프(07-center.js)와 같은 축
+const DAY_MS = 864e5, GAP_MS = 30 * 6e4;
+function dayAxis(now, x0, x1) {
+  const t0 = now - DAY_MS;
+  const x = (t) => x0 + ((t - t0) / DAY_MS) * (x1 - x0);
+  const d = new Date(t0);
+  d.setMinutes(0, 0, 0);
+  d.setHours(d.getHours() + 1); // 왼쪽 끝 다음 정각부터
+  if (d.getHours() % 2) d.setHours(d.getHours() + 1);
+  const ticks = [];
+  for (; d.getTime() <= now; d.setHours(d.getHours() + 2)) ticks.push(d.getTime());
+  return { t0, x, ticks };
+}
+// 24시간 안의 점만 · 30분 넘게 비면 끊는다(빈 구간은 그리지 않는다)
+function daySegs(points, t0) {
+  const segs = [];
+  for (const p of points) {
+    if (p[0] < t0) continue;
+    const cur = segs.at(-1);
+    if (cur && p[0] - cur.at(-1)[0] <= GAP_MS) cur.push(p);
+    else segs.push([p]);
+  }
+  return segs;
+}
+// 계단 선: 값은 다음 응답까지 그대로, 덩어리 끝은 30분(지금을 넘지 않게)까지 늘인다. area 면 바닥까지 닫은 면
+function stepPath(seg, now, x, y, base) {
+  const f = (n) => n.toFixed(1);
+  let d = `M${f(x(seg[0][0]))},${f(y(seg[0][1]))}`;
+  for (const [at, v] of seg.slice(1)) d += ` H${f(x(at))} V${f(y(v))}`;
+  d += ` H${f(x(Math.min(seg.at(-1)[0] + GAP_MS, now)))}`;
+  return base === undefined ? d : `${d} V${f(base)} H${f(x(seg[0][0]))} Z`;
+}
+// 앞 점보다 절반 넘게 줄어든 곳 = 자동 요약(compact) — 24시간 밖의 앞 점과도 견준다
+const dropIdx = (points) => points.flatMap((p, i) => (i && p[1] < points[i - 1][1] * 0.5 ? [i] : []));
+
+// 지금 탭 아래(좁은 화면에서만 보인다 — 넓으면 가운데 바탕 그래프). 2초마다 불려도 바뀐 게 없으면 그대로
 function renderTrend(s) {
   const html = trendHtml(s);
   const el = $('#now-trend');
   setHtml(el, html);
 }
-function trendHtml(s) {
+function trendHtml(s, now = Date.now()) {
   if (trend.key !== s.key || !trend.data) return '';
   const { supported, points, drops, total } = trend.data;
   if (!supported) return `<div class="trend-note">${t('The context trend is based on Claude Code logs')}</div>`;
   const win = s.context?.window;
-  if (!win || points.length < 2) return '';
-  const W = 280, H = 48, t0 = points[0][0], t1 = points.at(-1)[0] || t0 + 1;
-  const x = (t) => ((t - t0) / Math.max(1, t1 - t0)) * W;
+  if (!win || !points.length) return '';
+  const W = 280, H = 48, ax = dayAxis(now, 0, W);
   const y = (v) => H - Math.min(1, v / win) * H;
-  const line = points.map(([t, v]) => `${x(t).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
-  // 앞 점보다 절반 넘게 줄어든 곳 = 자동 요약(compact)
-  const dots = points.map(([at, v], i) => (i && v < points[i - 1][1] * 0.5 ? `<circle cx="${x(at).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" class="tr-drop"><title>${t('Auto-compact')} ${new Date(at).toLocaleTimeString(LOCALE, { hour12: false })}</title></circle>` : '')).join('');
+  const segs = daySegs(points, ax.t0);
+  const lines = segs.map((g) => `<path d="${stepPath(g, now, ax.x, y)}" class="tr-line"/>`).join('');
+  const ticks = ax.ticks.map((at) => `<line x1="${ax.x(at).toFixed(1)}" x2="${ax.x(at).toFixed(1)}" y1="0" y2="${H}" class="tr-tick"/>`).join('');
+  const dots = dropIdx(points).filter((i) => points[i][0] >= ax.t0).map((i) => { const [at, v] = points[i]; return `<circle cx="${ax.x(at).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" class="tr-drop"><title>${t('Auto-compact')} ${cpHm(at)}</title></circle>`; }).join('');
   return `<div class="trend"><div class="trend-h">${t('Context trend')} · ${t('{n} replies', { n: total })}${drops ? ` · ${t('auto-compact {n}×', { n: drops })}` : ''}</div>
-    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${t('Context window usage trend')}"><line x1="0" x2="${W}" y1="${y(win * 0.8)}" y2="${y(win * 0.8)}" class="tr-80"/><polyline points="${line}" class="tr-line"/>${dots}</svg>
-    <div class="trend-f"><span>${new Date(t0).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', hour12: false })}</span><span>${t('dashed line 80%')}</span><span>${new Date(t1).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', hour12: false })}</span></div></div>`;
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${t('Context window usage trend')}">${ticks}<line x1="0" x2="${W}" y1="${y(win * 0.8)}" y2="${y(win * 0.8)}" class="tr-80"/>${lines}${dots}</svg>
+    <div class="trend-f"><span>${cpHm(ax.t0)}</span><span>${t('dashed line 80%')}</span><span>${t('now')}</span></div></div>`;
 }
+const cpHm = (at) => new Date(at).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', hour12: false });
 
 async function select(key) {
   selected = key;

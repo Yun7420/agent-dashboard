@@ -103,4 +103,10 @@ const KO_UI2 = {
   "Copied as Markdown": "마크다운으로 복사했어요",
   "Could not copy": "복사하지 못했어요",
   "This request is marked risky — press {k} again within 2 seconds to send": "위험 표시가 있는 요청이에요 — 2초 안에 {k} 키를 한 번 더 누르면 보내요",
+  "+ Agent": "+ 에이전트", // 빈 화면 단추(01-core.js · index.html) — 로고의 「Agent」와 겹치지 않게 「+」까지 한 덩어리
+  // 가운데 바탕 그래프(07-center.js)
+  "none": "없음",
+  "Last auto-compact": "마지막 자동 요약",
+  "Background: last 24 hours ({from} → now) · lines every 2 hours": "바탕 그래프: 최근 24시간({from} → 지금) · 세로 줄은 2시간마다",
+  "No replies in the last 24 hours": "최근 24시간 동안 응답이 없어요",
 };
