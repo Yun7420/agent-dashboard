@@ -87,7 +87,7 @@ $('#spawn-form').addEventListener('submit', async (e) => {
 });
 let pendingSelect = null;
 // 새 세션에 첫 프롬프트를 넣지 못했으면(입력칸이 10분 안에 안 뜸 · 창이 닫힘 — 서버 state.firstPrompts) 쓴 글이 사라지지 않게
-// 그 세션의 입력 칸 임시 글로 돌려놓고 활동 로그에 한 줄. 받았다고 알리면 서버는 글을 지운다(상태에 오래 남지 않게)
+// 그 세션의 입력 칸 임시 글로(세션이 이미 닫혔으면 「새 세션」 창의 첫 프롬프트 칸으로) 돌려놓고 알림을 길게 띄운다. 받았다고 알리면 서버는 글을 지운다(상태에 오래 남지 않게)
 const fpSeen = new Set();
 function restoreFirstPrompts(list, sessions) {
   for (const f of list ?? []) {
@@ -96,8 +96,11 @@ function restoreFirstPrompts(list, sessions) {
     const name = f.title || f.key.split(':')[1].slice(0, 8);
     if (sessions.some((s) => s.key === f.key)) {
       putDraft(f.key, f.text);
-      logLine('x', `[${name}] ${t('Could not deliver the first message, so it is back in the input — check and send it')}`);
-    } else logLine('x', `[${name}] ${t('The session closed before the first message was sent — the text was')}: ${f.text.slice(0, 300)}`);
+      toast(`[${name}] ${t('Could not deliver the first message, so it is back in the input — check and send it')}`, 10000);
+    } else {
+      $('#sp-prompt').value = f.text;
+      toast(`[${name}] ${t('The session closed before the first message was sent — the text is back in New session')}`, 10000);
+    }
     api('/api/cmd/first-prompt-ack', { key: f.key }).catch(() => fpSeen.delete(f.key));
   }
 }
@@ -145,6 +148,7 @@ $('#d-search').addEventListener('input', () => {
 // 패널 접기: 손잡이 · Esc · 조직도 빈 곳 누르기. 앞 번호 파일(03-graph)은 #drawer 에 'fold' 이벤트를 보내 부른다(함수를 거꾸로 부르지 않게)
 function closeDrawer() { clearTimeout(paneTimer); $('#drawer').classList.remove('open'); selected = null; view.init = false; renderList(); renderGraph(); }
 $('#drawer').addEventListener('fold', closeDrawer);
+$('#fold-panel').addEventListener('click', closeDrawer); // 좁은 화면(패널이 화면을 덮음)에서만 보이는 ⋯ 메뉴 항목
 document.addEventListener('click', (e) => {
   const tg = e.target.closest('[data-toggle]');
   if (tg) { const k = tg.dataset.toggle; pref.expandSubs[k] = !pref.expandSubs[k]; savePref(); renderGraph(); return; }

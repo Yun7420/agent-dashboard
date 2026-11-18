@@ -76,3 +76,26 @@ test('두 번 누르면 기본 폭, 키보드 ← 넓게 · → 좁게 · Enter 
   a.h.keydown(ev(0, 'x'));
   assert.equal(a.w(), 460);
 });
+
+test('목록 접기 탭: 누르면 얇은 띠(aside-folded) · 이름 · aria-expanded 가 바뀌고 agent-deck 의 asideFolded 에 남는다, 다시 누르면 펼침', () => {
+  const stored = { 'agent-deck': JSON.stringify({ welcomed: true }) };
+  const tab = fakeEl();
+  const body = fakeEl();
+  const others = {};
+  const { run } = loadFront(['00-md.js', '01-core.js', '14-collapse.js'], {
+    window: {}, setInterval() {}, setTimeout() {},
+    matchMedia: () => ({ matches: false, addEventListener() {} }),
+    document: { querySelector: (s) => (s === '#aside-fold' ? tab : (others[s] ??= fakeEl())), addEventListener() {}, body }, // 손잡이 등 나머지는 빈 가짜
+    localStorage: { getItem: (k) => stored[k] ?? null, setItem: (k, v) => (stored[k] = v) },
+  });
+  assert.equal(body.cls.has('aside-folded'), false);
+  assert.equal(tab.attrs['aria-expanded'], 'true');
+  tab.listeners.click();
+  assert.equal(body.cls.has('aside-folded'), true);
+  assert.equal(tab.attrs['aria-expanded'], 'false');
+  assert.equal(tab.attrs['aria-label'], '목록 펼치기');
+  assert.equal(JSON.parse(stored['agent-deck']).asideFolded, true);
+  tab.listeners.click();
+  assert.equal(body.cls.has('aside-folded'), false);
+  assert.equal(run('pref.asideFolded'), false);
+});

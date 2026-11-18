@@ -1,7 +1,7 @@
 /* 가운데 칸: 탭 「구조 / 대화 창」 · 대화 창 사용률 큰 그래프(07-center.js). 좁은 창에선 조직도만(12-narrow.css) */
-/* 배경 분위기: 아래쪽 초록 번짐 · 옅은 격자 · 점 입자 — 머리 · 목록 · 아래 칸은 반투명이라 번짐이 비친다 */
+/* 배경 분위기: 아래쪽 초록 번짐 · 옅은 격자 · 점 입자 — 머리 · 목록은 반투명이라 번짐이 비친다 */
 body { background: radial-gradient(120% 70% at 50% 115%, var(--glow), transparent 62%), var(--bg); }
-header, aside, footer { background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(8px); }
+header, aside { background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(8px); }
 main {
   background:
     radial-gradient(circle at 1px 1px, var(--deco-dot-2) 1px, transparent 0) 7px 11px / 61px 53px,

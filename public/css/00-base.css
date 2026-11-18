@@ -108,7 +108,7 @@
 * { box-sizing: border-box; }
 ::selection { background: var(--accent-soft); }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
-body { display: grid; grid-template-columns: 296px 1fr; grid-template-rows: 60px 1fr 136px; height: 100vh; overflow: hidden; }
+body { display: grid; grid-template-columns: 296px 1fr; grid-template-rows: 60px 1fr; height: 100vh; overflow: hidden; }
 code, .mono { font-family: var(--mono); font-size: .92em; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 8%, transparent); border-radius: 12px; border: 3px solid transparent; background-clip: padding-box; }

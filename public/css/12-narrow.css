@@ -11,13 +11,15 @@
 }
 /* 태블릿 세로 · 좁은 창: 목록을 숨기지 않고 접힌 띠(상태 점 + 이니셜)로 둔다 — 접기 단추는 숨김(JS 가 항상 접음) */
 @media (max-width: 860px) {
-  body, body.aside-folded { grid-template-columns: 64px 1fr; grid-template-rows: 56px 1fr 120px; }
+  body, body.aside-folded { grid-template-columns: 64px 1fr; grid-template-rows: 56px 1fr; }
   #aside-fold { display: none; }
   header { gap: 8px; padding: 0 12px; }
   .brand h1 span { display: none; }
   #conn { font-size: 0; gap: 0; }
   #drawer { top: 0; right: 0; bottom: 0; width: 100%; border-radius: 0; border: none; }
-  .drawer-handle { display: none; } /* 패널이 화면을 덮으니 폭 손잡이는 필요 없다 */
+  .drawer-handle { display: none; } /* 패널이 화면을 덮으니 폭 손잡이 대신 ⋯ 메뉴의 「패널 닫기」 */
+  #more-menu .narrow-only { display: flex; }
+  #more-menu #wide { display: none; } /* 패널이 이미 화면 전체 */
   /* 가운데 탭 · 큰 그래프는 넓은 화면에서만 — 좁으면 조직도만, 대화 창 추이는 지금 탭 아래 작은 그래프로 */
   #ctx-panel, .center-tabs, .zoom-btns { display: none !important; }
   body.cv-ctx #graph { visibility: visible; }

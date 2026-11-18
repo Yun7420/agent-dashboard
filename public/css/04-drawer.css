@@ -32,7 +32,7 @@
 #more-menu .mi:hover { background: var(--surface-2); }
 #more-menu .mi svg { color: var(--dim); flex: none; }
 #more-menu .mi.danger, #more-menu .mi.danger svg { color: var(--waiting-text); }
-#more-menu .mi[hidden] { display: none; }
+#more-menu .mi[hidden], #more-menu .narrow-only { display: none; }
 #d-model { font-size: 13px; height: 32px; padding: 0 26px 0 10px; }
 .badge-model { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent-text); }
 #drawer .info-pop { left: auto; right: 0; flex-wrap: wrap; align-items: center; gap: 8px 10px; color: var(--faint); font-size: 12px; }

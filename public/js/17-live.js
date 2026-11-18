@@ -27,15 +27,12 @@ function connect() {
     const b = selected ? next.sessions.find((s) => s.key === selected) : null;
     const newPrompt = Boolean(a && b && (a.lastPromptAt !== b.lastPromptAt || (a.status !== b.status && b.status === 'idle')));
     notifyChanges(state?.sessions, next.sessions);
-    logEvents(next.sessions);
-    logLinks(next.links || [], next.sessions);
     state = next;
     pruneDrafts(next.sessions); // 끝난 · 사라진 세션의 임시 글 · 첨부 정리(09-attach.js)
     restoreFirstPrompts(next.firstPrompts, next.sessions); // 넣지 못한 첫 프롬프트 → 입력 칸(12-panel.js)
     if (prunePrefs(pref, next.sessions.map((s) => s.key), Date.now())) savePref(); // 오래 못 본 세션 열쇠 정리(01-core.js)
     renderRestore();
     finishBoot();
-    $('#updated').textContent = `${t('Updated')} ${new Date(next.generatedAt).toLocaleTimeString(LOCALE, { hour12: false })}`;
     render();
     if (pendingSelect && state.sessions.some((s) => s.key === pendingSelect)) { const k = pendingSelect; pendingSelect = null; select(k); }
     else if (newPrompt) select(selected);

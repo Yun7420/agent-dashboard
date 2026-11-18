@@ -49,11 +49,3 @@ test('저장 줄이기: 같은 세션을 한 시간 안에 다시 봐도 바뀐 
   assert.equal(prune(p, ['a'], 1000 + 30 * 60_000), false);
   assert.equal(prune(p, ['a'], 1000 + 61 * 60_000), true);
 });
-
-test('활동 로그: 세션이 0개여도 「온라인」 줄은 처음 한 번만', () => {
-  const { run, el } = load(['00-md.js', '01-core.js', '02-activity.js']);
-  for (let i = 0; i < 4; i++) run('logEvents')([]);
-  assert.equal(el('#events').lines.filter((l) => l.includes('Agent Dashboard 온라인')).length, 1);
-  run('logEvents')([{ key: 'a', status: 'idle', title: 'A', toolLabel: 'Claude Code', project: 'p' }]);
-  assert.equal(el('#events').lines.filter((l) => l.includes('새 세션')).length, 1); // 그 뒤 새로 뜬 세션은 평소처럼
-});

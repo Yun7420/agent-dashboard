@@ -1,4 +1,4 @@
-// 가장자리 접기: 왼쪽 목록 접기 탭 · 오른쪽 패널 폭 손잡이 · 활동 로그 접기
+// 가장자리 접기: 왼쪽 목록 접기 탭 · 오른쪽 패널 폭 손잡이
 // ---------- 왼쪽 목록 접기 ----------
 // 좁은 화면(태블릿 세로 · 휴대폰)에선 저장된 설정과 상관없이 접힌 띠로 둔다
 const narrowScreen = matchMedia('(max-width: 860px)');
@@ -46,12 +46,3 @@ const dragVerdict = (startW, dx, min = 380) => (startW - dx < min - FOLD_PX ? 'f
     applyDrawerWidth(); done();
   });
 })();
-
-// ---------- 활동 로그 접기 ----------
-function applyFold() {
-  document.querySelector('footer').classList.toggle('folded', Boolean(pref.eventsFolded));
-  document.body.style.gridTemplateRows = pref.eventsFolded ? '60px 1fr 44px' : '';
-  $('#fold-ic').textContent = pref.eventsFolded ? `${t('Unfold')} ▴` : `${t('Fold')} ▾`;
-}
-$('#fold-ic').addEventListener('click', () => { pref.eventsFolded = !pref.eventsFolded; savePref(); applyFold(); view.init = false; renderGraph(); });
-applyFold();

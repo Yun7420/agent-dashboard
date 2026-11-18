@@ -44,7 +44,7 @@ const apiJson = async (path) => JSON.parse(await api(path));
 // 403 이면 로그인이 필요한 것 → 안내하고 멈춤, 그 밖(서버가 아직 켜지는 중 등)은 잠시 뒤 다시 연결. 연결 중(CONNECTING)이면 브라우저가 알아서 다시 시도
 const sseOnError = (readyState, CLOSED = 2) => (readyState === CLOSED ? 'probe' : 'wait');
 const probeVerdict = (status) => (status === 403 ? 'gone' : 'reconnect');
-function toast(msg) {
+function toast(msg, ms = 3500) {
   const el = $('#toast');
   el.textContent = msg;
   // 세션 패널이 열려 있으면 패널 가운데·입력창 바로 위에, 아니면 그래프 영역 가운데·하단 안내 위에 띄운다
@@ -56,7 +56,7 @@ function toast(msg) {
   el.style.bottom = `${innerHeight - floor + 12}px`;
   el.style.display = 'block';
   clearTimeout(toast.t);
-  toast.t = setTimeout(() => (el.style.display = 'none'), 3500);
+  toast.t = setTimeout(() => (el.style.display = 'none'), ms);
 }
 // esc() 는 00-md.js (마크다운 변환과 함께 node 에서 시험하려고)
 const STATUS_KO = { working: t('Working'), background: t('Background task'), waiting: t('Needs approval'), idle: t('Idle'), ended: t('Ended') };
