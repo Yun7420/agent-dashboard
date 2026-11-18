@@ -198,7 +198,7 @@ A session already running in a terminal has no official way to receive input fro
 - **History** tab: past prompts and answers, search, "load more". Turns started by a message from another session (SendMessage) are split out and shown as a **dashed bubble labelled "↙ sender"** (same in the Now tab and global search)
 - **What I did today**: ⋯ at the top right → Today's work → per session: prompts, edited files, command count, **commit titles** and **tokens** (input · output · cache read · cache write · subagents, plus a daily total) (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts). Each response is counted once, and tokens are never converted to money (pricing differs by plan)
 - **Context trend** (narrow screens up to 860px): a small chart under the Now tab — context-window usage per response, dashed line = 80%, amber dot = where auto-compact dropped it
-- **Search all history**: the **search bar** at the top center (or the `/` key; 🔍 on narrow screens) searches prompts and answers across all sessions → picking a result opens that session's History tab with the same query
+- **Search all history**: type straight into the **search bar** at the top center (or press `/`; 🔍 on narrow screens) and matches from prompts and answers across all sessions drop down below it → pick one with `↑`/`↓` and `Enter` (or click) to open that session's History tab with the same query. `Esc` once closes the list, twice clears the bar
 - **Keyboard shortcuts** (also under ⋯ → Help)
 
   | Key | Action |

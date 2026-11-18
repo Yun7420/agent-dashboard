@@ -1,17 +1,26 @@
 /* 전체 기록 검색 */
-/* ---------- 전체 기록 검색 ---------- */
-#search-dlg { width: min(720px, 94vw); }
-/* 맨 위 가운데 검색칸: 약 360px, 남는 폭에 맞춰 줄어든다 · 오른쪽 끝에 / 키 표시 */
-.gs-open { flex: 0 1 360px; min-width: 0; margin: 0 auto; display: flex; align-items: center; gap: var(--sp-2); height: 34px; padding: 0 var(--sp-2) 0 var(--sp-3); border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--border); color: var(--faint); font-size: 13px; text-align: left; cursor: text; }
-.gs-open:hover { border-color: var(--border-strong); color: var(--dim); }
-.gs-open .gs-ph { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gs-open kbd { flex: none; min-width: 20px; height: 20px; display: grid; place-items: center; border-radius: 5px; border: 1px solid var(--border-strong); color: var(--dim); font: 600 11px var(--mono); }
-#gs-q { width: 100%; height: 40px; padding: 0 12px; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font-size: 14px; }
-#gs-meta { color: var(--faint); font-size: 12px; margin: 10px 2px 6px; min-height: 16px; }
-#gs-list { max-height: min(60vh, 520px); overflow: auto; display: flex; flex-direction: column; gap: 6px; }
-.gs-item { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 10px 12px; border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--border); height: auto; }
-.gs-item:hover { border-color: var(--accent); }
-.gs-head { display: flex; gap: 8px; align-items: baseline; font-size: 11px; color: var(--faint); }
-.gs-head b { color: var(--text); font-size: 13px; }
-.gs-snip { font-size: 12.5px; line-height: 1.6; color: var(--dim); word-break: break-word; }
+/* ---------- 맨 위 가운데 기록 검색: 칸(약 360px, 남는 폭에 맞춰 줄어듦) + 바로 아래 결과 목록 ---------- */
+.gs { position: relative; flex: 0 1 360px; min-width: 0; margin: 0 auto; }
+#gs-btn { display: none; } /* 🔍 단추는 좁은 화면에서만(12-narrow.css) */
+.gs-field { display: flex; align-items: center; gap: var(--sp-2); height: 34px; padding: 0 var(--sp-2) 0 var(--sp-3); border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--border); color: var(--faint); cursor: text; }
+.gs-field:hover { border-color: var(--border-strong); }
+.gs-field:focus-within { border-color: var(--accent); }
+.gs-field svg { flex: none; }
+#gs-q { flex: 1; min-width: 0; height: 100%; padding: 0; border: none; border-radius: 0; background: transparent; color: var(--text); font-size: 13px; outline: none; }
+#gs-q::placeholder { color: var(--faint); }
+.gs-field kbd { flex: none; min-width: 20px; height: 20px; display: grid; place-items: center; border-radius: 5px; border: 1px solid var(--border-strong); color: var(--dim); font: 600 11px var(--mono); }
+.gs-field:focus-within kbd { display: none; }
+/* 결과 목록: 칸 폭 이상(넓으면 560px까지) · 칸 가운데 아래 · 길면 안에서 스크롤 */
+.gs-drop { position: absolute; top: calc(100% + 6px); left: 50%; translate: -50% 0; width: max(100%, min(560px, calc(100vw - 32px))); max-height: min(60vh, 480px); overflow: auto; z-index: var(--z-popover); padding: var(--sp-1); border-radius: 12px; background: var(--surface-3); border: 1px solid var(--border-strong); box-shadow: var(--shadow); white-space: normal; }
+.gs-drop[hidden] { display: none; }
+#gs-meta { color: var(--faint); font-size: 12px; padding: 6px 10px; }
+#gs-meta:empty { display: none; }
+.gs-item { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.gs-item:hover { background: var(--surface-2); }
+.gs-item[aria-selected="true"] { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+.gs-head { display: flex; gap: 8px; align-items: baseline; min-width: 0; font-size: 11px; color: var(--faint); }
+.gs-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 13px; }
+.gs-head span, .gs-head time { flex: none; }
+.gs-head time { margin-left: auto; font-variant-numeric: tabular-nums; }
+.gs-snip { font-size: 12.5px; line-height: 1.55; color: var(--dim); word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .gs-snip mark { background: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); border-radius: 3px; padding: 0 2px; }

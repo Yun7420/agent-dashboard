@@ -202,7 +202,7 @@
 | `15-notify.js` | 알림 판단 · 설정(`notifyChanges` · `saveNotifyCfg`) |
 | `16-restore.js` | 재시동 배너(`renderRestore`) · 종료된 세션 카드의 「다시 열기」(`checkLaunched`) |
 | `17-live.js` | 서버와 실시간 연결(`connect`) |
-| `18-search.js` | 전체 기록 검색(`openSearch` · `runSearch`) |
+| `18-search.js` | 맨 위 기록 검색칸(combobox · 칸 아래 결과 목록 — `runSearch` · `gsPick`) |
 | `19-day.js` | 오늘 한 일(`loadDay` · `dayMarkdown`) |
 | `20-keys.js` | 키보드 단축키(`approveKey` · `armTwice` · `nextKey`) |
 
