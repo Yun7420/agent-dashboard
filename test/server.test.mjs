@@ -45,7 +45,7 @@ const PUBLIC = ['/login', '/hello'];
 test('경로 표의 모든 경로는 /events 또는 /api/ 아래(로그인 검사가 주소 앞부분으로 걸러서, 그 밖에 두면 로그인 없이 열린다) — 예외는 PUBLIC 둘', () => {
   const block = fs.readFileSync(path.join(ROOT, 'server.mjs'), 'utf8').match(/const ROUTES = \[([\s\S]*?)\n\];/)[1];
   assert.equal(ROUTE_LIST.length, block.match(/handler:/g).length, '경로 표를 다 읽지 못했어요(표 모양이 바뀌었으면 위 정규식도)');
-  assert.ok(ROUTE_LIST.length >= 17);
+  assert.ok(ROUTE_LIST.length >= 16); // 간추리기로 /api/window · trend · limits 를 없앤 뒤 16개
   for (const r of ROUTE_LIST) assert.ok(r.path === '/events' || r.path.startsWith('/api/') || PUBLIC.includes(r.path), r.path);
   assert.deepEqual(ROUTE_LIST.filter((r) => PUBLIC.includes(r.path)).map((r) => `${r.method} ${r.path}`), ['GET /login', 'GET /hello']);
 });
@@ -267,13 +267,9 @@ test('알림 설정 API: 토큰 없거나 다른 Origin 이면 403, 소리는 �
   assert.equal(fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null, before);
 });
 
-test('한도 추이 API: 토큰 없으면 403, range 는 24h · 7d 만(그 밖은 400)', async () => {
-  const H = { ...AUTH };
-  assert.equal(await req('/api/limits?range=24h'), 403);
-  assert.equal(await req('/api/limits?range=24h', { headers: { ...H, origin: 'http://evil.example' } }), 403);
-  assert.equal(await req('/api/limits?range=24h', { headers: H }), 200);
-  assert.equal(await req('/api/limits?range=7d', { headers: H }), 200);
-  for (const r of ['30d', '__proto__', '../x']) assert.equal(await req(`/api/limits?range=${encodeURIComponent(r)}`, { headers: H }), 400, r);
+// 한도 추이 그래프를 없애며 /api/limits 도 없앴다 — 팝업은 SSE 의 usage(지금 남은 양)만 쓴다
+test('한도 추이 API 는 없다(로그인해도 404)', async () => {
+  assert.equal(await req('/api/limits?range=24h', { headers: { ...AUTH } }), 404);
 });
 
 test('복구 API: 토큰 없거나 다른 Origin 이면 403, 데모에선 흉내만', async () => {
@@ -325,7 +321,6 @@ test('보안 헤더(클릭재킹 · nosniff): 화면 · API 200/403 · SSE · 40
     ['/css/00-base.css', {}, 200],
     ['/api/perf', { headers: T }, 200],
     ['/api/perf', {}, 403],
-    ['/api/limits?range=30d', { headers: T }, 400],
     ['/events', { headers: AUTH }, 200],
     ['/no-such-file.js', {}, 404],
     ['/', { headers: { host: 'evil.example:4699' } }, 403],
@@ -389,7 +384,6 @@ test('오류 응답 모양: text/plain; charset=utf-8 한국어 문장, 영어 �
     ['/no-such-file.js', {}, 404],
     ['/api/day?date=2026-02-30', { headers: T }, 400],
     ['/api/day?date=abc', { headers: T }, 400],
-    ['/api/limits?range=30d', { headers: T }, 400],
     ['/api/history', { headers: T }, 400],
     ['/api/cmd/send', { method: 'POST', headers: T, body: 'null' }, 400],
     ['/api/cmd/send', { method: 'POST', headers: T, body: '[1]' }, 400],

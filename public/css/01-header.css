@@ -23,26 +23,16 @@ header > * { white-space: nowrap; flex-shrink: 0; }
 #app-menu .mi svg { color: var(--dim); flex: none; }
 #notify.on svg { color: var(--accent-text); }
 
-/* 범례 Claude Code 항목의 사용 한도 → 계정 한도 추이(5시간 · 주간 두 선, 리셋 지점). 범례 바로 위(--lp-b 는 11-usage.js 가 범례 높이로) */
-#limits-pop { width: 360px; padding: 12px 14px; display: none; flex-direction: column; gap: 8px; z-index: var(--z-popover); top: auto; left: auto; right: calc(var(--dw) + var(--sp-4)); bottom: var(--lp-b, 120px); }
-#limits-pop .lp-resets { font-size: 12px; color: var(--dim); }
-#limits-pop .lp-resets:empty { display: none; }
+/* 범례 Claude Code 항목의 사용 한도 → 창마다 남은 양 · 초기화 시각 · 막대. 범례 바로 위(--lp-b 는 11-usage.js 가 범례 높이로) */
+#limits-pop { width: 320px; padding: 12px 14px; display: none; flex-direction: column; gap: 8px; z-index: var(--z-popover); top: auto; left: auto; right: calc(var(--dw) + var(--sp-4)); bottom: var(--lp-b, 120px); }
 #limits-pop.show { display: flex; }
-#limits-pop .lp-head, #limits-pop .lp-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
-#limits-pop .lp-range { display: inline-flex; gap: 4px; }
-#limits-pop button { width: auto; height: 26px; padding: 0 10px; font-size: 12px; }
-#limits-pop .lp-range button.on { background: var(--surface-2); color: var(--text); border: 1px solid var(--border-strong); }
-#limits-pop .lp-key { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--faint); }
-#limits-pop .lp-key i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-left: 4px; }
-#limits-pop .k5 { background: var(--accent); } #limits-pop .k7 { background: var(--working); } #limits-pop .kr { background: none; border-left: 1px dashed var(--dim); width: 1px !important; height: 10px !important; }
-#limits-chart svg { display: block; width: 100%; height: 120px; background: color-mix(in srgb, var(--shade) 20%, transparent); border-radius: 6px; overflow: visible; }
-#limits-chart .lc-grid { stroke: color-mix(in srgb, var(--ink) 7%, transparent); vector-effect: non-scaling-stroke; }
-#limits-chart .lc-5h { fill: none; stroke: var(--accent); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
-#limits-chart .lc-7d { fill: none; stroke: var(--working); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
-#limits-chart .lc-r5 { stroke: color-mix(in srgb, var(--ink) 22%, transparent); stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
-#limits-chart .lc-r7 { stroke: var(--working); stroke-dasharray: 4 3; opacity: .7; vector-effect: non-scaling-stroke; }
-#limits-chart .lc-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--faint); margin-top: 3px; }
-#limits-chart .lc-note { font-size: 12px; color: var(--dim); padding: 18px 0; text-align: center; }
+#limits-body { display: flex; flex-direction: column; gap: 12px; }
+#limits-pop .lp-row { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--dim); }
+#limits-pop .lp-row b { color: var(--text); font-variant-numeric: tabular-nums; } #limits-pop .lp-row b.mid { color: var(--working-text); } #limits-pop .lp-row b.high { color: var(--waiting-text); }
+#limits-pop .lp-bar { display: block; height: 4px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 8%, transparent); overflow: hidden; }
+#limits-pop .lp-bar .ctx-bar { display: block; }
+#limits-pop .lp-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--faint); }
+#limits-pop button { width: auto; height: 24px; padding: 0 8px; font-size: 11px; }
 /* ⋯ → 알림 · 화면 설정 모달의 안쪽(틀은 06-dialog.css 의 .modal) */
 :is(#notify-dlg, #settings-dlg) { width: min(420px, 92vw); }
 :is(#notify-dlg, #settings-dlg)[open] { display: flex; flex-direction: column; gap: var(--sp-3); }

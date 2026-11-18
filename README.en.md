@@ -50,7 +50,7 @@ Agent Dashboard puts all of this on one screen.
 | 📂 | **Open the folder** | Click a project box to open that folder in VS Code · Cursor or reveal it in Finder — no hunting for the folder when you want to check what changed |
 | ■ | **Stop · close** | Stop only what a session is doing (the conversation stays), or close a session from the dashboard |
 | 📝 | **Live code diff** | Files changed in the current request with +/− counts and red/green diffs; commands with ✓ pass / ✕ fail and output |
-| 🧠 | **Model · usage** | Start sessions with Opus · Sonnet · Haiku, switch a running session's model, context usage, Claude account 5-hour/weekly limits and their trend |
+| 🧠 | **Model · usage** | Start sessions with Opus · Sonnet · Haiku, switch a running session's model, context usage, Claude account 5-hour/weekly limits (what is left) |
 | 🔔 | **Notifications** | Alert when approval is needed or a task over 1 minute finishes — **macOS notifications that arrive even with the tab closed** (choose a sound), or browser notifications when not on macOS; pending approvals in the tab title |
 | 🛡️ | **Local-only security** | 127.0.0.1 only, Host/Origin checks, a secret token generated per machine (`~/.agent-dashboard/token`), no framing (clickjacking), path checks for attachments and folders |
 
@@ -132,7 +132,7 @@ Everything the dashboard writes lives in `~/.agent-dashboard/` (it never writes 
 | `settings.backup.<time>.json` · `statusline-original.json` | backup of `~/.claude/settings.json` before turning on usage limits · your original status line | 600 |
 | `bin/statusline.mjs` | copy of the usage-limit status-line bridge | folder 700 · file 600 |
 | `status/` | values the bridge writes per session (old ones are cleaned up) | folder 700 · files 600 |
-| `limits/` | account limit history (per day, kept 30 days) | folder 700 · files 600 |
+| `limits/` | old account limit history (no longer written — deleted after 30 days) | folder 700 · files 600 |
 | `uploads/` | attachments (per day, deleted after 14 days) | folder 700 · files 600 |
 
 ### Stopping and uninstalling
@@ -224,7 +224,7 @@ A session already running in a terminal has no official way to receive input fro
 <summary><b>Header — approval · limits · ⋯ menu</b></summary>
 
 - "Needs approval N" (hidden at 0, click to open the first waiting session) · search bar · + New task (run an agent) · ⋯
-- Account usage limits sit inside the **Claude Code** item of the kinds legend at the bottom right of the structure view as "· 5h % · Weekly %" (hover for reset times and the trend). On narrow screens (860 or less) they move to one line at the top of the center
+- Account usage limits sit inside the **Claude Code** item of the kinds legend at the bottom right of the structure view as "· 5h 68% left · Weekly 79% left" (amber at 40% left or less, red at 15% or less). On narrow screens (860 or less) they move to one line at the top of the center, shortened to "5h 68% · Weekly 79% left".
 - The connection shows only when it drops
 - **Esc**: close popups → press again to collapse the panel
 - ⋯ → Notifications: notification settings (approval needed · task over 1 minute finished) — one on/off switch · sound · test notification. On macOS the server sends macOS notifications (even with the tab closed); elsewhere (Linux etc.) the same switch turns on browser notifications (while this tab is open). Only one route is used, so you never get two. The same session and reason alerts at most once a minute, and simultaneous alerts are merged into one. Settings live in `~/.agent-dashboard/notify.json` (readable only by you). macOS notifications may need notification permission for Script Editor (or Terminal)
@@ -239,7 +239,7 @@ A session already running in a terminal has no official way to receive input fro
   - When turned on, the status-line script is copied to `~/.agent-dashboard/bin/statusline.mjs` and that path is registered (so moving or deleting the dashboard folder doesn't break your status line). A newer version refreshes the copy automatically, and an older registration is switched to the new path. If the node or copy path contains a quote, `$`, `` ` `` or `\`, it refuses to turn on and tells you why.
   - The status line is registered with the node path at the time you turned it on (with Homebrew, `…/Cellar/node/<version>/…`). Upgrading node can remove that path and stop the limit readings. The environment check's "usage limits" row shows the status line's node path and version, and warns if it can't run. Restarting the dashboard switches it to the current node.
   - If `~/.claude/settings.json` is a **symlink** (e.g. to your dotfiles), on/off is refused with "the settings file is a link" so the real file it points to isn't edited behind your back. Register it in the linked file yourself in that case.
-  - While on, hover the limits in the legend (tap the top line on narrow screens) to open a **limits trend chart** (last 24 hours · 7 days, 5-hour and weekly lines, reset points). A line with time · % · reset times is appended to `~/.agent-dashboard/limits/<date>.jsonl` only when values change (at most once a minute, readable only by you), and files older than 30 days are deleted. Settings are under "Settings…" below the chart.
+  - While on, hover the limits in the legend (tap the top line on narrow screens) to see **what is left and when it resets** per window ("5h: 68% left · resets in 4h 27m", or "resets Sun, Nov 22" when more than a day away) with a bar, plus the as-of time and "Setup…". No history is recorded any more (old `~/.agent-dashboard/limits/` files are deleted after 30 days).
 
 ## Security
 

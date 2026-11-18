@@ -73,12 +73,10 @@
     <button type="button" data-st="ended"><span class="dot-s ended"></span><span class="sl">Ended</span><b id="n-ended">0</b></button>
   </div>
   <div class="kinds" id="kinds" aria-label="Agent kinds"></div>
-  <!-- 범례 Claude Code 항목(좁은 화면은 위 한 줄)에 마우스를 올리면: 사용 한도 초기화 시각 · 추이(11-usage.js) -->
-  <div class="menu-pop" id="limits-pop" role="group" aria-label="Limit trend">
-    <div class="lp-head"><b>Limit trend</b><span class="lp-range"><button type="button" class="ghost on" data-range="24h">24h</button><button type="button" class="ghost" data-range="7d">7d</button></span></div>
-    <div id="limits-resets" class="lp-resets"></div>
-    <div id="limits-chart"></div>
-    <div class="lp-foot"><span class="lp-key"><i class="k5"></i>5h <i class="k7"></i>Weekly <i class="kr"></i>Reset</span><button type="button" class="ghost" id="limits-setup">Setup…</button></div>
+  <!-- 범례 Claude Code 항목(좁은 화면은 위 한 줄)에 마우스를 올리면: 창마다 남은 양 · 초기화 시각(11-usage.js) -->
+  <div class="menu-pop" id="limits-pop" role="group" aria-label="Claude account usage limits">
+    <div id="limits-body"></div>
+    <div class="lp-foot"><span id="limits-asof"></span><button type="button" class="ghost" id="limits-setup">Setup…</button></div>
   </div>
   <div class="usage-line" id="usage-line" data-lp hidden></div>
   <div class="empty" id="empty" hidden><div class="empty-line"><span>No sessions running</span><button type="button" class="primary" data-new-session aria-label="New task — run an agent" title="New task — run an agent">+ New task</button></div></div>

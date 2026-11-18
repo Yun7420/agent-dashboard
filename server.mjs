@@ -8,7 +8,7 @@
 // 이 파일: 서버 켜기 · 요청 입구의 보안 검사(handle · authorized · 보안 헤더) · 토큰 · 경로 표(ROUTES) · 화면 파일 · 각 구역을 잇는 일.
 // 구역별 일은 lib/ 에: 상태 조립 state · 프로세스 procs · 2초 틱과 SSE live-feed · 명령 commands · 기록 · 검색 · 오늘 한 일 history-api ·
 // 사용 한도 · 기본 모델 usage-bridge · 알림 notify-api · 환경 점검 env · 폴더 열기 open-dir · 첨부 uploads · body · 복구 recent · restore ·
-// 한도 추이 limits · 정리 작업 housekeeping · 응답 모양 respond · 입력 검사 validate. 경로 처리 함수는 그 값을 가진 모듈에 있고, 서버는 표로 잇기만 한다.
+// 예전 한도 기록 정리 limits · 정리 작업 housekeeping · 응답 모양 respond · 입력 검사 validate. 경로 처리 함수는 그 값을 가진 모듈에 있고, 서버는 표로 잇기만 한다.
 // lib 모듈은 createXxx(deps) 로 필요한 것만 이름 붙여 받는다(바뀌는 값은 함수로 받아 늘 지금 값을 본다).
 
 import http from 'node:http';
@@ -32,7 +32,6 @@ import { DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs'
 import { loadToken } from './lib/token.mjs';
 import { createAuth, loginUrl, SESSION_MS } from './lib/auth.mjs';
 import { portInUseMessage } from './lib/launch.mjs';
-import { createRecorder, limitsRoute } from './lib/limits.mjs';
 import { createNotifyApi } from './lib/notify-api.mjs';
 import { createLiveFeed } from './lib/live-feed.mjs';
 import { startHousekeeping } from './lib/housekeeping.mjs';
@@ -100,9 +99,8 @@ const { checkEnv } = env;
 
 // ---------- macOS 알림 (브라우저 탭을 닫아도) — 설정 · 보내기 · 경로는 lib/notify-api.mjs ----------
 const notify = createNotifyApi({ demo: DEMO });
-// 계정 한도 추이: 머리 표시와 같은 값(usageState)이 바뀔 때만 ~/.agent-dashboard/limits/ 하루 파일에 한 줄(600). 데모는 읽지도 쓰지도 않는다
+// 예전 계정 한도 추이 기록 폴더 — 이제 쓰지 않고, 켤 때 정리(housekeeping)가 30일 지난 하루 파일을 지운다
 const LIMITS_DIR = path.join(DATA_DIR, 'limits');
-const limitsRecorder = DEMO ? null : createRecorder({ dir: LIMITS_DIR });
 
 // 꺼진 세션 다시 열기: 최근 7일 안에 떠 있던 Claude 세션(tmux 밖 포함)을 기억(recent.json, 600). 데모는 파일을 읽지도 쓰지도 않는다
 const recent = DEMO ? null : createRecent({ file: path.join(DATA_DIR, 'recent.json') });
@@ -111,15 +109,12 @@ const restoreLock = createLock(); // 재시동 배너 · 「종료된 세션」�
 const liveIdSet = () => (feed.latest() ? new Set(feed.latest().sessions.filter((s) => s.status !== 'ended').map((s) => s.id)) : null);
 
 // ---------- 2초 틱: 상태 → 바뀐 것만 SSE (lib/live-feed.mjs) ----------
-// 만든 직후 · 보내기 전에: 알림 · 한도 기록, 재시동 복구 — 재시동 전 목록 중 지금 없는 세션을 알려 주고, 떠 있는 tmux 세션 목록을 저장한다.
+// 만든 직후 · 보내기 전에: 알림, 재시동 복구 — 재시동 전 목록 중 지금 없는 세션을 알려 주고, 떠 있는 tmux 세션 목록을 저장한다.
 // 이 순서여야 첫 틱에 떠 있던 세션이 저장을 덮기 전에 재시동 전 목록을 떼어 둔다
 const feed = createLiveFeed({
   buildState,
   afterBuild(latest) {
     notify.tick(latest.sessions);
-    if (limitsRecorder) {
-      try { limitsRecorder.observe(latest.usage); } catch (e) { console.error('한도 기록 실패:', e.message); }
-    }
     if (!DEMO) {
       latest.restore = restoreCandidates(liveIdSet()).map((e) => ({ id: e.id, title: e.title, cwd: e.cwd }));
       saveSnapshot(latest.sessions);
@@ -209,7 +204,6 @@ const ROUTES = [
   { path: '/api/lang', handler: createLangRoute({ demo: DEMO }) }, // 브라우저 밖 문구(터미널 · 알림 · 상태줄)의 언어 — 화면 설정에서 고른 값(lib/lang-pref.mjs)
   { path: '/api/notify', handler: notify.route },
   { path: '/api/notify/test', method: 'POST', handler: notify.test },
-  { path: '/api/limits', handler: limitsRoute({ dir: LIMITS_DIR, demoLimits: DEMO ? demo.demoLimits : null }) },
   { path: '/api/recent', handler: async (req, res) => sendJson(res, 200, DEMO ? demo.demoRecent() : await recentInfo({ recent, liveIds: liveIdSet(), capture: tmux.capture })) },
   { path: '/api/perf', handler: feed.getPerf },
   { path: '/api/changes', handler: feed.getChanges }, // 고른 세션의 이번 턴 변경 본문(목록엔 표식만)
