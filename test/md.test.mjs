@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { loadFront } from './_helpers/vm.mjs';
 
 // 브라우저 파일이지만 화면(DOM)에 닿지 않는 순수 함수만 있어서 node:vm 으로 그대로 불러 시험한다
-const md = loadFront(['00-md.js']).run('md');
+const { run } = loadFront(['00-md.js']);
+const md = run('md'), BTN = run('COPY_BTN()'); // 코드 블록 뒤 복사 단추(모양은 copy-code.test.mjs)
+const box = (code) => `<div class="code-box"><pre><code>${code}</code></pre>${BTN}</div>`;
 
 test('기존 꾸밈: 굵게 · 인라인 코드 · 제목', () => {
   assert.equal(md('**굵게** 와 `npm test`'), '<b>굵게</b> 와 <code>npm test</code>');
@@ -17,12 +19,12 @@ test('표는 그대로 바뀌고 표 뒤 줄바꿈은 먹는다', () => {
 
 test('코드 블록: <pre><code> 로, 안쪽 마크다운은 바꾸지 않는다', () => {
   const out = md('설명\n```js\n**굵게 아님**\n# 제목 아님\n- 목록 아님\n> 인용 아님\n| a | b |\n|---|---|\n```\n끝');
-  assert.equal(out, '설명\n<pre><code>**굵게 아님**\n# 제목 아님\n- 목록 아님\n&gt; 인용 아님\n| a | b |\n|---|---|</code></pre>끝');
+  assert.equal(out, `설명\n${box('**굵게 아님**\n# 제목 아님\n- 목록 아님\n&gt; 인용 아님\n| a | b |\n|---|---|')}끝`);
 });
 
 test('닫히지 않은 코드 블록은 끝까지 코드로 본다', () => {
-  assert.equal(md('```\nconst a = 1;\n**x**'), '<pre><code>const a = 1;\n**x**</code></pre>');
-  assert.equal(md('```'), '<pre><code></code></pre>');
+  assert.equal(md('```\nconst a = 1;\n**x**'), box('const a = 1;\n**x**'));
+  assert.equal(md('```'), box(''));
 });
 
 test('<script> 는 어디서든 글자로', () => {

@@ -11,6 +11,10 @@ const ITEM = /^(\s*)([-*]|\d{1,9}[.)])\s+(.*)$/;
 const cells = (line) => line.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
 const indentOf = (line) => line.match(/^\s*/)[0].replace(/\t/g, '    ').length;
 
+// 코드 블록 오른쪽 위 복사 단추. 누르면 06-history.js 의 위임 하나(copyCode)가 바로 앞 <pre> 의 글자(원문)를 복사한다
+const COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+const COPY_BTN = () => `<button type="button" class="copy-code" aria-label="${t('Copy code')}" title="${t('Copy code')}">${COPY_ICON}</button>`;
+
 // 한 줄 안의 꾸밈. 코드 블록 안에는 쓰지 않는다
 function mdInline(line) {
   return line
@@ -47,7 +51,7 @@ function md(s) {
     if (FENCE.test(line)) {
       let j = i + 1;
       while (j < lines.length && !/^\s*```\s*$/.test(lines[j])) j++;
-      out.push({ html: `<pre><code>${lines.slice(i + 1, j).join('\n')}</code></pre>`, block: true });
+      out.push({ html: `<div class="code-box"><pre><code>${lines.slice(i + 1, j).join('\n')}</code></pre>${COPY_BTN()}</div>`, block: true });
       i = j;
       continue;
     }

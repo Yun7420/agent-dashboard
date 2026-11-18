@@ -48,7 +48,20 @@ function askBubble(text, from) {
   const long = askLong(text);
   return `<div class="ask">${askWho(from)}<div class="ask-p md${long ? ' fold closed' : ''}">${md(text)}</div>${long ? `<button class="more ask-more" type="button">${t('More')} ▾</button>` : ''}</div>`;
 }
+// 답변 코드 블록 복사(00-md.js 의 단추): 블록마다 리스너를 달지 않고 위임 하나로. 글자는 <pre> 의 textContent = ``` · 언어 이름 없는 원문
+// 1.5초 동안 ✓ 「복사됨」, 권한 등으로 실패하면 「복사하지 못했어요」. <button> 이라 Enter · Space 도 같은 click
+async function copyCode(btn) {
+  const text = btn.previousElementSibling?.textContent ?? '';
+  let ok = true;
+  try { await navigator.clipboard.writeText(text); } catch { ok = false; }
+  btn.classList.add('done');
+  btn.innerHTML = ok ? `✓ ${t('Copied')}` : t('Could not copy');
+  setTimeout(() => { btn.classList.remove('done'); btn.innerHTML = COPY_ICON; }, 1500);
+  return ok;
+}
 document.addEventListener('click', (e) => {
+  const c = e.target.closest?.('.copy-code');
+  if (c) return void copyCode(c);
   const b = e.target.closest?.('.ask-more');
   if (!b) return;
   b.textContent = b.previousElementSibling.classList.toggle('closed') ? `${t('More')} ▾` : `${t('Fold')} ▴`;

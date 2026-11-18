@@ -156,6 +156,12 @@
 .md blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--border-strong); color: var(--dim); }
 .md pre { margin: 0; max-width: 100%; overflow-x: auto; padding: 9px 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font: 12px/1.55 var(--mono); color: var(--code-text); white-space: pre; }
 .md pre code { background: none; padding: 0; border-radius: 0; color: inherit; font: inherit; }
+/* 코드 블록 복사 단추: 넓은 화면은 올리거나 초점이 있을 때만(터치 · 좁은 화면은 12-narrow.css 에서 늘 보임) */
+.code-box { position: relative; }
+.code-box pre { padding-right: 40px; } /* 늘 보이는 화면에서 단추가 첫 줄 끝 글자를 가리지 않게 */
+.copy-code { position: absolute; top: 5px; right: 5px; display: inline-flex; align-items: center; gap: 4px; height: 26px; min-width: 26px; padding: 0 6px; justify-content: center; border-radius: 6px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--dim); font: 11px var(--sans); white-space: nowrap; opacity: 0; transition: opacity .15s; }
+.code-box:hover .copy-code, .copy-code:focus-visible, .copy-code.done { opacity: 1; }
+.copy-code:hover { color: var(--text); }
 
 #busy { display: none !important; align-items: center; gap: 10px; margin: 0 14px 10px; padding: 9px 12px; border-radius: 12px; background: color-mix(in srgb, var(--working) 7%, transparent); border: 1px solid color-mix(in srgb, var(--working) 25%, transparent); color: var(--working-text); font-size: 13px; }
 #busy[hidden] { display: none; }

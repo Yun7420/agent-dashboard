@@ -73,3 +73,5 @@
 }
 @container (max-width: 420px) { #drawer .head-top h2 { margin-inline: 0; } #drawer .head-top .tab { padding: 0 8px; } } /* 탭은 글자 그대로, 여백만 */
 @container (max-width: 385px) { .ctx-line #cl-pct { display: none; } }
+/* 터치 화면 · 좁은 화면은 마우스를 올릴 수 없으니 코드 복사 단추를 늘 보인다 */
+@media (hover: none), (max-width: 860px) { .copy-code { opacity: 1; } }
