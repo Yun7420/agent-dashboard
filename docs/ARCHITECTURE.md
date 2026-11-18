@@ -79,7 +79,7 @@
 | `server.mjs` | 서버 켜기 · 요청 입구의 보안 검사(`handle` · `authorized` · 보안 헤더) · 토큰 · 경로 표(`ROUTES`) · 화면 파일(`serveStatic`) · 틱 뒤에 할 일(`afterBuild`: 알림 · 한도 기록 · 복구 목록) · 각 구역을 잇는 일. 바뀌는 값을 가진 구역의 처리 함수는 그 모듈에, 남은 처리 함수(환경 · 한도 · 복구 · 창 화면 · 업로드 · 명령)는 여기 |
 | `lib/live-feed.mjs` | 2초 틱과 SSE(`createLiveFeed`): 마지막 상태(`latest`) · 열린 탭을 들고, 바뀐 세션만 보냄(첫 연결 · 다시 보내기는 전체). 경로 `/events` · `/api/perf` |
 | `adapters/index.mjs` | 쓸 어댑터 목록(`adapters`). 새 도구는 여기에 한 줄 |
-| `adapters/claude.mjs` | Claude Code 어댑터의 입구: 세션 찾기(`scan`) · 요약(`describe`) · 기록 탭(`history`) · 대화 창 추이(`contextTrend`) · 세션 간 메시지(`peers`) · 서브에이전트. 서버 · lib 는 이 파일만 불러요 |
+| `adapters/claude.mjs` | Claude Code 어댑터의 입구: 세션 찾기(`scan`) · 요약(`describe`) · 기록 탭(`history`) · 마지막 자동 요약 시각(`lastCompact`) · 세션 간 메시지(`peers`) · 서브에이전트. 서버 · lib 는 이 파일만 불러요 |
 | `adapters/claude/prompts.mjs` | 줄 하나가 새 턴의 시작인가: 사람이 친 요청(`promptText`) · 다른 세션 메시지(`turnStart`) — 요약 · 기록 탭 · 승인 카드 · 오늘 한 일이 같이 써요 |
 | `adapters/claude/changes.mjs` | 이번 턴에 고친 파일 · 실행한 명령(`collectChange` · `attachResult`) · 결과 없는 도구 호출(`trackPending` · `pendingToolOf`) |
 | `adapters/claude/live.mjs` | 떠 있는 세션 공식 목록(`createLiveSessions` — `~/.claude/sessions/<PID>.json`, 옛 버전은 `claude agents --json`) · 모르는 상태 값(`unknownStatuses`) |
@@ -100,7 +100,7 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `lib/history-api.mjs` | 세션 열쇠로 어댑터 · 기록 파일을 찾아 기록 탭(`promptHistory`) · 대화 창 추이(`contextTrend`) · 전체 기록 검색(`searchHistory` — 한 번에 하나, 새 검색이 오면 하던 것은 멈춤(409) · 검색어 200자 상한, 점검 G1) · 오늘 한 일(`daySummary`). 크기가 같으면 다시 읽지 않는 캐시. 경로 처리 함수 `getHistory` · `getTrend` · `getDay` · `getSearch` |
+| `lib/history-api.mjs` | 세션 열쇠로 어댑터 · 기록 파일을 찾아 기록 탭(`promptHistory`) · 마지막 자동 요약 시각(`lastCompact` — 패널 머리 대화 창 말풍선) · 전체 기록 검색(`searchHistory` — 한 번에 하나, 새 검색이 오면 하던 것은 멈춤(409) · 검색어 200자 상한, 점검 G1) · 오늘 한 일(`daySummary`). 크기가 같으면 다시 읽지 않는 캐시. 경로 처리 함수 `getHistory` · `getTrend` · `getDay` · `getSearch` |
 | `lib/usage-bridge.mjs` | 상태줄 다리 켜기 · 끄기 · 켜질 때 맞추기(`enableUsage` · `sync`) · 상태줄 파일 읽기(`readStatusFiles` · `usageState`) · `/model` 뒤 기본 모델 되돌리기(`restoreDefaultModel`) |
 | `lib/dialog.mjs` | 화면 맨 아래를 보고 선택창인지(`hasDialog` · `detectDialog`), 선택지와 커서 위치(`parseOptions`), 승인 단추로 쓸 커서 묶음(`dialogOptions` · `cursorRun` — 화면 `05-approval.js:approvalChoices` 와 같은 규칙). 입력칸(가로줄 + `> `)보다 위는 답변이라 보지 않고, 줄마다 앞 500자만 본다 |
 | `lib/approval.mjs` | 승인 창 맨 위 「허락할 내용」 카드: 종류 · 내용 · 위험 이유(`summarizeTool` · `fileRisks`). 위험은 자르기 전 전체 명령으로 판정한 값(기록 · 화면에서 읽을 때 붙임)을 쓴다 |
@@ -155,7 +155,7 @@
 | `lib/notify.mjs` | 무엇을 언제 알릴지(`createNotifier`) · macOS 알림 인자(`osascriptArgs`) · 설정 파일 |
 | `lib/notify-api.mjs` | 알림 설정 값을 들고(`createNotifyApi`) 틱마다 알리기(`tick`) · 경로 `/api/notify` · `/api/notify/test` |
 | `lib/housekeeping.mjs` | 켤 때 · 6시간마다 정리(`startHousekeeping`): 권한 600 · 14일 지난 첨부 · 30일 지난 한도 기록 · 상태줄 파일 |
-| `lib/limits.mjs` | 계정 한도 추이 기록(`createRecorder`) · 읽기(`readRange`) |
+| `lib/limits.mjs` | 예전 계정 한도 추이 하루 파일 정리만(`pruneLimits`, 30일 — 추이 기록 · 그래프는 간추리기 2에서 없앰) |
 
 ### lib — 작은 도구
 
@@ -178,30 +178,31 @@
 
 ### public — 화면
 
-`index.html` 이 `js/` 파일을 **번호 순서대로** 불러요. 모두 같은 전역(한 페이지 안에서 함께 쓰는 변수 공간)을 써서, **뒤 파일이 앞 파일의 함수를 불러요.** 예를 들어 `17-live.js` 의 `connect` 는 `02-activity.js` 의 `logEvents`, `13-controls.js` 의 `render` 를 불러요. 여러 파일이 같이 쓰는 상태(`drawerTab` · `canSend` · `envData` …)와 도우미(`fmtTok` · `modelName` …)는 맨 앞 `01-core.js` 에 있어요.
+`index.html` 이 `js/` 파일을 **번호 순서대로** 불러요. 모두 같은 전역(한 페이지 안에서 함께 쓰는 변수 공간)을 써서, **뒤 파일이 앞 파일의 함수를 불러요.** 예를 들어 `17-live.js` 의 `connect` 는 `15-notify.js` 의 `notifyChanges`, `13-controls.js` 의 `render` 를 불러요. 여러 파일이 같이 쓰는 상태(`drawerTab` · `canSend` · `envData` …)와 도우미(`fmtTok` · `modelName` …)는 맨 앞 `01-core.js` 에 있어요.
 
 | 파일 | 하는 일 |
 |---|---|
 | `00-dict-page.js` · `00-dict-ui.js` · `00-dict-ui2.js` | 한국어 사전(영어 원문 → 한국어): index.html 고정 글자 · 화면 js 글자 |
 | `00-i18n.js` | 화면 언어(`LANG`: agent-deck 의 lang → 브라우저 언어 ko 면 한국어, 그 밖 영어) · `t('원문', {값})` · index.html 글자 바꿔 끼우기 · `<html lang>` |
 | `00-md.js` | 답변 마크다운 일부만 그리기(`md`) · 글자 안전하게 바꾸기(`esc`) |
-| `01-core.js` | 공통: 서버 요청 한 길(`apiFetch` · `api` · `apiJson`, 요청 머리글 `REQ_HEADER`, 403 이면 `loginNeeded` — 연동 카드 또는 위쪽 고정 안내) · 바뀐 곳만 그리기(`setHtml`) · 토스트(`toast`) · 설정 저장(`savePref`) · 오래된 설정 정리(`prunePrefs`) · 여러 파일이 같이 쓰는 화면 상태(`view` · `drawerTab` · `openFiles` · `sentAt` · `canSend` · `envData` …) · 도우미(`fmtTok` · `ctxLevel` · `modelName` · `initials`) |
-| `02-activity.js` | 아래 활동 로그(`logEvents` · `logLinks`) |
-| `03-graph.js` | 가운데 조직도(`renderGraph` · `layout`) |
+| `01-core.js` | 공통: 서버 요청 한 길(`apiFetch` · `api` · `apiJson`, 요청 머리글 `REQ_HEADER`, 403 이면 `loginNeeded` — 연동 카드 또는 위쪽 고정 안내, SSE 오류 판단 `sseOnError` · `probeVerdict`) · 바뀐 곳만 그리기(`setHtml`) · 토스트(`toast`) · 설정 저장(`savePref`) · 오래된 설정 정리(`prunePrefs`) · 대화상자(`openModal`) · 빈 상태 줄(`emptyLine` · `newSessionBtn`) · 목록 순서 · 보이는 세션(`ordered` · `visible`) · 여러 파일이 같이 쓰는 화면 상태(`view` · `drawerTab` · `openFiles` · `sentAt` · `canSend` · `envData` …) · 도우미(`fmtTok` · `ctxLevel` · `modelName` · `initials`) |
+| `02-kinds.js` | 에이전트 종류 표식(머리글자 + `--kind-<id>` 색 — `kmark` · `kmarkSvg`) · 지금 떠 있는 종류만(`runningKinds`, 범례가 씀) |
+| `02-water.js` | 조직도 세션 노드 물 채우기(`waterSvg`: 대화 창 % 만큼 차오름 · 60 · 85% 색 · 80% 눈금, 값이 바뀔 때만 0.5초) · 물낯 선을 이름 · 상태 글자 자리에서 끊기(`textHoles`) |
+| `03-graph.js` | 가운데 조직도(`buildTree` · `layout` · `renderGraph`) · 세션 사이 화살표(`drawLinks`) · 맞춤 · 이동 · 확대(`autoFit` · `applyView` · 보이는 칸 `visibleBox` · 목록 판 폭 `asideW`) |
 | `04-list.js` | 왼쪽 세션 목록(`renderList`) · 「N초 전」만 따로 갱신(`updateAgo`) |
 | `05-approval.js` | 승인 창: 「허락할 내용」 카드(`renderApproveCard`) · 터미널 화면과 선택지 단추(`renderApproval`) · 선택지 읽기(`approvalChoices`, 순수 함수) |
-| `06-history.js` | 오른쪽 서랍: 세션 고르기(`select`) · 기록 읽기(`loadHistory`) · 대화 창 추이(`renderTrend`) |
-| `07-center.js` | 가운데 칸: 패널 폭(`--dw`) · 확대 단추 · 마우스 올린 노드 강조 · 상태가 바뀐 노드 빛남. 대화 창 추이는 패널 머리 아래 띠(`06-history.js` 의 `renderTrend`) |
+| `06-history.js` | 오른쪽 패널: 세션 고르기(`select`) · 기록 읽기(`loadHistory`) · 패널 머리 「대화 창 N%」 + 막대(`renderCtxLine`) · 요청 말풍선(`askBubble`) · 코드 복사(`copyCode`) · 입력 칸 안내(`renderComposer`) |
+| `07-center.js` | 가운데 칸(조직도 = 머리 아래 전체 바탕, 목록 · 패널은 뜬 판): 패널 폭 `--dw`(`dwSync`) · 가려진 고른 노드만 보이는 칸으로(`revealSel` · `glideTo`) · + − ⌖(`zoomBy` · `recenter`) · 마우스 올린 노드 강조 · 바탕 스포트라이트(`.spot`, `spotOff`) · 상태가 바뀐 노드 빛남 · 메시지 점(`msgDots` · `msgDot`) · 노드 등장 · 퇴장(`nodeMoves`) |
 | `08-now.js` | 지금 탭(`renderNow`) · 탭 바꾸기(`setTab`) · 바꾼 파일 diff · 실행한 명령(`renderChanges`) · 진행 표시(`renderBusy`) |
 | `09-attach.js` | 입력 칸: 세션별 임시 글 · 첨부(`useDraft` · `pruneDrafts`) · 첨부 · 보내기(`addFiles` · `sendMsg`) · 🎤 음성 입력 |
 | `10-env.js` | 환경 점검 화면(`renderEnv`) · 없는 도구면 단추 끄기(`applyTools`) |
-| `11-usage.js` | 머리의 계정 한도(`renderUsage`) · 한도 추이 그래프(`renderLimits`) |
-| `12-panel.js` | 패널 머리 메뉴 · 폭 · 폴더 열기 메뉴(`openDirMenu`) |
-| `13-controls.js` | 전체 다시 그리기(`render`) |
-| `14-collapse.js` | 활동 로그 · 왼쪽 목록 접기(`applyFold` · `applyAsideFold`) |
+| `11-usage.js` | 계정 사용 한도: 범례 Claude Code 항목 안 「5시간 68% 남음 · 주간 79% 남음」(`usageHtml`, 짧은 꼴 같이) · 남은 양 팝업(`limitsHtml` · `showLimits`) · 사용 한도 보기 스위치(`setUsage` · `toggleUsage`) |
+| `12-panel.js` | 패널 머리 ⋯ 메뉴 · 폭(`applyDrawerWidth`) · 패널 닫기(`closeDrawer`) · 기록 탭(`renderHistory`) · 폴더 열기 메뉴(`openDirMenu`) |
+| `13-controls.js` | 전체 다시 그리기(`render`) · 조직도 위 세 무리(왼쪽 위 상태 칩 · 왼쪽 아래 범례 `renderKinds` · 오른쪽 아래 확대 단추)가 보이는 칸에 맞게 짧은 꼴(`floatSync` · `fitShort`) · 화면 색(`applyTheme`) · 목록 탭(`setListTab`) |
+| `14-collapse.js` | 가장자리 접기: 왼쪽 목록 접기 탭(`applyAsideFold`) · 오른쪽 패널 폭 손잡이 끌기(`dragVerdict`) |
 | `15-notify.js` | 알림 판단 · 설정(`notifyChanges` · `saveNotifyCfg`) |
 | `16-restore.js` | 재시동 배너(`renderRestore`) · 종료된 세션 카드의 「다시 열기」(`checkLaunched`) |
-| `17-live.js` | 서버와 실시간 연결(`connect`) |
+| `17-live.js` | 서버와 실시간 연결(`connect`) · 바뀐 세션만 온 조각 합치기(`applyPatch`) |
 | `18-search.js` | 맨 위 기록 검색칸(combobox · 칸 아래 결과 목록 — `runSearch` · `gsPick`) |
 | `19-day.js` | 오늘 한 일(`loadDay` · `dayMarkdown`) |
 | `20-keys.js` | 키보드 단축키(`approveKey` · `armTwice` · `nextKey`) |
@@ -211,19 +212,19 @@
 | 파일 | 모양 |
 |---|---|
 | `00-base.css` | 색 · 글꼴 변수(`:root`) · 화면 틀(body 격자) · 단추 · 입력 칸 같은 공통 컨트롤 |
-| `01-header.css` | 머리 · 사용 한도 표시 · 머리 단추가 여는 팝업(한도 추이 · 알림 설정) |
+| `01-header.css` | 머리 · 머리 단추가 여는 팝업(알림 설정) · 사용 한도 팝업(`#limits-pop`, 범례 위로 열림) |
 | `02-list.css` | 왼쪽 목록 카드 · 접힌 띠 · 재시동 복구 안내 |
-| `03-graph.css` | 조직도 노드 · 선 · 흐르는 점선 · 세션 사이 화살표 · 폴더 열기 메뉴 |
+| `03-graph.css` | 조직도 바탕(점 격자 · 멈춘 오로라 · 마우스 둘레 `.spot`) · 노드 · 선 · 물 채우기 · 세션 사이 화살표 · 메시지 점 · 폴더 열기 메뉴 |
 | `04-drawer.css` | 오른쪽 패널 틀 · 탭 · 지금 탭 · 기록 탭 · 입력 |
 | `05-approval.css` | 승인 창 · 허락할 내용 카드 |
 | `06-dialog.css` | 대화상자 · 토스트 · 로그인 필요 안내 |
-| `07-onboarding.css` · `08-log.css` · `09-search.css` · `10-day.css` | 첫 실행 안내 · 활동 로그 · 전체 기록 검색 · 오늘 한 일 |
-| `11-center.css` | 가운데 탭 · 대화 창 큰 그래프 |
+| `07-onboarding.css` · `09-search.css` · `10-day.css` | 첫 실행 안내 · 맨 위 기록 검색 · 오늘 한 일 (`08-log.css` 는 활동 로그와 함께 없앰 — 번호는 비워 둠) |
+| `11-center.css` | 조직도 위 세 무리(상태 칩 · 범례 + 한도 · 확대 단추, 반투명 면 `--float-bg` · 짧은 꼴 `.short`) · 노드 강조 · 빛남 · 등장 · 퇴장 기준점 |
 | `12-narrow.css` | 좁은 창 · 휴대폰 · 동작 줄이기(`@media`) — 모든 구역의 덮어쓰기 |
 
 ### test
 
-58개 파일, 338개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+86개 파일, 457개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
@@ -246,8 +247,8 @@
 | `lib/peer-links.mjs:createPeerLinks` | `adapters` | `buildLinks` |
 | `lib/commands.mjs:createCommands` | `tmux` · `findSession(key)` · `hasState()` · `uploadDir` · `recent` · `restoreLock` · `openDir` · `onChanged()` | 명령 하나를 처리하는 함수(서버에선 `handleCommand`) |
 | `lib/procs.mjs:createProcesses` | `adapters` · `tmux` | `processes(sig)` · `panes(sig)` · `invalidate()` |
-| `lib/history-api.mjs:createHistoryApi` | `adapters` · `sessions()` · `projectName(cwd, s)` | `promptHistory` · `contextTrend` · `searchHistory` · `daySummary` · `keepCaches` + 경로 처리 함수 |
-| `lib/live-feed.mjs:createLiveFeed` | `buildState(hours)` · `afterBuild(state)` · `scanMs` | `start` · `stop` · `latest()` · `invalidate()` + 경로 처리 함수 `openEvents` · `getPerf` · `windowRoute` |
+| `lib/history-api.mjs:createHistoryApi` | `adapters` · `sessions()` · `projectName(cwd, s)` | `promptHistory` · `lastCompact` · `searchHistory` · `daySummary` · `keepCaches` + 경로 처리 함수 |
+| `lib/live-feed.mjs:createLiveFeed` | `buildState()` · `afterBuild(state)` · `scanMs` | `start` · `stop` · `latest()` · `invalidate()` + 경로 처리 함수 `openEvents` · `getPerf` · `getChanges` |
 | `lib/notify-api.mjs:createNotifyApi` | `demo` · `file` (시험: `platform` · `run`) | `tick(sessions)` · `route` · `test` |
 | `lib/runner.mjs:createRunner` | `command` · `cwd` · `logFile` · `restartMs` · `burst` · `logMax` | `stop(signal)` · `done` · `pid` |
 
@@ -264,10 +265,10 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
      ├─ orphanSessions                기록이 아직 없는 막 띄운 세션
      ├─ dialogPass                    tmux 화면을 보고 선택창이면 「승인 필요」(lib/dialog-watch.mjs)
      ├─ attachPendingTool             승인 카드 내용(lib/dialog-watch.mjs → lib/approval.mjs)
-     ├─ buildLinks                    세션 사이 메시지(보라 화살표, lib/peer-links.mjs)
+     ├─ buildLinks                    세션 사이 메시지(파란 화살표, lib/peer-links.mjs)
      └─ mergeStatusline               상태줄 다리 값(정확한 대화 창 · 한도)
  ├─ latest = 결과                    ← 명령은 이 「마지막 상태」(feed.latest())를 기준으로 대상을 찾아요
- ├─ afterBuild(server.mjs): notify.tick · limitsRecorder.observe · saveSnapshot · recent.observe
+ ├─ afterBuild(server.mjs): notify.tick · saveSnapshot · recent.observe(데모가 아닐 때)
  └─ JSON 이 지난번과 다르면 열린 SSE 연결(clients) 모두에 보냄
 ```
 
@@ -278,11 +279,10 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 ### 화면 쪽 흐름
 
 ```
-17-live.js:connect  — EventSource('/events?token=…')
- ├─ onmessage(새 상태)
+17-live.js:connect  — EventSource('/events?lang=ko|en')  (로그인 쿠키가 같이 감 · 주소에 비밀 없음)
+ ├─ onmessage(새 상태 또는 바뀐 세션만 온 조각)
+ │   ├─ 17-live.js:applyPatch          (조각이면 지난 상태에 합침 — 못 합치면 다시 연결)
  │   ├─ 15-notify.js:notifyChanges    (알림 판단 · 탭 제목 숫자)
- │   ├─ 02-activity.js:logEvents       (활동 로그 — 상태 변화)
- │   ├─ 02-activity.js:logLinks        (활동 로그 — 세션 사이 메시지)
  │   ├─ state = 새 상태
  │   ├─ 09-attach.js:pruneDrafts       (끝난 세션의 임시 글 · 첨부 정리)
  │   ├─ 01-core.js:prunePrefs          (오래 못 본 세션 열쇠 정리)
@@ -290,6 +290,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
  │   ├─ 10-env.js:finishBoot           (처음 한 번: 연동 중 화면 닫기 · 환경 점검)
  │   ├─ 「갱신 시각」 글자
  │   ├─ 13-controls.js:render          (목록 · 조직도 · 패널 다시 그리기 — 바뀐 곳만)
+ │   │    └─ 조직도가 다시 그려지면 07-center.js 의 MutationObserver: 상태 바뀐 노드 빛남 · msgDots(메시지 점) · nodeMoves(등장 · 퇴장)
  │   └─ 06-history.js:select           (막 띄운 세션이 나타났거나, 고른 세션에 새 요청이 오면)
  └─ onerror                            (서버가 꺼짐 → 「재연결 중…」, 멈췄으면 /api/perf 로 403 인지 확인)
 ```
@@ -346,6 +347,8 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 | CSRF 머리글 | `server.mjs:authorized` · `01-core.js:REQ_HEADER` | `/api/*` 는 `X-Dashboard-Request: 1` 이 있어야 해요. 다른 사이트의 form · img · script 요청은 이 머리글을 붙일 수 없어요(붙이려면 CORS 사전 확인이 필요한데 허락하지 않음). SSE(`/events`)는 머리글을 못 붙여 쿠키 · 출처만 |
 | 로그인 링크 | `lib/auth.mjs:loginUrl` · `loginRoute`(`/login`) · `lib/login-open.mjs`(`agent-dashboard open`) | 화면 파일에는 토큰이 없어요 — 예전엔 `index.html` 에 넣어서 같은 Mac 의 다른 계정 · 프로세스가 `curl` 한 번으로 얻었어요(점검 C1). 토큰 파일(600)을 읽을 수 있는 이 계정만 링크(`/login?t=<만료>.<서명>`, 10분)를 만들고, 들어오면 쿠키를 주고 `/` 로 303 — 주소창 · 기록엔 `/` 만. `open` 은 넘기기 전에 127.0.0.1 · [::1] 의 서버에 무작위 값을 보내 토큰 서명으로 답하는지(`/hello`) 확인해, 서버가 꺼진 사이 포트를 잡은 다른 프로그램에게 링크를 주지 않아요(C3). 켤 때 로그에도 10분짜리 링크를 남겨요(지나면 쓸모없음) |
 | 토큰 파일 | `lib/token.mjs:loadToken` | `~/.agent-dashboard/token`(600). 링크면 거절, 새로 만들 땐 `link` 로 붙여 두 서버가 동시에 켜도 값이 하나 |
+| 변경 본문 | `lib/live-feed.mjs:getChanges`(`/api/changes?key=`) | 고른 세션의 이번 턴 바꾼 파일 · 명령 본문은 SSE 로 다 보내지 않고 고른 탭만 따로 받아요(점검 P2). 다른 `/api/*` 와 같은 쿠키 · 출처 · CSRF 머리글 검사를 거치고, 마지막 상태(`latest`)에 있는 세션 키만 답해요(없으면 빈 목록) |
+| 화면 밖 언어 설정 | `lib/lang-pref.mjs:createLangRoute`(`/api/lang`) | POST 는 `ko` · `en` 만 받아(그 밖 400) `~/.agent-dashboard/settings.json`(600)의 `lang` 만 원자적으로 바꾸고 다른 키는 그대로. 데모는 파일에 쓰지 않음 |
 | 로그인 · 쿠키의 남은 위험 | — | ① 쿠키는 포트를 가리지 않아, 로그인한 브라우저로 같은 Mac 의 다른 포트 페이지(`localhost:3000`)를 열면 그 페이지의 서버가 쿠키를 받아요. 그 서버(다른 프로그램)가 쿠키를 우리 서버에 그대로 보내면 30일 동안 통해요 — 브라우저 요청은 출처 검사로 막지만, 서버끼리 보내는 건 못 막아요. 이름 · 서명에 포트를 넣어 다른 대시보드(데모 4646)와는 섞이지 않고, 쿠키 값으로 토큰을 알아낼 수는 없어요. 막으려면 토큰 파일을 지우고 다시 켜기(모든 로그인 끊김). ② localhost 권한이 있는 브라우저 확장은 화면을 조작할 수 있어요(HttpOnly 라 쿠키 값은 못 읽음). ③ 이 계정과 같은 사용자로 도는 프로그램은 원래 토큰 파일을 읽을 수 있어요 |
 | 화면 파일 경로 | `server.mjs:serveStatic` + `lib/paths.mjs:isInside` | `public/` 안의 일반 파일만. 폴더를 열다 서버가 죽던 경로도 막음 |
 | 첨부 경로 | `lib/commands.mjs` 의 `send` → `lib/paths.mjs:allInside` | 첨부는 uploads 폴더 안만. `uploads-x` 같은 옆 폴더 · 없는 파일 · 링크를 풀면 밖인 파일도 거절(`isInsideReal`) |
@@ -355,6 +358,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 | 본문 상한 | `lib/body.mjs:readBody` · `saveUpload` | 큰 요청은 413 한 번, 그 뒤 본문은 쌓지 않음. 끊기면 바로 정리(`.part` 안 남김) |
 | 셸을 거치지 않기 | `lib/tmux.mjs`(`execFile` · `spawn` 인자 배열) · `lib/spawn.mjs:newSessionArgs` | 글자가 명령으로 해석되지 않게. 첫 프롬프트는 인자가 아니라 입력칸에 붙여 넣어 `ps` 에 안 보이고 `--permission-mode …` 같은 글도 옵션이 아님 |
 | 붙여넣기 버퍼 | `lib/tmux.mjs:sendText` | 보낼 때마다 새 이름(`agent-deck-<무작위>`)으로 넣고 붙이면서 지움(`-d`), 붙이기가 실패해도 지움. 두 세션에 거의 동시에 보내도 글이 섞이지 않고 tmux 에 남지 않게 |
+| 슬래시 명령 한 줄 | `lib/tmux.mjs:sendText` · `isSlashLine` | `/compact` 같은 한 줄은 붙여넣기 대신 `send-keys -l -t <창> -- <글>` 로 쳐 넣고 Enter(붙여 넣은 글은 Claude Code 가 명령으로 안 봐서). `-l` 이라 「Enter」 · 「C-c」 같은 글이 키 이름으로 읽히지 않고, `--` 라 글이 옵션으로 읽히지 않아요. 여러 줄 · 첨부가 붙은 글은 붙여넣기 그대로(`test/tmux.test.mjs`) |
 | 상태줄 명령 | `lib/bridge.mjs:bridgeCommand` | 경로에 따옴표 · `$` · `` ` `` 등이 있으면 켜지 않음(설정 파일 속 명령에 끼어들지 못하게) |
 | 파일 권한 | `lib/perms.mjs:tightenTree` · `lib/runner.mjs` 의 `openLog` · `lib/body.mjs:saveUpload` | 폴더 700, 파일 600. 예전에 넓게 만든 폴더 · 하위 폴더(uploads/<날짜> · status · limits · bin)와 파일도 켤 때 좁힘(넓히지는 않음 — mkdir 의 mode 는 이미 있던 폴더엔 닿지 않아서). 링크는 따라가지 않음 |
 | 로그 | `lib/respond.mjs:logPath` · `lib/runner.mjs`(`LOG_MAX`) | 요청 오류 로그에는 경로만(`?token=` · `?q=` 를 남기지 않음). server.log 는 5MB 를 넘으면 `.1` 로 한 번 돌려 디스크를 채우지 않음(600 그대로) |
@@ -483,7 +487,7 @@ GitHub Actions(`.github/workflows/test.yml`)가 push · PR 마다 Ubuntu · macO
 | 파일 | 부르는 이름 → 정의된 파일 | 되돌아오는 길(고리) |
 |---|---|---|
 | `04-list.js` | `select` → 06 | 06 이 04 `renderList` |
-| `06-history.js` | `setTab` · `renderNow` · `renderBusy` → 08, `useDraft` · `updateSendState` → 09, `renderHistory` → 12 | 08 이 06 `renderTrend`, 09 가 08 `renderBusy`, 12 가 06 `select` |
+| `06-history.js` | `setTab` · `renderNow` · `renderBusy` → 08, `useDraft` · `updateSendState` → 09, `renderHistory` → 12 | 08 이 06 `renderCtxLine`, 09 가 08 `renderBusy`, 12 가 06 `select` |
 | `08-now.js` | `renderHistory` → 12 | 12 → 06 → 08 |
 
 - 이 목록은 `test/conventions.test.mjs` 가 지켜요(검사기 `test/_helpers/front-deps.mjs`). 새로 생기면 실패하고, 고친 곳은 허용 목록에서 지워야 해서 줄어들기만 해요. let · const 는 허용 목록 없이 0 이어야 해요.
