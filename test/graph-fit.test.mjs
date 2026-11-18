@@ -76,3 +76,16 @@ test('서브에이전트: 진행 중 전부 + 끝난 건 「완료 N개」 하�
   run("pref.expandSubs.k = true");
   assert.equal(run(`subNodes(${JSON.stringify(s)})`).length, 6);
 });
+
+// G2 · G3: 보이는 칸에서 떠 있는 무리의 위 · 아래 띠(상태 칩 / 범례 · + − ⌖ 중 높은 쪽, 가장자리 16 + 틈 8)를 뺀다 — 맞춤 · ⌖ · 확대 가운데가 같은 칸을 본다
+test('visibleBox: 위 띠 = 상태 칩, 아래 띠 = 범례와 + − ⌖ 중 높은 쪽 · 맞춤은 위 띠 아래에서 시작', () => {
+  const el = (box, extra = {}) => ({ getBoundingClientRect: () => box, classList: { contains: () => false }, addEventListener() {}, ...extra });
+  const els = { '#graph': el({ width: 1440, height: 800 }), '#drawer': el({ width: 0 }), '.status-chips': el({}, { offsetHeight: 36 }), '.kinds': el({}, { offsetHeight: 36 }), '.zoom-btns': el({}, { offsetHeight: 100, offsetWidth: 36 }) };
+  const { run } = loadFront(['00-md.js', '01-core.js', '03-graph.js'], {
+    window: { addEventListener() {} }, innerWidth: 1440, getComputedStyle: () => ({ getPropertyValue: (k) => (k === '--aw' ? '296px' : '') }),
+    document: { querySelector: (s) => els[s] ?? el({}), addEventListener() {} }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {},
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(run('visibleBox()'))), { L: 296, T: 60, width: 1144, height: 800 - 60 - 124 });
+  run(`autoFit({ x: 0, y: 0, w: 170, h: 54, children: [] })`);
+  assert.ok(run('view.y') >= 60 + 8); // 상태 칩 밑으로 들어가지 않는다
+});

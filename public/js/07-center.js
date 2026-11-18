@@ -33,21 +33,21 @@ const selNode = () => (selected ? [...document.querySelectorAll('#graph .node[da
 function revealSel() {
   const g = selNode();
   if (!g || !view.init || innerWidth <= 860) return; // 좁은 화면은 패널이 다 덮으니 옮기지 않는다
-  const { L, width, height } = visibleBox(), n = nodeBox(g), M = 24;
+  const { L, T, width, height } = visibleBox(), n = nodeBox(g), M = 24;
   const sx = view.x + n.x * view.k, sy = view.y + n.y * view.k, sw = n.w * view.k, sh = n.h * view.k;
   const dx = sx < L + M ? L + M - sx : sx + sw > L + width - M ? L + width - M - sx - sw : 0;
-  const dy = sy < M ? M - sy : sy + sh > height - M ? height - M - sy - sh : 0;
+  const dy = sy < T + M ? T + M - sy : sy + sh > T + height - M ? T + height - M - sy - sh : 0;
   if (dx || dy) glideTo(view.x + dx, view.y + dy);
 }
 // ⌖ 제자리로: 고른 세션이 있으면 그 노드를 보이는 칸 가운데 · 배율 1, 없으면 전체 맞춤(더블클릭과 같음)
 function recenter() {
   const g = selNode();
   if (!g) { view.init = false; renderGraph(); return; }
-  const { L, width, height } = visibleBox(), n = nodeBox(g);
-  glideTo(L + width / 2 - (n.x + n.w / 2), height / 2 - (n.y + n.h / 2), 1);
+  const { L, T, width, height } = visibleBox(), n = nodeBox(g);
+  glideTo(L + width / 2 - (n.x + n.w / 2), T + height / 2 - (n.y + n.h / 2), 1);
 }
 const zoomBy = (f) => {
-  const { L, width, height } = visibleBox(), cx = L + width / 2, cy = height / 2; // 보이는 칸 가운데를 기준으로
+  const { L, T, width, height } = visibleBox(), cx = L + width / 2, cy = T + height / 2; // 보이는 칸 가운데를 기준으로
   const k = Math.min(3, Math.max(0.2, view.k * f));
   glideTo(cx - (cx - view.x) * (k / view.k), cy - (cy - view.y) * (k / view.k), k);
 };

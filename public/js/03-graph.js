@@ -147,27 +147,28 @@ function bounds(n, b = { x1: Infinity, y1: Infinity, x2: -Infinity, y2: -Infinit
   n.children.forEach((c) => bounds(c, b));
   return b;
 }
-// 조직도는 화면 전체 바탕이고 목록 · 패널은 그 위에 뜬 판 — 보이는 칸 = 목록 판 오른쪽(--aw) ~ 열린 패널 왼쪽
-const asideW = () => parseFloat(getComputedStyle(document.body).getPropertyValue('--aw')) || 0;
+// 조직도는 화면 전체 바탕이고 목록 · 패널은 그 위에 뜬 판 — 보이는 칸 = 목록 판 오른쪽(--aw) ~ 열린 패널 왼쪽에서 떠 있는 무리의 위 · 아래 띠(상태 칩 / 범례 · + − ⌖ 중 높은 쪽,
+// 가장자리 16 + 틈 8)를 뺀 곳 — 맞춘 뒤에도 + − ⌖ · 범례 밑에 노드가 깔렸다(G2 · G3). 넓은 나무는 오른쪽 끝을 지나가니 + − ⌖ 도 아래 띠로 피한다. 크기만 재서 판이 미끄러지는 중에도 같다
+const asideW = () => parseFloat(getComputedStyle(document.body).getPropertyValue('--aw')) || 0, floatSz = (s, k) => ($(s)?.[k] || 0) && $(s)[k] + 24;
 const visibleBox = () => {
-  const svg = $('#graph').getBoundingClientRect(), L = asideW();
+  const svg = $('#graph').getBoundingClientRect(), L = asideW(), T = floatSz('.status-chips', 'offsetHeight');
   const R = $('#drawer').classList.contains('open') && innerWidth > 860 ? $('#drawer').getBoundingClientRect().width : 0;
-  return { L, width: Math.max(120, svg.width - L - R), height: svg.height };
+  return { L, T, width: Math.max(120, svg.width - L - R), height: Math.max(120, svg.height - T - Math.max(floatSz('.kinds', 'offsetHeight'), floatSz('.zoom-btns', 'offsetHeight'))) };
 };
 // 맞춤은 처음 · 더블클릭 · ⌖(고름 없음) · 나무 모양이 바뀔 때만 — 판을 열고 닫거나 폭을 바꿔도 배율 · 위치는 그대로
 function autoFit(tree) {
-  const { L, width, height } = visibleBox();
+  const { L, T, width, height } = visibleBox();
   const b = bounds(tree);
   // 가로는 보이는 폭에 맞추되, 노드 이름(12px)이 작아지지 않게 1배 아래로는 줄이지 않는다(0.45배는 1440 에서 거의 안 읽혔다)
   // (그 경우 고른 세션 — 없으면 나무 가운데 — 를 가운데에 두고 나머지는 드래그로 본다)
   const fitW = (width - 48) / (b.x2 - b.x1);
-  const fitH = (height - 60) / (b.y2 - b.y1);
+  const fitH = (height - 16) / (b.y2 - b.y1);
   const k = Math.max(1, Math.min(1.2, fitW, Math.max(fitH, Math.min(fitW, 0.7))));
   view.k = k;
   const graphW = (b.x2 - b.x1) * k;
   const sel = (function find(n) { return n.key && n.key === selected ? n : n.children.reduce((a, c) => a || find(c), null); })(tree);
   view.x = L + (graphW <= width - 48 ? (width - graphW) / 2 - b.x1 * k : Math.min(24 - b.x1 * k, Math.max(width - 24 - b.x2 * k, width / 2 - (sel ? sel.x + sel.w / 2 : (b.x1 + b.x2) / 2) * k)));
-  view.y = Math.max(64, (height - (b.y2 - b.y1) * k) / 2.6) - b.y1 * k;
+  view.y = T + Math.max(8, (height - (b.y2 - b.y1) * k) / 2.6) - b.y1 * k;
   view.init = true;
 }
 function applyView() { $('#viewport').setAttribute('transform', `translate(${view.x},${view.y}) scale(${view.k})`); }
