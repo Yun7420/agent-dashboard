@@ -213,6 +213,22 @@ test('restore(실행 파일): 대시보드가 떠 있으면 다시 켜지 않고
 
 test('--help: 하위 명령(run · restore) 목록', () => {
   const r = spawnSync(process.execPath, [BIN, '--help'], { encoding: 'utf8' });
-  assert.match(r.stdout, /agent-dashboard run\s+실행기/);
-  assert.match(r.stdout, /agent-dashboard restore\s+맥을 다시 켠 뒤/);
+  assert.match(r.stdout, /node bin\/agent-dashboard\.mjs run\s+실행기/);
+  assert.match(r.stdout, /node bin\/agent-dashboard\.mjs restore\s+맥을 다시 켠 뒤/);
+});
+
+// D14: 예시 명령은 켠 방법 그대로(lib/launch.mjs 의 startCommand) — 저장소면 node bin/…, 설치된 이름(agent-dashboard)으로 부르면 그 이름
+test('--help: 예시 명령은 켠 방법 그대로 · PORT 한 줄 · -h · help 도 같은 도움말', () => {
+  const repo = spawnSync(process.execPath, [BIN, '-h'], { encoding: 'utf8' }).stdout;
+  assert.match(repo, /^  node bin\/agent-dashboard\.mjs open\s+로그인 링크/m);
+  assert.match(repo, /PORT=4546 node bin\/agent-dashboard\.mjs/);
+  assert.doesNotMatch(repo, /^  agent-dashboard /m); // 저장소 사용자에게 설치 명령을 보이지 않는다
+  assert.equal(spawnSync(process.execPath, [BIN, 'help'], { encoding: 'utf8' }).stdout, repo);
+  const dir = tmpDir('ad-help-'), link = path.join(dir, 'agent-dashboard');
+  fs.symlinkSync(BIN, link); // npm 이 설치하면 bin 폴더에 이 이름으로 걸린다
+  try {
+    const installed = spawnSync(process.execPath, [link, '--help'], { encoding: 'utf8' }).stdout;
+    assert.match(installed, /^  agent-dashboard open\s+로그인 링크/m);
+    assert.doesNotMatch(installed, /node bin\//);
+  } finally { fs.rmSync(link, { force: true }); }
 });

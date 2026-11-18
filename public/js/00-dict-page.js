@@ -94,7 +94,7 @@ const KO_PAGE = {
   "Active": "활성",
   "Close panel": "패널 닫기",
   "Sort": "정렬",
-  "Log": "기록",
+  "History": "기록",
   "Stop": "멈추기",
   "Send": "보내기",
   "Notifications": "알림",
