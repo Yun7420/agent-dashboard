@@ -304,6 +304,8 @@ test('테마 대비: 초록 · 회색 · 푸른 밤 · 밝음 · 따뜻한 밝�
       need('text', s, 7, 10.05);
       for (const k of ['dim', 'faint', 'accent-text', 'working-text', 'waiting-text']) need(k, s, 4.5);
     }
+    // 목록 카드의 상태 글자(02-list.css: 작업 중 --working · 승인 필요 --waiting · 백그라운드 --working-text · 대기 --dim)는 고른 카드(surface-3) · 마우스 올림(surface-2) 바탕 위에서도(회귀 점검 G4)
+    for (const s of ['surface', 'surface-2', 'surface-3']) for (const k of ['working', 'waiting', 'working-text', 'dim']) need(k, s, 4.5);
     need('on-primary', 'primary', 4.5);
     for (const k of ['accent', 'working', 'waiting', 'idle', 'ok']) need(k, 'bg', 3);
     for (const k of ['switch-on', 'switch-off']) need('switch-knob', k, 3);

@@ -99,6 +99,7 @@
   --shade: #06080c; --text: #bcc4cf; --dim: #9fa9b6; --faint: #939daa; --accent: #4d84b6;
   --accent-2: #6a9dcb; --accent-text: #93bbe0; --primary: #2b6496; --primary-hover: #275b89; --on-accent: #0c131c;
   --switch-off: #848c97; --code-text: #bec6d0; --reply-text: #bac2cd; --on-status: #151a22;
+  --waiting: #de7e86; /* 고른 카드(surface-3) 위 「승인 필요」 4.47 → 4.64 */
 }
 :root[data-theme="light"], :root[data-theme="warm"] {
   color-scheme: light; --bg: #f2f3ee; --surface: #f8f9f5; --surface-2: #e9ebe5; --surface-3: #e0e3dc;
