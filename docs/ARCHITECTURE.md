@@ -167,7 +167,7 @@
 | `lib/filecache.mjs` | 수정 시각 · 크기가 같으면 지난 내용 재사용(`createFileCache`) |
 | `lib/lru.mjs` | 최근에 쓴 것만 남기는 캐시(`createLru`) |
 | `lib/serial.mjs` | 같은 파일 일은 한 번에 하나씩(`createSerial`) — [7절](#7-겪은-일에서-배운-점) 참고 |
-| `lib/demo.mjs` | 데모 모드 가짜 데이터(`demoState` · `DEMO_SESSIONS`) |
+| `lib/demo.mjs` · `lib/demo-en.mjs` | 데모 모드 가짜 데이터(`demoState` · `DEMO_SESSIONS`). 영어 요청(lang=en)엔 대화 · 기록 · 하루 요약 · tmux 화면까지 영어 판(`demoEn` — 상태의 `en` 은 live-feed 가 영어 탭에만) |
 
 ### bin — 실행 명령
 

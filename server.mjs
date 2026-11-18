@@ -225,7 +225,7 @@ const ROUTES = [
 
 // tmux 세션 화면(색 정보로 「지금 보고 있는 질문 탭」도)
 async function getPane(req, res, url) {
-  if (DEMO) return void sendText(res, 200, demo.demoPane(url.searchParams.get('key')));
+  if (DEMO) return void sendText(res, 200, demo.demoPane(url.searchParams.get('key'), req));
   const s = findSession(url.searchParams.get('key'));
   if (!s?.tmux) return void sendText(res, 404, 'tmux 로 띄운 세션만 화면을 볼 수 있어요');
   try {
