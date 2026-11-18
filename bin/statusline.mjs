@@ -54,7 +54,8 @@ try {
 }
 
 if (original) {
-  const r = spawnSync('/bin/sh', ['-c', original], { input: raw, encoding: 'utf8', timeout: 4000 });
+  // 10초: git · 네트워크를 부르는 상태줄 스크립트가 4초를 넘겨 잘리면 빈 줄이 됐다(호환성 검토 C10)
+  const r = spawnSync('/bin/sh', ['-c', original], { input: raw, encoding: 'utf8', timeout: 10_000 });
   process.stdout.write(r.stdout || '');
 } else {
   const parts = [];

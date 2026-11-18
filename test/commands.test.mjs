@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createCommands } from '../lib/commands.mjs';
 import { createLock } from '../lib/lock.mjs';
-import { createSpawned } from '../lib/spawn.mjs';
+import { createSpawned, findCommand, NO_CLAUDE } from '../lib/spawn.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 
 const UP = tmpDir('ad-cmd-up-'); // 첨부는 실제로 있는 파일만 받는다(링크를 풀어 본다)
@@ -13,7 +13,7 @@ fs.mkdirSync(path.join(UP, 'd'));
 fs.writeFileSync(path.join(UP, 'd', 'a.png'), 'x');
 
 // 가짜 tmux · 가짜 상태로 실제 모드 명령을 시험한다(실제 세션 · tmux 는 건드리지 않음)
-function setup({ sessions = [], hasState = true, screen = '────────\n❯ ' } = {}) {
+function setup({ sessions = [], hasState = true, screen = '────────\n❯ ', claudeBin = '/fake/bin/claude' } = {}) {
   const calls = [];
   const spawned = createSpawned();
   const tmux = {
@@ -26,7 +26,7 @@ function setup({ sessions = [], hasState = true, screen = '───────
   const restoreLock = createLock();
   let changed = 0;
   const run = createCommands({
-    demo: false, demoRecentRestore: () => '', tmux,
+    demo: false, demoRecentRestore: () => '', tmux, claudeBin: () => claudeBin,
     findSession: (k) => sessions.find((s) => s.key === k) ?? null, sessions: () => sessions,
     hasState: () => hasState, liveIdSet: () => new Set(), uploadDir: UP,
     readDefaultModel: () => ({ exists: false, value: null }), restoreDefaultModel: () => calls.push(['restoreModel']),
@@ -98,6 +98,7 @@ test('복구 · 폴더 열기 · 새 세션 · 사용 한도: 예전 응답 그�
   assert.match(JSON.parse(json).key, /^claude:[0-9a-f-]{36}$/);
   const made = t.calls.findLast((c) => c[0] === 'new');
   assert.ok(!made[2].includes('--x') && !made[2].includes('--')); // 프롬프트는 인자에 없음(ps 에 안 보이게)
+  assert.equal(made[2][0], '/fake/bin/claude'); // 대시보드가 찾은 절대 경로(tmux 서버의 PATH 가 달라도 — 호환성 C9)
   await new Promise((r) => setImmediate(r));
   assert.deepEqual(t.calls.findLast((c) => c[0] === 'text'), ['text', '%9', '--x']); // 입력칸이 보여 새 창(%9)에 붙여 넣음
   assert.deepEqual(await t.run('usage-on', {}), [200, '켰어요']);
@@ -125,4 +126,15 @@ test('spawn 첫 프롬프트: 넣으면 기록 없음 · 창이 닫혀 못 넣�
     console.error = orig;
   }
   assert.ok(logs.length && !logs.some((l) => l.includes('비밀 계획')));
+});
+
+// claude 가 없으면 새 세션 · 복구 창이 바로 닫혀 아무 말 없이 실패했다 → 띄우기 전에 이유를 알린다(호환성 검토 C9)
+test('claude 를 찾지 못하면 새 작업 · 복구 · 복구 단추는 띄우지 않고 409 안내', async () => {
+  const t = setup({ claudeBin: null });
+  for (const [cmd, body] of [['spawn', { cwd: '~' }], ['restore', {}], ['recent-restore', { ids: ['x'] }]]) {
+    assert.deepEqual(await t.run(cmd, body), [409, NO_CLAUDE], cmd);
+  }
+  assert.equal(t.calls.filter((c) => c[0] === 'new').length, 0);
+  assert.equal(findCommand('claude', path.join(os.tmpdir(), 'no-such-dir')), null);
+  assert.equal(findCommand('node', path.dirname(process.execPath)), process.execPath);
 });

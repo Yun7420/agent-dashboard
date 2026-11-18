@@ -166,3 +166,13 @@ test('기본 모델 줄: 최상위 "model" 만 — 다른 객체 안의 model �
   assert.equal(restoreModelText(first, null), '{\n  "a": { "model": "x" },\n  "b": 1\n}\n');
   assert.equal(restoreModelText('{"model": "haiku"}', 'opus'), null); // 한 줄 JSON 은 줄을 못 가려 건드리지 않음
 });
+
+// 원래 상태줄의 여백(padding)을 0 으로 덮어 모양이 바뀌었다 → 그대로 둔다(호환성 검토 C10). 원래 상태줄을 부르는 시간 제한은 넉넉히(10초)
+test('상태줄 켜기: 원래 상태줄의 padding 은 그대로(없으면 0) · 다리가 원래 상태줄을 기다리는 시간은 10초', () => {
+  for (const [orig, want] of [[{ type: 'command', command: 'my-line', padding: 2 }, 2], [undefined, 0]]) {
+    const { file, data } = setup(orig ? { statusLine: orig } : {});
+    enableStatusLine(file, { dataDir: data, command: '"/node" "/agent-dashboard/bin/statusline.mjs"', paths: BR });
+    assert.equal(read(file).statusLine.padding, want);
+  }
+  assert.match(fs.readFileSync(new URL('../bin/statusline.mjs', import.meta.url), 'utf8'), /spawnSync\('\/bin\/sh', \['-c', original\], \{[^}]*timeout: 10_000 \}\)/);
+});

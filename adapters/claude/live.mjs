@@ -20,15 +20,19 @@ export const unknownStatuses = () => [...unknownStatus];
 
 // 빠른 길: claude 가 세션마다 남기는 ~/.claude/sessions/<PID>.json 을 직접 읽는다(claude agents 실행 160ms → 파일 읽기 1ms).
 // 폴더를 읽었으면 빈 목록이어도 그대로 돌려준다 — 예전엔 빈 목록이면 아래로 내려가, 떠 있는 세션이 없을 때 2초마다 claude 를 실행했다.
-// 폴더가 없는 옛 버전만 `claude agents --json` 을 쓰고, 그 결과(실패 포함)는 30초 기억 · 실행 중이면 같은 Promise 를 나눠 쓴다
+// 폴더가 없는 옛 버전만 `claude agents --json` 을 쓰고, 그 결과는 30초 기억 · 실행 중이면 같은 Promise 를 나눠 쓴다.
+// 한 번 실패하면(하위 명령이 없는 더 옛 버전) 다시 부르지 않는다 — 30초마다 claude 를 띄워 실패하기를 되풀이했다(호환성 검토 C5)
 export function createLiveSessions({ dir = path.join(CLAUDE_DIR, 'sessions'), run = exec, now = Date.now, ttlMs = 30_000, alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } } } = {}) {
   let cached = null; // { at, value }
   let pending = null;
+  let gaveUp = false;
   const fromCommand = async () => {
+    if (gaveUp) return null;
     try {
       const { stdout } = await run('claude', ['agents', '--json'], { timeout: 5000 });
       return JSON.parse(stdout).map((a) => ({ pid: a.pid, sessionId: a.sessionId, status: liveStatus(a.status), waitingFor: a.waitingFor ?? null, name: a.name ?? null, background: a.kind !== 'interactive', startedAt: a.startedAt }));
     } catch {
+      gaveUp = true;
       return null;
     }
   };

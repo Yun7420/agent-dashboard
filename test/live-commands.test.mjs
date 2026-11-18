@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { startServer } from './_helpers/server.mjs';
+import { startServer, FAKE_BIN } from './_helpers/server.mjs';
 import { createLiveHome } from './_helpers/live-home.mjs';
 
 const PORT = 4695;
@@ -113,7 +113,7 @@ test('restore: 재시동 전 목록에서 떠 있는 것은 빼고 N개를 --res
   const n = tmuxCalls('new-session').length;
   const r = await cmd('restore', {});
   assert.deepEqual([r.status, r.text], [200, '세션 2개를 다시 열었어요. 몇 초 뒤 목록에 나타나요']);
-  assert.deepEqual(resumed(n).map((a) => a.slice(0, 3)).sort(), [['claude', '--resume', R1], ['claude', '--resume', R2]].sort());
+  assert.deepEqual(resumed(n).map((a) => a.slice(0, 3)).sort(), [[path.join(FAKE_BIN, 'claude'), '--resume', R1], [path.join(FAKE_BIN, 'claude'), '--resume', R2]].sort());
   for (const c of tmuxCalls('new-session').slice(n)) assert.equal(c.args[c.args.indexOf('-c') + 1], CWD);
   assert.deepEqual([(await cmd('restore', {})).text], ['다시 열 세션이 없어요']);
   assert.equal(tmuxCalls('new-session').length, n + 2);

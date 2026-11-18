@@ -4,6 +4,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { tmpDir } from './_helpers/tmp.mjs';
+import { FAKE_BIN } from './_helpers/server.mjs';
+
+process.env.PATH = `${FAKE_BIN}:${process.env.PATH}`; // 띄울 claude 는 가짜(절대 경로로 넘긴다 — 호환성 C9)
+const CLAUDE = path.join(FAKE_BIN, 'claude');
 
 const HOME = tmpDir('ad-rcli-');
 process.env.DASHBOARD_TEST = '1';
@@ -43,7 +47,7 @@ test('떠 있는 세션은 빼고 꺼진 것만 다시 열고, 대시보드가 �
   fileCache.forget(path.join(DATA, 'restore.json')); // 앞 테스트가 「없음」을 읽은 지 0.5초 안이라 캐시를 비운다(실제 명령은 한 번만 읽음)
   const t = fakeTmux(['sa', 'dashboard']);
   const lines = await run(t);
-  assert.deepEqual(t.made.map((m) => m.command), [['claude', '--resume', id(2), '--name=꺼짐']]);
+  assert.deepEqual(t.made.map((m) => m.command), [[CLAUDE, '--resume', id(2), '--name=꺼짐']]);
   assert.deepEqual(lines, ['다시 연 세션 1개:', '  · 꺼짐  →  tmux attach -t sb', '대시보드는 이미 켜져 있어요 → http://localhost:4545']);
   const again = fakeTmux(['sa', 'sb', 'dashboard']);
   assert.equal((await run(again))[0], '다시 열 세션이 없어요(이미 떠 있어요).');

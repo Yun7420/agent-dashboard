@@ -7,6 +7,10 @@ import { createRecent, liveEntries, KEEP_DAYS } from '../lib/recent.mjs';
 import { restoreSessions } from '../lib/restore.mjs';
 import { isTrustPrompt } from '../lib/dialog.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
+import { FAKE_BIN } from './_helpers/server.mjs';
+
+process.env.PATH = `${FAKE_BIN}:${process.env.PATH}`; // 띄울 claude 는 가짜(절대 경로로 넘긴다 — 호환성 C9)
+const CLAUDE = path.join(FAKE_BIN, 'claude');
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const sess = (n, extra = {}) => ({ tool: 'claude', id: ID(n), title: `세션 ${n}`, named: false, cwd: `/Users/me/p${n}`, status: 'idle', tmux: { session: `t${n}` }, ...extra });
@@ -110,10 +114,10 @@ test('다시 띄우기: 같은 ID 는 한 번, 홈 밖 · 없는 폴더는 건�
     { id: ID(7), title: '모르는 모델', cwd: HOME, tmuxSession: 't7', model: '--dangerously-skip-permissions' },
   ], deps);
   assert.deepEqual(done.map((d) => d.id), [ID(1), ID(2), ID(7)]);
-  assert.deepEqual(calls[2].command, ['claude', '--resume', ID(7)]); // 모르는 모델 값은 넘기지 않고 기본 모델로
+  assert.deepEqual(calls[2].command, [CLAUDE, '--resume', ID(7)]); // 모르는 모델 값은 넘기지 않고 기본 모델로
   assert.equal(calls[0].name, 't1-2'); // t1 이 이미 있음
-  assert.deepEqual(calls[0].command, ['claude', '--resume', ID(1)]);
-  assert.deepEqual(calls[1].command, ['claude', '--resume', ID(2), '--name=이름 "따옴표" $(x)', '--model', 'sonnet']);
+  assert.deepEqual(calls[0].command, [CLAUDE, '--resume', ID(1)]);
+  assert.deepEqual(calls[1].command, [CLAUDE, '--resume', ID(2), '--name=이름 "따옴표" $(x)', '--model', 'sonnet']);
   assert.match(calls[1].name, /^re-[a-zA-Z0-9가-힣_-]+$/);
 });
 

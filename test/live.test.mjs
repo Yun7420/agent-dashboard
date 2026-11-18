@@ -49,5 +49,8 @@ test('폴더가 없으면 claude agents 를 쓰되 30초 기억 · 동시에 불
   const live2 = createLiveSessions({ dir, run: bad, now });
   assert.equal(await live2(), null); // 실패 → null(서버가 추정 방식으로)
   assert.equal(await live2(), null);
-  assert.equal(bad.calls, 1); // 실패도 30초 기억
+  assert.equal(bad.calls, 1); // 실패도 기억
+  now.add(10 * 60_000);
+  assert.equal(await live2(), null);
+  assert.equal(bad.calls, 1); // 한 번 실패하면(하위 명령 없는 옛 버전) 30초가 지나도 다시 띄우지 않는다(호환성 C5)
 });

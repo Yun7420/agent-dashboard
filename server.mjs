@@ -22,7 +22,7 @@ import { createLock } from './lib/lock.mjs';
 import { createCommands } from './lib/commands.mjs';
 import { createProcesses } from './lib/procs.mjs';
 import { createStateBuilder } from './lib/state.mjs';
-import { createSpawned } from './lib/spawn.mjs';
+import { createSpawned, findCommand } from './lib/spawn.mjs';
 import { createEnvCheck, startupNotices } from './lib/env.mjs';
 import { detectEditors, openDir } from './lib/open-dir.mjs';
 import { UPLOAD_DIR, UPLOAD_MAX } from './lib/uploads.mjs';
@@ -165,9 +165,8 @@ async function handle(req, res) {
 
 // 명령 처리(/api/cmd/<이름>)는 lib/commands.mjs — 필요한 것만 이름 붙여 넘긴다
 const handleCommand = createCommands({
-  demo: DEMO,
-  demoRecentRestore: demo.demoRecentRestore,
-  tmux,
+  demo: DEMO, demoRecentRestore: demo.demoRecentRestore,
+  tmux, claudeBin: () => findCommand('claude'),
   findSession,
   sessions: () => feed.latest()?.sessions ?? [],
   hasState: () => Boolean(feed.latest()),
