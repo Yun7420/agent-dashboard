@@ -40,7 +40,7 @@ function renderEnv() {
     + (tk.openCmd ? `<br>✓ ${t('This browser is logged in ({n} days) — for another browser or after expiry, in a terminal:', { n: tk.loginDays })} <code>${esc(tk.openCmd)}</code>` : '');
   $('#env-list').innerHTML = envData.items.map((it) => `<div class="env-row"><span class="lv ${esc(it.level)}">${LV_ICON[it.level]}</span><span class="nm">${esc(it.name)}</span><span class="dt">${esc(it.detail)}</span></div>`).join('');
 }
-function openWelcome() { renderEnv(); $('#welcome').showModal(); }
+function openWelcome() { renderEnv(); openModal($('#welcome'), $('#app-more')); }
 $('#help').addEventListener('click', openWelcome);
 $('#welcome').addEventListener('close', async () => {
   pref.welcomed = true; savePref();

@@ -44,21 +44,6 @@
       <button type="button" class="mi" id="settings" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Display</span></button>
       <button type="button" class="mi" id="help" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span>Help</span></button>
     </div>
-    <div class="menu-pop" id="notify-menu">
-      <div class="np-title">Notifications <span>Needs approval · tasks over 1 min finished</span></div>
-      <div class="np-row"><span>Browser<small>While this tab is open</small></span><button type="button" class="ghost" id="np-browser">Turn on</button></div>
-      <div class="np-row"><span>macOS<small>Even with the tab closed</small></span><label class="switch"><input type="checkbox" id="np-mac"><span class="track"></span></label></div>
-      <div class="np-row"><span>Sound<small>macOS</small></span><select id="np-sound"></select></div>
-      <button type="button" class="ghost" id="np-test">Send a test notification</button>
-      <p class="np-hint" id="np-note"></p>
-      <p class="np-hint">macOS notifications may need permission for 'Script Editor' (or Terminal) in System Settings › Notifications.</p>
-    </div>
-    <div class="menu-pop" id="settings-menu">
-      <div class="np-title">Display</div>
-      <div class="np-row"><label for="set-theme">Theme<small>System = follows macOS light · dark</small></label><select id="set-theme"><option value="dark">Dark green</option><option value="light">Light</option><option value="system">Follow system</option></select></div>
-      <!-- 언어 이름은 그 언어로(한국어 = 숫자 문자 참조 — 화면 파일에 한글을 직접 쓰지 않는 규칙) -->
-      <div class="np-row"><label for="set-lang">Language<small>At first it follows the browser language</small></label><select id="set-lang"><option value="ko">&#xD55C;&#xAD6D;&#xC5B4;</option><option value="en">English</option></select></div>
-    </div>
   </span>
 </header>
 <aside>
@@ -177,6 +162,22 @@
     </form>
   </section>
 </main>
+<dialog id="notify-dlg" class="modal" aria-labelledby="notify-t">
+  <div class="modal-h"><h3 id="notify-t">Notifications</h3><button type="button" class="ghost icon-btn modal-x" data-close-modal title="Close" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <p class="np-sub">Needs approval · tasks over 1 min finished</p>
+  <div class="np-row"><span>Browser<small>While this tab is open</small></span><button type="button" class="ghost" id="np-browser">Turn on</button></div>
+  <div class="np-row"><span>macOS<small>Even with the tab closed</small></span><label class="switch"><input type="checkbox" id="np-mac"><span class="track"></span></label></div>
+  <div class="np-row"><span>Sound<small>macOS</small></span><select id="np-sound"></select></div>
+  <button type="button" class="ghost" id="np-test">Send a test notification</button>
+  <p class="np-hint" id="np-note"></p>
+  <p class="np-hint">macOS notifications may need permission for 'Script Editor' (or Terminal) in System Settings › Notifications.</p>
+</dialog>
+<dialog id="settings-dlg" class="modal" aria-labelledby="settings-t">
+  <div class="modal-h"><h3 id="settings-t">Display</h3><button type="button" class="ghost icon-btn modal-x" data-close-modal title="Close" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="np-row"><label for="set-theme">Theme<small>System = follows macOS light · dark</small></label><select id="set-theme"><option value="dark">Dark green</option><option value="light">Light</option><option value="system">Follow system</option></select></div>
+  <!-- 언어 이름은 그 언어로(한국어 = 숫자 문자 참조 — 화면 파일에 한글을 직접 쓰지 않는 규칙) -->
+  <div class="np-row"><label for="set-lang">Language<small>At first it follows the browser language</small></label><select id="set-lang"><option value="ko">&#xD55C;&#xAD6D;&#xC5B4;</option><option value="en">English</option></select></div>
+</dialog>
 <dialog id="spawn-dlg">
   <form method="dialog" id="spawn-form">
     <h3>New Claude session (tmux)</h3>
@@ -198,9 +199,9 @@
     <div class="row"><button value="cancel" formnovalidate>Cancel</button><button class="primary" value="ok">Open</button></div>
   </form>
 </dialog>
-<dialog id="day-dlg">
+<dialog id="day-dlg" class="modal wide" aria-labelledby="day-t">
   <form method="dialog">
-    <h3>Today's work</h3>
+    <div class="modal-h"><h3 id="day-t">Today's work</h3><button type="button" class="ghost icon-btn modal-x" data-close-modal title="Close" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <div class="day-bar">
       <button type="button" data-day="0" class="on">Today</button><button type="button" data-day="-1">Yesterday</button>
       <input type="date" id="day-date">
@@ -258,9 +259,9 @@
     </ul>
   </div>
 </div>
-<dialog id="welcome">
+<dialog id="welcome" class="modal wide" aria-labelledby="welcome-t">
   <form method="dialog">
-    <h3>Getting started with Agent Dashboard</h3>
+    <div class="modal-h"><h3 id="welcome-t">Getting started with Agent Dashboard</h3><button type="button" class="ghost icon-btn modal-x" data-close-modal title="Close" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <div class="env-host" id="env-host"></div>
     <div class="env-list" id="env-list"><div class="env-row"><span class="spinner"></span>Checking environment…</div></div>
     <div class="notice">

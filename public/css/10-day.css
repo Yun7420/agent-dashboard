@@ -1,6 +1,5 @@
 /* 오늘 한 일 */
 /* ---------- 오늘 한 일 ---------- */
-#day-dlg { width: min(760px, 94vw); }
 .day-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .day-bar .grow { flex: 1; }
 .day-bar button.on { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }

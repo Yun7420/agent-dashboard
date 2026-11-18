@@ -28,11 +28,7 @@ async function saveNotifyCfg(change) {
   try { notifyCfg = JSON.parse(await api('/api/notify', change)); } catch (err) { toast(err.message); }
   renderNotifyBtn();
 }
-$('#notify').addEventListener('click', (e) => {
-  e.stopPropagation();
-  if ($('#notify-menu').classList.toggle('show')) loadNotifyCfg();
-});
-document.addEventListener('click', (e) => { if (!e.target.closest('#notify-menu')) $('#notify-menu').classList.remove('show'); });
+$('#notify').addEventListener('click', () => { openModal($('#notify-dlg'), $('#app-more')); loadNotifyCfg(); });
 $('#np-browser').addEventListener('click', async () => {
   if (!('Notification' in window)) { toast(t('This browser does not support notifications')); return; }
   if (browserOn()) { pref.notify = false; savePref(); renderNotifyBtn(); toast(t('Browser notifications off')); return; }
@@ -72,8 +68,6 @@ document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape' || document.querySelector('dialog[open]')) return;
   if ($('#dir-menu').classList.contains('show')) { $('#dir-menu').classList.remove('show'); return; }
   if ($('#app-menu').classList.contains('show')) { $('#app-menu').classList.remove('show'); $('#app-more').focus(); return; }
-  if ($('#notify-menu').classList.contains('show')) { $('#notify-menu').classList.remove('show'); return; }
-  if ($('#settings-menu').classList.contains('show')) { $('#settings-menu').classList.remove('show'); return; }
   if ($('#cp-pop').classList.contains('show')) { $('#cp-pop').classList.remove('show'); return; }
   if ($('#limits-pop').classList.contains('show')) { $('#limits-pop').classList.remove('show'); return; }
   if ($('#more-menu').classList.contains('show') || $('#d-meta').classList.contains('show')) { $('#more-menu').classList.remove('show'); $('#d-meta').classList.remove('show'); return; }

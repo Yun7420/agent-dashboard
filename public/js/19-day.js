@@ -46,7 +46,7 @@ function dayMarkdown() {
   return lines.join('\n');
 }
 
-$('#day-btn').addEventListener('click', () => { $('#day-dlg').showModal(); loadDay(ymd(new Date())); });
+$('#day-btn').addEventListener('click', () => { openModal($('#day-dlg'), $('#app-more')); loadDay(ymd(new Date())); });
 $('#day-dlg').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-day]');
   if (b) return void loadDay(ymd(new Date(Date.now() + Number(b.dataset.day) * 86400_000)));

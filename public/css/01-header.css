@@ -50,15 +50,13 @@ header .spacer { flex-shrink: 1; }
 #limits-chart .lc-r7 { stroke: var(--working); stroke-dasharray: 4 3; opacity: .7; vector-effect: non-scaling-stroke; }
 #limits-chart .lc-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--faint); margin-top: 3px; }
 #limits-chart .lc-note { font-size: 12px; color: var(--dim); padding: 18px 0; text-align: center; }
-/* 종 단추 → 알림 설정(브라우저 · macOS · 소리) */
-:is(#notify-menu, #settings-menu) { width: 300px; padding: 12px 14px; display: none; flex-direction: column; gap: 10px; z-index: var(--z-popover); }
-:is(#notify-menu, #settings-menu).show { display: flex; }
-:is(#notify-menu, #settings-menu) .np-title { font-weight: 700; font-size: 13px; }
-:is(#notify-menu, #settings-menu) .np-title span { display: block; font-weight: 400; font-size: 11px; color: var(--faint); margin-top: 2px; }
-:is(#notify-menu, #settings-menu) .np-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
-:is(#notify-menu, #settings-menu) .np-row small { display: block; font-size: 11px; color: var(--faint); }
-:is(#notify-menu, #settings-menu) .np-row button, :is(#notify-menu, #settings-menu) .np-row select { width: auto; min-width: 96px; height: 30px; font-size: 12px; }
-:is(#notify-menu, #settings-menu) .np-row button { border: 1px solid var(--border-strong); }
-#notify-menu label.switch { display: inline-flex; } /* 좁은 화면에서 머리의 스위치를 숨기는 규칙에 걸리지 않게 */
-#notify-menu .np-hint { margin: 0; font-size: 11px; line-height: 1.5; color: var(--dim); white-space: normal; }
-#notify-menu .np-hint:empty { display: none; }
+/* ⋯ → 알림 · 화면 설정 모달의 안쪽(틀은 06-dialog.css 의 .modal) */
+:is(#notify-dlg, #settings-dlg) { width: min(420px, 92vw); }
+:is(#notify-dlg, #settings-dlg)[open] { display: flex; flex-direction: column; gap: var(--sp-3); }
+:is(#notify-dlg, #settings-dlg) .np-sub { margin: calc(-1 * var(--sp-2)) 0 0; font-size: 12px; color: var(--faint); }
+:is(#notify-dlg, #settings-dlg) .np-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); font-size: 14px; }
+:is(#notify-dlg, #settings-dlg) .np-row small { display: block; font-size: 12px; color: var(--faint); }
+:is(#notify-dlg, #settings-dlg) .np-row button, :is(#notify-dlg, #settings-dlg) .np-row select { width: auto; min-width: 112px; height: 32px; font-size: 13px; }
+:is(#notify-dlg, #settings-dlg) .np-row button { border: 1px solid var(--border-strong); }
+#notify-dlg .np-hint { margin: 0; font-size: 12px; line-height: 1.6; color: var(--dim); white-space: normal; }
+#notify-dlg .np-hint:empty { display: none; }

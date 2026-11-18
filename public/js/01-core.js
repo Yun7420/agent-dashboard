@@ -106,6 +106,31 @@ function ago(iso) {
   if (s < 86400) return t('{n}h ago', { n: Math.floor(s / 3600) });
   return t('{n}d ago', { n: Math.floor(s / 86400) });
 }
+// 모달 틀(⋯ 메뉴의 오늘 한 일 · 알림 · 화면 설정 · 도움말): <dialog class="modal"> 를 showModal 로 — 브라우저 맨 위 층(top layer)이라
+// 어떤 칸 밑에도 묻히지 않고, 뒤는 흐리게 · Esc 로 닫기 · 포커스 가두기는 브라우저가 한다. 여기서는 ✕ · 바깥 누름으로 닫기와
+// 닫힌 뒤 연 단추로 포커스 돌려주기만(⋯ 메뉴 항목은 메뉴와 함께 사라지므로 그땐 ⋯ 단추로)
+const modalOpener = new WeakMap();
+function openModal(dlg, opener = document.activeElement) {
+  modalOpener.set(dlg, opener);
+  if (!dlg.open) dlg.showModal();
+}
+function modalClosed(dlg, fallback) {
+  const o = modalOpener.get(dlg);
+  modalOpener.delete(dlg);
+  (o?.isConnected && o.offsetParent !== null ? o : fallback)?.focus?.();
+}
+// 바깥 누름: 클릭 자리가 창 네모 밖이면(뒤 흐림을 누름) 닫기. ✕(data-close-modal)도 닫기
+function modalClick(e) {
+  const dlg = e.target.closest?.('dialog.modal');
+  if (!dlg) return;
+  const r = dlg.getBoundingClientRect();
+  const outside = e.target === dlg && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom);
+  if (outside || e.target.closest('[data-close-modal]')) dlg.close('cancel');
+}
+if (typeof document !== 'undefined' && document.querySelectorAll) {
+  document.addEventListener('click', modalClick);
+  for (const d of document.querySelectorAll('dialog.modal')) d.addEventListener('close', () => modalClosed(d, $('#app-more')));
+}
 // 빈 · 오류 상태는 어디서나 같은 모양: 한 줄 안내 + 할 일 하나(없으면 안내만) — docs/CONVENTIONS.md 「화면 디자인 규칙」
 const emptyLine = (text, action = '') => `<div class="empty-line"><span>${text}</span>${action}</div>`;
 const newSessionBtn = () => `<button type="button" class="primary" data-new-session>+ ${t('New session')}</button>`; // 누르면 머리의 「+ 새 세션」과 같은 창(12-panel.js)

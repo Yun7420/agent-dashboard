@@ -37,12 +37,11 @@ systemLight.addEventListener?.('change', applyTheme);
 applyTheme();
 // 머리 ⋯ 메뉴: 자주 안 쓰는 것(오늘 한 일 · 알림 · 화면 설정 · 도움말)을 한곳에. 항목을 누르면 메뉴는 닫고 그 항목의 창 · 팝업을 연다
 // (항목 단추들이 stopPropagation 하므로 잡기 단계에서 닫는다)
-$('#app-more').addEventListener('click', (e) => { e.stopPropagation(); for (const id of ['#limits-pop', '#notify-menu', '#settings-menu']) $(id).classList.remove('show'); /* 다른 머리 팝업과 겹치지 않게 */ $('#app-more').setAttribute('aria-expanded', $('#app-menu').classList.toggle('show')); });
+$('#app-more').addEventListener('click', (e) => { e.stopPropagation(); $('#limits-pop').classList.remove('show'); /* 한도 추이 팝업과 겹치지 않게 */ $('#app-more').setAttribute('aria-expanded', $('#app-menu').classList.toggle('show')); });
 $('#app-menu').addEventListener('click', () => { $('#app-menu').classList.remove('show'); $('#app-more').setAttribute('aria-expanded', 'false'); }, true);
 document.addEventListener('click', (e) => { if (!e.target.closest('#app-menu')) { $('#app-menu').classList.remove('show'); $('#app-more').setAttribute('aria-expanded', 'false'); } });
 $('#appr-count').addEventListener('click', () => { const s = visible().find((x) => x.status === 'waiting'); if (s) select(s.key); }); // 승인 필요 → 첫 세션 열기
-$('#settings').addEventListener('click', (e) => { e.stopPropagation(); $('#settings-menu').classList.toggle('show'); });
-document.addEventListener('click', (e) => { if (!e.target.closest('#settings-menu')) $('#settings-menu').classList.remove('show'); });
+$('#settings').addEventListener('click', () => openModal($('#settings-dlg'), $('#app-more')));
 $('#set-theme').addEventListener('change', (e) => {
   pref.theme = e.target.value === 'dark' ? undefined : e.target.value;
   savePref(); applyTheme();

@@ -3,6 +3,13 @@
 dialog { background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); border-radius: 16px; padding: 22px; width: min(520px, 92vw); box-shadow: 0 24px 60px color-mix(in srgb, var(--shade) 55%, transparent); }
 dialog::backdrop { background: color-mix(in srgb, var(--shade) 60%, transparent); backdrop-filter: blur(3px); }
 dialog h3 { margin: 0 0 14px; font-size: 16px; }
+/* 모달 틀(⋯ 메뉴의 네 창): 가운데 · 뒤 흐림(::backdrop) · 제목 + ✕. showModal 로 브라우저 맨 위 층(top layer)에 떠서
+   z-index(--z-modal 포함)와 상관없이 어떤 칸에도 묻히지 않는다. 넓은 내용(오늘 한 일 · 도움말)은 .wide */
+.modal { padding: var(--sp-5); }
+.modal.wide { width: min(760px, 94vw); }
+.modal-h { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin: 0 0 var(--sp-4); }
+.modal-h h3 { margin: 0; font-size: 17px; }
+.modal-x { flex: none; margin-right: calc(-1 * var(--sp-2)); }
 dialog label { display: block; color: var(--dim); font-size: 12px; margin: 12px 0 6px; }
 dialog input, dialog textarea { width: 100%; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; padding: 8px 10px; outline: none; }
 dialog input:focus, dialog textarea:focus { border-color: var(--accent); }
