@@ -16,16 +16,12 @@ main {
 .brand h1, #ctx-title { background: linear-gradient(180deg, var(--title-a), var(--title-b)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .brand h1 span { background: inherit; -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 500; }
 button:not(.primary):not(.ghost):not(.tab):not(.danger) { background: transparent; }
-/* 심전도 장식선: 「구조」 탭 왼쪽 아래(안내 문구 위) — 「대화 창」 탭 · 좁은 창에선 숨김 */
-.ecg { position: absolute; left: 24px; bottom: 48px; width: 300px; height: 50px; pointer-events: none; }
-.ecg path { fill: none; stroke: var(--deco-line); stroke-width: 1.2; }
-body.cv-ctx .ecg { display: none; }
 .center-tabs { position: absolute; top: 12px; left: 16px; z-index: var(--z-float); display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1px solid var(--border); }
 /* 고른 탭: 초록 바탕 + 밑줄(색만으로 가르지 않게) */
 .center-tabs .tab.on { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
 /* 「대화 창」 탭이면 조직도는 자리만 두고 숨긴다(돌아왔을 때 크기 계산이 맞게) */
 body:not(.cv-ctx) #ctx-panel { display: none; }
-body.cv-ctx #graph, body.cv-ctx .hint, body.cv-ctx .zoom-btns { visibility: hidden; }
+body.cv-ctx #graph, body.cv-ctx .zoom-btns { visibility: hidden; }
 
 
 #ctx-panel { position: absolute; top: 60px; left: 16px; right: calc(var(--dw) + 16px); bottom: 16px; display: flex; flex-direction: column; padding: 14px 16px 10px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1px solid var(--border); box-shadow: var(--shadow); }

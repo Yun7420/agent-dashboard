@@ -1,18 +1,18 @@
 // 가운데 조직도
 // 트리: 이 컴퓨터 → 도구 → 프로젝트 → 세션 → 서브에이전트
 function buildTree() {
-  const root = { kind: 'root', label: state.host.replace(/\.local$/, ''), sub: 'THIS MAC', children: [] };
+  const root = { kind: 'root', label: state.host.replace(/\.local$/, ''), children: [] };
   for (const tool of state.tools) {
     const ss = visible().filter((s) => s.tool === tool.id);
     if (!ss.length) continue;
-    const grp = { kind: 'group', label: tool.label, sub: 'AGENT CLI', children: [], status: ss.some((s) => s.status === 'working') ? 'working' : ss.some((s) => s.status === 'background') ? 'background' : 'idle' };
+    const grp = { kind: 'group', label: tool.label, children: [], status: ss.some((s) => s.status === 'working') ? 'working' : ss.some((s) => s.status === 'background') ? 'background' : 'idle' };
     const byProject = new Map();
     for (const s of ss) {
       if (!byProject.has(s.project)) byProject.set(s.project, []);
       byProject.get(s.project).push(s);
     }
     for (const [project, items] of byProject) {
-      const p = { kind: 'group', label: project, sub: 'PROJECT', dir: items.find((s) => s.cwd)?.cwd ?? null, children: [], status: items.some((s) => s.status === 'waiting') ? 'waiting' : items.some((s) => s.status === 'working') ? 'working' : items.some((s) => s.status === 'background') ? 'background' : items.some((s) => s.status === 'idle') ? 'idle' : 'ended' };
+      const p = { kind: 'group', label: project, dir: items.find((s) => s.cwd)?.cwd ?? null, children: [], status: items.some((s) => s.status === 'waiting') ? 'waiting' : items.some((s) => s.status === 'working') ? 'working' : items.some((s) => s.status === 'background') ? 'background' : items.some((s) => s.status === 'idle') ? 'idle' : 'ended' };
       for (const s of items) {
         p.children.push({
           kind: 'session', key: s.key, label: s.title, sub: `${STATUS_KO[s.status]}${s.lastTool && s.status === 'working' ? ' · ' + s.lastTool : ''}`, status: s.status,
@@ -105,8 +105,8 @@ function renderGraph() {
     const subMax = Math.floor((n.w - 12) / 6.4); // 10px
     nodes += `<g class="${esc(cls)}" data-path="${p}" data-st="${esc(n.status || '')}" ${n.key ? `data-key="${esc(n.key)}"` : ''} ${n.toggle ? `data-toggle="${esc(n.toggle)}"` : ''} ${n.dir ? `data-dir="${esc(n.dir)}"` : ''} transform="translate(${n.x},${n.y})">
       <rect width="${n.w}" height="${n.h}" rx="10"/>
-      <text x="${n.w / 2}" y="${n.h / 2 - 4}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
-      <text class="t2" x="${n.w / 2}" y="${n.h / 2 + 13}" text-anchor="middle">${esc(fit(String(n.sub || '').toUpperCase(), subMax))}</text>
+      <text x="${n.w / 2}" y="${n.sub ? n.h / 2 - 4 : n.h / 2 + 4}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
+      ${n.sub ? `<text class="t2" x="${n.w / 2}" y="${n.h / 2 + 13}" text-anchor="middle">${esc(fit(String(n.sub).toUpperCase(), subMax))}</text>` : ''}
     </g>`;
   };
   walk(tree);

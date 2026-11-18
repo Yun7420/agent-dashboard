@@ -17,9 +17,8 @@
   .brand h1 span { display: none; }
   #conn { font-size: 0; gap: 0; }
   #drawer { top: 0; right: 0; bottom: 0; width: 100%; border-radius: 0; border: none; }
-  .hint { display: none; }
   /* 가운데 탭 · 큰 그래프는 넓은 화면에서만 — 좁으면 조직도만, 대화 창 추이는 지금 탭 아래 작은 그래프로 */
-  #ctx-panel, .center-tabs, .zoom-btns, .ecg { display: none !important; }
+  #ctx-panel, .center-tabs, .zoom-btns { display: none !important; }
   body.cv-ctx #graph { visibility: visible; }
 }
 @media (min-width: 861px) { #now-trend { display: none; } } /* 넓은 화면은 가운데 「대화 창」 탭이 같은 추이를 크게 보여 준다 */

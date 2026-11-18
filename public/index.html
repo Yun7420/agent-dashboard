@@ -85,8 +85,6 @@
     </defs>
     <g id="viewport"></g>
   </svg>
-  <div class="hint">Drag to move · wheel to zoom · click a node for its prompts · <span class="peer-t">blue arrow</span> = messages between sessions</div>
-  <svg class="ecg" viewBox="0 0 360 60" aria-hidden="true"><path d="M0 40 H120 l8 -4 l6 4 h18 l6 -34 l7 48 l6 -14 h22 q14 -14 28 0 H360"/></svg>
   <div class="empty" id="empty" hidden>No sessions running</div>
   <div class="center-tabs" role="tablist" aria-label="Center view">
     <button type="button" class="tab" data-view="org" role="tab" aria-selected="false">Structure</button>
@@ -275,6 +273,7 @@
         <li data-th="help.tmux"><b>Chat · approve · end</b> work only for <b>sessions started in tmux</b>. Sessions from a plain terminal or editor (Cursor etc.) are view-only. <b>+ New session</b> opens one inside tmux for you.</li>
         <li data-th="help.approve"><b>Approve buttons</b> grant real permissions. Check the terminal screen (command · file) in the panel before you press.</li>
         <li data-th="help.auto">If a session's default permission mode is <b>auto</b>, most actions are allowed automatically and approval prompts rarely appear.</li>
+        <li data-th="help.graph"><b>Structure tab</b>: drag to move · wheel or the + − buttons to zoom · double-click to fit · click a node for its prompts. A <span class="peer-t">blue arrow</span> means messages between sessions.</li>
         <li data-th="help.keys"><b>Shortcuts</b>: <kbd>j</kbd>/<kbd>k</kbd> next · previous session, <kbd>g</kbd> or <kbd>Enter</kbd> open panel, <kbd>/</kbd> search everything, in an approval prompt <kbd>1</kbd>~<kbd>9</kbd> choose · <kbd>Esc</kbd> reject (if marked risky, press the same number again within 2 seconds), otherwise <kbd>Esc</kbd> closes the panel. They don't work while you are typing.</li>
       </ul>
     </div>
