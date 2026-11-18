@@ -71,6 +71,7 @@ function notifyChanges(prevSessions, next) {
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape' || document.querySelector('dialog[open]')) return;
   if ($('#dir-menu').classList.contains('show')) { $('#dir-menu').classList.remove('show'); return; }
+  if ($('#app-menu').classList.contains('show')) { $('#app-menu').classList.remove('show'); $('#app-more').focus(); return; }
   if ($('#notify-menu').classList.contains('show')) { $('#notify-menu').classList.remove('show'); return; }
   if ($('#settings-menu').classList.contains('show')) { $('#settings-menu').classList.remove('show'); return; }
   if ($('#cp-pop').classList.contains('show')) { $('#cp-pop').classList.remove('show'); return; }

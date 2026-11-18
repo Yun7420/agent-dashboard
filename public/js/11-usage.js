@@ -10,12 +10,13 @@ function resetIn(iso) {
 function renderUsage() {
   const u = state?.usage;
   const el = $('#usage');
-  const who = '<span class="badge tool claude">Claude</span>'; // 지금 사용 한도는 Claude 계정만 — Codex 등이 붙으면 도구별로 늘린다
-  if (!u?.enabled) { el.innerHTML = `${who}${t('Show usage limits')}`; el.title = t('Turn on to show your Claude account 5h · weekly limits here'); return; }
-  if (!u.fiveHour && !u.sevenDay) { el.innerHTML = `${who}<span class="dot-s pulse"></span>${t('Usage limits · updated on the next reply')}`; el.title = t('Values arrive once a Claude session replies'); return; }
-  const item = (label, w) => w ? `<span class="u" title="${resetIn(w.resetsAt)}">${label} <b>${w.percent}%</b><span class="bar"><i class="${ctxLevel(w.percent)}" style="width:${w.percent}%"></i></span></span>` : '';
-  el.innerHTML = who + item(t('5h'), u.fiveHour) + item(t('Weekly'), u.sevenDay) + (u.fiveHour?.resetsAt ? `<span class="rs">${resetIn(u.fiveHour.resetsAt)}</span>` : '');
-  el.title = `${t('Claude account usage limits (5h · weekly)')}${u.updatedAt ? ` · ${t('as of {tm}', { tm: new Date(u.updatedAt).toLocaleTimeString(LOCALE) })}` : ''}`;
+  // 머리에는 짧게 「5시간 19% · 주간 14%」만. 초기화 시각 · 기준 시각은 마우스 올림(title)으로
+  if (!u?.enabled) { el.textContent = t('Show usage limits'); el.title = t('Turn on to show your Claude account 5h · weekly limits here'); return; }
+  if (!u.fiveHour && !u.sevenDay) { el.innerHTML = `<span class="dot-s pulse"></span>${t('Usage limits · updated on the next reply')}`; el.title = t('Values arrive once a Claude session replies'); return; }
+  const item = (label, w) => w ? `<span class="u">${label} <b class="${ctxLevel(w.percent)}">${w.percent}%</b></span>` : '';
+  el.innerHTML = [item(t('5h'), u.fiveHour), item(t('Weekly'), u.sevenDay)].filter(Boolean).join('<span class="sep">·</span>');
+  const rs = [u.fiveHour && `${t('5h')} ${resetIn(u.fiveHour.resetsAt)}`, u.sevenDay && `${t('Weekly')} ${resetIn(u.sevenDay.resetsAt)}`].filter(Boolean).join(' · ');
+  el.title = `${t('Claude account usage limits (5h · weekly)')}${rs ? ` · ${rs}` : ''}${u.updatedAt ? ` · ${t('as of {tm}', { tm: new Date(u.updatedAt).toLocaleTimeString(LOCALE) })}` : ''}`;
 }
 // 사용 한도 보기가 켜져 있으면 누를 때 추이(최근 24시간 · 7일)를, 꺼져 있으면 켜기 안내 창을 연다
 const limits = { range: '24h', data: null, seq: 0 };

@@ -2,7 +2,8 @@
 // 끊기면: 서버가 꺼져 있는 동안은 브라우저가 알아서 다시 시도한다(「재연결 중…」).
 // 로그인이 안 됐거나 지났으면 403 → 브라우저가 멈추므로, 이유를 확인해 안내하거나(403) 잠시 뒤 새로 연결한다(01-core.js 의 sseOnError · probeVerdict)
 let liveES = null;
-const connState = (cls, text) => { $('#conn').innerHTML = `<span class="dot-s ${cls}"></span>${text}`; $('#conn').title = text; }; // 좁은 창에선 글자를 숨겨 title 로
+// 연결 상태는 끊겼을 때만 머리에 경고로 보인다(잘 붙어 있으면 아무것도 안 보임)
+const connState = (cls, text) => { $('#conn').innerHTML = `<span class="dot-s ${cls}"></span>${text}`; $('#conn').title = text; $('#conn').hidden = cls === 'live'; };
 function connect() {
   liveES?.close();
   const es = (liveES = new EventSource(`/events?lang=${LANG}`)); // 로그인 쿠키가 같이 간다(주소에 비밀을 싣지 않음)

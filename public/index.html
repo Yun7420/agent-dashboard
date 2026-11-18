@@ -24,12 +24,8 @@
     <div class="logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5 6.5 17M12 11.5l5.5 5.5"/></svg></div>
     <h1>Agent <span>Dashboard</span></h1>
   </div>
-  <div class="stats">
-    <span class="stat"><span class="dot-s waiting"></span>Approval <em id="c-waiting">0</em></span>
-    <span class="stat"><span class="dot-s working"></span>Working <em id="c-working">0</em></span>
-    <span class="stat"><span class="dot-s idle"></span>Idle <em id="c-idle">0</em></span>
-    <span class="stat"><span class="dot-s ended"></span>Ended <em id="c-ended">0</em></span>
-  </div>
+  <button type="button" id="appr-count" class="appr-count" hidden><span class="dot-s waiting"></span>Needs approval <em id="c-waiting">0</em></button>
+  <span id="conn" role="status" hidden></span>
   <span class="spacer"></span>
   <span class="info-wrap">
     <button id="usage" class="usage-pill" title="Claude account usage limits"></button>
@@ -39,10 +35,16 @@
       <div class="lp-foot"><span class="lp-key"><i class="k5"></i>5h <i class="k7"></i>Weekly <i class="kr"></i>Reset</span><button type="button" class="ghost" id="limits-setup">Setup…</button></div>
     </div>
   </span>
-  <button id="day-btn" class="ghost icon-btn" title="Today's work" aria-label="Today's work"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16M9 16l2 2 4-4"/></svg></button>
   <button id="search-btn" class="ghost icon-btn" title="Search all logs ( / )" aria-label="Search all logs"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+  <button id="new-session" class="primary" title="New session" aria-label="New session">+<span> New session</span></button>
   <span class="info-wrap">
-    <button id="notify" class="ghost icon-btn" title="Notifications — tells you when approval is needed or a long task finishes" aria-label="Notifications"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+    <button type="button" id="app-more" class="ghost icon-btn" title="More" aria-label="More" aria-haspopup="menu" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+    <div class="menu-pop" id="app-menu" role="menu">
+      <button type="button" class="mi" id="day-btn" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16M9 16l2 2 4-4"/></svg><span>Today's work</span></button>
+      <button type="button" class="mi" id="notify" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span>Notifications</span></button>
+      <button type="button" class="mi" id="settings" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Display</span></button>
+      <button type="button" class="mi" id="help" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span>Help</span></button>
+    </div>
     <div class="menu-pop" id="notify-menu">
       <div class="np-title">Notifications <span>Needs approval · tasks over 1 min finished</span></div>
       <div class="np-row"><span>Browser<small>While this tab is open</small></span><button type="button" class="ghost" id="np-browser">Turn on</button></div>
@@ -52,9 +54,6 @@
       <p class="np-hint" id="np-note"></p>
       <p class="np-hint">macOS notifications may need permission for 'Script Editor' (or Terminal) in System Settings › Notifications.</p>
     </div>
-  </span>
-  <span class="info-wrap">
-    <button id="settings" class="ghost icon-btn" title="Display" aria-label="Display"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     <div class="menu-pop" id="settings-menu">
       <div class="np-title">Display</div>
       <div class="np-row"><label for="set-theme">Theme<small>System = follows macOS light · dark</small></label><select id="set-theme"><option value="dark">Dark green</option><option value="light">Light</option><option value="system">Follow system</option></select></div>
@@ -62,9 +61,6 @@
       <div class="np-row"><label for="set-lang">Language<small>At first it follows the browser language</small></label><select id="set-lang"><option value="ko">&#xD55C;&#xAD6D;&#xC5B4;</option><option value="en">English</option></select></div>
     </div>
   </span>
-  <button id="help" class="ghost icon-btn" title="Environment check · guide" aria-label="Help"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
-  <button id="new-session" class="primary" title="New session" aria-label="New session">+<span> New session</span></button>
-  <span id="conn" role="status"><span class="dot-s"></span>Connecting…</span>
 </header>
 <aside>
   <div class="sort-bar">
@@ -286,7 +282,7 @@
       </ul>
     </div>
     <div class="row">
-      <span class="note" style="margin:0 auto 0 0" data-th="help.again">You can open this guide again any time with the <b>?</b> button at the top right</span>
+      <span class="note" style="margin:0 auto 0 0" data-th="help.again">You can open this guide again any time from <b>⋯ → Help</b> at the top right</span>
       <button value="recheck" formnovalidate>Check again</button>
       <button class="primary" value="ok" autofocus>Start</button>
     </div>

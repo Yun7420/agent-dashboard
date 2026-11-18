@@ -2,8 +2,6 @@
 /* ---------- 좁은 창 (화면을 나눠 쓸 때) ---------- */
 /* 1100 → 1320: 머리에 단추가 늘면서(알림 · 복구) 1100~1320 에서 글자가 두 줄로 밀렸다 */
 @media (max-width: 1320px) {
-  .stats .stat:nth-child(n+3) { display: none; }
-  .usage-pill .rs { display: none; }
   header label.switch { display: none; }
 }
 /* 1024 근처: 로고 옆 「Dashboard」 · 연결 글자를 빼야 머리가 한 줄에 들어간다(연결은 점만, 글자는 title) */
@@ -16,7 +14,8 @@
   body, body.aside-folded { grid-template-columns: 64px 1fr; grid-template-rows: 56px 1fr 120px; }
   #aside-fold { display: none; }
   header { gap: 8px; padding: 0 12px; }
-  .brand h1 span, .stats, #conn { display: none; }
+  .brand h1 span { display: none; }
+  #conn { font-size: 0; gap: 0; }
   #drawer { top: 0; right: 0; bottom: 0; width: 100%; border-radius: 0; border: none; }
   .hint { display: none; }
   /* 가운데 탭 · 큰 그래프는 넓은 화면에서만 — 좁으면 조직도만, 대화 창 추이는 지금 탭 아래 작은 그래프로 */
@@ -30,7 +29,8 @@
   .usage-pill { padding: 0 10px; gap: 6px; white-space: nowrap; flex: none; }
   .brand h1, #new-session { white-space: nowrap; }
   .brand h1 { display: none; } /* 로고만 남겨 머리 단추가 줄바꿈되지 않게 */
-  .usage-pill .badge, .usage-pill .bar, .usage-pill .rs, .usage-pill .u + .u { display: none; }
+  .usage-pill .u + .sep, .usage-pill .sep + .u { display: none; }
+  .appr-count { font-size: 0; gap: var(--sp-1); } .appr-count em { font-size: 13px; } /* 점 + 숫자만(글자는 화면 읽기용으로 남김) */
   #limits-pop { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; }
   #new-session { padding: 0 12px; }
   #new-session span { display: none; } /* 「+」만(이름은 title · aria-label) */
@@ -43,7 +43,7 @@
   #drawer .head-top .grow { display: none; }
 }
 
-@media (max-width: 600px) { #notify-menu, #settings-menu { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; } } /* 좁은 화면에선 종 단추 기준으로 두면 왼쪽이 화면 밖으로 나간다 */
+@media (max-width: 600px) { #app-menu, #notify-menu, #settings-menu { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; } } /* 좁은 화면에선 종 단추 기준으로 두면 왼쪽이 화면 밖으로 나간다 */
 /* 「동작 줄이기」를 켠 사람: 한 번 깜빡임 · 상태가 바뀐 노드 빛남 · 그래프 나타남 효과도 끈다· 로딩 고리는 멈춘 고리로(계속 움직이는 효과는 로딩 고리 말고는 처음부터 없음) */
 @media (prefers-reduced-motion: reduce) {
   .pulse, .spinner, .cp-chart .fade, .node.bump rect { animation: none !important; }
