@@ -71,3 +71,18 @@ test('지원 종료 안내는 켤 때 한 번만: bin start(Node 20 인 척) →
     try { assert.equal(s.log().match(/지원이 끝난 버전/g)?.length, 1, args.join(' ')); } finally { await s.stop(); }
   }
 });
+
+// Windows 는 ps · lsof · tmux 가 없어 빈 화면만 보인다 → 켜지 않고 이유를 알리고 끝낸다(호환성 검토 C1). package.json os 로 npm 설치도 막는다
+test('Windows: 안내(WSL 길 포함) 후 exit(1) · macOS · Linux 는 그대로, package.json os 는 darwin · linux', () => {
+  const logs = [], exits = [];
+  const r = checkNode({ version: 'v22.0.0', platform: 'win32', log: (m) => logs.push(m), exit: (c) => exits.push(c) });
+  assert.equal(r.ok, false);
+  assert.deepEqual(exits, [1]);
+  assert.match(logs[0], /Windows|WSL/);
+  for (const platform of ['darwin', 'linux']) {
+    const e = [];
+    assert.equal(checkNode({ version: 'v22.0.0', platform, log() {}, exit: (c) => e.push(c) }).ok, true);
+    assert.deepEqual(e, []);
+  }
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).os, ['darwin', 'linux']);
+});

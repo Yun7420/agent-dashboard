@@ -40,7 +40,23 @@ test('processes: 어댑터가 고른 것만, --resume ID · 에디터 확장(str
   const lsof = JSON.parse(fs.readFileSync(LOG, 'utf8').trim().split('\n').reverse().find((l) => JSON.parse(l).cmd === 'lsof'));
   assert.deepEqual(lsof.args, ['-a', '-d', 'cwd', '-Fn', '-p', '501,502']); // 고른 PID 만
   const ps = JSON.parse(fs.readFileSync(LOG, 'utf8').trim().split('\n').reverse().find((l) => JSON.parse(l).cmd === 'ps'));
-  assert.deepEqual(ps.args, ['-U', String(process.getuid()), '-o', 'pid=,ppid=,etime=,command=']); // 내 계정 것만(점검 C8 — 다른 계정의 같은 명령줄에 속지 않게)
+  assert.deepEqual(ps.args, ['-U', String(process.getuid()), '-ww', '-o', 'pid=,ppid=,etime=,command=']); // 내 계정 것만(점검 C8) · -ww 명령줄 자르지 않기(Linux COLUMNS, 호환성 C7)
+});
+
+// Linux 는 lsof 가 없는 배포판이 많아 /proc/<pid>/cwd 를 먼저 읽고, 못 읽은 것만 lsof 로(호환성 검토 C3)
+test('Linux: 작업 폴더는 /proc/<pid>/cwd 먼저, 못 읽은 PID 만 lsof 로 · macOS 는 /proc 를 보지 않음', async () => {
+  fs.writeFileSync(path.join(dir, 'ps.txt'), `601 1 01:00 claude --resume ${ID}\n602 1 01:00 claude\n`);
+  fs.writeFileSync(path.join(dir, 'lsof.txt'), 'p602\nn/home/me/from-lsof\n');
+  const read = [];
+  const readlink = (f) => { read.push(f); if (f === '/proc/601/cwd') return '/home/me/from-proc'; throw new Error('EACCES'); };
+  const linux = createProcesses({ adapters: [claude], tmux: { listPanes: async () => [] }, os: { platform: 'linux', readlink } });
+  const { procs } = await linux.processes('l');
+  assert.deepEqual(procs.map((x) => [x.pid, x.cwd]), [[601, '/home/me/from-proc'], [602, '/home/me/from-lsof']]);
+  const lsof = JSON.parse(fs.readFileSync(LOG, 'utf8').trim().split('\n').reverse().find((l) => JSON.parse(l).cmd === 'lsof'));
+  assert.deepEqual(lsof.args.at(-1), '602'); // /proc 로 읽은 601 은 lsof 에 묻지 않는다
+  read.length = 0;
+  await createProcesses({ adapters: [claude], tmux: { listPanes: async () => [] }, os: { platform: 'darwin', readlink } }).processes('m');
+  assert.deepEqual(read, []);
 });
 
 test('캐시: 같은 구성(sig)이면 6초 안에 ps 를 다시 부르지 않고, 구성이 바뀌거나 invalidate 면 다시', async () => {

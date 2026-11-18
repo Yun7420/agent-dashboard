@@ -84,3 +84,13 @@ test('실행 파일: --help 는 도움말(종료 0) · --version · 모르는 �
   assert.match(bad.stderr, /모르는 명령이에요: restore-all[\s\S]*사용법/);
   assert.equal(fs.readFileSync(bin, 'utf8').split('\n')[0], '#!/usr/bin/env node');
 });
+
+// 「프로세스 목록」 줄(호환성 검토 C3): ps 없음 = 세션을 못 찾음(오류), lsof 없음 = macOS 는 경고 · Linux 는 /proc 로 대신(정상)
+test('환경 점검 프로세스 목록 줄: ps 없음 error · lsof 없음은 macOS warn · Linux ok(/proc)', async () => {
+  const { procEnvItem } = await import('../lib/env.mjs');
+  assert.equal(procEnvItem({ ps: false, lsof: true, platform: 'darwin' }).level, 'error');
+  assert.equal(procEnvItem({ ps: true, lsof: true, platform: 'darwin' }).level, 'ok');
+  assert.equal(procEnvItem({ ps: true, lsof: false, platform: 'darwin' }).level, 'warn');
+  const linux = procEnvItem({ ps: true, lsof: false, platform: 'linux' });
+  assert.deepEqual([linux.level, /\/proc/.test(linux.detail)], ['ok', true]);
+});
