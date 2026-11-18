@@ -99,11 +99,15 @@
   </div>
   <section id="ctx-panel" aria-labelledby="ctx-title">
     <div class="cp-head">
-      <h3 id="ctx-title">Context window usage <span>— what Claude remembers</span></h3>
+      <h3 id="ctx-title">Context window</h3>
+      <span id="cp-who"></span>
+      <span class="info-wrap">
+        <button type="button" class="ghost icon-btn sm" id="cp-info" aria-label="About the context window" title="About the context window"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></button>
+        <div class="info-pop cp-about">How much conversation Claude remembers at once. Near 80% Claude Code auto-compacts the earlier part (a dot on the line). Hover the line for time · tokens.</div>
+      </span>
       <span class="grow"></span>
-      <span class="pill"><span class="dot-s live"></span><span id="cp-who">Pick a session</span></span>
+      <div class="cp-now" id="cp-now"></div>
     </div>
-    <div class="cp-row"><div class="cp-now" id="cp-now"></div><label class="cp-cmp">Compare <select id="cp-cmp"><option value="">None</option></select></label></div>
     <div class="cp-chart" id="cp-chart"><div class="empty-note">Pick a session on the left to see how full its context window is</div></div>
     <div class="cp-tip" id="cp-tip" hidden></div>
     <div class="cp-pop menu-pop" id="cp-pop" role="dialog" aria-label="About auto-compact"></div>

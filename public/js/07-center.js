@@ -49,7 +49,7 @@ new MutationObserver(() => {
 }).observe($('#viewport'), { childList: true });
 
 // ---------- 대화 창 사용률 큰 그래프 ----------
-const big = { key: null, sig: '', cmpKey: '', cmp: null };
+const big = { key: null, sig: '' };
 const BIG_N = 160; // 세션이 바뀔 때 선이 부드럽게 옮겨 가도록(CSS transition: d) 늘 같은 개수의 점으로 다시 뽑는다
 const cpHm = (t) => new Date(t).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', hour12: false });
 function resample(pts, win, x, y) {
@@ -62,63 +62,41 @@ function resample(pts, win, x, y) {
   }
   return out;
 }
-async function loadCmp(key) {
-  big.cmpKey = key;
-  big.cmp = key ? await apiJson(`/api/trend?key=${encodeURIComponent(key)}`).catch(() => null) : null;
-  big.sig = '';
-  drawBig();
-}
-$('#cp-cmp').addEventListener('change', (e) => loadCmp(e.target.value));
-
 function drawBig() {
   if (!state) return; // 첫 상태가 오기 전(크기 감시가 먼저 부를 때)
   const s = state.sessions.find((x) => x.key === selected);
   const box = $('#cp-chart');
-  $('#cp-who').textContent = s ? s.title || s.key : t('Pick a session');
-  // 겹쳐 볼 세션 목록(지금 세션 빼고 끝나지 않은 Claude 세션만)
-  const opts = state.sessions.filter((x) => x.key !== selected && x.tool === 'claude' && x.status !== 'ended');
-  const sel = $('#cp-cmp');
-  const want = [`<option value="">${t('None')}</option>`, ...opts.map((x) => `<option value="${esc(x.key)}">${esc(x.title || x.key)}</option>`)].join('');
-  if (sel.dataset.sig !== want) { sel.innerHTML = want; sel.dataset.sig = want; sel.value = opts.some((x) => x.key === big.cmpKey) ? big.cmpKey : ''; }
+  $('#cp-who').textContent = s ? s.title || s.key : '';
   const d = trend.key === s?.key ? trend.data : null;
   if (s && !d && big.key) return; // 다른 세션의 기록을 받는 중 — 앞 선을 두었다가 새 선으로 옮겨 간다
   const win = s?.context?.window;
   if (!s || !d?.supported || !win || d.points.length < 2) {
     const note = t(!s ? 'Pick a session on the left to see how full its context window is' : d && !d.supported ? 'The context trend is based on Claude Code logs' : d ? 'Drawn after more than two replies' : 'Loading…');
-    if (big.sig !== note) { box.innerHTML = `<div class="empty-note">${note}</div>`; $('#cp-now').innerHTML = ''; }
+    if (big.sig !== note) { box.innerHTML = `<div class="empty-note">${note}</div>`; $('#cp-now').innerHTML = ''; $('#cp-now').title = ''; }
     Object.assign(big, { key: null, sig: note });
     return;
   }
   const r = box.getBoundingClientRect();
   const W = Math.max(200, r.width), H = Math.max(80, r.height);
   const pts = d.points;
-  const cmpOn = Boolean(big.cmp?.supported && big.cmp.points.length > 1);
-  const sig = [s.key, pts.length, pts.at(-1).join(), win, W, H, cmpOn && big.cmpKey, cmpOn && big.cmp.points.length].join('|');
+  const sig = [s.key, pts.length, pts.at(-1).join(), win, W, H].join('|');
   if (sig === big.sig) return; // 1초마다 불려도 바뀐 게 없으면 그대로
   const L = 40, R = 14, T = 12, B = 22, t0 = pts[0][0], t1 = pts.at(-1)[0] || t0 + 1;
-  // 겹쳐 볼 땐 두 세션의 시간대가 달라 응답 순서(0 → 끝)로 맞춘다
-  const x = cmpOn ? (i) => L + (i / Math.max(1, pts.length - 1)) * (W - L - R) : (t) => L + ((t - t0) / Math.max(1, t1 - t0)) * (W - L - R);
+  const x = (t) => L + ((t - t0) / Math.max(1, t1 - t0)) * (W - L - R);
   const y = (f) => T + (1 - Math.min(1.05, f)) * (H - T - B);
-  const P = cmpOn ? pts.map((p, i) => [i, p[1]]) : pts;
+  const P = pts;
   const line = resample(P, win, x, y);
   const area = `M${line[0].split(',')[0]},${y(0)} L${line.join(' L')} L${line.at(-1).split(',')[0]},${y(0)} Z`;
-  const grid = [0, 0.25, 0.5, 1].map((f) => `<line class="g" x1="${L}" x2="${W - R}" y1="${y(f)}" y2="${y(f)}"/><text class="gl" x="${L - 8}" y="${y(f) + 4}" text-anchor="end">${f * 100}%</text>`).join('');
-  const xl = cmpOn ? `<text class="gl" x="${L}" y="${H - 4}">${t('First reply')}</text><text class="gl" x="${W - R}" y="${H - 4}" text-anchor="end">${t('Aligned by reply order')} →</text>`
-    : [0, 0.5, 1].map((f) => `<text class="gl" x="${L + f * (W - L - R)}" y="${H - 4}" text-anchor="${['start', 'middle', 'end'][f * 2]}">${cpHm(t0 + f * (t1 - t0))}</text>`).join('');
-  // 앞 점보다 절반 넘게 줄어든 곳 = 자동 요약(06-history.js 의 작은 그래프와 같은 기준). 표시는 점 아래, 시각 글자에 닿으면 위로
+  // 눈금은 0 · 100 만, 시각은 처음 · 끝만(자세한 값은 마우스 올림)
+  const grid = [0, 1].map((f) => `<line class="g" x1="${L}" x2="${W - R}" y1="${y(f)}" y2="${y(f)}"/><text class="gl" x="${L - 8}" y="${y(f) + 4}" text-anchor="end">${f * 100}%</text>`).join('');
+  const xl = [0, 1].map((f) => `<text class="gl" x="${L + f * (W - L - R)}" y="${H - 4}" text-anchor="${f ? 'end' : 'start'}">${cpHm(t0 + f * (t1 - t0))}</text>`).join('');
+  // 앞 점보다 절반 넘게 줄어든 곳 = 자동 요약(06-history.js 의 작은 그래프와 같은 기준). 이름표 없이 점만 — 누르면 설명(넓은 투명 원이 누를 자리)
   const drops = pts.flatMap((p, i) => (i && p[1] < pts[i - 1][1] * 0.5 ? [i] : []));
-  const dropsSvg = drops.map((i) => { const px = x(P[i][0]), py = y(pts[i][1] / win), ly = py + 34 > H - B ? py - 32 : py + 10; return `<g class="drop fade" tabindex="0" role="button" aria-label="${t('Auto-compacted')} ${cpHm(pts[i][0])} — ${t('click for details')}" data-i="${i}"><line class="l80 dl" x1="${px}" x2="${px}" y1="${y(pts[i - 1][1] / win)}" y2="${py}"/><circle cx="${px}" cy="${py}" r="5"/><rect x="${px - 38}" y="${ly}" width="76" height="22" rx="11"/><text x="${px}" y="${ly + 15}" text-anchor="middle">${t('Auto-compacted')}</text></g>`; }).join('');
-  let cmpPath = '';
-  if (cmpOn) {
-    const cw = state.sessions.find((x2) => x2.key === big.cmpKey)?.context?.window || win;
-    const cp = big.cmp.points.map((p, i) => [i, p[1]]);
-    const cx = (i) => L + (i / Math.max(1, cp.length - 1)) * (W - L - R);
-    cmpPath = `<path class="cmp" d="M${resample(cp, cw, cx, y).join(' L')}"/>`;
-  }
+  const dropsSvg = drops.map((i) => { const px = x(P[i][0]), py = y(pts[i][1] / win); return `<g class="drop fade" tabindex="0" role="button" aria-label="${t('Auto-compacted')} ${cpHm(pts[i][0])} — ${t('click for details')}" data-i="${i}"><title>${t('Auto-compacted')} ${cpHm(pts[i][0])}</title><line class="l80 dl" x1="${px}" x2="${px}" y1="${y(pts[i - 1][1] / win)}" y2="${py}"/><circle class="hit" cx="${px}" cy="${py}" r="14"/><circle cx="${px}" cy="${py}" r="5"/></g>`; }).join('');
   if (!box.querySelector('svg') || big.W !== W || big.H !== H) {
     box.innerHTML = `<svg role="img" aria-label="${t('Context window usage trend')}"><defs><linearGradient id="cp-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="stop-a"/><stop offset="1" class="stop-b"/></linearGradient></defs>
-      <g class="grid"></g><line class="l80" x1="${L}" x2="${W - R}" y1="${y(0.8)}" y2="${y(0.8)}"/><text class="l80t" x="${W - R}" y="${y(0.8) - 6}" text-anchor="end">80% · ${t('auto-compact around here')}</text>
-      <path class="area"/><g class="cmpg"></g><path class="line"/><g class="xl"></g><g class="drops"></g>
+      <g class="grid"></g><line class="l80" x1="${L}" x2="${W - R}" y1="${y(0.8)}" y2="${y(0.8)}"/><text class="l80t" x="${W - R}" y="${y(0.8) - 6}" text-anchor="end">80%</text>
+      <path class="area"/><path class="line"/><g class="xl"></g><g class="drops"></g>
       <line class="cross" y1="${T}" y2="${H - B}" visibility="hidden"/><circle class="hdot" r="4.5" visibility="hidden"/></svg>`;
     // 처음 그릴 땐 바닥에서 올라오게, 세션을 바꾸면 앞 선에서 새 선으로 옮겨 간다(CSS transition: d)
     const flat = `M${line.map((p) => `${p.split(',')[0]},${y(0)}`).join(' L')}`;
@@ -130,13 +108,13 @@ function drawBig() {
   svg.querySelector('.grid').innerHTML = grid;
   svg.querySelector('.line').style.d = `path('M${line.join(' L')}')`;
   svg.querySelector('.area').style.d = `path('${area}')`;
-  svg.querySelector('.cmpg').innerHTML = cmpPath;
   svg.querySelector('.drops').innerHTML = dropsSvg;
   svg.querySelector('.xl').innerHTML = xl;
   Object.assign(big, { key: s.key, sig, pts, P, win, x, y, W, H, prevLine: `M${line.join(' L')}`, prevArea: area });
   const last = pts.at(-1)[1];
-  const cs = cmpOn && state.sessions.find((x2) => x2.key === big.cmpKey);
-  $('#cp-now').innerHTML = `<span><b>${Math.round((last / win) * 100)}%</b>${t('now')} · ${fmtTok(last)} / ${fmtTok(win)} ${t('tokens')}</span><span><b>${pts.length}</b>${t('replies')}</span><span><b>${drops.length}</b>${t('auto-compacts')}</span>${cmpOn ? `<span class="key"><i></i>${esc(s.title || '')}</span><span class="key"><i class="cmp"></i>${esc(cs?.title || '')}</span>` : ''}`;
+  // 큰 % 하나만. 토큰 · 응답 수 · 자동 요약 수는 마우스 올림(title)으로
+  $('#cp-now').innerHTML = `<b>${Math.round((last / win) * 100)}%</b>`;
+  $('#cp-now').title = `${fmtTok(last)} / ${fmtTok(win)} ${t('tokens')} · ${t('replies')} ${pts.length} · ${t('auto-compacts')} ${drops.length}`;
 }
 
 // 마우스 올림: 가장 가까운 응답의 시각 · % · 토큰 · 응답 번호
