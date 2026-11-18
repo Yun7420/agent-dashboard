@@ -71,6 +71,7 @@
   --grid-dot: color-mix(in srgb, var(--ink) 5%, transparent);
   --grid-dot-lit: color-mix(in srgb, var(--ink) 20%, transparent); /* 마우스 둘레 점만 +0.15(면은 밝히지 않음) */
   /* 스위치(iOS · macOS 꼴): 손잡이는 두 판 모두 흰색 + 옅은 그림자 한 단계. 흰 손잡이와 바탕 대비 켜짐 5.3 · 꺼짐 3.4(비텍스트 3:1 이상) */
+  --card-line: color-mix(in srgb, var(--border) 55%, transparent); /* 목록 카드 사이 구분선 — 테두리 색을 더 옅게 */
   --float-bg: color-mix(in srgb, var(--surface) 86%, transparent); /* 조직도 위 세 무리(상태 칩 · 범례 · 확대 단추) — 뒤 점 격자가 살짝 비친다 */
   --switch-knob: #ffffff;
   --switch-knob-shadow: 0 1px 2px color-mix(in srgb, var(--shade) 30%, transparent);
@@ -165,3 +166,11 @@ button.switch { background: transparent; border-color: transparent; } /* 단추�
 .dot-s.live { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 15%, transparent); }
 @keyframes pulse { 50% { opacity: .35; } }
 .pulse { animation: pulse 1.4s ease-in-out 1; } /* 계속 깜빡이지 않게 — 나타날 때(상태가 바뀌어 다시 그릴 때) 한 번만 */
+/* 세그먼트 탭(목록 「활성 | 종료」 · 패널 「지금 | 기록」 같은 한 컴포넌트): 둥근 바탕 칸 안에 칸들, 고른 칸만 면을 칠한다.
+   고름은 aria-selected(목록) · .on(패널, 08-now.js) 둘 다. 칸 안 숫자는 작은 흐린 글자, 0 이면 더 흐리게 */
+.seg { flex: none; display: flex; gap: 2px; padding: 3px; height: 32px; align-items: center; background: var(--surface-2); border-radius: 8px; width: fit-content; }
+.tab { white-space: nowrap; flex: none; border: none; background: transparent; color: var(--dim); height: 26px; padding: 0 12px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+.tab:is(.on, [aria-selected="true"]) { background: var(--surface-3); color: var(--text); box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 6%, transparent) inset; }
+.tab:hover:not(.on):not([aria-selected="true"]) { color: var(--text); background: transparent !important; }
+.tab b { margin-left: 4px; font-size: 11px; font-weight: 600; color: var(--faint); font-variant-numeric: tabular-nums; }
+.tab b.zero { opacity: .55; }

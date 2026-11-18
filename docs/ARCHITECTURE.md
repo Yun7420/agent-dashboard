@@ -191,7 +191,7 @@
 | `03-graph.js` | 가운데 조직도(`buildTree` · `layout` · `renderGraph`) · 세션 사이 화살표(`drawLinks`) · 맞춤 · 이동 · 확대(`autoFit` · `applyView` · 보이는 칸 `visibleBox` · 목록 판 폭 `asideW`) |
 | `04-list.js` | 왼쪽 세션 목록(`renderList`) · 「N초 전」만 따로 갱신(`updateAgo`) |
 | `05-approval.js` | 승인 창: 「허락할 내용」 카드(`renderApproveCard`) · 터미널 화면과 선택지 단추(`renderApproval`) · 선택지 읽기(`approvalChoices`, 순수 함수) |
-| `06-history.js` | 오른쪽 패널: 세션 고르기(`select`) · 기록 읽기(`loadHistory`) · 패널 머리 「대화 창 N%」 + 막대(`renderCtxLine`) · 요청 말풍선(`askBubble`) · 코드 복사(`copyCode`) · 입력 칸 안내(`renderComposer`) |
+| `06-history.js` | 오른쪽 패널: 세션 고르기(`select`) · 기록 읽기(`loadHistory`) · ⓘ 세션 정보의 대화 창 한 줄(`ctxText` — 패널 머리 대화 창 줄은 없앰) · 요청 말풍선(`askBubble`) · 코드 복사(`copyCode`) · 입력 칸 안내(`renderComposer`) |
 | `07-center.js` | 가운데 칸(조직도 = 머리 아래 전체 바탕, 목록 · 패널은 뜬 판): 패널 폭 `--dw`(`dwSync`) · 가려진 고른 노드만 보이는 칸으로(`revealSel` · `glideTo`) · + − ⌖(`zoomBy` · `recenter`) · 마우스 올린 노드 강조 · 바탕 스포트라이트(`.spot`, `spotOff`) · 상태가 바뀐 노드 빛남 · 메시지 점(`msgDots` · `msgDot`) · 노드 등장 · 퇴장(`nodeMoves`) |
 | `08-now.js` | 지금 탭(`renderNow`) · 탭 바꾸기(`setTab`) · 바꾼 파일 diff · 실행한 명령(`renderChanges`) · 진행 표시(`renderBusy`) |
 | `09-attach.js` | 입력 칸: 세션별 임시 글 · 첨부(`useDraft` · `pruneDrafts`) · 첨부 · 보내기(`addFiles` · `sendMsg`) · 🎤 음성 입력 |
@@ -487,7 +487,7 @@ GitHub Actions(`.github/workflows/test.yml`)가 push · PR 마다 Ubuntu · macO
 | 파일 | 부르는 이름 → 정의된 파일 | 되돌아오는 길(고리) |
 |---|---|---|
 | `04-list.js` | `select` → 06 | 06 이 04 `renderList` |
-| `06-history.js` | `setTab` · `renderNow` · `renderBusy` → 08, `useDraft` · `updateSendState` → 09, `renderHistory` → 12 | 08 이 06 `renderCtxLine`, 09 가 08 `renderBusy`, 12 가 06 `select` |
+| `06-history.js` | `setTab` · `renderNow` · `renderBusy` → 08, `useDraft` · `updateSendState` → 09, `renderHistory` → 12 | 08 이 06 `askBubble`, 09 가 08 `renderBusy`, 12 가 06 `select` |
 | `08-now.js` | `renderHistory` → 12 | 12 → 06 → 08 |
 
 - 이 목록은 `test/conventions.test.mjs` 가 지켜요(검사기 `test/_helpers/front-deps.mjs`). 새로 생기면 실패하고, 고친 곳은 허용 목록에서 지워야 해서 줄어들기만 해요. let · const 는 허용 목록 없이 0 이어야 해요.

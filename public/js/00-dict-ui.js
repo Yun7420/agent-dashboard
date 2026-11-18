@@ -50,7 +50,6 @@ const KO_UI = {
   "Start of this turn skipped": "이번 턴 앞부분 생략",
   "Window size estimated from the model setting. ": "창 크기는 모델 설정으로 추정했어요. ",
   "When full, Claude auto-summarizes (compacts) the earlier part": "가득 차면 Claude 가 앞부분을 자동 요약(compact)해요",
-  "left": "남은",
   "Model changes work only for sessions started in tmux": "모델 바꾸기는 tmux 로 띄운 세션에서만 돼요",
   "Change model — sends /model to the session": "모델 바꾸기 — 세션에 /model 을 보내요",
   "This session has ended.": "종료된 세션이에요.",

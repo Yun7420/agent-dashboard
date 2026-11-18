@@ -21,24 +21,13 @@ async function loadHistory(key, more = false) {
   return true;
 }
 
-// 패널 머리 「대화 창 33%」 + 작은 막대(80% 눈금 · 60/85 색). 예전 24시간 추이 띠(56px)는 읽히지 않아 없앴다.
-// 마우스를 올리면 토큰과 마지막 자동 요약 시각 — 요약 시각은 기록(/api/history 의 compactAt)을 받을 때 같이 온다. 대화 창 정보가 없으면 숨긴다
+// 대화 창은 조직도 물 채우기 하나로 보여 준다(패널 머리 줄은 없앰). 정확한 숫자는 ⋯ → 세션 정보(ⓘ) 한 줄:
+// 「대화 창 30% · 300K / 1M 토큰 · 마지막 자동 요약 11:26」 — 요약 시각은 기록(/api/history 의 compactAt)을 받을 때 같이 온다(고른 세션 것만)
 const compact = { key: null, at: null };
-function ctxTitle(c, at) {
+function ctxText(s) {
+  const c = s.context, at = compact.key === s.key ? compact.at : null;
   const hm = at ? new Date(at).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', hour12: false }) : t('none');
-  return `${t('Context')} ${c.percent}% · ${fmtTok(c.used)} / ${fmtTok(c.window)} ${t('tokens')} · ${t('Last auto-compact')} ${hm}`; // 좁아 % 글자를 뺐을 때도 여기서 보이게
-}
-function renderCtxLine(s) {
-  const c = s.context, row = $('#ctx-line');
-  row.hidden = !c;
-  if (!c) return;
-  const at = compact.key === s.key ? compact.at : null;
-  $('#cl-label').textContent = t('Context');
-  $('#cl-pct').textContent = `${c.percent}%`;
-  $('#cl-pct').className = ctxLevel(c.percent);
-  $('#cl-fill').className = `ctx-bar ${ctxLevel(c.percent)}`;
-  $('#cl-fill').style.width = `${Math.min(100, c.percent)}%`;
-  row.title = ctxTitle(c, at);
+  return `${t('Context')} ${c.percent}% · ${fmtTok(c.used)} / ${fmtTok(c.window)} ${t('tokens')} · ${t('Last auto-compact')} ${hm}`;
 }
 
 // 요청 말풍선 하나(지금 탭 · 기록 탭): 사람이 보냈든 다른 세션이 보냈든 같은 모양 · 같은 함수 — 위 이름표만 다르다(「나」 / 「↙ 세션 이름」).
@@ -90,7 +79,7 @@ function renderDrawerHead(s) {
   $('#d-title').textContent = s.title;
   $('#d-title').title = s.title;
   $('#d-dot').className = `dot-s ${s.status} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}`;
-  $('#d-meta').innerHTML = `<span class="badge tool ${esc(s.tool)}">${esc(s.toolLabel)}</span>${s.model ? `<span class="badge badge-model" title="${esc(s.model)}">${esc(modelName(s.model))}</span>` : ''}${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span style="display:inline-flex;align-items:center;gap:6px"><span class="dot-s ${esc(s.status)}"></span>${STATUS_KO[s.status]}${s.waitingFor ? ' · ' + esc(s.waitingFor) : ''}</span><span class="path">${esc(s.cwd || '')}</span><span class="mono">${t('Session')} ${esc(s.id.slice(0, 8))}</span>${s.pid ? `<span>PID ${s.pid}</span>${s.startedAt ? `<span title="${esc(new Date(s.startedAt).toLocaleString())}">${t('Up')} ${upFor(s.startedAt)}</span>` : ''}` : ''}${s.ide ? `<span>${t('Editor extension')}</span>` : ''}<span>${t('Log')} ${s.sizeMB ?? 0}MB</span>${s.turnClipped ? `<span title="${t('The last request is more than 8MB before the end of the log, so only the last 8MB of this turn was read')}">${t('Start of this turn skipped')}</span>` : ''}${s.context ? `<span class="ctx-chip" title="${s.context.estimated ? t('Window size estimated from the model setting. ') : ''}${t('When full, Claude auto-summarizes (compacts) the earlier part')}"><span class="mini"><span class="ctx-bar ${ctxLevel(s.context.percent)}" style="display:block;width:${s.context.percent}%"></span></span>${t('Context')} ${s.context.percent}% · ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)} · ${t('left')} ${fmtTok(Math.max(0, s.context.window - s.context.used))}</span>` : ''}`;
+  $('#d-meta').innerHTML = `<span class="badge tool ${esc(s.tool)}">${esc(s.toolLabel)}</span>${s.model ? `<span class="badge badge-model" title="${esc(s.model)}">${esc(modelName(s.model))}</span>` : ''}${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span style="display:inline-flex;align-items:center;gap:6px"><span class="dot-s ${esc(s.status)}"></span>${STATUS_KO[s.status]}${s.waitingFor ? ' · ' + esc(s.waitingFor) : ''}</span><span class="path">${esc(s.cwd || '')}</span><span class="mono">${t('Session')} ${esc(s.id.slice(0, 8))}</span>${s.pid ? `<span>PID ${s.pid}</span>${s.startedAt ? `<span title="${esc(new Date(s.startedAt).toLocaleString())}">${t('Up')} ${upFor(s.startedAt)}</span>` : ''}` : ''}${s.ide ? `<span>${t('Editor extension')}</span>` : ''}<span>${t('Log')} ${s.sizeMB ?? 0}MB</span>${s.turnClipped ? `<span title="${t('The last request is more than 8MB before the end of the log, so only the last 8MB of this turn was read')}">${t('Start of this turn skipped')}</span>` : ''}${s.context ? `<span class="ctx-chip" title="${s.context.estimated ? t('Window size estimated from the model setting. ') : ''}${t('When full, Claude auto-summarizes (compacts) the earlier part')}"><span class="mini"><span class="ctx-bar ${ctxLevel(s.context.percent)}" style="display:block;width:${s.context.percent}%"></span></span>${ctxText(s)}</span>` : ''}`;
   $('#end-session').hidden = s.status === 'ended';
   const fam = (s.model || '').match(/opus|sonnet|haiku/)?.[0] ?? '';
   $('#d-model').value = fam;

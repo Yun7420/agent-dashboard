@@ -2,12 +2,7 @@
 /* ---------- 왼쪽 목록 ---------- */
 aside { position: relative; z-index: var(--z-float); justify-self: start; width: var(--aw); overflow-x: hidden; overflow-y: auto; background: var(--surface); box-shadow: var(--shadow-panel); transition: width var(--slide); }
 .sort-bar { position: sticky; top: 0; z-index: var(--z-raised); background: var(--surface); height: var(--bar-h); padding: 0 var(--sp-3) 0 var(--sp-4); display: flex; gap: var(--sp-2); align-items: center; }
-.list-tabs { flex: 1; min-width: 0; display: flex; gap: 2px; }
-.list-tabs [role="tab"] { height: 30px; padding: 0 10px; border-color: transparent; background: transparent; color: var(--dim); font-size: 13px; font-weight: 600; border-radius: 8px; }
-.list-tabs [role="tab"]:hover:not(:disabled) { background: var(--surface-2); border-color: transparent; color: var(--text); }
-.list-tabs [role="tab"][aria-selected="true"] { background: var(--surface-3); color: var(--text); }
-.list-tabs [role="tab"] b { margin-left: 2px; color: var(--faint); font-weight: 600; font-variant-numeric: tabular-nums; }
-.list-tabs [role="tab"][aria-selected="true"] b { color: var(--dim); }
+.list-tabs { margin-right: auto; } /* 세그먼트 탭(00-base.css 의 .seg · .tab) — 정렬 아이콘은 오른쪽 끝 */
 /* 정렬 아이콘: 투명한 select 를 아이콘 위에 겹쳐 누르면 기본 목록이 뜬다 */
 .sort-ic { position: relative; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; color: var(--dim); cursor: pointer; transition: background .15s, color .15s; }
 .sort-ic:hover { background: var(--surface-2); color: var(--text); }
@@ -42,10 +37,14 @@ body.aside-folded #restore { display: none; }
 .empty .empty-line { align-items: center; pointer-events: auto; } /* 가운데 칸(구조 탭) — 바탕 칸은 마우스를 통과시키지만 단추는 누를 수 있게 */
 body.aside-folded .empty-line { display: none; }
 /* 카드는 테두리 없이 면 차이로: 평소 = 목록 바탕, 올림 = 한 단계 밝게, 고름 = 두 단계 + 왼쪽 초록 줄. 승인 필요만 테두리로 눈에 띄게 */
-.card { position: relative; padding: var(--sp-3); margin: var(--sp-1) 0; border-radius: var(--radius); border: 1px solid transparent; background: transparent; cursor: pointer; transition: background .15s, border-color .15s; }
+.card { position: relative; padding: var(--sp-2) var(--sp-3); margin: var(--sp-1) 0; border-radius: var(--radius); border: 1px solid transparent; background: transparent; cursor: pointer; transition: background .15s, border-color .15s; }
 .card:hover { background: var(--surface-2); }
 .card.sel { background: var(--surface-3); box-shadow: inset 3px 0 0 var(--accent); }
 .card.waiting { border-color: color-mix(in srgb, var(--waiting) 45%, transparent); }
+/* 카드 사이 옅은 1px 선(카드 안쪽 여백만큼 들여서, 위 카드와의 틈 가운데) — 막대가 빠져 경계가 안 보여서. 마지막 카드 아래 · 무리 제목 앞 · 접힌 띠엔 없음.
+   면이 칠해진 카드(고름 · 올림 · 승인 필요)의 위아래에선 숨겨 면과 선이 겹치지 않게 */
+.card + .card::before { content: ''; position: absolute; left: var(--sp-3); right: var(--sp-3); top: -3px; height: 1px; background: var(--card-line); pointer-events: none; }
+.card:is(.sel, :hover, .waiting)::before, .card:is(.sel, :hover, .waiting) + .card::before, body.aside-folded .card::before { display: none; }
 /* 키보드(j/k)로 고른 카드 · 위험 요청에서 숫자를 한 번 누른 단추(한 번 더 누르면 허락) */
 .card.kb:not(.sel) { outline: 2px dashed color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: -2px; }
 #approve-btns button.kb-arm { outline: 2px solid var(--working); outline-offset: 2px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--working) 18%, transparent); }

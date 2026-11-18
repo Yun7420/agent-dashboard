@@ -7,14 +7,6 @@
 #drawer .head-top h2 { margin: 0 2px 0 4px; font-size: 16px; font-weight: 700; letter-spacing: -.01em; min-width: 4em; max-width: 34%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #drawer .head-top .grow { flex: 1; }
 #drawer .head-top > :not(h2, .grow) { flex-shrink: 0; } /* 좁아지면 이름만 줄어든다(탭 · 대화 창 · 모델 · ⋯ 는 그대로) */
-/* 대화 창(renderCtxLine): 머리 첫 줄 모델 선택 바로 왼쪽에 「대화 창 33%」 + 64px 막대 · 80% 눈금(자동 요약이 가까워지는 곳) */
-.ctx-line { flex: none; display: flex; align-items: center; gap: 6px; margin-right: 4px; color: var(--faint); font-size: 12px; white-space: nowrap; cursor: help; }
-.ctx-line[hidden] { display: none; }
-.ctx-line b { color: var(--text); font-variant-numeric: tabular-nums; }
-.ctx-line b.mid { color: var(--working-text); } .ctx-line b.high { color: var(--waiting-text); }
-.cl-bar { position: relative; width: 64px; height: 4px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 8%, transparent); }
-.cl-bar::after { content: ''; position: absolute; left: 80%; top: -2px; width: 1px; height: 8px; background: var(--faint); }
-.cl-bar .ctx-bar { display: block; height: 100%; border-radius: 3px; }
 #drawer .tabs { margin: 0 0 0 6px; }
 .icon-btn.sm { width: 32px; height: 32px; border-radius: 8px; }
 .info-wrap { position: relative; display: inline-flex; }
@@ -60,11 +52,6 @@
 #log-view[hidden] { display: none; }
 #log-view .search { margin: 12px 16px 4px; }
 #log-list { overflow-y: auto; flex: 1; min-height: 60px; }
-.tabs { display: flex; gap: 2px; margin-top: 12px; padding: 3px; height: 32px; align-items: center; background: var(--surface-2); border-radius: 8px; width: fit-content; }
-.tabs { flex: none; }
-.tab { white-space: nowrap; flex: none; border: none; background: transparent; color: var(--dim); height: 26px; padding: 0 12px; border-radius: 8px; font-size: 13px; font-weight: 600; }
-.tab.on { background: var(--surface-3); color: var(--text); box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 6%, transparent) inset; }
-.tab:hover:not(.on) { color: var(--text); background: transparent !important; }
 #now-view { flex: 1; min-height: 0; overflow: hidden; padding: 14px 16px 8px; display: flex; flex-direction: column; gap: 10px; }
 #now-view[hidden] { display: none; }
 .now-prompt { flex: none; max-height: 60%; overflow-y: auto; } /* 펼친 긴 요청이 답변 카드를 다 밀어내지 않게만 */

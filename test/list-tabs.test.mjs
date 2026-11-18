@@ -15,9 +15,10 @@ function load(saved = {}, { folded = false } = {}) {
   const store = { 'agent-deck': JSON.stringify({ hidden: ['e2'], ...saved }) };
   const els = {};
   const on = {};
-  const el = (sel) => (els[sel] ??= {
+  const el = (sel) => els[sel] ?? ((els[sel] = mk(sel)), (els[sel].classList.owner = els[sel]), els[sel]);
+  const mk = (sel) => ({
     sel, innerHTML: '', textContent: '', value: '', dataset: {}, style: {}, attrs: {},
-    classList: { add() {}, remove() {}, toggle: () => false, contains: () => false },
+    cls: new Set(), classList: { add() {}, remove() {}, toggle(c, on) { on ? this.owner.cls.add(c) : this.owner.cls.delete(c); return on; }, contains: () => false },
     setAttribute(k, v) { this.attrs[k] = v; }, addEventListener(ty, fn) { (on[sel] ??= {})[ty] = fn; },
     querySelectorAll: () => [], focus() {},
   });
@@ -48,6 +49,22 @@ test('활성 탭: 떠 있는 세션만, 탭 숫자는 활성 2 · 종료 1(목�
   assert.deepEqual([els['#tab-live'].attrs['aria-selected'], els['#tab-ended'].attrs['aria-selected']], ['true', 'false']);
 });
 
+test('탭 숫자: 0 이면 zero(더 흐리게), 1 이상이면 뗌 · 목록 · 패널 탭은 같은 세그먼트 컴포넌트(.seg · .tab)', async () => {
+  const { run, els, keys } = load();
+  keys();
+  assert.deepEqual([els['#tab-live-n'].cls.has('zero'), els['#tab-ended-n'].cls.has('zero')], [false, false]);
+  run("state.sessions = state.sessions.filter((s) => s.status !== 'ended')");
+  keys();
+  assert.ok(els['#tab-ended-n'].cls.has('zero'));
+  const fs = await import('node:fs');
+  const html = fs.readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
+  assert.match(html, /class="list-tabs seg" role="tablist"/);
+  assert.match(html, /class="tabs seg" role="tablist"/);
+  assert.equal((html.match(/<button type="button" class="tab[" ][^>]*role="tab"/g) || []).length, 4);
+  const base = fs.readFileSync(new URL('../public/css/00-base.css', import.meta.url), 'utf8');
+  assert.match(base, /\.tab:is\(\.on, \[aria-selected="true"\]\) \{ background: var\(--surface-3\)/);
+});
+
 test('카드는 이름 · 상태 · 흐린 한 줄(폴더 · 시간)만 — 대화 창 막대 없음(조직도 물 채우기 · 패널 머리 % 가 맡음)', () => {
   const { run, els, keys } = load();
   run("state.sessions[0].context = { percent: 72, used: 144000, window: 200000 }");
@@ -56,6 +73,14 @@ test('카드는 이름 · 상태 · 흐린 한 줄(폴더 · 시간)만 — 대�
   assert.match(card, /class="title">.*Work<\/div>.*class="status working"/s);
   assert.match(card, /class="sub">.*class="proj">p<\/span><span class="ago"/s);
   assert.doesNotMatch(els['#list'].innerHTML, /ctx|72%/);
+});
+
+test('카드 사이 구분선: 다음 카드 위에만(마지막 아래 없음) · 안쪽 여백만큼 들임 · 칠해진 카드 위아래 · 접힌 띠엔 숨김', async () => {
+  const fs = await import('node:fs');
+  const css = fs.readFileSync(new URL('../public/css/02-list.css', import.meta.url), 'utf8');
+  assert.match(css, /\.card \+ \.card::before \{ content: ''; position: absolute; left: var\(--sp-3\); right: var\(--sp-3\); top: -3px; height: 1px; background: var\(--card-line\);/);
+  assert.match(css, /\.card:is\(\.sel, :hover, \.waiting\)::before, \.card:is\(\.sel, :hover, \.waiting\) \+ \.card::before, body\.aside-folded \.card::before \{ display: none; \}/);
+  assert.match(fs.readFileSync(new URL('../public/css/00-base.css', import.meta.url), 'utf8'), /--card-line: color-mix\(in srgb, var\(--border\) \d+%, transparent\)/);
 });
 
 test('종료 탭: 종료 카드만 + 다시 열기, 비면 「최근 24시간 안에 종료된 세션이 없어요」', () => {

@@ -170,7 +170,7 @@ A session already running in a terminal has no official way to receive input fro
 
 - Sort: **manual** (drag cards to fix the order) · by status (recent first)
 - Sorting is the small icon at the top right of the list
-- Card: name · status + one faint line (folder · time). Context use is shown by the water fill in the org chart nodes (to compare sessions) and "Context N%" in the panel header (exact number). Tags only when not the default (Codex · "View only" outside tmux)
+- Card: name · status + one faint line (folder · time). Context use is shown by the water fill in the org chart nodes; the exact number is in ⓘ session info. Tags only when not the default (Codex · "View only" outside tmux)
 - **Collapse the list** with the ‹ tab at the middle of its right edge — a thin rail keeps status dots + initials (› to expand, click to open)
 - List tabs **Active N** · **Ended N** — the Ended tab shows sessions that ended in the last 24 hours (with "Reopen"); your tab is remembered. The folded strip shows active sessions only
 - Hover for ✕ — close the session (with confirmation) / hide an ended session
@@ -198,7 +198,7 @@ A session already running in a terminal has no official way to receive input fro
 - While working, **■ Stop** on the answer card stops the current task only (sends Esc); the session and conversation stay
 - **History** tab: past prompts and answers, search, "load more". Every request uses the same bubble with a faint label above it — "You" for yours, "↙ sender" for a message from another session (SendMessage); the Now tab and global search match. Long requests show 4 lines and "More"
 - **What I did today**: ⋯ at the top right → Today's work → per session: prompts, edited files, command count, **commit titles** and **tokens** (total · excluding cache; hover for input · output · cache read · cache write · subagents, plus a daily total) (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts). Each response is counted once, and tokens are never converted to money (pricing differs by plan)
-- **Context** (header row, left of the model picker): "Context N%" (amber at 60%, red at 85%) + a small bar with an 80% tick. Hover it for %, tokens (331K / 1M) and the last auto-compact time. When the panel is narrow it drops the word, then shortens the bar, then truncates the name — the bar always stays. Hidden when there is no data (e.g. Codex)
+- **Context**: shown only by the water fill in the org chart nodes (amber at 60%, red at 85%, short line on the right = 80%). For the exact number, open the panel ⋯ → ⓘ session info: "Context 30% · 300K / 1M tokens · Last auto-compact 11:26". When there is no data (e.g. Codex) the node is an empty box
 - **Search all history**: type straight into the **search bar** at the top center (or press `/`; 🔍 on narrow screens) and matches from prompts and answers across all sessions drop down below it → pick one with `↑`/`↓` and `Enter` (or click) to open that session's History tab with the same query. `Esc` once closes the list, twice clears the bar
 - **Keyboard shortcuts** (also under ⋯ → Help)
 

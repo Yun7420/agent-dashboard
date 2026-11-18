@@ -45,9 +45,9 @@
 <aside>
   <div class="sort-bar">
     <!-- 목록 탭: 활성(지금 떠 있는 세션 · 정렬 · 끌기) / 종료(최근 24시간, 다시 열기) — 고른 탭은 agent-deck 의 listTab(04-list.js) -->
-    <div class="list-tabs" role="tablist" aria-label="Sessions">
-      <button type="button" role="tab" id="tab-live" data-tab="live" aria-selected="true">Active <b id="tab-live-n">0</b></button>
-      <button type="button" role="tab" id="tab-ended" data-tab="ended" aria-selected="false">Ended <b id="tab-ended-n">0</b></button>
+    <div class="list-tabs seg" role="tablist" aria-label="Sessions">
+      <button type="button" class="tab" role="tab" id="tab-live" data-tab="live" aria-selected="true">Active <b id="tab-live-n">0</b></button>
+      <button type="button" class="tab" role="tab" id="tab-ended" data-tab="ended" aria-selected="false">Ended <b id="tab-ended-n">0</b></button>
     </div>
     <!-- 정렬: 작은 아이콘 위에 투명한 select 를 겹쳐 둔다(키보드 · 화면 읽기는 select 그대로) -->
     <label class="sort-ic" title="Sort"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13M3 12h9M3 18h5M18 9V20M15 17l3 3 3-3"/></svg>
@@ -95,13 +95,11 @@
       <div class="head-top">
         <span class="dot-s" id="d-dot"></span>
         <h2 id="d-title"></h2>
-        <div class="tabs" role="tablist" aria-label="Session panel views">
+        <div class="tabs seg" role="tablist" aria-label="Session panel views">
           <button type="button" class="tab on" data-tab="now" id="tab-now" role="tab" aria-selected="true" aria-controls="now-view">Now</button>
           <button type="button" class="tab" data-tab="log" id="tab-log" role="tab" aria-selected="false" aria-controls="log-view" tabindex="-1">Log</button>
         </div>
         <span class="grow"></span>
-        <!-- 대화 창: 지금 % + 작은 막대(06-history.js 의 renderCtxLine) — 마우스를 올리면 토큰 · 마지막 자동 요약. 좁으면 글자 → 막대 순으로 뺀다(12-narrow.css) -->
-        <span class="ctx-line" id="ctx-line" hidden><span id="cl-label"></span><b id="cl-pct"></b><span class="cl-bar"><span id="cl-fill"></span></span></span>
         <select id="d-model" title="Change model (tmux sessions only)">
           <option value="" disabled>Model</option>
           <option value="opus">Opus</option>

@@ -13,6 +13,7 @@ function renderList() {
   const endedAll = ordered(state.sessions.filter((s) => s.status === 'ended' && !pref.hidden.includes(s.key)));
   for (const [tab, n] of [['live', live.length], ['ended', endedAll.length]]) {
     $(`#tab-${tab}-n`).textContent = n;
+    $(`#tab-${tab}-n`).classList.toggle('zero', !n); // 0 이면 더 흐리게
     $(`#tab-${tab}`).setAttribute('aria-selected', String(pref.listTab === tab));
   }
   const groups = endedTab() ? [[null, endedAll]]
