@@ -15,7 +15,7 @@ function buildTree() {
       const p = { kind: 'group', label: project, dir: items.find((s) => s.cwd)?.cwd ?? null, children: [], status: items.some((s) => s.status === 'waiting') ? 'waiting' : items.some((s) => s.status === 'working') ? 'working' : items.some((s) => s.status === 'background') ? 'background' : items.some((s) => s.status === 'idle') ? 'idle' : 'ended' };
       for (const s of items) {
         p.children.push({
-          kind: 'session', key: s.key, tool: s.tool, label: s.title, sub: `${STATUS_KO[s.status]}${s.lastTool && s.status === 'working' ? ' · ' + s.lastTool : ''}`, status: s.status,
+          kind: 'session', key: s.key, tool: s.tool, label: s.title, sub: `${STATUS_KO[s.status]}${s.lastTool && s.status === 'working' ? ' · ' + s.lastTool : ''}`, status: s.status, ctx: s.status === 'ended' ? null : s.context,
           children: subNodes(s),
         });
       }
@@ -78,6 +78,7 @@ function renderGraph() {
   const b = bounds(tree), sig = `${b.x2 | 0}x${b.y2 | 0}`;
   if (sig !== view.sig) { view.sig = sig; view.init = false; }
   let edges = '', nodes = '';
+  clipSeq = 0;
   const walk = (n, p = '0') => { // p = 뿌리부터의 자리(0.1.2) — 마우스를 올린 노드의 위아래 줄기를 찾는 데 쓴다(07-center.js)
     n.children.forEach((c, ci) => { const cp = `${p}.${ci}`;
       const hot = c.status === 'working';
@@ -94,12 +95,12 @@ function renderGraph() {
       walk(c, cp);
     });
     const cls = ['node', n.dir ? 'proj' : '', n.kind === 'sub' ? 'sub' : '', n.more ? 'more' : '', n.kind === 'group' || n.kind === 'root' ? 'group' : '', n.status || '', n.key && n.key === selected ? 'sel' : ''].join(' ');
-    const mx = n.tool ? 8 : 0, max = Math.floor((n.w - 14 - 2 * mx) / 7.4); // 12px 글자 기준 — 종류 표식이 있으면 글자를 그만큼 오른쪽으로(mx)
+    const max = Math.floor((n.w - 14 - (n.tool ? 32 : 0)) / 7.4); // 12px 글자 기준 — 이름은 가운데, 왼쪽 위 종류 표식 자리만큼 양쪽을 비운다
     const subMax = Math.floor((n.w - 12) / 6.4); // 10px
     nodes += `<g class="${esc(cls)}" data-path="${p}" data-st="${esc(n.status || '')}" ${n.key ? `data-key="${esc(n.key)}"` : ''} ${n.toggle ? `data-toggle="${esc(n.toggle)}"` : ''} ${n.dir ? `data-dir="${esc(n.dir)}"` : ''} transform="translate(${n.x},${n.y})">
-      <rect width="${n.w}" height="${n.h}" rx="10"/>${n.tool ? kmarkSvg(n.tool, 14, 14) : ''}
-      <text x="${n.w / 2 + mx}" y="${n.sub ? n.h / 2 - 4 : n.h / 2 + 4}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
-      ${n.sub ? `<text class="t2" x="${n.w / 2 + mx}" y="${n.h / 2 + 13}" text-anchor="middle">${esc(fit(String(n.sub).toUpperCase(), subMax))}</text>` : ''}
+      <rect width="${n.w}" height="${n.h}" rx="10"/>${n.ctx ? waterSvg(n) : ''}${n.tool ? kmarkSvg(n.tool, 14, 14) : ''}
+      <text x="${n.w / 2}" y="${n.sub ? n.h / 2 - 4 : n.h / 2 + 4}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
+      ${n.sub ? `<text class="t2" x="${n.w / 2}" y="${n.h / 2 + 13}" text-anchor="middle">${esc(fit(String(n.sub).toUpperCase(), subMax))}</text>` : ''}
     </g>`;
   };
   walk(tree);

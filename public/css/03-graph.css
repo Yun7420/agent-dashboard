@@ -19,6 +19,17 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 .node.ended text { opacity: .45; }
 .node.sel rect { stroke: var(--accent); stroke-width: 1.6; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 24%, transparent)); }
 .node text { fill: var(--text); font: 600 12px var(--sans); }
+/* 물 채우기(02-water.js 의 waterSvg): 글자 대비가 그대로이게 아주 흐리게, 차오를 때만 0.5초 */
+.node .water { fill: color-mix(in srgb, var(--ok) 6%, transparent); transform: translateY(var(--y)); }
+.node .water.mid { fill: color-mix(in srgb, var(--working) 7%, transparent); }
+.node .water.high { fill: color-mix(in srgb, var(--waiting) 7%, transparent); }
+.node .water-top { fill: none; stroke: color-mix(in srgb, var(--ok) 55%, transparent); stroke-width: 1.2; transform: translateY(var(--y)); }
+.node .water-top.mid { stroke: color-mix(in srgb, var(--working) 60%, transparent); }
+.node .water-top.high { stroke: color-mix(in srgb, var(--waiting) 60%, transparent); }
+.node .water.moving, .node .water-top.moving { animation: fill-rise .5s ease-out; }
+@keyframes fill-rise { from { transform: translateY(var(--from)); } }
+.node[data-key] > text { paint-order: stroke; stroke: var(--surface-2); stroke-width: 3px; stroke-linejoin: round; } /* 물낯 선이 글자를 긋지 않게 글자 둘레를 바탕색으로(지도 글씨처럼) */
+.node .tick80 { stroke: var(--faint); stroke-width: 1; opacity: .6; }
 .node text.t2 { fill: var(--faint); font: 500 10px var(--sans); letter-spacing: .04em; }
 /* 세션 상태는 점 대신 아래 줄(대기 · 작업 중 …) 글자색으로 */
 .node:not(.proj):not(.group).idle text.t2 { fill: var(--idle); }
