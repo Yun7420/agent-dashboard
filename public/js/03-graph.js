@@ -70,7 +70,7 @@ function layout(node, depth = 0, x0 = 0) {
 function fit(s, n) { return s.length > n ? s.slice(0, n - 1) + '…' : s; }
 
 function renderGraph() {
-  const tree = buildTree();
+  if (!state) return; const tree = buildTree(); // 첫 상태 전(0 키 · 창 크기 바꿈 · 더블클릭 · 정렬)엔 그릴 것이 없다
   $('#empty').hidden = tree.children.length > 0;
   const shown = new Set(visible().map((s) => s.key));
   GAP_Y = (state.links || []).some((l) => shown.has(l.from) && shown.has(l.to)) ? 104 : 64;

@@ -8,7 +8,7 @@ pref.listTab = pref.listTab === 'ended' ? 'ended' : 'live';
 const endedTab = () => pref.listTab === 'ended' && !document.body.classList.contains('aside-folded');
 function renderList() {
   const list = $('#list');
-  if (dragKey) return; // 끌고 있는 동안은 다시 그리지 않는다
+  if (dragKey || !state) return; // 끌고 있는 동안은 다시 그리지 않는다 · 첫 상태 전(정렬 바꿈)엔 그릴 것이 없다
   const live = visible().filter((s) => s.status !== 'ended');
   const endedAll = ordered(state.sessions.filter((s) => s.status === 'ended' && !pref.hidden.includes(s.key)));
   for (const [tab, n] of [['live', live.length], ['ended', endedAll.length]]) {

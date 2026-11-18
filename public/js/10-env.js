@@ -28,7 +28,7 @@ function applyTools() {
     b.disabled = noTmux;
     b.title = noTmux ? NO_TMUX : b.dataset.title;
   }
-  if (state) renderList();
+  renderList(); // 첫 상태 전이면 renderList 가 그냥 돌아온다
 }
 function renderEnv() {
   if (!envData) { $('#env-list').innerHTML = `<div class="env-row"><span class="lv error">✕</span><span class="nm">${t('Check failed')}</span><span class="dt">${esc(envError || t('Could not reach the server'))}</span></div>`; return; }
