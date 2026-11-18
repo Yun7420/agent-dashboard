@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { FAKE_BIN } from './_helpers/server.mjs';
-import { listPanes, findPane, capture, captureWithFocus, sendText, sendKey, newSession } from '../lib/tmux.mjs';
+import { listPanes, findPane, capture, captureWithFocus, sendText, sendKey, newSession, cleanText } from '../lib/tmux.mjs';
 
 const dir = tmpDir('ad-tmux-');
 const LOG = path.join(dir, 'fake.log');
@@ -60,6 +60,18 @@ test('sendText: 붙여넣기 버퍼(stdin) → paste-buffer → Enter 순서, se
   assert.deepEqual(calls().at(-1).args, ['send-keys', '-t', '%2', 'Escape']);
   assert.equal(await newSession({ name: 'n', cwd: '/w', command: ['claude', '--', '-x'] }), '%90'); // 새 창 번호(-P -F) — 첫 프롬프트를 넣을 곳
   assert.deepEqual(calls().at(-1).args, ['new-session', '-d', '-P', '-F', '#{pane_id}', '-s', 'n', '-c', '/w', '-x', '200', '-y', '50', '--', 'claude', '--', '-x']);
+});
+
+// 보안 검토 2026-11-18: ESC · 붙여넣기 끝 신호가 섞이면 붙여넣기 밖으로 빠져 키 입력으로 읽힐 수 있다 → \n · \t 만 남기고 지운다
+test('sendText: 줄바꿈 · 탭을 뺀 제어 문자(ESC · 붙여넣기 끝 신호 · CR · DEL)는 지우고 보낸다 — 붙여넣기 · send-keys · 첨부 경로 글 모두', async () => {
+  assert.equal(cleanText('a\x1b[201~b\r\nc\td\x7f\x00\x07e'), 'a[201~b\nc\tde');
+  const subs = async (text, opts) => { const before = calls().length; await sendText('%5', text, opts); return calls().slice(before); };
+  const pasted = await subs('끝\x1b[201~\x1b[A 위로\n줄');
+  assert.equal(pasted[0].stdin, '끝[201~[A 위로\n줄');
+  const typed = await subs('/compact\x1b\x03');
+  assert.deepEqual(typed[0].args, ['send-keys', '-l', '-t', '%5', '--', '/compact']);
+  const withFile = await subs('봐 줘\n[첨부] /up/a\x1b]0;x\x07.png', { paste: true });
+  assert.equal(withFile[0].stdin, '봐 줘\n[첨부] /up/a]0;x.png');
 });
 
 test('sendText: 한 줄 슬래시 명령은 send-keys -l 로 쳐 넣고 Enter, 여러 줄 · 일반 글 · paste: true 는 붙여넣기', async () => {

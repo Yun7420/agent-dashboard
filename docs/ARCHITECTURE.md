@@ -140,7 +140,7 @@
 | `lib/login-open.mjs` | `agent-dashboard open`(`openLogin`): 127.0.0.1 · [::1] 서버가 진짜인지 확인한 뒤 로그인 링크를 브라우저로 |
 | `lib/paths.mjs` | 데이터 폴더(`DATA_DIR`) · 시험 모드(`TEST_MODE`) · 폴더 안 검사(`isInside` · `allInside`) · 화면용 `~` 줄이기(`tildify`) |
 | `lib/perms.mjs` | `~/.agent-dashboard` 아래 폴더를 700 · 파일을 600 으로 좁히기(`tightenTree` · `tightenFiles`) |
-| `lib/claude-settings.mjs` | `~/.claude/settings.json` 을 안전하게 고치기(`updateJson`), 상태줄 켜기 · 끄기 |
+| `lib/claude-settings.mjs` | `~/.claude/settings.json` 을 안전하게 고치기(`updateJson` — rename 직전 ino · mtime 재확인), 상태줄 켜기 · 끄기(정확한 경로만) · 백업 최근 5개(`pruneBackups`) · 최상위 `model` 줄 |
 | `lib/atomic-write.mjs` | 파일 한 번에 바꾸기(`writeAtomic` · `writeAtomicIn`): 난수 임시 파일 `wx` → fsync → rename — 링크를 따라 쓰지 않음(점검 C7) |
 | `lib/bridge.mjs` | 상태줄 다리를 `~/.agent-dashboard/bin` 에 복사해 등록(`enableBridge` · `syncBridge`) |
 
@@ -154,7 +154,7 @@
 | `lib/runner.mjs` | 실행기: 서버가 죽으면 다시 켜기(`createRunner`) · 로그 5MB 넘으면 `.1` 로 돌리기 |
 | `lib/notify.mjs` | 무엇을 언제 알릴지(`createNotifier`) · macOS 알림 인자(`osascriptArgs`) · 설정 파일 |
 | `lib/notify-api.mjs` | 알림 설정 값을 들고(`createNotifyApi`) 틱마다 알리기(`tick`) · 경로 `/api/notify` · `/api/notify/test` |
-| `lib/housekeeping.mjs` | 켤 때 · 6시간마다 정리(`startHousekeeping`): 권한 600 · 14일 지난 첨부 · 30일 지난 한도 기록 · 상태줄 파일 |
+| `lib/housekeeping.mjs` | 켤 때 · 6시간마다 정리(`startHousekeeping`): 권한 600 · 14일 지난 첨부 · 30일 지난 한도 기록 · 상태줄 파일 · settings 백업 최근 5개 |
 | `lib/limits.mjs` | 예전 계정 한도 추이 하루 파일 정리만(`pruneLimits`, 30일 — 추이 기록 · 그래프는 간추리기 2에서 없앰) |
 
 ### lib — 작은 도구
@@ -360,6 +360,8 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 | 붙여넣기 버퍼 | `lib/tmux.mjs:sendText` | 보낼 때마다 새 이름(`agent-deck-<무작위>`)으로 넣고 붙이면서 지움(`-d`), 붙이기가 실패해도 지움. 두 세션에 거의 동시에 보내도 글이 섞이지 않고 tmux 에 남지 않게 |
 | 슬래시 명령 한 줄 | `lib/tmux.mjs:sendText` · `isSlashLine` | `/compact` 같은 한 줄은 붙여넣기 대신 `send-keys -l -t <창> -- <글>` 로 쳐 넣고 Enter(붙여 넣은 글은 Claude Code 가 명령으로 안 봐서). `-l` 이라 「Enter」 · 「C-c」 같은 글이 키 이름으로 읽히지 않고, `--` 라 글이 옵션으로 읽히지 않아요. 여러 줄 · 첨부가 붙은 글은 붙여넣기 그대로(`test/tmux.test.mjs`) |
 | 상태줄 명령 | `lib/bridge.mjs:bridgeCommand` | 경로에 따옴표 · `$` · `` ` `` 등이 있으면 켜지 않음(설정 파일 속 명령에 끼어들지 못하게) |
+| 보내는 글의 제어 문자 | `lib/tmux.mjs:cleanText` ← `sendText` | `\n` · `\t` 를 뺀 C0 제어 문자와 DEL 을 지우고 보내요(붙여넣기 · `send-keys -l` · 첨부 경로가 붙은 글 모두). ESC 나 붙여넣기 끝 신호(`ESC[201~`)가 섞이면 붙여넣기 밖으로 빠져 키 입력으로 읽힐 수 있어서(2026-11-18 보안 검토) |
+| settings.json 고치기 | `lib/claude-settings.mjs` | 링크 거절 · 깨진 JSON 이면 안 씀 · 쓰기 직전 다시 읽기, 그리고 rename 바로 앞에서 원본의 ino · mtime · 크기를 다시 봐요 — 그 사이 Claude Code 가 썼으면 다시 읽어 한 번 더, 그래도 다르면 쓰지 않고 409(남의 쓰기를 덮지 않게). 기본 모델은 **최상위** `"model"` 줄만(JSON 으로 최상위인지 확인 + 최상위 들여쓰기 줄만 치환). 상태줄 끄기 · 켜짐 확인은 명령의 끝 인자가 우리 다리 경로와 **정확히** 같을 때만 — 옛 규칙(이름에 `agent-dashboard` + `statusline.mjs`)은 켤 때 옛 경로를 옮기는(sync) 데만. 켜기 전 백업 `settings.backup.<시각>.json` 은 최근 5개만(켤 때 · 정리 작업, 링크는 따라가지 않음) |
 | 파일 권한 | `lib/perms.mjs:tightenTree` · `lib/runner.mjs` 의 `openLog` · `lib/body.mjs:saveUpload` | 폴더 700, 파일 600. 예전에 넓게 만든 폴더 · 하위 폴더(uploads/<날짜> · status · limits · bin)와 파일도 켤 때 좁힘(넓히지는 않음 — mkdir 의 mode 는 이미 있던 폴더엔 닿지 않아서). 링크는 따라가지 않음 |
 | 로그 | `lib/respond.mjs:logPath` · `lib/runner.mjs`(`LOG_MAX`) | 요청 오류 로그에는 경로만(`?token=` · `?q=` 를 남기지 않음). server.log 는 5MB 를 넘으면 `.1` 로 한 번 돌려 디스크를 채우지 않음(600 그대로) |
 | 첨부 정리 | `lib/uploads.mjs:pruneUploads` | 14일 지난 첨부 삭제(스크린샷에 민감한 화면이 남지 않게) |
@@ -392,7 +394,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 | `test/body.test.mjs` | 본문 상한 413 · 끊긴 요청 · `.part` 안 남김 · 실패 응답(`bodyFail` — 낯선 오류 문구는 안 보냄) |
 | `test/live-feed.test.mjs` | 틱: 첫 상태 · 바뀐 것만 SSE · `invalidate` 면 다시 · 탭을 닫으면 안 보냄 · `afterBuild` 실패 틱은 안 보냄 · 기간 400/204 · 성능 값 |
 | `test/notify-api.test.mjs` · `housekeeping.test.mjs` | 알림 설정(데모는 메모리만 · 값 검사 400 · 파일 600 · osascript 인자 배열 · macOS 밖은 안 보냄) · 켤 때 정리(하나가 실패해도 나머지는 함) |
-| `test/claude-settings.test.mjs` · `bridge.test.mjs` | 설정 파일을 깨뜨리지 않고 고치기, 링크 거절 |
+| `test/claude-settings.test.mjs` · `bridge.test.mjs` | 설정 파일을 깨뜨리지 않고 고치기, 링크 거절, 가짜 동시 쓰기(fsync 를 바꿔 끼움) → 한 번 더 · 409, 최상위 model 만, 끄기는 정확한 경로만, 백업 5개 |
 | `test/uploads.test.mjs` | 첨부 14일 정리: 날짜 폴더 안 폴더 · 링크에도 멈추거나 밖을 지우지 않기 |
 | `test/approval-ui.test.mjs` | 승인 창 선택지 읽기(화면): 서버 `parseOptions` 와 같은 화면에서 같은 번호 · 글자, 여러 질문 창 이전 · 다음 |
 | `test/conventions.test.mjs` | 코드 규칙(화면 번호 순서 · 파일 크기 · 모듈 경계 · 셸 안 거치기 · 직접 fetch · 토큰 자리 · 머리 주석 · 테스트 짝). 남은 위반은 허용 목록(줄어들기만) — [CONVENTIONS](CONVENTIONS.md) 3부 |

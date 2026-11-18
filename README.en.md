@@ -129,7 +129,7 @@ Everything the dashboard writes lives in `~/.agent-dashboard/` (it never writes 
 | `restore.json` · `restore-prev.json` | restore-after-reboot lists (now · before the reboot) | 600 |
 | `recent.json` | sessions from the last 7 days, for "Reopen" | 600 |
 | `notify.json` | notification settings | 600 |
-| `settings.backup.<time>.json` · `statusline-original.json` | backup of `~/.claude/settings.json` before turning on usage limits · your original status line | 600 |
+| `settings.backup.<time>.json` · `statusline-original.json` | backup of `~/.claude/settings.json` before turning on usage limits (latest 5 kept) · your original status line | 600 |
 | `bin/statusline.mjs` | copy of the usage-limit status-line bridge | folder 700 · file 600 |
 | `status/` | values the bridge writes per session (old ones are cleaned up) | folder 700 · files 600 |
 | `limits/` | old account limit history (no longer written — deleted after 30 days) | folder 700 · files 600 |

@@ -1,4 +1,4 @@
-// 켤 때 · 6시간마다 정리(lib/housekeeping.mjs)를 임시 홈으로: 넓은 권한 폴더 700 · 파일 600 으로 · 14일 지난 첨부 · 30일 지난 한도 기록 지우기, 하나가 실패해도 나머지는 한다
+// 켤 때 · 6시간마다 정리(lib/housekeeping.mjs)를 임시 홈으로: 넓은 권한 폴더 700 · 파일 600 으로 · 14일 지난 첨부 · 30일 지난 한도 기록 · 5개 넘는 settings 백업 지우기, 하나가 실패해도 나머지는 한다
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -30,6 +30,7 @@ test('켤 때: 권한 정리 · 오래된 첨부 · 한도 기록을 지우고, 
   fs.writeFileSync(path.join(limits, '2000-01-01.jsonl'), '', { mode: 0o600 });
   const today = new Date().toISOString().slice(0, 10);
   fs.writeFileSync(path.join(limits, `${today}.jsonl`), '', { mode: 0o600 });
+  for (let t = 1; t <= 8; t++) fs.writeFileSync(path.join(DATA, `settings.backup.${t}.json`), '{}', { mode: 0o600 }); // 켜기 전 백업이 쌓인 상태
   const lines = [];
   const log = { log: (...a) => lines.push(a.join(' ')), error: (...a) => lines.push('오류 ' + a.join(' ')) };
   const timer = startHousekeeping({ limitsDir: limits, statusDir: status, log });
@@ -41,6 +42,7 @@ test('켤 때: 권한 정리 · 오래된 첨부 · 한도 기록을 지우고, 
   assert.ok(lines.some((l) => /^권한 정리\(폴더 700 · 파일 600\): \d+개$/.test(l)), lines.join('|'));
   assert.deepEqual(fs.readdirSync(up), ['new.png']);
   assert.deepEqual(fs.readdirSync(limits), [`${today}.jsonl`]);
+  assert.deepEqual(fs.readdirSync(DATA).filter((n) => n.startsWith('settings.backup.')).sort(), [4, 5, 6, 7, 8].map((t) => `settings.backup.${t}.json`)); // 최근 5개만
   assert.ok(!lines.some((l) => l.startsWith('오류')), lines.join('|'));
   assert.equal(TIDY_EVERY_MS, 6 * 3600_000);
 });

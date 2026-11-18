@@ -129,7 +129,7 @@ node bin/agent-dashboard.mjs restore   # 재시동 전 세션들을 tmux 로 다
 | `restore.json` · `restore-prev.json` | 재시동 복구 목록(지금 · 재시동 전) | 600 |
 | `recent.json` | 「다시 열기」용 최근 7일 세션 기억 | 600 |
 | `notify.json` | 알림 설정 | 600 |
-| `settings.backup.<시각>.json` · `statusline-original.json` | 사용 한도를 켜기 전 `~/.claude/settings.json` 백업 · 원래 상태줄 | 600 |
+| `settings.backup.<시각>.json` · `statusline-original.json` | 사용 한도를 켜기 전 `~/.claude/settings.json` 백업(최근 5개만) · 원래 상태줄 | 600 |
 | `bin/statusline.mjs` | 사용 한도 상태줄 다리 복사본 | 폴더 700 · 파일 600 |
 | `status/` | 상태줄 다리가 세션마다 남기는 값(오래된 것은 정리) | 폴더 700 · 파일 600 |
 | `limits/` | 예전 계정 한도 기록(이제 쓰지 않음 — 30일 지나면 자동 삭제) | 폴더 700 · 파일 600 |
