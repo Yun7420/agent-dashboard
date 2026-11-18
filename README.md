@@ -20,9 +20,9 @@ Claude Code · Codex 지원 · 설치할 패키지 없음 · 모든 처리는 �
 
 **📝 개발 일기** — [#1 AI 코딩 세션 6개를 한 화면에서: 하루 만에 만들고, 하루 종일 고친 이야기](https://velog.io/@yun7420/AI-세션-대시보드-개발-일기-1-AI-코딩-세션-6개를-한-화면에서-하루-만에-만들고-하루-종일-고친-이야기) (velog · [티스토리](https://hsy742010.tistory.com/entry/AI-세션-대시보드-개발-일기-1-AI-코딩-세션-6개를-한-화면에서-하루-만에-만들고-하루-종일-고친-이야기))
 
-![데모 — 위험 경고가 붙은 승인 카드, 작업 중 세션의 바뀐 코드, 계정 한도 추이, 꺼진 세션 복구 창](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/demo.gif)
+![데모 — 대화 창 그래프, 위험 경고가 붙은 승인 카드, 작업 중 세션의 바뀐 코드, 계정 한도 추이, ⋯ 메뉴](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/demo.gif)
 
-![전체 화면 — 세션 목록, 조직도, 계정 사용 한도, 활동 로그](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/overview.png)
+![전체 화면 — 세션 목록, 대화 창 그래프, 세션 패널, 승인 필요 수 · 사용 한도](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/overview.png)
 
 <sub>화면의 프로젝트·세션 이름은 데모 모드의 예시 데이터예요.</sub>
 
@@ -54,7 +54,7 @@ Agent Dashboard는 이걸 한 화면에 모읍니다.
 | 🔔 | **알림** | 승인이 필요하거나 1분 넘게 걸린 작업이 끝나면 알림 — 브라우저 알림, 또는 **탭을 닫아도 오는 macOS 알림**(소리 선택). 탭 제목에 승인 대기 수 |
 | 🛡️ | **로컬 전용 보안** | 127.0.0.1 전용, Host·Origin 검사, 컴퓨터마다 자동 생성되는 비밀 열쇠(`~/.agent-dashboard/token`), 화면 끼워 넣기(클릭재킹) 금지, 첨부 · 폴더 경로 검사 |
 
-![세션 패널 — 현재 답변, 바꾼 파일 diff, 실행한 명령](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/session-panel.png)
+![세션 패널 — 현재 답변, 바꾼 파일 diff, 실행한 명령 · 구조 탭](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/session-panel.png)
 
 ![승인 요청 — 허락할 내용 카드(위험하면 경고) + 터미널 화면 그대로 + 선택지 버튼](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/approval.png)
 
@@ -85,6 +85,8 @@ node bin/agent-dashboard.mjs open   # 링크가 지났거나 다른 브라우저
 같은 일을 `node bin/agent-dashboard.mjs` 로도 할 수 있어요(`--help` 로 도움말). 나중에 npm 으로 내놓을 때 쓸 실행 명령이에요.
 
 처음 켜면 **환경 점검표**와 사용 안내가 떠요. 빠진 게 있으면 해결 방법이 같이 나와요(다시 보기: 오른쪽 위 **⋯ → 도움말**).
+
+**화면 언어**는 처음엔 브라우저 언어(한국어면 한국어, 그 밖은 영어)를 따르고, **⋯ → 화면 설정 → 언어**에서 한국어 · English 를 고를 수 있어요. 고른 언어는 터미널 로그 · macOS 알림 · 상태줄에도 같이 쓰여요.
 
 ### 계속 켜 두기 (추천)
 

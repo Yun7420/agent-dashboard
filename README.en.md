@@ -20,9 +20,9 @@ Claude Code · Codex · zero dependencies · everything stays on your machine
 
 **Roadmap** — ✅ Stage 1: vanilla JS, built fast and used for real · 🔄 Stage 2: split files (done) · clean up (in progress), still zero dependencies · ⏳ Stage 3: move to React
 
-![Demo — an approval card with a risk warning, live diffs of a working session, the usage-limit trend and the restore dialog](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/demo.gif)
+![Demo — the context chart, an approval card with a risk warning, live diffs of a working session, the usage-limit trend and the ⋯ menu](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/demo-en.gif)
 
-![Overview — session list, org chart, account usage limits, activity log](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/overview.png)
+![Overview — session list, context chart, session panel, approval count · usage limits](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/overview-en.png)
 
 <sub>Project and session names in the screenshots are sample data from demo mode.</sub>
 
@@ -54,9 +54,9 @@ Agent Dashboard puts all of this on one screen.
 | 🔔 | **Notifications** | Alert when approval is needed or a task over 1 minute finishes — browser notifications, or **macOS notifications that arrive even with the tab closed** (choose a sound); pending approvals in the tab title |
 | 🛡️ | **Local-only security** | 127.0.0.1 only, Host/Origin checks, a secret token generated per machine (`~/.agent-dashboard/token`), no framing (clickjacking), path checks for attachments and folders |
 
-![Session panel — current answer, file diffs, commands](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/session-panel.png)
+![Session panel — current answer, file diffs, commands · structure tab](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/session-panel-en.png)
 
-![Approval — "what you're allowing" card (amber when risky) + the real terminal screen + option buttons](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/approval.png)
+![Approval — "what you're allowing" card (amber when risky) + the real terminal screen + option buttons](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/approval-en.png)
 
 ## Getting started
 
@@ -85,6 +85,8 @@ The page lives at `http://localhost:4545`, but the first visit has to come throu
 You can also run `node bin/agent-dashboard.mjs` (see `--help`); it's the command a future npm release will use.
 
 On first launch you'll see an **environment check** and a short guide, with fixes for anything missing (open it again with **⋯ → Help** in the top right).
+
+The **UI language** follows your browser at first (Korean for Korean, English otherwise); pick 한국어 · English under **⋯ → Display → Language**. The choice also applies to terminal logs, macOS notifications and the status line.
 
 ### Keep it running (recommended)
 
