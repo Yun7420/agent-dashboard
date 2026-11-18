@@ -84,7 +84,7 @@ The page lives at `http://localhost:4545`, but the first visit has to come throu
 
 You can also run `node bin/agent-dashboard.mjs` (see `--help`); it's the command a future npm release will use.
 
-On first launch you'll see an **environment check** and a short guide, with fixes for anything missing (open it again with **?** in the top right).
+On first launch you'll see an **environment check** and a short guide, with fixes for anything missing (open it again with **⋯ → Help** in the top right).
 
 ### Keep it running (recommended)
 
@@ -167,16 +167,18 @@ A session already running in a terminal has no official way to receive input fro
 <summary><b>Left — session list</b></summary>
 
 - Sort: **manual** (drag cards to fix the order) · by status · by name
-- Bar under each card = context usage (green → yellow → red)
-- **Collapse the list** with the top icon — a thin rail keeps status dots + initials (click to open)
+- Sorting is the small icon at the top right of the list
+- Card: name · status · context bar (green → yellow → red) + one faint line (folder · time). Tags only when not the default (Codex · "View only" outside tmux)
+- **Collapse the list** with the ‹ tab at the middle of its right edge — a thin rail keeps status dots + initials (› to expand, click to open)
 - Click **Ended sessions N** under the live sessions to expand, and pick the time window (6h · 24h · 3d · 7d)
 - Hover for ✕ — close the session (with confirmation) / hide an ended session
 </details>
 
 <details open>
-<summary><b>Center — org chart</b></summary>
+<summary><b>Center — context · structure</b></summary>
 
-- Drag to pan · wheel to zoom · double-click to fit · **click empty space = close the right panel**
+- **Context** tab (the default): a big chart of the chosen session's context-window usage — big % · line · dashed 80% · auto-compact dots (click for details). Hover the big % for tokens · replies · compactions, the line for time · tokens
+- **Structure** tab (org chart): drag to pan · wheel to zoom · double-click to fit · **click empty space = close the right panel**
 - Dashed line = working in the same folder, yellow = working, **purple arrow = messages between sessions**
 - **Status text color** under each session box: idle = purple · working = yellow · background = light yellow · **needs approval = pink (bold)**
 - **Click a project box** to open that folder in **VS Code · Cursor, or reveal it in Finder** (only installed apps are shown; only folders of listed sessions can be opened)
@@ -186,15 +188,15 @@ A session already running in a terminal has no official way to receive input fro
 <details open>
 <summary><b>Right — session panel</b></summary>
 
-- Header: status dot · name · ⓘ details (path, PID, session ID…) · **Now / History** tabs · model · ⤢ wide · ⋯ (close session) · › collapse
-- Drag the left edge to **resize** (double-click = default width); the width is remembered
+- Header: status dot · name · **Now / History** tabs · model · ⋯ (ⓘ session info · ⤢ wide · end session)
+- A **vertical handle** at the middle of the left edge: drag to resize, drag past the minimum to fold the panel, double-click for the default width, or focus it and use ← → to resize · Enter to fold. The width is remembered; click a session to reopen (narrow screens: ⋯ → Close panel)
 - **Now** tab: last request + **current answer** + **file diffs** + **commands** (✓/✕, output, "show all" for long ones)
 - While working, **■ Stop** on the answer card stops the current task only (sends Esc); the session and conversation stay
 - **History** tab: past prompts and answers, search, "load more". Turns started by a message from another session (SendMessage) are split out and shown as a **dashed bubble labelled "↙ sender"** (same in the Now tab and global search)
-- **What I did today**: the calendar button at the top → per session: prompts, edited files, command count, **commit titles** and **tokens** (input · output · cache read · cache write · subagents, plus a daily total) (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts). Each response is counted once, and tokens are never converted to money (pricing differs by plan)
-- **Context trend**: a small chart under the Now tab — context-window usage per response, dashed line = 80%, amber dot = where auto-compact dropped it
+- **What I did today**: ⋯ at the top right → Today's work → per session: prompts, edited files, command count, **commit titles** and **tokens** (input · output · cache read · cache write · subagents, plus a daily total) (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts). Each response is counted once, and tokens are never converted to money (pricing differs by plan)
+- **Context trend** (narrow screens up to 860px): a small chart under the Now tab — context-window usage per response, dashed line = 80%, amber dot = where auto-compact dropped it
 - **Search all history**: the magnifier at the top (or the `/` key) searches prompts and answers across all sessions → picking a result opens that session's History tab with the same query
-- **Keyboard shortcuts** (also listed under the ? help)
+- **Keyboard shortcuts** (also under ⋯ → Help)
 
   | Key | Action |
   |---|---|
@@ -203,6 +205,8 @@ A session already running in a terminal has no official way to receive input fro
   | `/` | Search all history |
   | `1`–`9` | Pick that numbered option in an approval prompt. **For requests flagged as risky, press the same number again within 2 seconds** |
   | `Esc` | Reject if an approval prompt is shown, otherwise close popups / the panel |
+  | `Enter` · `Shift+Enter` | In the message box: send · new line |
+  | `←` `→` · `Enter` | With the panel handle focused: resize · fold |
 
   Shortcuts are off while typing, during Korean IME composition, with Ctrl/⌘/Alt, on key repeat, and while a dialog (search etc.) is open.
 - Answers render **bold** · `code` · headings · **tables** (`| head |` + `|---|`) · **lists** (`-` · `1.`, one nesting level) · **quotes** (`>`) · **code blocks** (```). Wide tables and long code scroll horizontally inside the block
@@ -215,11 +219,12 @@ A session already running in a terminal has no official way to receive input fro
 </details>
 
 <details open>
-<summary><b>Bottom — activity · keyboard</b></summary>
+<summary><b>Header — approval · limits · ⋯ menu</b></summary>
 
-- Activity: changes since the dashboard started (status · new prompts · messages between sessions · subagents). Fold it to one line with the button on the right
+- "Needs approval N" (hidden at 0, click to open the first waiting session) · "5h % · Weekly %" (hover for reset times, click for the trend) · 🔍 search all · + New session · ⋯
+- The connection shows only when it drops
 - **Esc**: close popups → press again to collapse the panel
-- 🔔: notification settings (approval needed · task over 1 minute finished) — browser notifications (while this tab is open) · macOS notifications (even with the tab closed, sent by the server) · sound · test notification. When macOS notifications are on, browser notifications are skipped so you don't get two. The same session and reason alerts at most once a minute, and simultaneous alerts are merged into one. Settings live in `~/.agent-dashboard/notify.json` (readable only by you). macOS notifications may need notification permission for Script Editor (or Terminal)
+- ⋯ → Notifications: notification settings (approval needed · task over 1 minute finished) — browser notifications (while this tab is open) · macOS notifications (even with the tab closed, sent by the server) · sound · test notification. When macOS notifications are on, browser notifications are skipped so you don't get two. The same session and reason alerts at most once a minute, and simultaneous alerts are merged into one. Settings live in `~/.agent-dashboard/notify.json` (readable only by you). macOS notifications may need notification permission for Script Editor (or Terminal)
 </details>
 
 ## Model · usage
@@ -326,7 +331,7 @@ Uses Node's built-in test runner (`node --test`), nothing to install. 338 tests 
 - File diffs come from the Edit/Write tools. Files changed by shell commands only show up under "commands".
 - If several sessions start in the same folder without `--resume`, they're matched by process start time. After `/clear` in a long-running session they can occasionally get mixed up.
 - If Claude Code changes its transcript format, some details may be wrong (only the adapter needs fixing).
-- Prompts are detected from Claude Code's English hint line at the bottom of the screen **or** from numbered options with a cursor (❯). If one of them changes the other still catches it, and when the signals (including the official status) disagree, the **"Approval detection"** row in the environment check turns into a warning and a line is added to the activity log.
+- Prompts are detected from Claude Code's English hint line at the bottom of the screen **or** from numbered options with a cursor (❯). If one of them changes the other still catches it, and when the signals (including the official status) disagree, the **"Approval detection"** row in the environment check turns into a warning.
 
 ## License
 
