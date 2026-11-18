@@ -26,7 +26,8 @@ const HELP_KO = `Agent Dashboard ${version} — 내 Mac 에 떠 있는 AI 코딩
   agent-dashboard --help     이 도움말
   agent-dashboard --version  버전
 
-필요한 것: macOS · Node 18 이상 · tmux(채팅 · 승인 · 새 세션) · Claude Code
+필요한 것: macOS(Linux 는 실험적 · Windows 미지원) · Node 18 이상 · tmux(채팅 · 승인 · 새 세션) · Claude Code
+처음 켤 때 브라우저를 저절로 열지 않아요 — 터미널의 로그인 링크나 agent-dashboard open 으로
 설명서: ${homepage}`; // npx 로 받으면 패키지 폴더는 캐시 안 긴 경로라 GitHub 주소로
 const HELP_EN = `Agent Dashboard ${version} — a local dashboard that shows the AI coding sessions (Claude Code, Codex) on your Mac in one screen
 
@@ -39,7 +40,8 @@ Usage
   agent-dashboard --help     This help
   agent-dashboard --version  Version
 
-Needs: macOS · Node 18 or later · tmux (chat, approval, new sessions) · Claude Code
+Needs: macOS (Linux experimental, Windows not supported) · Node 18 or later · tmux (chat, approval, new sessions) · Claude Code
+It doesn't open a browser on first start — use the login link in the terminal or agent-dashboard open
 Docs: ${homepage}`;
 const HELP = termLang() === 'ko' ? HELP_KO : HELP_EN;
 

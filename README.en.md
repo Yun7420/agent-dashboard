@@ -66,7 +66,7 @@ You need: **macOS · Node 18+ · tmux · Claude Code**. If something is missing 
 
 | | Required | Install |
 |---|---|---|
-| macOS | yes | On Linux only the tests run (in CI); it hasn't been used there for real. Windows is not supported — see [Supported environment and limits](#supported-environment-and-limits) |
+| macOS | yes | Linux is experimental (tests only, in CI); Windows is not supported — see [Supported environment and limits](#supported-environment-and-limits) |
 | Node.js 18+ | yes | `brew install node` |
 | Claude Code | yes | latest recommended — `brew upgrade claude-code` |
 | tmux | for chat/approve | `brew install tmux` (without it, view-only) |
@@ -329,10 +329,19 @@ Uses Node's built-in test runner (`node --test`), nothing to install. 338 tests 
 
 ## Supported environment and limits
 
-- Built for and used daily on **macOS · tmux · Claude Code**. On Linux only the tests have been run. Open folder (`open`) and macOS notifications (`osascript`) exist only on macOS. Windows is not supported.
-- **Codex is partial** — list · status · Now tab (request · answer · context) · History tab · search work. Today's work · tokens · account usage limits · last auto-compact time · subagents · messages between sessions · new session · restore are Claude Code only. Prompt detection is based on the Claude Code screen too.
+| Item | Supported | Limits |
+|---|---|---|
+| OS | **macOS** (where it's built and used daily) | **Linux is experimental** — sessions come from `ps`, working folders from `/proc` (or `lsof`), folders open with `xdg-open`, and there are no macOS notifications. Only the tests run there (CI). **Windows is not supported** — it explains why and exits (Linux inside WSL counts as Linux) |
+| Node.js | 18 or later (22 · 24 recommended) | Below 18 it won't start. 18 · 20 and odd versions are end-of-life, so it prints one line and starts |
+| tmux | Built assuming 3.0 or later (used daily on 3.6) | Only the default socket is read (sessions started with `tmux -L name` · `-S path` are not seen) |
+| Claude Code | Latest recommended (used daily on 2.1) | Status comes from the `~/.claude/sessions` files; older versions without that folder use `claude agents --json`, and without that it guesses from processes (weaker "needs approval" detection). Prompts are detected from the **English screen text** |
+| Record folders | Folders moved with `CLAUDE_CONFIG_DIR` · `CODEX_HOME` | Only the **one** value of the shell that started the dashboard — several accounts (folders) at once aren't shown |
+
+- **Chat · approve · close work only for sessions started in tmux.** Sessions started in a plain terminal or an editor extension (VS Code · Cursor) are view-only.
+- **It doesn't open a browser by itself on first start.** Open the login link printed in the terminal or run `agent-dashboard open`. If you started it with `run` (the runner), the link is in `~/.agent-dashboard/server.log`.
+- If a project's `.claude/settings.json` has its own `statusLine`, sessions in that project don't get account usage limits (the status-line bridge isn't called).
+- **Codex is partial** — list · status · Now tab (request · answer · context) · History tab · search · chat work. Prompt detection · Today's work · tokens · account usage limits · last auto-compact time · subagents · messages between sessions · new session · restore are Claude Code only.
 - No Gemini or other tools yet (each can be added as one adapter file).
-- If you moved the record folders with `CLAUDE_CONFIG_DIR` · `CODEX_HOME`, those folders are read (the shell that starts the dashboard needs the same variables).
 - **This Mac only.** The server listens on `127.0.0.1` only; there is no access from other devices or remote access (login · tunnels · cloud).
 - File diffs come from the Edit/Write tools. Files changed by shell commands only show up under "commands".
 - If several sessions start in the same folder without `--resume`, they're matched by process start time. After `/clear` in a long-running session they can occasionally get mixed up.
