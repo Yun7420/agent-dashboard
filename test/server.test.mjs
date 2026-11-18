@@ -356,12 +356,13 @@ test('보안 헤더(클릭재킹 · nosniff): 화면 · API 200/403 · SSE · 40
   assert.match(res500, /X-Content-Type-Options: nosniff/i);
 });
 
-test('요청 본문: 너무 크면 413 한국어 문장 후 소켓을 닫고, 중간에 끊긴 요청 뒤에도 서버는 정상', async () => {
+test('요청 본문: 너무 크면 413 문장(화면 언어) 후 소켓을 닫고, 중간에 끊긴 요청 뒤에도 서버는 정상', async () => {
   // 413 뒤 서버가 바로 끊으면(destroy) 받지 않은 본문 때문에 RST 로 닫혀 문장을 못 읽을 수 있다(3MB 면 200번 중 70~80번, CI macOS 에서 한 번).
   // 본문을 3MB 로 20번 보내 매번 문장을 읽고, 쓰기 오류 없이 정상 종료(FIN)되는지 본다
   const big = 'x'.repeat(3_000_000);
-  const head = `POST /api/cmd/send HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nCookie: ${AUTH.cookie}\r\nX-Dashboard-Request: 1\r\nContent-Type: application/json\r\nContent-Length: ${big.length}\r\n\r\n`;
-  for (let i = 0; i < 20; i++) {
+  const headOf = (lang) => `POST /api/cmd/send HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nCookie: ${AUTH.cookie}\r\nX-Dashboard-Request: 1\r\nX-Dashboard-Lang: ${lang}\r\nContent-Type: application/json\r\nContent-Length: ${big.length}\r\n\r\n`;
+  for (let i = 0; i < 21; i++) {
+    const head = headOf(i === 20 ? 'en' : 'ko'); // 마지막 한 번은 영어 화면 — 본문 오류도 화면 언어로(호환성 C6)
     const r = await new Promise((resolve) => {
       const s = net.connect(PORT, '127.0.0.1', () => { s.write(head); s.write(big, () => {}); });
       let got = '', error = null;
@@ -371,7 +372,7 @@ test('요청 본문: 너무 크면 413 한국어 문장 후 소켓을 닫고, �
       s.setTimeout(3000, () => { s.destroy(); resolve({ got, error, closed: false }); });
     });
     assert.match(r.got, / 413 /, `${i}번째: ${r.error}`);
-    assert.match(r.got, /요청이 너무 커요/);
+    assert.match(r.got, i === 20 ? /^HTTP\/1\.1 413[\s\S]*\r\n\r\n[^가-힣]+$/ : /요청이 너무 커요/);
     assert.equal(r.closed, true);
     assert.equal(r.error, null);
   }

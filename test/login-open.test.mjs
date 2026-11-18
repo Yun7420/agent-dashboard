@@ -47,6 +47,12 @@ test('open: 127.0.0.1 · [::1] 모두 진짜 서버면 로그인 링크를 연�
     const l = opened();
     await openLogin({ token: TOKEN, port: PORT, platform: 'linux', run: l.run });
     assert.equal(l.calls[0][0], 'xdg-open');
+    assert.match(r.message, /^브라우저에서 열었어요/);
+    // WSL · 화면 없는 Linux: xdg-open 이 없거나 실패하면 「열었어요」 대신 붙여 넣을 주소(호환성 C8)
+    const bad = await openLogin({ token: TOKEN, port: PORT, platform: 'linux', run: (cmd, args, cb) => cb(Object.assign(new Error('spawn xdg-open ENOENT'), { code: 'ENOENT' })) });
+    assert.equal(bad.ok, true);
+    assert.match(bad.message, /^브라우저를 열지 못했어요\(xdg-open\) — 이 주소를 브라우저에 붙여 넣으세요/);
+    assert.ok(bad.message.endsWith(bad.url));
     if (!v6) t.diagnostic('이 컴퓨터는 [::1] 을 열 수 없어 127.0.0.1 만 확인');
   } finally {
     await close(v4); await close(v6);

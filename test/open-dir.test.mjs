@@ -45,6 +45,6 @@ test('모르는 앱 이름은 실행하지 않고 오류', async () => {
 
 test('detectEditors: 파일 관리자는 늘 맨 끝, 이름은 정해 둔 것만', async () => {
   const found = await detectEditors();
-  assert.deepEqual(found.at(-1), { id: 'finder', label: os.platform() === 'darwin' ? 'Finder' : '파일 관리자' });
+  assert.deepEqual(found.at(-1), { id: 'finder', label: os.platform() === 'darwin' ? 'Finder' : 'File manager' }); // 화면이 t() 로 바꾼다(호환성 C6)
   for (const e of found) assert.ok(['vscode', 'cursor', 'finder'].includes(e.id), e.id);
 });

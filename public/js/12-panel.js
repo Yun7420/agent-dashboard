@@ -160,7 +160,7 @@ function openDirMenu(dir, x, y) {
   const m = $('#dir-menu');
   const apps = envData?.editors?.length ? envData.editors : [{ id: 'finder', label: 'Finder' }];
   m.innerHTML = `<div class="dm-path" title="${esc(dir)}">${esc(tilde(dir))}</div>` +
-    apps.map((a) => `<button type="button" data-open-app="${esc(a.id)}">${t(a.id === 'finder' ? 'Show in {app}' : 'Open in {app}', { app: esc(a.label) })}</button>`).join('');
+    apps.map((a) => `<button type="button" data-open-app="${esc(a.id)}">${t(a.id === 'finder' ? 'Show in {app}' : 'Open in {app}', { app: esc(a.label === 'File manager' ? t('File manager') : a.label) })}</button>`).join('');
   m.dataset.dir = dir;
   m.classList.add('show');
   const r = m.getBoundingClientRect();

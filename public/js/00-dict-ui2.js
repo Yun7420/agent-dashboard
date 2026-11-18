@@ -36,6 +36,7 @@ const KO_UI2 = {
   "No prompts yet": "아직 프롬프트가 없어요",
   "No matching prompts": "맞는 프롬프트가 없어요",
   "Show in {app}": "{app}에서 보기",
+  "File manager": "파일 관리자",
   "Open in {app}": "{app}로 열기",
   "Unfold list": "목록 펼치기",
   "View only": "보기만",
