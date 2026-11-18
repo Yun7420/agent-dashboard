@@ -1,5 +1,5 @@
 // 사용 한도는 「얼마나 남았나」만(public/js/11-usage.js — 간추리기 2에서 추이 그래프를 없앰): 남은 % = 100 − 쓴 %.
-// 범례 Claude Code 항목 「· 5시간 68% 남음 · 주간 79% 남음」 · 좁은 화면 한 줄은 짧게 「5시간 68% · 주간 79% 남음」,
+// 범례 Claude Code 항목 「· 5시간 68% 남음 · 주간 79% 남음」 · 짧은 꼴 「68% · 79%」(.short 로 고름),
 // 팝업은 창마다 「5시간: 68% 남음 · 4시간 27분 뒤 초기화」 + 막대. 남은 양 15% 이하 빨강 · 40% 이하 노랑
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,6 +11,7 @@ function load(lang = 'ko') {
   const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '11-usage.js', '13-controls.js'], {
     window: {}, document: { documentElement: { dataset: {} }, querySelector: el, querySelectorAll: () => [], addEventListener() {}, body: { classList: { toggle() {}, add() {}, remove() {} } } },
     localStorage: { getItem: () => JSON.stringify({ lang }), setItem() {} }, setInterval() {}, setTimeout, clearTimeout, matchMedia: () => ({ matches: false, addEventListener() {} }),
+    asideW: () => 296, // 03-graph.js(범례 자리 셈에 쓰임)
   });
   return { els, run };
 }
@@ -23,28 +24,25 @@ test('남은 양 = 100 − 쓴 양(0~100), 색 경계: 15% 이하 빨강 · 40% 
   assert.deepEqual([15, 16, 40, 41, 100].map(leftLevel), ['high', 'mid', 'mid', '', '']);
 });
 
-test('usageHtml: 범례는 「· 5시간 74% 남음 · 주간 9% 남음」(남은 양 색) · 짧게는 마지막 창에만 「남음」 · 꺼져 있으면 꺼진 스위치 · 값이 없으면 안내', () => {
+test('usageHtml: 범례는 「· 5시간 74% 남음 · 주간 9% 남음」(남은 양 색) + 짧은 꼴 숫자(.us) · 꺼져 있으면 꺼진 스위치 · 값이 없으면 안내', () => {
   const { run } = load();
   run(`state = { tools: ${JSON.stringify(TOOLS)}, sessions: [], usage: { enabled: true, fiveHour: { percent: 26 }, sevenDay: { percent: 91 } } }`);
-  assert.match(run('usageHtml()'), /^<button type="button" class="k-use" data-usage[^>]*><span class="sep">·<\/span><span class="u">5시간 <b class="">74% 남음<\/b><\/span><span class="sep">·<\/span><span class="u">주간 <b class="high">9% 남음<\/b><\/span><\/button>$/);
-  assert.match(run('usageHtml(true)'), /5시간 <b class="">74%<\/b>.*주간 <b class="high">9% 남음<\/b>/);
+  assert.match(run('usageHtml()'), /^<button type="button" class="k-use" data-usage[^>]*><span class="sep">·<\/span><span class="u"><span class="ul">5시간 <\/span><b class=""><span class="ul">74% 남음<\/span><span class="us">74%<\/span><\/b><\/span><span class="sep">·<\/span><span class="u"><span class="ul">주간 <\/span><b class="high"><span class="ul">9% 남음<\/span><span class="us">9%<\/span><\/b><\/span><\/button>$/);
   run('state.usage = { enabled: false }');
   assert.match(run('usageHtml()'), /^<span class="sep">·<\/span><button type="button" class="switch k-use off" role="switch" aria-checked="false" data-usage-sw title="[^"]+"><span class="track"><\/span>사용 한도 보기<\/button>$/);
   run('state.usage = { enabled: true }');
   assert.doesNotMatch(run('usageHtml()'), /data-usage/); // 누를 것이 없는 안내
 });
 
-test('범례: Claude Code 항목에만 사용 한도(마우스 올림 자리 data-lp) · Codex 는 이름만 · 좁은 화면 한 줄은 짧게', () => {
+test('범례: Claude Code 항목에만 사용 한도(마우스 올림 자리 data-lp) · Codex 는 이름만', () => {
   const { els, run } = load();
   run(`state = { tools: ${JSON.stringify(TOOLS)}, sessions: [{ key: 'a', tool: 'claude', status: 'idle' }, { key: 'b', tool: 'codex', status: 'idle' }], usage: { enabled: true, fiveHour: { percent: 32 }, sevenDay: { percent: 21 } } };
     renderList = () => {}; renderGraph = () => {};`);
   run('render()');
   const [claude, codex] = els['#kinds'].innerHTML.split('</span><span class="kind"');
-  assert.match(claude, /^<span class="kind" data-lp>.*Claude Code<button type="button" class="k-use" data-usage.*5시간 <b class="">68% 남음.*주간 <b class="">79% 남음/);
-  assert.match(codex, /Codex<\/span>$/);
+  assert.match(claude, /^<span class="kind" data-lp>.*<span class="kl">Claude Code<\/span><button type="button" class="k-use" data-usage.*5시간 <\/span><b class=""><span class="ul">68% 남음.*주간 <\/span><b class=""><span class="ul">79% 남음/);
+  assert.match(codex, /<span class="kl">Codex<\/span><\/span>$/);
   assert.doesNotMatch(codex, /k-use|data-lp/);
-  assert.match(els['#usage-line'].innerHTML, /Claude Code<\/span><button type="button" class="k-use" data-usage.*5시간 <b class="">68%<\/b>.*주간 <b class="">79% 남음/);
-  assert.equal(els['#usage-line'].hidden, false);
 });
 
 test('팝업: 창마다 「5시간: 68% 남음 · N시간 M분 뒤 초기화」 + 막대, 24시간보다 멀면 날짜(한국어 「11. 22. (일)」 · 영어 「Sun, Nov 22」)', () => {
@@ -59,36 +57,51 @@ test('팝업: 창마다 「5시간: 68% 남음 · N시간 M분 뒤 초기화」 
   assert.match(load('en').run(`resetIn(${far})`), /^resets (Sun|Mon|Tue|Wed|Thu|Fri|Sat), [A-Z][a-z]{2} \d{1,2}$/);
 });
 
-test('보이는 칸이 480px 이하(1180 − 목록 296 − 패널 620 = 264)면 범례는 표식 + 숫자 「C 68% · 79%」(전체는 title) · 그래도 상태 칸과 겹치면 위로 · 넓어지면 되돌림', () => {
+test('세 무리 배치: 범례 + 확대 단추가 보이는 칸에 안 들어가면 범례부터 짧게, 상태 칩도 넘치면 점 + 숫자로 · 넓어지면 되돌림 · 승인 필요 1 이상은 hot', () => {
   const cls = () => { const set = new Set(); return { set, toggle: (c, on) => (on ?? !set.has(c) ? set.add(c) : set.delete(c), set.has(c)), contains: (c) => set.has(c), add: (c) => set.add(c), remove: (c) => set.delete(c) }; };
   const props = {};
+  // 긴 꼴 · 짧은 꼴 폭(.short 를 떼고 잰 값이 긴 꼴)
+  const box = (long, short) => { const b = { innerHTML: '', addEventListener() {}, classList: cls() }; Object.defineProperty(b, 'offsetWidth', { get: () => (b.classList.contains('short') ? short : long) }); return b; };
   const els = {
-    main: { clientWidth: 1180, classList: cls(), style: { getPropertyValue: (k) => props[k] ?? '' } },
-    '#kinds': { innerHTML: '', offsetWidth: 200, addEventListener() {}, classList: cls(), style: { setProperty: (k, v) => { props[`kinds${k}`] = v; } } },
-    '#status-col': { offsetWidth: 140, offsetHeight: 152, addEventListener() {} },
+    main: { clientWidth: 1440, classList: cls(), style: { getPropertyValue: (k) => props[k] ?? '' } },
+    '#kinds': box(330, 120), '#status-chips': box(420, 170), '.zoom-btns': { offsetWidth: 36 },
+    '#status-chips [data-st="waiting"]': { classList: cls() },
   };
   const el = (s) => (els[s] ??= { id: s, hidden: false, innerHTML: '', textContent: '', dataset: {}, style: { setProperty() {} }, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, getBoundingClientRect: () => ({}) });
+  let aw = 296;
   const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '11-usage.js', '13-controls.js'], {
     window: {}, document: { documentElement: { dataset: {} }, querySelector: el, querySelectorAll: () => [], addEventListener() {}, body: { classList: { toggle() {}, add() {}, remove() {} } } },
     localStorage: { getItem: () => JSON.stringify({ lang: 'ko' }), setItem() {} }, setInterval() {}, setTimeout, clearTimeout, matchMedia: () => ({ matches: false, addEventListener() {} }),
-    asideW: () => 296,
+    asideW: () => aw,
   });
-  run(`state = { tools: ${JSON.stringify(TOOLS)}, sessions: [{ key: 'a', tool: 'claude', status: 'idle' }], usage: { enabled: true, fiveHour: { percent: 32 }, sevenDay: { percent: 21 } } };
+  run(`state = { tools: ${JSON.stringify(TOOLS)}, sessions: [{ key: 'a', tool: 'claude', status: 'waiting' }], usage: { enabled: true, fiveHour: { percent: 32 }, sevenDay: { percent: 21 } } };
     renderList = () => {}; renderGraph = () => {};`);
   run('render()');
-  assert.match(els['#kinds'].innerHTML, /Claude Code<button/); // 넓을 땐 이름 그대로
-  props['--dw'] = '620px';
-  run('tightSync()');
-  assert.ok(els.main.classList.contains('tight'));
-  const html = els['#kinds'].innerHTML;
-  assert.doesNotMatch(html, /Claude Code<|5시간 <b|남음<\/b>/);
-  assert.match(html, /title="5시간 68% 남음 · 주간 79% 남음"><span class="u"><b class="">68%<\/b><\/span><span class="sep">·<\/span><span class="u"><b class="">79%<\/b>/);
-  // 범례 왼쪽 1180 − 620 − 16 − 200 = 344 < 상태 칸 오른쪽 296 + 16 + 140 + 8 → 상태 칸 위로(숨기지 않음)
-  assert.ok(els['#kinds'].classList.contains('stack'));
-  assert.equal(props['kinds--sc-h'], '152px');
+  const short = (s) => els[s].classList.contains('short');
+  assert.ok(els['#status-chips [data-st="waiting"]'].classList.contains('hot'));
+  assert.deepEqual([short('#kinds'), short('#status-chips')], [false, false]); // 1440 − 296 = 1144: 다 긴 꼴
+  // 1180 · 패널 620: 보이는 칸 264 − 32 = 232. 범례 330 + 16 + 36 > 232 → 짧게(120 + 52 은 들어감), 상태 칩 420 > 232 → 점 + 숫자
+  els.main.clientWidth = 1180; props['--dw'] = '620px';
+  run('floatSync()');
+  assert.deepEqual([short('#kinds'), short('#status-chips')], [true, true]);
+  // 패널 닫음: 1180 − 296 − 32 = 852 → 둘 다 긴 꼴로 되돌림
   props['--dw'] = '0px';
-  run('tightSync()');
-  assert.ok(!els.main.classList.contains('tight'));
-  assert.ok(!els['#kinds'].classList.contains('stack'));
-  assert.match(els['#kinds'].innerHTML, /Claude Code<button.*5시간 <b class="">68% 남음/);
+  run('floatSync()');
+  assert.deepEqual([short('#kinds'), short('#status-chips')], [false, false]);
+  // 390 휴대폰(목록 띠 56): 334 − 32 = 302. 범례 330 + 52 > 302 → 짧게, 상태 칩 420 > 302 → 점 + 숫자
+  els.main.clientWidth = 390; aw = 56;
+  run('floatSync()');
+  assert.deepEqual([short('#kinds'), short('#status-chips')], [true, true]);
+  // 경계: 보이는 칸 480 − 32 = 448 → 범례 330 + 52 = 382 · 상태 칩 420 다 들어감
+  els.main.clientWidth = 536;
+  run('floatSync()');
+  assert.deepEqual([short('#kinds'), short('#status-chips')], [false, false]);
+  els.main.clientWidth = 466; // 410 − 32 = 378: 범례 382 > 378 → 짧게, 상태 칩 420 > 378 → 점 + 숫자
+  run('floatSync()');
+  assert.deepEqual([short('#kinds'), short('#status-chips')], [true, true]);
+  els.main.clientWidth = 470; // 414 − 32 = 382: 범례 382 는 딱 들어감, 상태 칩 420 > 382 → 점 + 숫자만
+  run('floatSync()');
+  assert.deepEqual([short('#kinds'), short('#status-chips')], [false, true]);
+  run(`state.sessions[0].status = 'idle'; render()`);
+  assert.ok(!els['#status-chips [data-st="waiting"]'].classList.contains('hot')); // 0 이면 흐리게
 });

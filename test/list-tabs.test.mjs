@@ -27,6 +27,7 @@ function load(saved = {}, { folded = false } = {}) {
     document: { querySelector: el, querySelectorAll: (q) => (q === '#list .card[data-key]' ? cards : []), addEventListener() {}, documentElement: { dataset: {} }, body: { classList: { contains: (c) => c === 'aside-folded' && folded } } },
     localStorage: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; } },
     setInterval() {}, setTimeout() {},
+    asideW: () => 296, // 03-graph.js(범례 자리 셈에 쓰임)
   });
   // 다른 구역(조직도 · 한도 · 패널)은 이 시험 밖 — 빈 함수로
   run('renderGraph = () => {}; renderUsage = () => {}; renderDrawerHead = () => {}; envData = null');

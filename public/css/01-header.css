@@ -24,7 +24,7 @@ header > * { white-space: nowrap; flex-shrink: 0; }
 #notify.on svg { color: var(--accent-text); }
 
 /* 범례 Claude Code 항목의 사용 한도 → 창마다 남은 양 · 초기화 시각 · 막대. 범례 바로 위(--lp-b 는 11-usage.js 가 범례 높이로) */
-#limits-pop { width: 320px; padding: 12px 14px; display: none; flex-direction: column; gap: 8px; z-index: var(--z-popover); top: auto; left: auto; right: calc(var(--dw) + var(--sp-4)); bottom: var(--lp-b, 120px); }
+#limits-pop { width: 320px; padding: 12px 14px; display: none; flex-direction: column; gap: 8px; z-index: var(--z-popover); top: auto; left: calc(var(--aw) + var(--sp-4)); right: auto; bottom: var(--lp-b, 64px); max-width: calc(100% - var(--aw) - var(--dw) - 2 * var(--sp-4)); } /* 범례(왼쪽 아래) 바로 위로 열린다 */
 #limits-pop.show { display: flex; }
 #limits-body { display: flex; flex-direction: column; gap: 12px; }
 #limits-pop .lp-row { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--dim); }

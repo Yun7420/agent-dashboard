@@ -71,6 +71,7 @@
   --grid-dot: color-mix(in srgb, var(--ink) 5%, transparent);
   --grid-dot-lit: color-mix(in srgb, var(--ink) 20%, transparent); /* 마우스 둘레 점만 +0.15(면은 밝히지 않음) */
   /* 스위치(iOS · macOS 꼴): 손잡이는 두 판 모두 흰색 + 옅은 그림자 한 단계. 흰 손잡이와 바탕 대비 켜짐 5.3 · 꺼짐 3.4(비텍스트 3:1 이상) */
+  --float-bg: color-mix(in srgb, var(--surface) 86%, transparent); /* 조직도 위 세 무리(상태 칩 · 범례 · 확대 단추) — 뒤 점 격자가 살짝 비친다 */
   --switch-knob: #ffffff;
   --switch-knob-shadow: 0 1px 2px color-mix(in srgb, var(--shade) 30%, transparent);
   --switch-on: var(--primary);

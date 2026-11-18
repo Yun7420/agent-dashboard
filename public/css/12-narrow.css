@@ -19,7 +19,7 @@
   #drawer { top: 0; right: 0; bottom: 0; width: calc(100% - var(--aw)); border-radius: 0; border: none; } /* 목록 띠 오른쪽을 다 덮는다 */
   .drawer-handle { display: none; } /* 패널이 화면을 덮으니 폭 손잡이 대신 ⋯ 메뉴의 「패널 닫기」 */
   #more-menu .narrow-only { display: flex; }
-  .status-col, .kinds { display: none; } /* 좁은 폭에선 구조 노드를 가리지 않게 숨김(숫자는 목록 · 머리 승인 칩으로) */
+  body:has(#drawer.open) :is(.status-chips, .kinds, .zoom-btns) { visibility: hidden; } /* 패널이 가운데를 다 덮으니 그 위로 뜨지 않게 */
   /* 검색은 🔍 하나로 — 누르면(또는 /) 칸이 머리 폭을 덮으며 펼쳐지고, 결과 목록은 그 아래 머리 폭 그대로 */
   .gs { flex: none; position: static; margin: 0 0 0 auto; }
   #gs-btn { display: inline-grid; }
@@ -28,12 +28,6 @@
   .gs.open #gs-btn { display: none; }
   .gs.open .gs-field { display: flex; flex: 1; }
   .gs-drop { left: 12px; right: 12px; width: auto; translate: none; top: calc(100% - 4px); }
-  /* 바탕 그래프 · 큰 % 는 넓은 화면에서만 — 좁으면 조직도만, 대화 창 추이는 지금 탭 아래 작은 그래프로 */
-  .zoom-btns { display: none !important; }
-  /* 범례가 숨으니 사용 한도는 가운데 위 한 줄로(목록은 600 이하에서 좁은 띠가 되어 그 위엔 자리가 없다) · 추이 팝업은 그 아래 */
-  .usage-line:not([hidden]) { position: absolute; top: var(--sp-2); left: calc(var(--aw) + var(--sp-2)); z-index: var(--z-float); display: flex; align-items: center; gap: var(--sp-1); min-width: 0; overflow: hidden; padding: var(--sp-1) var(--sp-2); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); font-size: 13px; color: var(--dim); white-space: nowrap; width: fit-content; max-width: calc(100% - var(--aw) - 2 * var(--sp-2)); }
-  body:has(#drawer.open) .usage-line { display: none; } /* 좁은 화면은 패널이 가운데를 덮으니 그 위로 뜨지 않게 */
-  #limits-pop { top: 52px; bottom: auto; left: calc(var(--aw) + var(--sp-2)); right: var(--sp-2); width: auto; max-width: 420px; }
 }
 /* 휴대폰 크기 */
 @media (max-width: 600px) {
@@ -45,6 +39,7 @@
   header { gap: var(--sp-1); }
   /* 휴대폰은 손가락으로 누르니 아이콘 · 주 단추의 누를 자리를 40px 로(docs/CONVENTIONS.md 「화면 디자인 규칙」) */
   .icon-btn, .icon-btn.sm, #new-session, .appr-count { min-width: 40px; height: 40px; }
+  .status-chips button, .kind, .zoom-btns button { height: 40px; } .zoom-btns button { width: 40px; } /* 손가락 자리 40px — 세 무리 높이도 같게 */
   body, body.aside-folded { --aw: 56px; }
   /* 패널 머리: 이름 · 탭 · ⋯ · 닫기만 남겨 오른쪽 단추가 잘리지 않게 */
   #d-model { display: none; }

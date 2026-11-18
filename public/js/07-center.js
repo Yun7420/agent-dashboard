@@ -1,7 +1,7 @@
-// 가운데 칸: 조직도 · 상태 4칸 · 범례만. 고른 세션의 대화 창 % 는 패널 머리 줄(06-history.js 의 renderCtxLine)
+// 가운데 칸: 조직도 · 상태 칩 · 범례 · 확대 단추만. 고른 세션의 대화 창 % 는 패널 머리 줄(06-history.js 의 renderCtxLine)
 // 예전 탭 「구조 / 대화 창」 · 바탕 그래프 · 큰 % 는 없앴다. agent-deck 에 남은 centerView 는 읽지 않는다(남아 있어도 오류 없음)
 
-// 가운데 칸 위의 것(범례 · 폭 손잡이)은 오른쪽 패널 왼쪽까지만 — 패널 폭을 --dw 로(좁은 창은 패널이 화면을 덮으니 0).
+// 가운데 칸 위의 것(확대 단추 · 폭 손잡이)은 오른쪽 패널 왼쪽까지만 — 패널 폭을 --dw 로(좁은 창은 패널이 화면을 덮으니 0).
 // 판이 열리거나 넓어져 고른 노드를 가리면 그 노드만 보이는 칸으로 옮긴다(끄는 중엔 손을 놓은 뒤 14-collapse.js 가)
 const dwSync = () => {
   $('main').style.setProperty('--dw', `${$('#drawer').classList.contains('open') && innerWidth > 860 ? $('#drawer').getBoundingClientRect().width : 0}px`);

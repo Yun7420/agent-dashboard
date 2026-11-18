@@ -1,29 +1,28 @@
-/* 가운데 칸: 조직도 · 상태 4칸 · 범례(07-center.js). 좁은 창에선 조직도만(12-narrow.css) */
+/* 가운데 칸: 조직도 · 상태 칩 · 범례 · 확대 단추(07-center.js · 13-controls.js) — 좁은 창도 같은 배치 */
 /* 바탕은 장식 없이 한 가지 면(점 · 격자 · 번짐은 눈에 걸려서 뺐다). 머리 · 목록은 한 단계 밝은 면 */
 header, aside { background: var(--surface); }
-main { --dw: 0px; } /* 오른쪽 패널 폭(07-center.js 가 채움) — 범례 · 한도 팝업 · 폭 손잡이가 쓴다 */
+main { --dw: 0px; } /* 오른쪽 패널 폭(07-center.js 가 채움) — 확대 단추 · 폭 손잡이가 쓴다 */
 /* 보조 단추는 테두리만 */
 button:not(.primary):not(.ghost):not(.tab):not(.danger):not(.drawer-handle):not(.edge-tab) { background: transparent; }
 
-/* 조직도: 확대 단추(왼쪽 위 — 아래 두 모서리는 상태 칸 · 범례) · 마우스 올린 노드와 그 위아래 줄기만 또렷하게 · 상태가 바뀐 노드는 한 번 은은히 빛남 */
-.zoom-btns { position: absolute; top: var(--sp-3); left: calc(var(--aw) + var(--sp-4)); z-index: var(--z-float); display: flex; flex-direction: column; gap: var(--sp-2); transition: left var(--slide); }
-.zoom-btns .zb { display: flex; flex-direction: column; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); overflow: hidden; } /* 지도처럼 + · − 를 한 덩어리로, ⌖ 는 그 아래 따로 */
+/* 조직도 위 세 무리(지도 앱처럼): 왼쪽 위 상태 칩 · 왼쪽 아래 범례 + 한도 · 오른쪽 아래 + − ⌖. 모두 보이는 칸(--aw · --dw) 안에서 판과 같은 --slide 로 움직인다.
+   높이 · 모서리 · 반투명 면은 같게. 자리가 모자라면 범례부터 짧게, 그다음 상태 칩을 점 + 숫자로(.short — 13-controls.js) — 숨기지는 않는다 */
+.status-chips, .kinds, .zoom-btns { position: absolute; z-index: var(--z-float); display: flex; padding: 2px; border-radius: var(--radius); background: var(--float-bg); box-shadow: var(--shadow); backdrop-filter: blur(8px); white-space: nowrap; }
+.status-chips { top: var(--sp-4); left: calc(var(--aw) + var(--sp-4)); transition: left var(--slide); }
+.kinds { bottom: var(--sp-4); left: calc(var(--aw) + var(--sp-4)); font-size: 13px; color: var(--dim); transition: left var(--slide); }
+.zoom-btns { bottom: var(--sp-4); right: calc(var(--dw) + var(--sp-4)); flex-direction: column; overflow: hidden; transition: right var(--slide); }
 .zoom-btns button { width: 32px; height: 32px; padding: 0; border: none; border-radius: 0; font-size: 16px; line-height: 1; }
-.zoom-btns .zb + .zb, .zoom-btns .zb button + button { border-top: 1px solid var(--border); }
+.zoom-btns button + button { border-top: 1px solid var(--border); }
 #graph.hl .node:not(.on), #graph.hl .edge:not(.on), #graph.hl .dot:not(.on) { opacity: .28; }
 #graph .node, #graph .edge, #graph .dot { transition: opacity .2s; }
 #graph .node.on rect { stroke: var(--accent); }
 .node.bump rect { animation: bump 1.2s ease-out; }
 @keyframes bump { 0% { filter: drop-shadow(0 0 0 var(--accent)); } 30% { filter: drop-shadow(0 0 8px var(--deco-line)); } 100% { filter: none; } }
 
-/* 아래 모서리: 상태 숫자 칸(왼쪽) · 에이전트 종류 범례(오른쪽, 패널 왼쪽까지). 좁은 폭에선 숨김(12-narrow.css) */
-.status-col, .kinds { position: absolute; bottom: var(--sp-4); z-index: var(--z-float); display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-2); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
-.status-col { left: calc(var(--aw) + var(--sp-4)); transition: left var(--slide); }
-.kinds { right: calc(var(--dw) + var(--sp-4)); max-width: calc(100% - var(--aw) - var(--dw) - 2 * var(--sp-4)); overflow: hidden; font-size: 13px; color: var(--dim); transition: right var(--slide), bottom var(--slide); } /* 보이는 칸이 좁으면 목록 판 위로 넘지 않고 잘린다 */
-main:has(#drawer.dragging) :is(.kinds, .drawer-handle) { transition: none; } /* 폭을 끄는 동안엔 손을 바로 따라오게 */
+main:has(#drawer.dragging) :is(.zoom-btns, .drawer-handle) { transition: none; } /* 폭을 끄는 동안엔 손을 바로 따라오게 */
 .kinds:empty { display: none; }
-.kind { display: inline-flex; align-items: center; gap: var(--sp-2); height: 28px; padding: 0 var(--sp-2); }
-/* Claude Code 항목 안의 사용 한도 「· 5시간 26% · 주간 15%」 — 높으면 숫자 색만(ctxLevel). 꺼져 있으면 작은 링크 */
+.kind { display: inline-flex; align-items: center; gap: var(--sp-2); height: 32px; padding: 0 var(--sp-2); }
+/* Claude Code 항목 안의 사용 한도 「· 5시간 26% 남음 · 주간 15% 남음」 — 낮으면 숫자 색만(leftLevel). 꺼져 있으면 작은 스위치 */
 .k-use { display: inline-flex; align-items: center; gap: var(--sp-2); height: 24px; padding: 0 var(--sp-1); background: transparent; border-color: transparent; color: var(--dim); font-size: 13px; white-space: nowrap; }
 button.k-use:hover:not(:disabled) { background: var(--surface-2); border-color: transparent; color: var(--text); }
 .k-use .sep { color: var(--faint); }
@@ -31,17 +30,18 @@ button.k-use:hover:not(:disabled) { background: var(--surface-2); border-color: 
 .k-use .u b.mid { color: var(--working-text); }
 .k-use .u b.high { color: var(--waiting-text); }
 .k-use.off { font-size: 12px; } /* 꺼진 「사용 한도 보기」 스위치 */
-.usage-line { display: none; } /* 좁은 화면에서만(12-narrow.css) */
-.status-col button { display: flex; align-items: center; gap: var(--sp-2); height: 32px; padding: 0 var(--sp-3); background: transparent; border-color: transparent; color: var(--dim); font-size: 13px; text-align: left; }
-.status-col button:hover:not(:disabled) { background: var(--surface-2); color: var(--text); border-color: transparent; }
-.status-col .sl { flex: 1; }
-.status-col b { min-width: 2ch; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
-/* 보이는 칸이 좁을 때(main.tight, 13-controls.js): 상태 칸은 점 + 숫자 세로 한 줄(글자는 화면 읽기 · title 로 남김),
-   그래도 범례와 가로로 겹치면 범례가 상태 칸 위로(.stack — --sc-h = 상태 칸 높이) */
-main.tight .status-col button { gap: var(--sp-2); padding: 0 var(--sp-2); }
-main.tight .status-col .sl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-main.tight .kind { gap: 0; padding: 0 var(--sp-1); }
-.kinds.stack { bottom: calc(var(--sp-4) + var(--sc-h) + var(--sp-2)); }
+/* 상태 칩 「● 승인 필요 0 · ● 작업 중 2 …」 — 승인 필요는 0 이면 흐리게, 1 이상이면 경고색(.hot) */
+.status-chips button { display: flex; align-items: center; gap: var(--sp-2); height: 32px; padding: 0 var(--sp-3); background: transparent; border-color: transparent; color: var(--dim); font-size: 13px; }
+.status-chips button:hover:not(:disabled) { background: var(--surface-2); color: var(--text); border-color: transparent; }
+.status-chips b { color: var(--text); font-variant-numeric: tabular-nums; }
+.status-chips [data-st="waiting"]:not(.hot), .status-chips [data-st="waiting"]:not(.hot) b { color: var(--faint); }
+.status-chips .hot, .status-chips .hot b { color: var(--waiting-text); font-weight: 600; }
+/* 짧은 꼴: 상태 칩은 점 + 숫자(글자는 화면 읽기 · title 로 남김), 범례는 표식 + 숫자 「C 68% · 79%」(전체 문구는 마우스 올림 팝업) */
+.status-chips.short button { padding: 0 var(--sp-2); }
+.status-chips.short .sl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.kinds .us, .kinds.short :is(.kl, .ul, .k-use .sep:first-child) { display: none; }
+.kinds.short .us { display: inline; }
+.kinds.short .kind { gap: 0; padding: 0 var(--sp-1); }
 /* 종류 표식: 머리글자 + --kind-<id> 색(02-kinds.js 가 --k 로 넣음) */
 .kmark { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border-radius: 50%; font: 700 11px/1 var(--sans); vertical-align: 1px; color: var(--k); background: color-mix(in srgb, var(--k) 18%, transparent); flex: none; }
 .km circle { fill: color-mix(in srgb, var(--k) 18%, var(--surface-2)); stroke: none; }

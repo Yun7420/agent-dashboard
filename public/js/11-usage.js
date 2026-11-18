@@ -13,17 +13,15 @@ function resetIn(iso) {
   return t('resets {d}', { d });
 }
 // 사용 한도는 계정(에이전트) 몫이라 범례의 Claude Code 항목 안에 「· 5시간 68% 남음 · 주간 79% 남음」으로 붙인다(13-controls.js).
-// 좁은 화면(범례 숨김)은 가운데 위 한 줄(#usage-line)에 짧게 「5시간 68% · 주간 79% 남음」. 꺼져 있으면 꺼진 「사용 한도 보기」 스위치만.
-// 보이는 칸이 좁으면(short = 'tight', 13-controls.js) 표식 + 숫자만 「C 68% · 79%」 — 전체 문구는 마우스 올림(title)과 팝업에
+// 짧은 꼴 「68% · 79%」도 같이 넣어 두고(.ul 긴 글자 · .us 짧은 숫자) 범례의 .short 로 고른다 — 전체 문구는 마우스 올림 팝업. 꺼져 있으면 꺼진 「사용 한도 보기」 스위치만
 const switchHtml = (on, cls = '') => `<button type="button" class="switch ${cls}" role="switch" aria-checked="${on}" data-usage-sw title="${t('Turn on to show your Claude account 5h · weekly limits here')}"><span class="track"></span>${t('Show usage limits')}</button>`;
-function usageHtml(short = false) {
+function usageHtml() {
   const u = state?.usage;
   if (!u?.enabled) return `<span class="sep">·</span>${switchHtml(false, 'k-use off')}`;
   if (!u.fiveHour && !u.sevenDay) return `<span class="k-use" title="${t('Values arrive once a Claude session replies')}"><span class="sep">·</span><span class="dot-s pulse"></span>${t('Usage limits · updated on the next reply')}</span>`;
   const ws = [[t('5h'), u.fiveHour], [t('Weekly'), u.sevenDay]].filter(([, w]) => w);
-  const tight = short === 'tight', full = ws.map(([label, w]) => `${label} ${t('{p}% left', { p: leftOf(w) })}`).join(' · ');
-  const item = ([label, w], i) => { const l = leftOf(w), last = i === ws.length - 1; return `${tight && !i ? '' : '<span class="sep">·</span>'}<span class="u">${tight ? '' : `${label} `}<b class="${leftLevel(l)}">${tight || (short && !last) ? `${l}%` : t('{p}% left', { p: l })}</b></span>`; };
-  return `<button type="button" class="k-use" data-usage aria-label="${t('Claude account usage limits (5h · weekly)')}" aria-controls="limits-pop"${tight ? ` title="${full}"` : ''}>${ws.map(item).join('')}</button>`;
+  const item = ([label, w]) => { const l = leftOf(w); return `<span class="sep">·</span><span class="u"><span class="ul">${label} </span><b class="${leftLevel(l)}"><span class="ul">${t('{p}% left', { p: l })}</span><span class="us">${l}%</span></b></span>`; };
+  return `<button type="button" class="k-use" data-usage aria-label="${t('Claude account usage limits (5h · weekly)')}" aria-controls="limits-pop">${ws.map(item).join('')}</button>`;
 }
 // 팝업: 창마다 「5시간: 68% 남음 · 4시간 27분 뒤 초기화」 + 남은 양 막대, 아래 흐린 「오후 2:12:50 기준」 · 켜진 스위치.
 // 처음 켤 때만(이 브라우저에서 한 번도 연결한 적 없으면) 팝업이 동의 줄 + [연결] 로 바뀐다 — settings.json 을 고치는 일이라 한 번은 알리고
@@ -37,9 +35,6 @@ function limitsHtml(u = state?.usage) {
   return row(t('5h'), u?.fiveHour) + row(t('Weekly'), u?.sevenDay);
 }
 function renderUsage() {
-  const line = $('#usage-line');
-  line.hidden = !state?.tools?.some((x) => x.id === 'claude');
-  setHtml(line, `${kmark('claude')}<span>${esc(state?.tools?.find((x) => x.id === 'claude')?.label ?? 'Claude')}</span>${usageHtml(true)}`);
   setHtml($('#limits-body'), limitsHtml());
   const on = !!state?.usage?.enabled, at = state?.usage?.updatedAt;
   if (on && !pref.usageLinked) { pref.usageLinked = true; savePref(); } // 이미 켜 둔 사람은 다시 켤 때 묻지 않는다
@@ -47,7 +42,7 @@ function renderUsage() {
   $('#limits-asof').textContent = at ? t('as of {tm}', { tm: new Date(at).toLocaleTimeString(LOCALE) }) : '';
   setHtml($('#limits-sw'), switchHtml(on, 'ghost'));
 }
-// 마우스를 올리거나(범례 항목 · 한 줄) 초점이 가면 남은 양 팝업을 띄우고, 팝업으로 옮겨 가는 사이(150ms)에는 닫지 않는다
+// 마우스를 올리거나(범례 항목) 초점이 가면 남은 양 팝업을 띄우고, 팝업으로 옮겨 가는 사이(150ms)에는 닫지 않는다
 const lp = { hide: null, at: 0, consent: false }; // at = 연 시각, consent = 동의 줄을 띄운 중
 function showLimits(on) {
   clearTimeout(lp.hide);
@@ -55,11 +50,11 @@ function showLimits(on) {
   if (!on) { lp.hide = setTimeout(() => { pop.classList.remove('show'); lp.consent = false; }, 150); return; }
   if (!(state?.usage?.enabled || lp.consent) || pop.classList.contains('show')) return;
   const k = $('#kinds').getBoundingClientRect(), m = $('main').getBoundingClientRect();
-  pop.style.setProperty('--lp-b', `${Math.round(m.bottom - k.top + 6)}px`); // 범례 바로 위(범례 높이는 종류 수에 따라)
+  pop.style.setProperty('--lp-b', `${Math.round(m.bottom - k.top + 6)}px`); // 왼쪽 아래 범례 바로 위로 열린다
   pop.classList.add('show');
   lp.at = Date.now();
 }
-for (const box of [$('#kinds'), $('#usage-line'), $('#limits-pop')]) {
+for (const box of [$('#kinds'), $('#limits-pop')]) {
   box.addEventListener('mouseover', (e) => { if (e.target.closest('[data-lp], #limits-pop')) showLimits(true); });
   box.addEventListener('mouseout', (e) => { if (!e.relatedTarget?.closest?.('[data-lp], #limits-pop')) showLimits(false); });
   box.addEventListener('focusin', (e) => { if (e.target.closest('[data-usage]:not(.off), #limits-pop')) showLimits(true); });

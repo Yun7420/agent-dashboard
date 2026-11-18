@@ -8,6 +8,7 @@ function render() {
   $('#c-waiting').textContent = count('waiting');
   $('#appr-count').hidden = !count('waiting');
   for (const st of ['waiting', 'working', 'idle', 'ended']) $(`#n-${st}`).textContent = st === 'working' ? count('working') + count('background') : count(st);
+  $('#status-chips [data-st="waiting"]').classList.toggle('hot', count('waiting') > 0); // 승인 필요 0 은 흐리게, 1 이상은 경고색
   renderKinds();
   renderList();
   renderGraph();
@@ -17,33 +18,29 @@ function render() {
   }
 }
 
-// 범례: Claude Code 항목에는 계정 사용 한도를 붙인다(11-usage.js) — 마우스를 올리면 초기화 시각 · 추이.
-// 보이는 칸(목록 판 · 패널 사이)이 480px 이하면 main.tight — 범례는 표식 + 숫자 「C · 68% · 79%」, 상태 칸은 점 + 숫자만(12 · 11-center.css)
+// 범례: Claude Code 항목에는 계정 사용 한도를 붙인다(11-usage.js) — 마우스를 올리면 초기화 시각 · 추이
 function renderKinds() {
-  const tight = $('main').classList.contains('tight');
-  setHtml($('#kinds'), runningKinds(state.tools, state.sessions).map((k) => `<span class="kind"${k.id === 'claude' ? ' data-lp' : ''}>${kmark(k.id)}${tight ? '' : esc(k.label)}${k.id === 'claude' ? usageHtml(tight && 'tight') : ''}</span>`).join(''));
-  stackSync();
+  setHtml($('#kinds'), runningKinds(state.tools, state.sessions).map((k) => `<span class="kind"${k.id === 'claude' ? ' data-lp' : ''}>${kmark(k.id)}<span class="kl">${esc(k.label)}</span>${k.id === 'claude' ? usageHtml() : ''}</span>`).join(''));
+  floatSync();
 }
-// 줄여도 범례가 상태 칸과 가로로 겹치면 범례를 상태 칸 위로 올린다(숨기지 않음 — 한도는 꼭 봐야 하는 정보).
-// 위치는 판이 미끄러지는 중의 사각형이 아니라 끝난 자리로 셈한다(--aw · --dw 와 두 칸의 폭)
-const TIGHT_W = 480;
+// 세 무리가 보이는 칸(목록 판 · 패널 사이)에 다 들어가는지: 아래 줄은 범례 + 확대 단추, 위 줄은 상태 칩.
+// 넘치면 범례부터 짧게, 상태 칩도 넘치면 점 + 숫자로(숨기지 않음 — 한도 · 승인 수는 꼭 봐야 하는 정보).
+// 판이 미끄러지는 중의 사각형이 아니라 끝난 자리(--aw · --dw)로 세고, 폭은 .short 를 잠깐 떼고 긴 꼴로 잰다
+const GAP = 16;
 const dwOf = () => parseFloat($('main').style.getPropertyValue?.('--dw')) || 0;
 const visibleW = () => $('main').clientWidth - asideW() - dwOf();
-function stackSync() {
-  const kinds = $('#kinds'), col = $('#status-col'), gap = 16;
-  const kindsLeft = $('main').clientWidth - dwOf() - gap - kinds.offsetWidth;
-  const on = kinds.offsetWidth > 0 && kindsLeft < asideW() + gap + col.offsetWidth + 8;
-  kinds.classList.toggle('stack', on);
-  if (on) kinds.style.setProperty('--sc-h', `${col.offsetHeight}px`);
+function fitShort(el, room) {
+  el.classList.remove('short');
+  el.classList.toggle('short', el.offsetWidth > room);
 }
-function tightSync() {
-  const on = visibleW() <= TIGHT_W;
-  if ($('main').classList.contains('tight') !== on) { $('main').classList.toggle('tight', on); if (state) renderKinds(); }
-  else stackSync();
+function floatSync() {
+  const room = visibleW() - 2 * GAP;
+  fitShort($('#kinds'), room - GAP - $('.zoom-btns').offsetWidth);
+  fitShort($('#status-chips'), room);
 }
 if (typeof ResizeObserver === 'function') { // 브라우저에서만(단위 테스트의 가짜 문서엔 없음)
-  for (const el of [$('main'), $('aside')]) new ResizeObserver(tightSync).observe(el);
-  new MutationObserver(tightSync).observe($('main'), { attributes: true, attributeFilter: ['style'] }); // 패널 폭(--dw)이 바뀔 때(07-center.js 의 dwSync)
+  for (const el of [$('main'), $('aside')]) new ResizeObserver(floatSync).observe(el);
+  new MutationObserver(floatSync).observe($('main'), { attributes: true, attributeFilter: ['style'] }); // 패널 폭(--dw)이 바뀔 때(07-center.js 의 dwSync)
 }
 
 // 화면 색(톱니 단추 → 설정 메뉴): 어두운 초록(기본) · 밝은 판 · 시스템 따라가기. 고른 값은 agent-deck 의 theme 에
@@ -73,8 +70,8 @@ $('.list-tabs').addEventListener('keydown', (e) => {
   setListTab(pref.listTab === 'live' ? 'ended' : 'live');
   $(`#tab-${pref.listTab}`).focus();
 });
-// 상태 칸: 누르면 그 상태의 첫 세션(목록 순서)을 연다 — 종료는 목록을 「종료」 탭으로 바꾼 뒤. 없으면 알림만
-$('#status-col').addEventListener('click', (e) => {
+// 상태 칩: 누르면 그 상태의 첫 세션(목록 순서)을 연다 — 종료는 목록을 「종료」 탭으로 바꾼 뒤. 없으면 알림만
+$('#status-chips').addEventListener('click', (e) => {
   const st = e.target.closest('[data-st]')?.dataset.st;
   if (!st) return;
   if (st === 'ended') setListTab('ended');

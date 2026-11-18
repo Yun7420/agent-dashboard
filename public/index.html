@@ -70,28 +70,25 @@
     </defs>
     <g id="viewport"></g>
   </svg>
-  <!-- 아래 모서리: 왼쪽 = 상태 숫자 칸(누르면 그 상태의 첫 세션), 오른쪽 = 지금 떠 있는 에이전트 종류 범례(13-controls.js) -->
-  <div class="status-col" id="status-col" role="group" aria-label="Sessions by status">
+  <!-- 지도 앱처럼: 왼쪽 위 = 상태 칩(누르면 그 상태의 첫 세션), 왼쪽 아래 = 지금 떠 있는 에이전트 종류 범례 + 사용 한도(13-controls.js) -->
+  <div class="status-chips" id="status-chips" role="group" aria-label="Sessions by status">
     <button type="button" data-st="waiting" title="Needs approval"><span class="dot-s waiting"></span><span class="sl">Needs approval</span><b id="n-waiting">0</b></button>
     <button type="button" data-st="working" title="Working"><span class="dot-s working"></span><span class="sl">Working</span><b id="n-working">0</b></button>
     <button type="button" data-st="idle" title="Idle"><span class="dot-s idle"></span><span class="sl">Idle</span><b id="n-idle">0</b></button>
     <button type="button" data-st="ended" title="Ended"><span class="dot-s ended"></span><span class="sl">Ended</span><b id="n-ended">0</b></button>
   </div>
   <div class="kinds" id="kinds" aria-label="Agent kinds"></div>
-  <!-- 범례 Claude Code 항목(좁은 화면은 위 한 줄)에 마우스를 올리면: 창마다 남은 양 · 초기화 시각 + 「사용 한도 보기」 스위치(11-usage.js) -->
+  <!-- 범례 Claude Code 항목에 마우스를 올리면: 창마다 남은 양 · 초기화 시각 + 「사용 한도 보기」 스위치(11-usage.js) -->
   <div class="menu-pop" id="limits-pop" role="group" aria-label="Claude account usage limits">
     <div id="limits-body"></div>
     <div class="lp-foot"><span id="limits-asof"></span><span id="limits-sw"></span></div>
   </div>
-  <div class="usage-line" id="usage-line" data-lp hidden></div>
   <div class="empty" id="empty" hidden><div class="empty-line"><span>No sessions running</span><button type="button" class="primary" data-new-session aria-label="New task — run an agent" title="New task — run an agent">+ New task</button></div></div>
-  <!-- 조직도 + − (한 덩어리) · ⌖ 제자리로(07-center.js) — 키 + · - · 0 -->
+  <!-- 오른쪽 아래: 조직도 + · − · ⌖ 제자리로 한 덩어리(07-center.js) — 키 + · - · 0 -->
   <div class="zoom-btns" role="group" aria-label="Org chart zoom">
-    <div class="zb">
-      <button type="button" class="ghost icon-btn" id="zoom-in" title="Zoom in (+)" aria-label="Zoom in" aria-keyshortcuts="+">+</button>
-      <button type="button" class="ghost icon-btn" id="zoom-out" title="Zoom out (-)" aria-label="Zoom out" aria-keyshortcuts="-">−</button>
-    </div>
-    <div class="zb"><button type="button" class="ghost icon-btn" id="zoom-home" title="Recenter (0)" aria-label="Recenter" aria-keyshortcuts="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button></div>
+    <button type="button" class="ghost icon-btn" id="zoom-in" title="Zoom in (+)" aria-label="Zoom in" aria-keyshortcuts="+">+</button>
+    <button type="button" class="ghost icon-btn" id="zoom-out" title="Zoom out (-)" aria-label="Zoom out" aria-keyshortcuts="-">−</button>
+    <button type="button" class="ghost icon-btn" id="zoom-home" title="Recenter (0)" aria-label="Recenter" aria-keyshortcuts="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
   </div>
   <section id="drawer">
     <div class="head">
