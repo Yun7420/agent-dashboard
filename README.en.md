@@ -168,7 +168,7 @@ A session already running in a terminal has no official way to receive input fro
 <details open>
 <summary><b>Left — session list</b></summary>
 
-- Sort: **manual** (drag cards to fix the order) · by status · by name
+- Sort: **manual** (drag cards to fix the order) · by status (recent first)
 - Sorting is the small icon at the top right of the list
 - Card: name · status · context bar (green → yellow → red) + one faint line (folder · time). Tags only when not the default (Codex · "View only" outside tmux)
 - **Collapse the list** with the ‹ tab at the middle of its right edge — a thin rail keeps status dots + initials (› to expand, click to open)

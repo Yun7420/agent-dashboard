@@ -92,7 +92,6 @@ const KO_PAGE = {
   "Weekly": "주간",
   "Setup…": "설정…",
   "Help": "도움말",
-  "By name": "이름순",
   "Sessions": "세션",
   "Sessions by status": "상태별 세션",
   "Agent kinds": "에이전트 종류",

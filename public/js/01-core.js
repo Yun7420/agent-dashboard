@@ -153,11 +153,12 @@ function initials(title) {
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[1][0]).toUpperCase();
 }
-// 정렬: 직접 정렬(드래그 순서 저장) · 상태별 최근 활동순 · 이름순. 목록과 조직도가 같은 순서를 쓴다.
+// 정렬: 직접 정렬(드래그 순서 저장) · 상태별 최근 활동순. 목록과 조직도가 같은 순서를 쓴다.
+// 이름순은 없앴다(간추리기 B2) — 예전에 저장된 'name' 은 상태별로
 pref.sort ??= 'manual';
+if (pref.sort === 'name') pref.sort = 'status';
 pref.order ??= [];
 function ordered(list) {
-  if (pref.sort === 'name') return [...list].sort((a, b) => a.title.localeCompare(b.title, 'ko'));
   if (pref.sort === 'status') return list; // 서버가 최근 활동순으로 준다
   // 직접 정렬: 저장된 순서대로, 처음 보는 세션은 맨 아래에 붙여 순서에 기록
   let changed = false;
