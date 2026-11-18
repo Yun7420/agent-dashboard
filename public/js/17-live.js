@@ -47,7 +47,7 @@ function connect() {
     finishBoot();
     render();
     if (pendingSelect && state.sessions.some((s) => s.key === pendingSelect)) { const k = pendingSelect; pendingSelect = null; select(k); }
-    else if (newPrompt) select(selected);
+    else if (newPrompt) reloadLog(selected); // 기록만(render() 가 목록 · 조직도 · 패널 머리를 이미 그렸다)
   };
 }
 if (loginShown) connState('waiting', t('Login needed')); else connect(); // 로그인 전이면 /events 를 열지 않는다(01-core.js)

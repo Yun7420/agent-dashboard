@@ -68,3 +68,30 @@ test('뼈대가 로그인 전(data-login=need)이면 불러오자마자 안내�
     assert.match(fs.readFileSync(new URL(`../public/js/${f}`, import.meta.url), 'utf8'), re, f);
   }
 });
+
+// B7: 고른 세션에 새 요청이 오거나 답이 끝나면 기록만 다시 읽는다. 예전엔 render() 바로 뒤 select(selected) 가 목록 · 조직도를 한 번 더 그려
+// 물 차오름 · 빛남(bump) · 메시지 점 효과가 그리자마자 지워졌다
+test('틱: 고른 세션의 새 요청 · 답 끝남 → 기록만 다시(reloadLog), select 로 다시 그리지 않는다', () => {
+  const calls = [];
+  let es = null;
+  const el = { hidden: true, innerHTML: '', title: '', textContent: '', addEventListener() {}, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, dataset: {} };
+  const { run } = loadFront(['01-core.js', '17-live.js'], browserStub({
+    document: { querySelector: () => el, hidden: true }, window: { addEventListener() {} },
+    EventSource: class { constructor() { es = this; } close() {} },
+    render: () => calls.push('render'), select: (k) => calls.push(`select ${k}`), reloadLog: (k) => calls.push(`reload ${k}`),
+    notifyChanges() {}, pruneDrafts() {}, restoreFirstPrompts() {}, renderRestore() {}, finishBoot() {}, updateAgo() {}, pendingSelect: null,
+  }));
+  const S = (status, lastPromptAt) => ({ key: 'claude:a', status, lastPromptAt });
+  const send = (s) => es.onmessage({ data: JSON.stringify({ sessions: [s], links: [] }) });
+  send(S('working', 't1'));
+  run(`selected = 'claude:a'`);
+  calls.length = 0;
+  send(S('idle', 't1')); // 답 끝남
+  assert.deepEqual(calls, ['render', 'reload claude:a']);
+  calls.length = 0;
+  send(S('working', 't2')); // 새 요청
+  assert.deepEqual(calls, ['render', 'reload claude:a']);
+  calls.length = 0;
+  send(S('working', 't2')); // 그대로면 그리기만
+  assert.deepEqual(calls, ['render']);
+});

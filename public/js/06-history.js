@@ -69,7 +69,11 @@ async function select(key) {
   renderDrawerHead(s);
   if (drawerTab === 'log') $('#log-list').innerHTML = `<div class="commit"><span class="m">${t('Reading log…')}</span></div>`;
   if (s.orphan) { Object.assign(hist, { key, q: '', items: [], total: 0, next: null }); $('#log-list').innerHTML = `<div class="commit"><span class="m">${t('This session has no log file yet')}</span></div>`; return; }
-  if (!(await loadHistory(key))) return;
+  await reloadLog(key);
+}
+// 고른 세션의 기록만 다시 읽어 그린다. 새 요청 · 답 끝남(17-live.js)은 select 대신 이것 — 목록 · 조직도를 한 번 더 그리면 물 차오름 · 빛남 · 메시지 점이 바로 지워졌다
+async function reloadLog(key) {
+  if (state.sessions.find((x) => x.key === key)?.orphan || !(await loadHistory(key))) return;
   renderHistory();
   const cur = state.sessions.find((x) => x.key === key);
   if (cur && selected === key) renderNow(cur);
