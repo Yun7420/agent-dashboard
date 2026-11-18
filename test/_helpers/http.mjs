@@ -3,10 +3,10 @@ import http from 'node:http';
 import net from 'node:net';
 import { loginUrl } from '../../lib/auth.mjs';
 
-// 응답 { status, text, headers }. statusOnly 면 상태 코드만 보고 끊는다(SSE 처럼 끝나지 않는 응답)
+// 응답 { status, text, headers }. 서버 문구는 한국어 원문으로 받는다(x-dashboard-lang: ko — 영어는 test/server-i18n.test.mjs). statusOnly 면 상태 코드만 보고 끊는다(SSE 처럼 끝나지 않는 응답)
 export function request(port, p, { method = 'GET', headers = {}, body, statusOnly = false } = {}) {
   return new Promise((resolve, reject) => {
-    const r = http.request({ host: '127.0.0.1', port, path: p, method, headers: { host: `127.0.0.1:${port}`, ...headers } }, (res) => {
+    const r = http.request({ host: '127.0.0.1', port, path: p, method, headers: { host: `127.0.0.1:${port}`, 'x-dashboard-lang': 'ko', ...headers } }, (res) => {
       if (statusOnly) { res.destroy(); return resolve({ status: res.statusCode, text: '', headers: res.headers }); }
       let t = '';
       res.setEncoding('utf8');
@@ -24,13 +24,13 @@ export async function loginHeaders(port, token) {
   const u = new URL(loginUrl({ token, port }));
   const r = await request(port, u.pathname + u.search);
   if (r.status !== 303) throw new Error(`/login ${r.status}: ${r.text}`);
-  return { cookie: r.headers['set-cookie'][0].split(';')[0], 'x-dashboard-request': '1' };
+  return { cookie: r.headers['set-cookie'][0].split(';')[0], 'x-dashboard-request': '1', 'x-dashboard-lang': 'ko' }; // 화면처럼 언어도(lib/i18n.mjs)
 }
 
 // SSE 첫 상태 한 덩어리. 200 이 아니거나(403 등) 첫 덩어리 전에 끝나거나 5초 안에 안 오면 거절 — 기다리다 멈추지 않게. auth = loginHeaders 결과
 export function firstEvent(port, auth) {
   return new Promise((resolve, reject) => {
-    const r = http.get({ host: '127.0.0.1', port, path: '/events', headers: { host: `127.0.0.1:${port}`, cookie: auth.cookie } }, (res) => {
+    const r = http.get({ host: '127.0.0.1', port, path: '/events', headers: { host: `127.0.0.1:${port}`, cookie: auth.cookie, 'x-dashboard-lang': auth.lang ?? 'ko' } }, (res) => {
       if (res.statusCode !== 200) { res.destroy(); return reject(new Error(`/events ${res.statusCode}`)); }
       let t = '';
       res.setEncoding('utf8');

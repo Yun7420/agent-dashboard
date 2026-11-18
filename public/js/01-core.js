@@ -1,7 +1,7 @@
 // 공통: 서버 요청 · 로그인 안내 · 알림 토스트 · 화면 상태 · 설정 저장
 // 로그인은 쿠키(HttpOnly — 이 스크립트도 못 읽음)라 화면 파일에 비밀이 없다. 서버 요청에는 사용자 지정 머리글만 붙인다:
 // 다른 사이트의 form · img 요청은 이 머리글을 붙일 수 없어 서버가 거절한다(CSRF, server.mjs 의 authorized)
-const REQ_HEADER = { 'X-Dashboard-Request': '1' };
+const REQ_HEADER = { 'X-Dashboard-Request': '1', 'X-Dashboard-Lang': LANG }; // 서버 문구(오류 · 환경 점검)도 화면 언어로(lib/i18n.mjs)
 const $ = (s) => document.querySelector(s);
 
 // 서버 요청은 모두 이 길로: 403 = 로그인이 필요함(처음 · 30일 지남 · 토큰 파일을 지우고 다시 켬) → 고정 안내를 한 번 띄우고 오류로 끝낸다.

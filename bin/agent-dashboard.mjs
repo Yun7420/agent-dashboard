@@ -5,12 +5,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkNode } from '../lib/node-check.mjs';
+import { tr, termLang } from '../lib/i18n.mjs';
 
 checkNode({ notice: [undefined, 'start', 'run', 'restore'].includes(process.argv[2]) }); // 맨 먼저: Node 가 낮으면 안내하고 끝낸다(지원 종료 한 줄은 서버를 켜는 명령에서만)
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url))); // bin/ 의 부모 = 저장소(패키지) 폴더
 const { name, version, homepage } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-const HELP = `Agent Dashboard ${version} — 내 Mac 에 떠 있는 AI 코딩 세션(Claude Code · Codex)을 한 화면에서 보는 로컬 대시보드
+// 도움말은 통째로 두 언어(터미널 LANG 이 ko 면 한국어, 그 밖은 영어 — lib/i18n.mjs)
+const HELP_KO = `Agent Dashboard ${version} — 내 Mac 에 떠 있는 AI 코딩 세션(Claude Code · Codex)을 한 화면에서 보는 로컬 대시보드
 
 사용법
   agent-dashboard            서버를 켜요 → http://localhost:4545 (PORT=4546 처럼 바꿀 수 있어요)
@@ -23,6 +25,20 @@ const HELP = `Agent Dashboard ${version} — 내 Mac 에 떠 있는 AI 코딩 �
 
 필요한 것: macOS · Node 18 이상 · tmux(채팅 · 승인 · 새 세션) · Claude Code
 설명서: ${homepage}`; // npx 로 받으면 패키지 폴더는 캐시 안 긴 경로라 GitHub 주소로
+const HELP_EN = `Agent Dashboard ${version} — a local dashboard that shows the AI coding sessions (Claude Code, Codex) on your Mac in one screen
+
+Usage
+  agent-dashboard            Start the server → http://localhost:4545 (change with PORT=4546)
+  agent-dashboard start      Same as above
+  agent-dashboard run        Runner: restarts the server when it stops (log ~/.agent-dashboard/server.log). Good to keep in tmux
+  agent-dashboard restore    After rebooting the Mac: reopens the tmux sessions from before and starts the runner in tmux 'dashboard'
+  agent-dashboard open       Opens the login link in the browser (that browser stays logged in for 30 days — first time, expired, or another browser)
+  agent-dashboard --help     This help
+  agent-dashboard --version  Version
+
+Needs: macOS · Node 18 or later · tmux (chat, approval, new sessions) · Claude Code
+Docs: ${homepage}`;
+const HELP = termLang() === 'ko' ? HELP_KO : HELP_EN;
 
 const [cmd] = process.argv.slice(2);
 // 포트 충돌 안내에 쓸 「다시 켤 명령」 — 사용자가 켠 방법 그대로(lib/launch.mjs). 실행기의 자식 서버도 이 환경을 받는다
@@ -47,14 +63,14 @@ else if (cmd === 'run') {
   const { loadToken } = await import('../lib/token.mjs');
   const { openLogin } = await import('../lib/login-open.mjs');
   const r = await openLogin({ token: loadToken(tokenFiles(root)).token, port: Number(process.env.PORT ?? 4545) });
-  (r.ok ? console.log : console.error)(r.message);
+  (r.ok ? console.log : console.error)(tr(r.message, termLang()));
   if (!r.ok) process.exitCode = 1;
 } else if (cmd === 'restore') {
   const { restoreAll } = await import('../lib/restore-cli.mjs');
   await restoreAll({ root, launcher: [process.execPath, path.join(root, 'bin', 'agent-dashboard.mjs'), 'run'] });
 }
 else {
-  console.error(`모르는 명령이에요: ${cmd}\n`);
+  console.error(tr(`모르는 명령이에요: ${cmd}\n`, termLang()));
   console.error(HELP);
   process.exitCode = 1;
 }

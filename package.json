@@ -28,7 +28,7 @@
   ],
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test test/*.test.mjs"
+    "test": "LANG=ko_KR.UTF-8 LC_ALL= LC_MESSAGES= node --test test/*.test.mjs"
   },
   "engines": {
     "node": ">=18"

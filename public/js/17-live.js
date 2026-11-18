@@ -5,7 +5,7 @@ let liveES = null;
 const connState = (cls, text) => { $('#conn').innerHTML = `<span class="dot-s ${cls}"></span>${text}`; $('#conn').title = text; }; // 좁은 창에선 글자를 숨겨 title 로
 function connect() {
   liveES?.close();
-  const es = (liveES = new EventSource('/events')); // 로그인 쿠키가 같이 간다(주소에 비밀을 싣지 않음)
+  const es = (liveES = new EventSource(`/events?lang=${LANG}`)); // 로그인 쿠키가 같이 간다(주소에 비밀을 싣지 않음)
   es.onopen = () => connState('live', t('Live'));
   es.onerror = () => {
     if (loginShown) { es.close(); connState('waiting', t('Login needed')); return; }

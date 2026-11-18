@@ -42,6 +42,7 @@ import * as demo from './lib/demo.mjs';
 import { saveSnapshot, restoreCandidates, restoreSessions, modelAlias, defaultAlias } from './lib/restore.mjs';
 import { createRecent, liveEntries, recentInfo } from './lib/recent.mjs';
 import { checkNode } from './lib/node-check.mjs';
+import { langOf, trEnv, termLog, termErr } from './lib/i18n.mjs';
 checkNode(); // 맨 먼저(import 다음): Node 가 낮으면 안내하고 끝낸다(lib/node-check.mjs)
 const DEMO = process.env.DEMO === '1'; // 가짜 데이터로 화면만 보여 주는 모드(스크린샷용)
 const PORT = Number(process.env.PORT ?? 4545);
@@ -49,7 +50,7 @@ const ROOT = dirOf(import.meta.url); // 저장소(패키지) 폴더 — 공백 �
 // 토큰은 ~/.agent-dashboard/token(600). 화면에 넣지 않고 로그인 링크 · 쿠키의 서명 열쇠로만 쓴다(lib/auth.mjs) — 다시 켜도 로그인 그대로
 const { file: TOKEN_FILE, legacy: TOKEN_LEGACY } = tokenFiles(ROOT);
 const { token: TOKEN, createdNow: TOKEN_CREATED_NOW, migrated: TOKEN_MIGRATED } = loadToken({ file: TOKEN_FILE, legacy: TOKEN_LEGACY });
-if (TOKEN_MIGRATED) console.log(`토큰을 새 자리로 옮겼어요 → ${TOKEN_FILE} (저장소 폴더의 옛 파일은 지움)`);
+if (TOKEN_MIGRATED) termLog(`토큰을 새 자리로 옮겼어요 → ${TOKEN_FILE} (저장소 폴더의 옛 파일은 지움)`);
 const OPEN_CMD = process.env.DASHBOARD_OPEN_CMD || 'node bin/agent-dashboard.mjs open'; // 로그인 링크를 다시 여는 명령(켠 방법에 맞게, bin 이 넘김)
 const auth = createAuth({ token: TOKEN, port: PORT, openCmd: OPEN_CMD });
 const ALLOWED_HOSTS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`]);
@@ -144,7 +145,6 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 // - 다른 사이트가 이 화면을 iframe 으로 띄워(로그인된 채로) 승인 단추를 누르게 속이는 클릭재킹을 막는다(X-Frame-Options · frame-ancestors)
 // - 브라우저가 Content-Type 을 짐작해 다른 종류로 실행하지 않게 한다(nosniff)
 // - 다른 곳으로 갈 때 주소(Referer)를 붙이지 않는다(no-referrer)
-
 // 처리 안 된 오류는 500 + 짧은 한국어 문장으로 돌려주고 자세한 내용은 로그로만(요청 하나 때문에 서버 전체가 죽지 않게)
 const onRequest = (req, res) => {
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v); // writeHead 의 헤더와 합쳐진다
@@ -162,7 +162,7 @@ const server6 = http.createServer(onRequest);
 // 보안 검사는 이 함수에만 둔다 — 경로가 늘어도 검사를 빠뜨리지 않게
 async function handle(req, res) {
   if (!ALLOWED_HOSTS.has(req.headers.host ?? '')) {
-    sendText(res, 403, '이 주소로는 열 수 없어요 — http://localhost:' + PORT + ' 로 열어 주세요');
+    sendText(res, 403, `이 주소로는 열 수 없어요 — http://localhost:${PORT} 로 열어 주세요`);
     return;
   }
   const url = new URL(req.url, 'http://localhost');
@@ -225,7 +225,7 @@ const ROUTES = [
 async function getEnv(req, res, url) {
   const e = url.searchParams.has('refresh') || !env.cached() ? await checkEnv() : env.cached();
   // 「승인 감지」 줄은 서버가 켜진 뒤 쌓인 기록이라 캐시 없이 매번 붙인다
-  sendJson(res, 200, { ...e, items: [...e.items, dialogEnvItem(), statusEnvItem()] });
+  sendJson(res, 200, trEnv({ ...e, items: [...e.items, dialogEnvItem(), statusEnvItem()] }, langOf(req))); // 문구는 화면 언어로(lib/i18n.mjs)
 }
 
 // tmux 세션 화면(색 정보로 「지금 보고 있는 질문 탭」도)
@@ -291,26 +291,26 @@ process.on('unhandledRejection', (e) => console.error('[처리 안 된 거절]',
 
 // 포트가 이미 쓰이면 오류 덩어리 대신 안내를 찍고 끝낸다(다음 포트로 자동으로 넘어가는 건 하지 않음)
 server.on('error', (e) => {
-  if (e.code === 'EADDRINUSE') console.error(portInUseMessage(PORT, process.env.DASHBOARD_START_CMD || 'npm start')); // 켠 방법에 맞는 예시(lib/launch.mjs)
-  else console.error('서버를 열지 못했어요:', e.message);
+  if (e.code === 'EADDRINUSE') termErr(portInUseMessage(PORT, process.env.DASHBOARD_START_CMD || 'npm start')); // 켠 방법에 맞는 예시(lib/launch.mjs)
+  else termErr('서버를 열지 못했어요:', e.message);
   process.exit(1);
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}\n로그인 링크(10분): ${loginUrl({ token: TOKEN, port: PORT })} — 나중엔 「${OPEN_CMD}」`);
+  termLog(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}\n로그인 링크(10분): ${loginUrl({ token: TOKEN, port: PORT })} — 나중엔 「${OPEN_CMD}」`);
   // [::1] 을 못 열면 이유만 남기고 127.0.0.1 로 계속(IPv6 가 꺼진 Mac 등). 다른 프로그램이 이미 쓰고 있으면 크게 알린다
-  server6.on('error', (e) => console.error(e.code === 'EADDRINUSE' ? `주의: 다른 프로그램이 [::1]:${PORT} 를 쓰고 있어요 — localhost 가 그쪽으로 갈 수 있어요. http://127.0.0.1:${PORT} 로 여세요` : `[::1]:${PORT} 은 열지 못했어요(${e.code ?? e.message}) — 127.0.0.1 로만 받아요`));
+  server6.on('error', (e) => termErr(e.code === 'EADDRINUSE' ? `주의: 다른 프로그램이 [::1]:${PORT} 를 쓰고 있어요 — localhost 가 그쪽으로 갈 수 있어요. http://127.0.0.1:${PORT} 로 여세요` : `[::1]:${PORT} 은 열지 못했어요(${e.code ?? e.message}) — 127.0.0.1 로만 받아요`));
   server6.listen(PORT, '::1');
   // 없는 도구(tmux · Claude Code) · 다른 OS 는 로그에 한국어로 안내만 하고 서버는 계속(보기 전용으로라도)
-  checkEnv().then((e) => { if (!DEMO) for (const line of startupNotices(e)) console.log(line); }).catch((e) => console.error('[환경 점검]', e.message)); // 시작 때 실패해도 서버는 계속(화면에서 다시 점검 가능)
+  checkEnv().then((e) => { if (!DEMO) for (const line of startupNotices(e)) termLog(line); }).catch((e) => console.error('[환경 점검]', e.message)); // 시작 때 실패해도 서버는 계속(화면에서 다시 점검 가능)
   feed.start();
   if (!DEMO) {
     startHousekeeping({ limitsDir: LIMITS_DIR, statusDir: STATUS_DIR }); // 권한 · 첨부 · 한도 기록 · 상태줄 파일 정리(켤 때 + 6시간마다, lib/housekeeping.mjs)
     // 사용 한도가 켜져 있으면 다리 복사본을 패키지의 최신으로 맞추고, 옛 경로 등록은 새 경로로(꺼져 있으면 아무것도 안 함)
     try {
       const b = usage.sync();
-      if (b.copied) console.log('상태줄 다리를 새 버전으로 맞췄어요 →', tildify(usage.bridgeDst));
-      if (b.migrated) console.log('상태줄 등록을 새 경로로 바꿨어요 →', tildify(usage.bridgeDst));
+      if (b.copied) termLog('상태줄 다리를 새 버전으로 맞췄어요 →', tildify(usage.bridgeDst));
+      if (b.migrated) termLog('상태줄 등록을 새 경로로 바꿨어요 →', tildify(usage.bridgeDst));
     } catch (e) { console.error('[상태줄 다리]', e.message); }
   }
 });

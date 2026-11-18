@@ -6,7 +6,7 @@ import path from 'node:path';
 import net from 'node:net';
 import os from 'node:os';
 import { tmpDir } from './_helpers/tmp.mjs';
-import { request, rawFirstLine, loginHeaders } from './_helpers/http.mjs';
+import { request, rawFirstLine, loginHeaders, firstEvent } from './_helpers/http.mjs';
 import { ROOT, demoEnv, startServer } from './_helpers/server.mjs';
 
 // 데모 모드 서버를 따로 띄워 보안 검사를 시험한다(실제 세션은 건드리지 않음).
@@ -205,6 +205,25 @@ test('환경 점검에 「승인 감지」 줄이 붙는다(엇갈림이 없으�
   const env = await (await fetch(`http://127.0.0.1:${PORT}/api/env`, { headers: { ...AUTH } })).json();
   const row = env.items.find((x) => x.name === '승인 감지');
   assert.equal(row?.level, 'ok');
+});
+
+test('영어 화면(X-Dashboard-Lang: en · SSE 는 lang): 오류 문장 · 환경 점검 · 승인 카드 이유가 영어, 모르는 값 · 머리글 없음도 영어', async () => {
+  const HANGUL = /[\uAC00-\uD7A3]/;
+  const get = (p, lang) => fetch(`http://127.0.0.1:${PORT}${p}`, { headers: { ...AUTH, 'x-dashboard-lang': lang } });
+  const long = await get(`/api/search?q=${'가'.repeat(201)}`, 'en');
+  assert.deepEqual([long.status, await long.text()], [400, 'Search text is limited to 200 characters']);
+  assert.equal(await (await get(`/api/search?q=${'가'.repeat(201)}`, 'de')).text(), 'Search text is limited to 200 characters');
+  const env = await (await get('/api/env', 'en')).json();
+  assert.ok(env.items.some((x) => x.name === 'Approval detection' && x.level === 'ok'));
+  assert.ok(env.items.every((x) => !HANGUL.test(x.name + x.detail)), JSON.stringify(env.items));
+  const st = await firstEvent(PORT, { ...AUTH, lang: 'en' });
+  const card = st.sessions.find((x) => x.pendingTool?.risks.length)?.pendingTool;
+  assert.equal(card.kind, 'Run command');
+  assert.ok(card.risks.every((r) => !HANGUL.test(r)), card.risks.join(' | '));
+  assert.ok(st.sessions.some((x) => x.project === '~ (home)'));
+  assert.ok((await firstEvent(PORT, AUTH)).sessions.some((x) => x.project === '~ (홈)')); // 한국어 탭은 그대로
+  const host = await request(PORT, '/', { headers: { host: 'evil.example', 'x-dashboard-lang': 'en' } });
+  assert.equal(host.text, `Can't open from this address — use http://localhost:${PORT}`);
 });
 
 test('기록 API: 나눠 보내기 · 검색어 거르기 (데모 기록 132개)', async () => {

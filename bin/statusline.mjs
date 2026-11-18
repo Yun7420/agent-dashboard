@@ -58,12 +58,14 @@ if (original) {
   process.stdout.write(r.stdout || '');
 } else {
   const parts = [];
+  // 터미널 언어(LANG)를 따른다 — 이 파일은 홀로 복사돼 돌아서(lib 를 못 부름) 판정만 여기 한 줄(lib/i18n.mjs 의 termLang 과 같은 규칙)
+  const KO = /^ko(?![a-z])/i.test(process.env.LC_ALL || process.env.LC_MESSAGES || process.env.LANG || '');
   if (input.model?.display_name) parts.push(input.model.display_name);
   const ctx = input.context_window?.used_percentage;
-  if (ctx != null) parts.push(`대화 창 ${Math.round(ctx)}%`);
+  if (ctx != null) parts.push(`${KO ? '대화 창' : 'Context'} ${Math.round(ctx)}%`);
   const five = input.rate_limits?.five_hour?.used_percentage;
-  if (five != null) parts.push(`5시간 한도 ${Math.round(five)}%`);
+  if (five != null) parts.push(`${KO ? '5시간 한도' : '5h limit'} ${Math.round(five)}%`);
   const week = input.rate_limits?.seven_day?.used_percentage;
-  if (week != null) parts.push(`주간 ${Math.round(week)}%`);
+  if (week != null) parts.push(`${KO ? '주간' : 'Week'} ${Math.round(week)}%`);
   process.stdout.write(parts.join(' · '));
 }
