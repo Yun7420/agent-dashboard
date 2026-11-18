@@ -51,7 +51,7 @@ $('#np-test').addEventListener('click', async () => {
     toast(t(r.sent ? 'Test notification sent — look at the top right of the screen' : r.supported ? 'Could not send. Check the notification permission' : 'No real notifications here (demo · not macOS)'));
   } catch (err) { toast(err.message); }
 });
-loadNotifyCfg();
+if (!loginShown) loadNotifyCfg(); // 로그인 전이면 부르지 않는다(403 이 콘솔에 남지 않게)
 function notifyChanges(prevSessions, next) {
   const waiting = next.filter((s) => s.status === 'waiting').length;
   document.title = waiting ? `(${waiting}) ${t('Needs approval')} · Agent Dashboard` : 'Agent Dashboard';

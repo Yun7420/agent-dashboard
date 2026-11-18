@@ -302,7 +302,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 ### 예 ① 화면에서 승인 「1」 단추를 누른다
 
 1. **단추 클릭** — `public/js/05-approval.js` 의 승인 단추 처리에서 `api('/api/cmd/approve', { key: selected, choice: '1' })` 를 불러요.
-2. **요청 만들기** — `public/js/01-core.js:api` 가 `fetch` 로 POST 를 보내요. 로그인 쿠키는 브라우저가 붙이고, 화면은 `X-Dashboard-Request: 1` 만 넣어요. 403 이면 서버가 준 「로그인이 필요해요 — … open」 안내가 떠요(`loginNeeded`).
+2. **요청 만들기** — `public/js/01-core.js:api` 가 `fetch` 로 POST 를 보내요. 로그인 쿠키는 브라우저가 붙이고, 화면은 `X-Dashboard-Request: 1` 만 넣어요. 403 이면 「로그인이 필요해요 — <어느 터미널>에서 「… open」을 실행하면 …」 안내가 떠요(`loginNeeded`). 명령은 서버가 뼈대 `<html data-open-cmd>` 에 켠 방법의 짧은 꼴로 적어 주고(저장소 = 그 폴더의 터미널, npx · 설치 = 아무 터미널, 절대 경로 없음), 로그인 전이면 `data-login="need"` 라 화면이 요청을 보내지 않고 바로 안내해 콘솔에 403 이 남지 않아요(`lib/launch.mjs:markIndex` · `openWhere`).
 3. **보안 헤더** — `server.mjs` 의 `onRequest`(127.0.0.1 · [::1] 두 서버가 같이 씀)가 모든 응답에 `SECURITY_HEADERS` 를 먼저 붙여요.
 4. **입구 검사** — `server.mjs:handle`
    - Host 가 `ALLOWED_HOSTS`(`localhost:포트` · `127.0.0.1:포트`)가 아니면 403

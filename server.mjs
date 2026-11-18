@@ -31,7 +31,7 @@ import { isObject } from './lib/validate.mjs';
 import { DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
 import { loadToken } from './lib/token.mjs';
 import { createAuth, loginUrl, SESSION_MS } from './lib/auth.mjs';
-import { portInUseMessage } from './lib/launch.mjs';
+import { portInUseMessage, markIndex } from './lib/launch.mjs';
 import { createNotifyApi } from './lib/notify-api.mjs';
 import { createLiveFeed } from './lib/live-feed.mjs';
 import { startHousekeeping } from './lib/housekeeping.mjs';
@@ -160,7 +160,7 @@ async function handle(req, res) {
     return;
   }
   const route = ROUTES.find((r) => (r.prefix ? url.pathname.startsWith(r.prefix) : url.pathname === r.path) && (!r.method || r.method === req.method));
-  return route ? route.handler(req, res, url) : serveStatic(res, url);
+  return route ? route.handler(req, res, url) : serveStatic(req, res, url);
 }
 
 // 명령 처리(/api/cmd/<이름>)는 lib/commands.mjs — 필요한 것만 이름 붙여 넘긴다
@@ -248,13 +248,12 @@ async function postCommand(req, res, url) {
 }
 
 // 화면 파일: public 폴더 안의 「일반 파일」만. 폴더(/js 등)를 스트림으로 열면 EISDIR 로 프로세스가 죽었다(토큰 없이 아무 사이트나 부를 수 있는 경로)
-function serveStatic(res, url) {
+function serveStatic(req, res, url) {
   const file = path.join(PUBLIC_DIR, url.pathname === '/' ? 'index.html' : path.normalize(url.pathname));
-  if (!isInside(PUBLIC_DIR, file) || !fs.statSync(file, { throwIfNoEntry: false })?.isFile()) { // 「public-other」 같은 옆 폴더는 안 됨
-    sendText(res, 404, '없는 파일이에요');
-    return;
-  }
+  if (!isInside(PUBLIC_DIR, file) || !fs.statSync(file, { throwIfNoEntry: false })?.isFile()) return void sendText(res, 404, '없는 파일이에요'); // 「public-other」 같은 옆 폴더는 안 됨
   const head = { 'Content-Type': MIME[path.extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store' };
+  // 뼈대에는 로그인 여부 · 다시 여는 명령을 적어 준다 — 로그인 전이면 화면이 요청 없이 바로 안내(콘솔에 403 이 남지 않게, lib/launch.mjs)
+  if (url.pathname === '/') return void res.writeHead(200, head).end(markIndex(fs.readFileSync(file, 'utf8'), { loggedIn: auth.loggedIn(req), openCmd: OPEN_CMD }));
   const stream = fs.createReadStream(file);
   stream.on('open', () => { res.writeHead(200, head); stream.pipe(res); });
   stream.on('error', (e) => { // 읽는 사이 지워진 파일 등 — 응답만 정리하고 서버는 계속

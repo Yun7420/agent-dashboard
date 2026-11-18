@@ -2,6 +2,8 @@
 const KO_UI = {
   "Login needed — open the login link again as shown above": "로그인이 필요해요 — 위 안내대로 로그인 링크를 다시 열어 주세요",
   "Login needed": "로그인이 필요해요",
+  "In a terminal opened in the agent-dashboard folder, run \"{cmd}\" to reopen it in this browser": "agent-dashboard 폴더에서 연 터미널에서 「{cmd}」을 실행하면 이 브라우저에 다시 열려요",
+  "In any terminal, run \"{cmd}\" to reopen it in this browser": "아무 터미널에서 「{cmd}」을 실행하면 이 브라우저에 다시 열려요",
   "Working": "작업 중",
   "Background task": "백그라운드 작업",
   "Needs approval": "승인 필요",

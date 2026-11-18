@@ -24,10 +24,10 @@ function connect() {
     connState('waiting', t('Reconnecting…'));
     if (sseOnError(es.readyState, EventSource.CLOSED) !== 'probe') return;
     fetch('/api/perf', { headers: REQ_HEADER })
-      .then(async (r) => [r.status, r.status === 403 ? await r.text().catch(() => '') : ''], () => [0, '']) // 서버가 아직 안 켜졌으면 0
-      .then(([status, text]) => {
+      .then((r) => r.status, () => 0) // 서버가 아직 안 켜졌으면 0
+      .then((status) => {
         if (es !== liveES) return; // 그사이 새로 연결했으면 그대로
-        if (probeVerdict(status) === 'gone') { loginNeeded(text); connState('waiting', t('Login needed')); }
+        if (probeVerdict(status) === 'gone') { loginNeeded(); connState('waiting', t('Login needed')); }
         else setTimeout(() => es === liveES && connect(), 3000);
       });
   };
@@ -50,6 +50,6 @@ function connect() {
     else if (newPrompt) select(selected);
   };
 }
-connect();
+if (loginShown) connState('waiting', t('Login needed')); else connect(); // 로그인 전이면 /events 를 열지 않는다(01-core.js)
 setInterval(updateAgo, 30000); // 목록의 「N분 전」 글자만 갱신(카드는 그대로)
 window.addEventListener('resize', () => { view.init = false; renderGraph(); });

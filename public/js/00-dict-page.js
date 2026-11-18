@@ -13,7 +13,6 @@ const KO_PAGE = {
   "help.key-how": "<b>어떻게 생기나요?</b> 처음 켤 때 이 컴퓨터에서 <b>자동으로</b> 만들어져요. 홈 폴더의 <code>~/.agent-dashboard/token</code> 에 본인만 읽을 수 있게(600) 두고, 저장소 · 패키지 폴더 밖이라 깃에 올라갈 일이 없어요. 할 일은 없어요.",
   "help.key-care": "<b>주의할 점</b> 다른 사람에게 보내지 마세요. 혹시 새어 나갔다면 그 파일을 지우고 대시보드를 다시 켜면 새 열쇠로 바뀌고 모든 로그인이 끊겨요(로그인 링크로 다시 열기).",
   "help.again": "이 안내는 오른쪽 위 <b>⋯ → 도움말</b>로 언제든 다시 볼 수 있어요",
-  "Login needed — run \"node bin/agent-dashboard.mjs open\" in a terminal to reopen it in this browser": "로그인이 필요해요 — 터미널에서 「node bin/agent-dashboard.mjs open」 을 실행하면 이 브라우저에 다시 열려요",
   "macOS notifications may need permission for 'Script Editor' (or Terminal) in System Settings › Notifications.": "macOS 알림은 시스템 설정 › 알림에서 '스크립트 편집기'(또는 터미널) 알림 권한이 필요할 수 있어요.",
   "Opens inside tmux, so you can chat · approve from the dashboard. To watch it in a terminal:": "tmux 안에서 열려서 대시보드로 채팅·승인할 수 있어요. 터미널에서 보려면",
   "Send a message": "메시지 보내기",

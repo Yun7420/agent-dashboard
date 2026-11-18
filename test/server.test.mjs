@@ -108,7 +108,7 @@ test('로그인 링크: 한 번만 — 맞으면 303 → / 와 쿠키(HttpOnly �
   assert.equal(r.headers['referrer-policy'], 'no-referrer');
   const again = await request(PORT, u.pathname + u.search); // 같은 링크 두 번째(시작 로그 · server.log 에 남은 것을 다른 프로그램이 다시 씀)
   assert.equal(again.status, 403);
-  assert.match(again.text, /^이미 쓴 링크예요 — 터미널에서 「node bin\/agent-dashboard\.mjs open」 로 새로 여세요/);
+  assert.match(again.text, /^이미 쓴 링크예요 — agent-dashboard 폴더에서 연 터미널에서 「node bin\/agent-dashboard\.mjs open」으로 새로 여세요/);
   assert.equal(again.headers['set-cookie'], undefined);
   const old = new URL(loginUrl({ token: TOKEN, port: PORT, now: Date.now() - 11 * 60_000 })); // 10분 지남
   const other = new URL(loginUrl({ token: TOKEN, port: PORT + 1 })); // 다른 포트용 링크
@@ -116,11 +116,20 @@ test('로그인 링크: 한 번만 — 맞으면 303 → / 와 쿠키(HttpOnly �
   for (const [what, p] of [['지남', old.pathname + old.search], ['다른 포트', other.pathname + other.search], ['다른 토큰', forged.pathname + forged.search], ['비ASCII', `/login?t=${encodeURIComponent('é'.repeat(70))}`], ['없음', '/login']]) {
     const x = await request(PORT, p);
     assert.equal(x.status, 403, what);
-    assert.match(x.text, /로그인 링크가 맞지 않거나 10분이 지났어요 — 터미널에서 「node bin\/agent-dashboard\.mjs open」/, what);
+    assert.match(x.text, /로그인 링크가 맞지 않거나 10분이 지났어요 — agent-dashboard 폴더에서 연 터미널에서 「node bin\/agent-dashboard\.mjs open」으로/, what);
     assert.equal(x.headers['set-cookie'], undefined, what);
   }
   const deny = await request(PORT, '/api/perf');
-  assert.match(deny.text, /^로그인이 필요해요 — 터미널에서 「node bin\/agent-dashboard\.mjs open」 를 실행하면/); // 화면이 그대로 보여 줄 안내
+  assert.match(deny.text, /^로그인이 필요해요 — agent-dashboard 폴더에서 연 터미널에서 「node bin\/agent-dashboard\.mjs open」을 실행하면/); // 화면이 그대로 보여 줄 안내
+});
+
+// 로그인 전이면 화면이 요청 없이 바로 안내하도록 뼈대에 로그인 여부 · 다시 여는 명령(짧은 꼴 — 절대 경로 없음)을 적어 준다(R5)
+test('화면 뼈대: <html> 에 로그인 여부(need · ok)와 다시 여는 명령, 홈 경로는 싣지 않는다', async () => {
+  const off = await request(PORT, '/');
+  assert.match(off.text, /^<!doctype html>\n<html lang="ko" data-login="need" data-open-cmd="node bin\/agent-dashboard\.mjs open">/);
+  assert.ok(!off.text.includes(os.homedir()));
+  const on = await request(PORT, '/', { headers: { cookie: AUTH.cookie } });
+  assert.match(on.text, /<html lang="ko" data-login="ok" /);
 });
 
 test('CSRF: /api 는 쿠키가 맞아도 사용자 지정 머리글이 없으면 403, Sec-Fetch-Site 가 same-origin 이 아니면 403(같은 Mac 의 다른 포트 페이지는 「같은 사이트」라 쿠키가 간다)', async () => {

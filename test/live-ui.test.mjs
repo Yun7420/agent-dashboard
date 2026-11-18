@@ -1,6 +1,7 @@
 // 화면 공통(public/js/01-core.js)의 403 처리 · 실시간 연결 판정. 브라우저 파일이라 불러올 때 쓰는 것(window · document · fetch …)만 흉내 내고 node:vm 으로 시험한다
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { loadFront, browserStub } from './_helpers/vm.mjs';
 
 function load(fetchImpl) {
@@ -22,13 +23,13 @@ test('실시간 연결: 브라우저가 멈췄을 때(CLOSED)만 이유를 확�
   for (const s of [0, 200, 500, 503]) assert.equal(probeVerdict(s), 'reconnect', String(s));
 });
 
-test('api · apiJson: 403 이면 서버가 준 로그인 안내(open 명령)를 고정 안내로 한 번만 켜고 오류, 그 밖의 오류는 서버 문장 그대로 · 요청엔 X-Dashboard-Request', async () => {
+test('api · apiJson: 403 이면 로그인 안내(켠 방법의 open 명령 · 어느 터미널)를 고정 안내로 한 번만 켜고 오류, 그 밖의 오류는 서버 문장 그대로 · 요청엔 X-Dashboard-Request', async () => {
   let next = res(403, '로그인이 필요해요 — 터미널에서 「agent-dashboard open」 를 실행하면');
   const { banner, how, calls, get } = load(async () => next);
   const api = get('api'), apiJson = get('apiJson');
   await assert.rejects(api('/api/perf'), /로그인이 필요해요/);
   assert.equal(banner.hidden, false);
-  assert.match(how.textContent, /agent-dashboard open/);
+  assert.equal(how.textContent, '로그인이 필요해요 — agent-dashboard 폴더에서 연 터미널에서 「node bin/agent-dashboard.mjs open」을 실행하면 이 브라우저에 다시 열려요'); // 뼈대에 명령이 없으면 저장소 기본값
   assert.equal(calls[0].headers['X-Dashboard-Request'], '1'); // 다른 사이트는 붙일 수 없는 머리글(CSRF) — 비밀은 쿠키라 화면엔 없음
   assert.ok(!JSON.stringify(calls[0]).match(/token/i));
   banner.hidden = true;
@@ -45,10 +46,25 @@ test('처음 여는 중(연동 카드가 떠 있음)에 403 이면 그 카드를
   const h2 = { textContent: '이 컴퓨터의 AI 세션을 연동하고 있어요' }, p = { textContent: '' };
   const boot = { classList: { add: (c) => cls.add(c), contains: (c) => cls.has(c) }, querySelector: (s) => (s === 'h2' ? h2 : p) };
   const banner = { hidden: true };
-  const { run } = loadFront(['01-core.js'], browserStub({ document: { querySelector: (s) => (s === '#boot' ? boot : s === '#login-needed' ? banner : null), hidden: true }, fetch: async () => res(403, '로그인이 필요해요 — 터미널에서 「agent-dashboard open」') }));
+  const { run } = loadFront(['01-core.js'], browserStub({ document: { documentElement: { dataset: { openCmd: 'npx agent-dashboard open' } }, querySelector: (s) => (s === '#boot' ? boot : s === '#login-needed' ? banner : null), hidden: true }, fetch: async () => res(403, '로그인이 필요해요 — 터미널에서 「agent-dashboard open」') }));
   await assert.rejects(run('api')('/api/env'));
   assert.ok(cls.has('login'));
   assert.equal(h2.textContent, '로그인이 필요해요');
-  assert.match(p.textContent, /agent-dashboard open/);
+  assert.equal(p.textContent, '아무 터미널에서 「npx agent-dashboard open」을 실행하면 이 브라우저에 다시 열려요'); // 제목과 같은 말을 되풀이하지 않고 방법만
   assert.equal(banner.hidden, true); // 카드에 보였으니 위쪽 안내는 띄우지 않는다
+});
+
+// 로그인 전이면 서버가 뼈대 <html data-login="need"> 로 알려 준다 → 요청을 하나도 보내지 않고 바로 안내(브라우저 콘솔에 403 이 남지 않게, R5)
+test('뼈대가 로그인 전(data-login=need)이면 불러오자마자 안내하고, 요청은 보내지 않는다 · 로그인됐으면 아무것도 안 띄움', () => {
+  for (const [login, shown] of [['need', true], ['ok', false]]) {
+    const banner = { hidden: true }, how = { textContent: '' }, calls = [];
+    const { run } = loadFront(['01-core.js'], browserStub({ document: { documentElement: { dataset: { login, openCmd: 'agent-dashboard open' } }, querySelector: (s) => (s === '#login-needed' ? banner : s === '#login-how' ? how : null), hidden: true }, fetch: async (...a) => { calls.push(a); return res(200); } }));
+    assert.equal(run('loginShown'), shown, login);
+    assert.equal(banner.hidden, !shown);
+    if (shown) assert.equal(how.textContent, '로그인이 필요해요 — 아무 터미널에서 「agent-dashboard open」을 실행하면 이 브라우저에 다시 열려요');
+    assert.equal(calls.length, 0);
+  }
+  for (const [f, re] of [['15-notify.js', /\nif \(!loginShown\) loadNotifyCfg\(\);/], ['17-live.js', /\nif \(loginShown\) connState\('waiting', t\('Login needed'\)\); else connect\(\);/]]) {
+    assert.match(fs.readFileSync(new URL(`../public/js/${f}`, import.meta.url), 'utf8'), re, f);
+  }
 });

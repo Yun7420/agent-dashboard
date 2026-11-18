@@ -4,11 +4,13 @@
 const REQ_HEADER = { 'X-Dashboard-Request': '1', 'X-Dashboard-Lang': LANG }; // 서버 문구(오류 · 환경 점검)도 화면 언어로(lib/i18n.mjs)
 const $ = (s) => document.querySelector(s);
 
-// 서버 요청은 모두 이 길로: 403 = 로그인이 필요함(처음 · 30일 지남 · 토큰 파일을 지우고 다시 켬) → 고정 안내를 한 번 띄우고 오류로 끝낸다.
-// 안내 문구는 서버가 403 에 담아 준 것(켠 방법에 맞는 open 명령)을 그대로. 예전엔 직접 fetch 하던 곳이 403 을 「없음」으로 바꿔 빈 결과를 믿었다
+// 서버 요청은 모두 이 길로: 403 = 로그인이 필요함(처음 · 7일 지남 · 토큰 파일을 지우고 다시 켬) → 고정 안내를 한 번 띄우고 오류로 끝낸다.
+// 안내는 켠 방법에 맞게: 명령은 서버가 뼈대 <html data-open-cmd> 에 적어 주고, 저장소면 그 폴더의 터미널 · npx · 설치면 아무 터미널(lib/launch.mjs)
 const LOGIN_MSG = t('Login needed — open the login link again as shown above');
+const OPEN_CMD = document.documentElement?.dataset?.openCmd || 'node bin/agent-dashboard.mjs open';
+const loginHow = () => t(OPEN_CMD.startsWith('node ') ? 'In a terminal opened in the agent-dashboard folder, run "{cmd}" to reopen it in this browser' : 'In any terminal, run "{cmd}" to reopen it in this browser', { cmd: OPEN_CMD });
 let loginShown = false;
-function loginNeeded(text) {
+function loginNeeded() {
   if (loginShown) return;
   loginShown = true;
   // 처음 여는 중(연동 카드가 떠 있음)이면 그 카드를 로그인 안내로 바꾼다 — 「연동하고 있어요」가 끝없이 돌지 않게. 쓰던 중이면 위쪽 고정 안내
@@ -16,19 +18,20 @@ function loginNeeded(text) {
   if (boot && !boot.classList.contains('gone')) {
     boot.classList.add('login');
     boot.querySelector('h2').textContent = t('Login needed');
-    if (text) boot.querySelector('p').textContent = text;
+    boot.querySelector('p').textContent = loginHow(); // 제목이 「로그인이 필요해요」라 본문은 방법만
     return;
   }
   const el = $('#login-needed');
   if (!el) return;
-  if (text && $('#login-how')) $('#login-how').textContent = text;
+  if ($('#login-how')) $('#login-how').textContent = `${t('Login needed')} — ${loginHow()}`;
   el.hidden = false;
 }
 // 인라인 onclick 은 CSP(script-src 'self')가 막는다 → 단추 동작은 js 에서 잇는다
 $('#login-reload')?.addEventListener('click', () => location.reload());
+if (document.documentElement?.dataset?.login === 'need') loginNeeded(); // 로그인 전: 요청(실시간 연결 · 알림 설정)을 보내지 않고 바로 안내
 async function apiFetch(path, { method = 'GET', headers = {}, body } = {}) {
   const res = await fetch(path, { method, headers: { ...REQ_HEADER, ...headers }, body });
-  if (res.status === 403) { loginNeeded(await res.text().catch(() => '')); throw new Error(LOGIN_MSG); }
+  if (res.status === 403) { loginNeeded(); throw new Error(LOGIN_MSG); }
   return res;
 }
 async function api(path, body) {
@@ -152,16 +155,14 @@ function modelName(id) {
 }
 // 접힌 목록 띠의 이니셜: Lead Manager → LM, Project2 Builder → PB
 function initials(title) {
-  const words = String(title).replace(/\(.*?\)/g, ' ').trim().split(/[\s_-]+/).filter(Boolean);
-  if (!words.length) return '?';
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0][0] + words[1][0]).toUpperCase();
+  const w = String(title).replace(/\(.*?\)/g, ' ').trim().split(/[\s_-]+/).filter(Boolean);
+  return !w.length ? '?' : w.length === 1 ? w[0].slice(0, 2).toUpperCase() : (w[0][0] + w[1][0]).toUpperCase();
 }
 // 정렬: 직접 정렬(드래그 순서 저장) · 상태별 최근 활동순. 목록과 조직도가 같은 순서를 쓴다.
 // 이름순은 없앴다(간추리기 B2) — 예전에 저장된 'name' 은 상태별로
 pref.sort ??= 'manual';
 if (pref.sort === 'name') pref.sort = 'status';
-pref.order ??= [];
+pref.order ??= []; pref.hidden ??= [];
 function ordered(list) {
   if (pref.sort === 'status') return list; // 서버가 최근 활동순으로 준다
   // 직접 정렬: 저장된 순서대로, 처음 보는 세션은 맨 아래에 붙여 순서에 기록
@@ -171,7 +172,6 @@ function ordered(list) {
   const idx = new Map(pref.order.map((k, i) => [k, i]));
   return [...list].sort((a, b) => idx.get(a.key) - idx.get(b.key));
 }
-pref.hidden ??= [];
 
 // 세션 열쇠로 기억하는 설정(직접 정렬 순서 · 숨긴 세션 · 펼친 서브에이전트)은 본 세션이 계속 쌓이기만 했다.
 // 열쇠마다 「마지막으로 본 시각」(seen)을 같은 저장 키(agent-deck) 안에 두고, 지금 상태에 없고 14일 넘게 못 본 것만 지운다.
