@@ -47,6 +47,25 @@ test('run: 서버가 죽으면 다시 켜고, 로그는 600 으로 이어 쓴다
   assert.equal(fs.statSync(logFile).mode & 0o777, 0o600);
 });
 
+// run.sh 와 같은 일인지: 기본값(restartMs 를 주지 않음)이면 비정상 종료 2초 뒤 다시 켠다
+test('run: 기본 간격은 run.sh 처럼 2초 — 죽은 뒤 2초가 지나서야 다시 켠다', async () => {
+  const dir = tmp();
+  const logFile = path.join(dir, 'data', 'server.log');
+  const r = createRunner({ command: [process.execPath, fakeServer(dir, 'crash')], cwd: dir, logFile });
+  let gap;
+  try {
+    assert.ok(await until(() => count(dir) >= 1));
+    const t1 = Date.now();
+    assert.ok(await until(() => count(dir) >= 2, 5000));
+    gap = Date.now() - t1;
+  } finally {
+    r.stop();
+  }
+  await r.done;
+  assert.ok(gap >= 1800, `${gap}ms 만에 다시 켬`);
+  assert.match(fs.readFileSync(logFile, 'utf8'), /서버 종료\(코드 3\) — 2초 뒤 다시 켭니다/);
+});
+
 test('run: 짧은 시간에 계속 죽으면 다시 켜는 간격을 늘린다', async () => {
   const dir = tmp();
   const logFile = path.join(dir, 'server.log');
