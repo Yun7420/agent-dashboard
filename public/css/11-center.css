@@ -44,6 +44,8 @@ button.k-use:hover:not(:disabled) { background: var(--surface-2); border-color: 
 .kinds .us, .kinds.short :is(.kl, .ul, .k-use .sep:first-child) { display: none; }
 .kinds.short .us { display: inline; }
 .kinds.short .kind { gap: 0; padding: 0 var(--sp-1); }
+.kinds.tiny .k-use :is(.u, .sep) { display: none; } /* 「C ▾」만 — 누르면 팝업(#limits-pop)에 전체 */
+.zoom-btns.up { bottom: calc(var(--sp-4) + var(--kh, 36px) + var(--sp-2)); } /* 범례 위로(겹치지 않게, 숨기지 않음) */
 /* 종류 표식: 머리글자 + --kind-<id> 색(02-kinds.js 가 --k 로 넣음) */
 .kmark { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border-radius: 50%; font: 700 11px/1 var(--sans); vertical-align: 1px; color: var(--k); background: color-mix(in srgb, var(--k) 18%, transparent); flex: none; }
 .km circle { fill: color-mix(in srgb, var(--k) 18%, var(--surface-2)); stroke: none; }

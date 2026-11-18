@@ -61,10 +61,10 @@ test('세 무리 배치: 범례 + 확대 단추가 보이는 칸에 안 들어�
   const cls = () => { const set = new Set(); return { set, toggle: (c, on) => (on ?? !set.has(c) ? set.add(c) : set.delete(c), set.has(c)), contains: (c) => set.has(c), add: (c) => set.add(c), remove: (c) => set.delete(c) }; };
   const props = {};
   // 긴 꼴 · 짧은 꼴 폭(.short 를 떼고 잰 값이 긴 꼴)
-  const box = (long, short) => { const b = { innerHTML: '', addEventListener() {}, classList: cls() }; Object.defineProperty(b, 'offsetWidth', { get: () => (b.classList.contains('short') ? short : long) }); return b; };
+  const box = (long, short, tiny = short) => { const b = { innerHTML: '', addEventListener() {}, classList: cls(), offsetHeight: 36 }; Object.defineProperty(b, 'offsetWidth', { get: () => (b.classList.contains('tiny') ? tiny : b.classList.contains('short') ? short : long) }); return b; };
   const els = {
     main: { clientWidth: 1440, classList: cls(), style: { getPropertyValue: (k) => props[k] ?? '' } },
-    '#kinds': box(330, 120), '#status-chips': box(420, 170), '.zoom-btns': { offsetWidth: 36 },
+    '#kinds': box(330, 120, 56), '#status-chips': box(420, 170), '.zoom-btns': { offsetWidth: 36, classList: cls(), style: { setProperty: (k, v) => (props[k] = v) } },
     '#status-chips [data-st="waiting"]': { classList: cls(), setAttribute() {} },
   };
   const el = (s) => (els[s] ??= { id: s, hidden: false, innerHTML: '', textContent: '', dataset: {}, style: { setProperty() {} }, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, setAttribute(k, v) { this[k] = v; }, getBoundingClientRect: () => ({}) });
@@ -88,6 +88,19 @@ test('세 무리 배치: 범례 + 확대 단추가 보이는 칸에 안 들어�
   props['--dw'] = '0px';
   run('floatSync()');
   assert.deepEqual([short('#kinds'), short('#status-chips')], [false, false]);
+  // 아주 좁은 칸(목록 펼침 + 넓은 패널 — 사용자 발견): 겹치지 않게 「C ▾」(.tiny) → 그래도 모자라면 + − ⌖ 를 범례 위로(.up), 숨기지 않는다
+  const tiny = () => els['#kinds'].classList.contains('tiny'), up = () => els['.zoom-btns'].classList.contains('up');
+  for (const [visible, want] of [[320, [true, false, false]], [280, [true, false, false]], [240, [true, false, false]], [200, [true, true, false]], [140, [true, true, false]], [120, [true, true, true]]]) {
+    props['--dw'] = `${1180 - 296 - visible}px`;
+    run('floatSync()');
+    assert.deepEqual([short('#kinds'), tiny(), up()], want, `보이는 칸 ${visible}`);
+    const room = visible - 32, k = els['#kinds'].offsetWidth;
+    if (!up()) assert.ok(k + 16 + 36 <= room, `${visible}: 범례 ${k} + 확대 단추가 옆에 들어감`); // 같은 줄이면 겹치지 않는다
+  }
+  assert.equal(props['--kh'], '36px'); // 올릴 높이 = 범례 높이
+  props['--dw'] = '0px';
+  run('floatSync()');
+  assert.deepEqual([short('#kinds'), tiny(), up()], [false, false, false]); // 넓어지면 모두 되돌림
   // 390 휴대폰(목록 띠 56): 334 − 32 = 302. 범례 330 + 52 > 302 → 짧게, 상태 칩 420 > 302 → 점 + 숫자
   els.main.clientWidth = 390; aw = 56;
   run('floatSync()');

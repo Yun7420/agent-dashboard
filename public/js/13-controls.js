@@ -28,8 +28,8 @@ function renderKinds() {
   setHtml($('#kinds'), runningKinds(state.tools, state.sessions).map((k) => `<span class="kind"${k.id === 'claude' ? ' data-lp' : ''}>${kmark(k.id)}<span class="kl">${esc(k.label)}</span>${k.id === 'claude' ? usageHtml() : ''}</span>`).join(''));
   floatSync();
 }
-// 세 무리가 보이는 칸(목록 판 · 패널 사이)에 다 들어가는지: 아래 줄은 범례 + 확대 단추, 위 줄은 상태 칩.
-// 넘치면 범례부터 짧게, 상태 칩도 넘치면 점 + 숫자로(숨기지 않음 — 한도 · 승인 수는 꼭 봐야 하는 정보).
+// 세 무리가 보이는 칸(목록 판 · 패널 사이)에 다 들어가는지: 아래 줄은 범례 + 확대 단추, 위 줄은 상태 칩. 어떤 폭에서도 서로 겹치지 않고 숨기지도 않는다.
+// 넘치면 범례부터 짧게(.short) → 「C ▾」만(.tiny, 누르면 팝업에 전체) → 그래도 모자라면 + − ⌖ 를 범례 위로(.up), 상태 칩은 점 + 숫자로(한도 · 승인 수는 꼭 봐야 하는 정보).
 // 판이 미끄러지는 중의 사각형이 아니라 끝난 자리(--aw · --dw)로 세고, 폭은 .short 를 잠깐 떼고 긴 꼴로 잰다
 const GAP = 16;
 const dwOf = () => parseFloat($('main').style.getPropertyValue?.('--dw')) || 0;
@@ -39,8 +39,12 @@ function fitShort(el, room) {
   el.classList.toggle('short', el.offsetWidth > room);
 }
 function floatSync() {
-  const room = visibleW() - 2 * GAP;
-  fitShort($('#kinds'), room - GAP - $('.zoom-btns').offsetWidth);
+  const room = visibleW() - 2 * GAP, k = $('#kinds'), z = $('.zoom-btns'), beside = room - GAP - z.offsetWidth;
+  k.classList.remove('tiny');
+  fitShort(k, beside);
+  k.classList.toggle('tiny', k.classList.contains('short') && k.offsetWidth > beside);
+  z.classList.toggle('up', k.offsetWidth > beside); // 「C ▾」도 옆에 안 들어가면(보이는 칸 약 200px 아래) 범례 위로 — 높이는 범례 그대로
+  z.style.setProperty?.('--kh', `${k.offsetHeight}px`);
   fitShort($('#status-chips'), room);
 }
 if (typeof ResizeObserver === 'function') { // 브라우저에서만(단위 테스트의 가짜 문서엔 없음)

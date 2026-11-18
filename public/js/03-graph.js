@@ -153,7 +153,7 @@ const asideW = () => parseFloat(getComputedStyle(document.body).getPropertyValue
 const visibleBox = () => {
   const svg = $('#graph').getBoundingClientRect(), L = asideW(), T = floatSz('.status-chips', 'offsetHeight');
   const R = $('#drawer').classList.contains('open') && innerWidth > 860 ? $('#drawer').getBoundingClientRect().width : 0;
-  return { L, T, width: Math.max(120, svg.width - L - R), height: Math.max(120, svg.height - T - Math.max(floatSz('.kinds', 'offsetHeight'), floatSz('.zoom-btns', 'offsetHeight'))) };
+  return { L, T, width: Math.max(120, svg.width - L - R), height: Math.max(120, svg.height - T - Math.max(floatSz('.kinds', 'offsetHeight'), floatSz('.zoom-btns', 'offsetHeight') + ($('.zoom-btns')?.classList?.contains('up') ? floatSz('.kinds', 'offsetHeight') - 16 : 0))) };
 };
 // 맞춤은 처음 · 더블클릭 · ⌖(고름 없음) · 나무 모양이 바뀔 때만 — 판을 열고 닫거나 폭을 바꿔도 배율 · 위치는 그대로
 function autoFit(tree) {
