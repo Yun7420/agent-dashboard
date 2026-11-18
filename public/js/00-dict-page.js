@@ -99,8 +99,6 @@ const KO_PAGE = {
   "Idle": "대기",
   "Ended": "종료",
   "Close panel": "패널 닫기",
-  "About the context window": "대화 창이란",
-  "How much conversation Claude remembers at once. Near 80% Claude Code auto-compacts the earlier part, and details that are not in the summary may be forgotten. The faint background shows the last 24 hours (right edge = now).": "Claude 가 한 번에 기억하는 대화 양이에요. 80% 쯤 차면 Claude Code 가 앞부분을 자동으로 요약하고, 요약에 없는 자세한 내용은 잊을 수 있어요. 흐린 바탕 그래프는 최근 24시간이에요(오른쪽 끝 = 지금).",
   "Sort": "정렬",
   "Log": "기록",
   "Stop": "멈추기",

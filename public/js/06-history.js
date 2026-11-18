@@ -30,7 +30,7 @@ async function loadTrend(key) {
   const s = state.sessions.find((x) => x.key === key);
   if (s) renderTrend(s);
 }
-// 가로축은 「최근 24시간」 — 오른쪽 끝 = 지금, 눈금은 이 컴퓨터 시각의 짝수 정각(2시간마다). 가운데 바탕 그래프(07-center.js)와 같은 축
+// 가로축은 「최근 24시간」 — 오른쪽 끝 = 지금, 눈금은 이 컴퓨터 시각의 짝수 정각(2시간마다). 패널 띠(renderTrend)가 쓴다
 const DAY_MS = 864e5, GAP_MS = 30 * 6e4;
 function dayAxis(now, x0, x1) {
   const t0 = now - DAY_MS;
@@ -65,28 +65,59 @@ function stepPath(seg, now, x, y, base) {
 // 앞 점보다 절반 넘게 줄어든 곳 = 자동 요약(compact) — 24시간 밖의 앞 점과도 견준다
 const dropIdx = (points) => points.flatMap((p, i) => (i && p[1] < points[i - 1][1] * 0.5 ? [i] : []));
 
-// 지금 탭 아래(좁은 화면에서만 보인다 — 넓으면 가운데 바탕 그래프). 2초마다 불려도 바뀐 게 없으면 그대로
-function renderTrend(s) {
-  const html = trendHtml(s);
-  const el = $('#now-trend');
-  setHtml(el, html);
+// 패널 머리 아래 「대화 창」 띠: 지금 %(60/85 색) + 최근 24시간 계단 추이선 · 흐린 80% 선 · 자동 요약 점(가로는 너비에 맞춰 1px = 1단위).
+// 예전엔 가운데 조직도 뒤의 흐린 바탕 그래프 · 큰 % 와 좁은 화면용 작은 그래프 두 벌이었다 — 읽히지 않아 이 띠 하나로.
+// 1초마다 불려도(08-now.js) 세션 · 점 · 폭 · 분이 같으면 그대로. 대화 창 정보가 없거나 기록이 Claude Code 형식이 아니면(Codex) 숨긴다
+const strip = { sig: '', pts: [], i: -1 };
+const CS_H = 32;
+function renderTrend(s, now = Date.now()) {
+  const d = trend.key === s.key ? trend.data : null, win = s.context?.window;
+  const box = $('#ctx-strip');
+  box.hidden = !win || d?.supported === false;
+  if (box.hidden) return void (strip.sig = '');
+  const chart = $('#cs-chart'), W = Math.max(120, Math.round(chart.clientWidth || 300));
+  const all = d?.points ?? [];
+  const sig = [s.key, s.context.percent, all.length, all.at(-1)?.join(), win, W, Math.floor(now / 6e4)].join('|'); // 축은 1분마다 옮겨 간다
+  if (sig === strip.sig) return;
+  strip.sig = sig;
+  $('#cs-pct').textContent = `${s.context.percent}%`;
+  $('#cs-pct').className = ctxLevel(s.context.percent);
+  const ax = dayAxis(now, 0, W), y = (v) => 2 + (1 - Math.min(1.05, v / win)) * (CS_H - 4);
+  const di = new Set(dropIdx(all));
+  Object.assign(strip, { ax, y, win, pts: all.map((p, i) => [...p, di.has(i)]).filter((p) => p[0] >= ax.t0) });
+  const lines = daySegs(all, ax.t0).map((g) => `<path class="cs-line" d="${stepPath(g, now, ax.x, y)}"/>`).join('');
+  const dots = strip.pts.filter((p) => p[2]).map(([at, v]) => `<circle class="cs-drop" cx="${ax.x(at).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.5"/>`).join('');
+  setHtml(chart, `<svg viewBox="0 0 ${W} ${CS_H}" width="${W}" height="${CS_H}"><line class="cs-80" x1="0" x2="${W}" y1="${y(win * 0.8).toFixed(1)}" y2="${y(win * 0.8).toFixed(1)}"/>${lines}${dots}</svg>`);
+  chart.setAttribute('aria-label', `${t('Context window usage trend')} · ${s.context.percent}%`);
+  if (strip.i >= 0) csShow(Math.min(strip.i, strip.pts.length - 1));
 }
-function trendHtml(s, now = Date.now()) {
-  if (trend.key !== s.key || !trend.data) return '';
-  const { supported, points, drops, total } = trend.data;
-  if (!supported) return `<div class="trend-note">${t('The context trend is based on Claude Code logs')}</div>`;
-  const win = s.context?.window;
-  if (!win || !points.length) return '';
-  const W = 280, H = 48, ax = dayAxis(now, 0, W);
-  const y = (v) => H - Math.min(1, v / win) * H;
-  const segs = daySegs(points, ax.t0);
-  const lines = segs.map((g) => `<path d="${stepPath(g, now, ax.x, y)}" class="tr-line"/>`).join('');
-  const ticks = ax.ticks.map((at) => `<line x1="${ax.x(at).toFixed(1)}" x2="${ax.x(at).toFixed(1)}" y1="0" y2="${H}" class="tr-tick"/>`).join('');
-  const dots = dropIdx(points).filter((i) => points[i][0] >= ax.t0).map((i) => { const [at, v] = points[i]; return `<circle cx="${ax.x(at).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" class="tr-drop"><title>${t('Auto-compact')} ${cpHm(at)}</title></circle>`; }).join('');
-  return `<div class="trend"><div class="trend-h">${t('Context trend')} · ${t('{n} replies', { n: total })}${drops ? ` · ${t('auto-compact {n}×', { n: drops })}` : ''}</div>
-    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${t('Context window usage trend')}">${ticks}<line x1="0" x2="${W}" y1="${y(win * 0.8)}" y2="${y(win * 0.8)}" class="tr-80"/>${lines}${dots}</svg>
-    <div class="trend-f"><span>${cpHm(ax.t0)}</span><span>${t('dashed line 80%')}</span><span>${t('now')}</span></div></div>`;
+// 띠의 한 지점: 시각 · % · 토큰 · 그때까지 마지막 자동 요약 시각(i < 0 이면 숨김). 표시 점 · 설명은 띠 안 절대 위치
+function csTip(i) {
+  const [at, v] = strip.pts[i];
+  const last = strip.pts.slice(0, i + 1).findLast((p) => p[2]);
+  return `<b>${cpHm(at)} · ${Math.round((v / strip.win) * 100)}%</b> · ${fmtTok(v)} / ${fmtTok(strip.win)} ${t('tokens')}<br>${t('Last auto-compact')} ${last ? cpHm(last[0]) : t('none')}`;
 }
+function csShow(i) {
+  strip.i = i < 0 || !strip.pts.length ? -1 : i;
+  const tip = $('#cs-tip'), cur = $('#cs-cur');
+  tip.hidden = cur.hidden = strip.i < 0;
+  if (strip.i < 0) return;
+  const [at, v] = strip.pts[strip.i], x = strip.ax.x(at);
+  cur.style.left = `${x.toFixed(1)}px`; cur.style.top = `${strip.y(v).toFixed(1)}px`;
+  tip.innerHTML = csTip(strip.i);
+  tip.style.setProperty('--x', `${x.toFixed(1)}px`);
+}
+// 마우스: 그 시각에 보이던 값(계단이라 그 시각 이전의 마지막 점) · 키보드: 초점이 오면 마지막 점, ← → 로 옮긴다
+const csAt = (px) => { const t = strip.ax.t0 + (px / strip.ax.x(strip.ax.t0 + DAY_MS)) * DAY_MS; const i = strip.pts.findLastIndex((p) => p[0] <= t); return i < 0 ? (strip.pts.length ? 0 : -1) : i; };
+$('#cs-chart').addEventListener('pointermove', (e) => strip.ax && csShow(csAt(e.clientX - e.currentTarget.getBoundingClientRect().left)));
+$('#cs-chart').addEventListener('pointerleave', () => document.activeElement !== $('#cs-chart') && csShow(-1));
+$('#cs-chart').addEventListener('focus', () => csShow(strip.pts.length - 1));
+$('#cs-chart').addEventListener('blur', () => csShow(-1));
+$('#cs-chart').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  e.preventDefault();
+  csShow(Math.max(0, Math.min(strip.pts.length - 1, strip.i + (e.key === 'ArrowRight' ? 1 : -1))));
+});
 const cpHm = (at) => new Date(at).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', hour12: false });
 
 async function select(key) {
@@ -111,8 +142,6 @@ function renderDrawerHead(s) {
   $('#d-title').textContent = s.title;
   $('#d-title').title = s.title;
   $('#d-dot').className = `dot-s ${s.status} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}`;
-  $('#d-ctx').innerHTML = s.context ? `<i class="${ctxLevel(s.context.percent)}" style="width:${s.context.percent}%"></i>` : '';
-  $('#d-ctx').title = s.context ? `${t('Context')} ${s.context.percent}% · ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)}` : '';
   $('#d-meta').innerHTML = `<span class="badge tool ${esc(s.tool)}">${esc(s.toolLabel)}</span>${s.model ? `<span class="badge badge-model" title="${esc(s.model)}">${esc(modelName(s.model))}</span>` : ''}${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span style="display:inline-flex;align-items:center;gap:6px"><span class="dot-s ${esc(s.status)}"></span>${STATUS_KO[s.status]}${s.waitingFor ? ' · ' + esc(s.waitingFor) : ''}</span><span class="path">${esc(s.cwd || '')}</span><span class="mono">${t('Session')} ${esc(s.id.slice(0, 8))}</span>${s.pid ? `<span>PID ${s.pid}</span><span>${t('Up')} ${esc(s.uptime ?? '')}</span>` : ''}${s.ide ? `<span>${t('Editor extension')}</span>` : ''}<span>${t('Log')} ${s.sizeMB ?? 0}MB</span>${s.turnClipped ? `<span title="${t('The last request is more than 8MB before the end of the log, so only the last 8MB of this turn was read')}">${t('Start of this turn skipped')}</span>` : ''}${s.context ? `<span class="ctx-chip" title="${s.context.estimated ? t('Window size estimated from the model setting. ') : ''}${t('When full, Claude auto-summarizes (compacts) the earlier part')}"><span class="mini"><span class="ctx-bar ${ctxLevel(s.context.percent)}" style="display:block;width:${s.context.percent}%"></span></span>${t('Context')} ${s.context.percent}% · ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)} · ${t('left')} ${fmtTok(Math.max(0, s.context.window - s.context.used))}</span>` : ''}`;
   $('#end-session').hidden = s.status === 'ended';
   const fam = (s.model || '').match(/opus|sonnet|haiku/)?.[0] ?? '';

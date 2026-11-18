@@ -34,3 +34,24 @@ test('좁은 나무는 가운데에, 크게 해도 1.2배까지', () => {
   assert.ok(v.k >= 1 && v.k <= 1.2);
   assert.ok(v.x > 24);
 });
+
+// 휠: ctrl · ⌘ 없이는 옮기기만(트랙패드 두 손가락 스크롤이 글자를 줄이지 않게) · ctrl(오므리기)이면 확대 · 축소
+test('휠: 그냥 스크롤은 옮기기만 하고 배율은 그대로 · ctrl 이나 ⌘ 와 함께면 확대 · 축소', () => {
+  const on = {};
+  const el = (box) => ({ getBoundingClientRect: () => box, classList: { contains: () => false, add() {}, remove() {} }, addEventListener(ty, fn) { on[ty] = fn; }, setAttribute() {} });
+  const els = { '#graph': el({ width: 1000, height: 700, left: 0, top: 0 }) };
+  const { run } = loadFront(['00-md.js', '01-core.js', '03-graph.js'], {
+    window: { addEventListener() {} }, document: { querySelector: (s) => els[s] ?? el({}), addEventListener() {} },
+    localStorage: { getItem: () => null, setItem() {} }, setInterval() {},
+  });
+  const wheel = (o) => on.wheel({ deltaX: 0, deltaY: 0, clientX: 500, clientY: 300, preventDefault() {}, ...o });
+  run('view.x = 0; view.y = 0; view.k = 1');
+  for (let i = 0; i < 5; i++) wheel({ deltaY: 40 });
+  assert.deepEqual({ ...run('view') }, { x: 0, y: -200, k: 1, init: false });
+  wheel({ deltaX: 30 });
+  assert.equal(run('view.x'), -30);
+  wheel({ deltaY: 40, ctrlKey: true });
+  assert.ok(Math.abs(run('view.k') - 0.9) < 1e-9);
+  wheel({ deltaY: -40, metaKey: true });
+  assert.ok(Math.abs(run('view.k') - 0.99) < 1e-9);
+});

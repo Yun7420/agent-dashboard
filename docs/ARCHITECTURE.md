@@ -191,7 +191,7 @@
 | `04-list.js` | 왼쪽 세션 목록(`renderList`) · 「N초 전」만 따로 갱신(`updateAgo`) |
 | `05-approval.js` | 승인 창: 「허락할 내용」 카드(`renderApproveCard`) · 터미널 화면과 선택지 단추(`renderApproval`) · 선택지 읽기(`approvalChoices`, 순수 함수) |
 | `06-history.js` | 오른쪽 서랍: 세션 고르기(`select`) · 기록 읽기(`loadHistory`) · 대화 창 추이(`renderTrend`) |
-| `07-center.js` | 가운데 탭 「구조 / 대화 창」(`applyCenterView`, 고른 탭은 `centerView`) · 대화 창 사용률 큰 그래프(`drawBig` — 지금 탭이 1초마다 부름, 바뀐 게 없으면 그대로) |
+| `07-center.js` | 가운데 칸: 패널 폭(`--dw`) · 확대 단추 · 마우스 올린 노드 강조 · 상태가 바뀐 노드 빛남. 대화 창 추이는 패널 머리 아래 띠(`06-history.js` 의 `renderTrend`) |
 | `08-now.js` | 지금 탭(`renderNow`) · 탭 바꾸기(`setTab`) · 바꾼 파일 diff · 실행한 명령(`renderChanges`) · 진행 표시(`renderBusy`) |
 | `09-attach.js` | 입력 칸: 세션별 임시 글 · 첨부(`useDraft` · `pruneDrafts`) · 첨부 · 보내기(`addFiles` · `sendMsg`) · 🎤 음성 입력 |
 | `10-env.js` | 환경 점검 화면(`renderEnv`) · 없는 도구면 단추 끄기(`applyTools`) |

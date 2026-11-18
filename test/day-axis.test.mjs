@@ -1,4 +1,4 @@
-// 대화 창 추이의 「최근 24시간」 축(public/js/06-history.js 의 dayAxis · daySegs · stepPath)과 가운데 바탕 그래프(07-center.js)
+// 대화 창 추이의 「최근 24시간」 축(public/js/06-history.js 의 dayAxis · daySegs · stepPath)과 패널 머리 아래 대화 창 띠(renderTrend)
 // 시각은 이 컴퓨터 시간대 기준이라, 시험의 시각도 new Date(년, 월, 일, 시) 로 만든다(어느 시간대에서 돌려도 같은 결과)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -6,7 +6,19 @@ import { loadFront } from './_helpers/vm.mjs';
 
 const H = 36e5;
 const at = (d, h, m = 0) => new Date(2026, 10, d, h, m).getTime();
-const { run } = loadFront(['00-md.js', '01-core.js', '06-history.js'], { window: {}, document: { querySelector: () => null }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {} });
+// 가짜 요소: 띠가 쓰는 속성 · 이벤트만
+function fakeDom() {
+  const els = {};
+  const el = (s) => (els[s] ??= { id: s, hidden: false, innerHTML: '', textContent: '', className: '', clientWidth: 480, attrs: {}, listeners: {}, style: { setProperty(k, v) { this[k] = v; } },
+    setAttribute(k, v) { this.attrs[k] = v; }, addEventListener(ty, fn) { this.listeners[ty] = fn; }, getBoundingClientRect: () => ({ left: 100 }) });
+  return { els, document: { querySelector: el, querySelectorAll: () => [], addEventListener() {}, activeElement: null } };
+}
+function load() {
+  const dom = fakeDom();
+  const { run: r } = loadFront(['00-md.js', '01-core.js', '06-history.js'], { window: {}, document: dom.document, localStorage: { getItem: () => null, setItem() {} }, setInterval() {} });
+  return { els: dom.els, doc: dom.document, run: r };
+}
+const { run } = load();
 const dayAxis = run('dayAxis'), daySegs = run('daySegs'), stepPath = run('stepPath');
 
 test('dayAxis: 왼쪽 끝 = 24시간 전, 오른쪽 끝 = 지금, 그 사이는 시각에 비례', () => {
@@ -55,49 +67,58 @@ test('stepPath: 값은 다음 응답까지 그대로(계단), 끝은 30분 뒤�
   assert.equal(stepPath(seg, now, ax.x, y, 100), 'M1320.0,90.0 H1330.0 V70.0 H1360.0 V100.0 H1320.0 Z');
 });
 
-// 07-center.js: 예전 탭 값(centerView)이 남아 있어도 오류 없이 불러오고, 세션을 고르지 않으면 바탕 · 큰 % 가 비어 있다
-function loadCenter(saved) {
-  const els = {};
-  const el = (s) => (els[s] ??= { innerHTML: 'x', textContent: '', hidden: false, dataset: {}, style: { setProperty() {} }, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, getBoundingClientRect: () => ({ width: 800, height: 600 }) });
-  const body = { cls: new Set(), classList: { toggle: (c, on) => (on ? body.cls.add(c) : body.cls.delete(c)), add: (c) => body.cls.add(c), remove() {}, contains: () => false } };
-  const { run: r } = loadFront(['00-md.js', '01-core.js', '06-history.js', '07-center.js'], {
-    window: {}, body, setInterval() {}, setTimeout, clearTimeout, innerWidth: 1440, getComputedStyle: () => ({ getPropertyValue: () => '0px' }),
-    document: { querySelector: el, querySelectorAll: () => [], addEventListener() {}, body },
-    localStorage: { getItem: () => JSON.stringify(saved), setItem() {} },
-    matchMedia: () => ({ matches: true, addEventListener() {} }),
-    ResizeObserver: class { observe() {} }, MutationObserver: class { observe() {} },
-  });
-  return { els, body, run: r };
-}
+// 대화 창 띠: 지금 %(60/85 색) · 24시간 안 계단 선 · 자동 요약 점 · 정보가 없으면(Codex) 숨김
+const SESSION = '{ key: "a", title: "A", context: { window: 200000, used: 130000, percent: 65 } }';
+const PTS = `[[${at(18, 10)}, 150000], [${at(18, 10, 10)}, 40000], [${at(18, 10, 30)}, 130000]]`;
 
-test('07-center: 저장된 예전 centerView(org · ctx · 이상한 값)가 있어도 오류 없이 불러오고 탭 표시(cv-ctx)를 만들지 않는다', () => {
-  for (const v of ['org', 'ctx', 42, null]) {
-    const { body } = loadCenter({ welcomed: true, centerView: v });
-    assert.equal(body.cls.has('cv-ctx'), false);
-  }
+test('띠: 지금 % 와 색 · 24시간 안 선 하나 · 자동 요약 점 하나 · 80% 선', () => {
+  const { els, run } = load();
+  run(`state = { sessions: [${SESSION}] }; selected = "a"; trend.key = "a"; trend.data = { supported: true, points: ${PTS} };`);
+  run(`renderTrend(state.sessions[0], ${at(18, 12)})`);
+  assert.equal(els['#ctx-strip'].hidden, false);
+  assert.equal(els['#cs-pct'].textContent, '65%');
+  assert.equal(els['#cs-pct'].className, 'mid');
+  const svg = els['#cs-chart'].innerHTML;
+  assert.equal((svg.match(/class="cs-line"/g) ?? []).length, 1);
+  assert.equal((svg.match(/class="cs-drop"/g) ?? []).length, 1);
+  assert.match(svg, /class="cs-80"/);
+  assert.match(els['#cs-chart'].attrs['aria-label'], /65%/);
 });
 
-test('07-center: 고른 세션이 없으면 큰 % 칸을 숨기고 바탕 그래프를 비운다', () => {
-  const { els, run } = loadCenter({ welcomed: true });
-  run('state = { sessions: [{ key: "a", title: "A" }] }; selected = null;');
-  run('big.key = "a"');
-  run('drawBig()');
-  assert.equal(els['#cp-card'].hidden, true);
-  assert.equal(els['#ctx-bg'].innerHTML, '');
+test('띠: 대화 창 정보가 없거나 기록이 Claude Code 형식이 아니면(Codex) 숨긴다', () => {
+  const { els, run } = load();
+  run('state = { sessions: [{ key: "x", title: "X", context: null }] }; selected = "x"; trend.key = "x"; trend.data = { supported: false, points: [] };');
+  run('renderTrend(state.sessions[0])');
+  assert.equal(els['#ctx-strip'].hidden, true);
+  run(`state.sessions[0].context = { window: 200000, used: 1, percent: 1 }; renderTrend(state.sessions[0])`);
+  assert.equal(els['#ctx-strip'].hidden, true); // 형식이 달라 추이를 못 그림
 });
 
-test('07-center: 고른 세션의 24시간 안 응답으로 면 · 선을 그리고, 24시간 밖 응답만 있으면 비우고 안내', () => {
-  const { els, run } = loadCenter({ welcomed: true });
+test('띠 마우스 올림 · 초점: 그 시각에 보이던 점의 시각 · % · 토큰 · 그때까지 마지막 자동 요약, 떠나면 숨김 · ← → 로 옮김', () => {
+  const { els, doc, run } = load();
   const now = at(18, 12);
-  run(`state = { sessions: [{ key: "a", title: "A", context: { window: 200000, used: 50000, percent: 25 } }] }; selected = "a";
-    trend.key = "a"; trend.data = { supported: true, total: 3, drops: 1, points: [[${at(18, 10)}, 150000], [${at(18, 10, 10)}, 40000], [${at(18, 10, 20)}, 50000]] };`);
-  run(`drawBig(${now})`);
-  assert.equal(els['#cp-card'].hidden, false);
-  assert.match(els['#cp-now'].innerHTML, /25%/);
-  assert.equal((els['#ctx-bg'].innerHTML.match(/class="area"/g) ?? []).length, 1);
-  assert.equal((els['#ctx-bg'].innerHTML.match(/class="drop"/g) ?? []).length, 1);
-  assert.match(els['#cp-detail'].innerHTML, /10:10/); // 마지막 자동 요약 시각
-  run(`trend.data = { supported: true, total: 1, drops: 0, points: [[${at(16, 10)}, 1000]] }; big.sig = ''; drawBig(${now})`);
-  assert.equal(els['#ctx-bg'].innerHTML, '');
-  assert.equal(els['#cp-note'].textContent, '최근 24시간 동안 응답이 없어요');
+  run(`state = { sessions: [${SESSION}] }; selected = "a"; trend.key = "a"; trend.data = { supported: true, points: ${PTS} };`);
+  run(`renderTrend(state.sessions[0], ${now})`);
+  const chart = els['#cs-chart'];
+  const xOf = (t) => 100 + ((t - (now - 24 * H)) / (24 * H)) * 480; // 화면 x(차트 왼쪽 100)
+  chart.listeners.pointermove({ clientX: xOf(at(18, 10, 5)), currentTarget: chart }); // 10:00 점 다음 · 10:10 전 → 10:00 점(요약 전)
+  const tip = els['#cs-tip'];
+  assert.equal(tip.hidden, false);
+  assert.match(tip.innerHTML, /10:00 · 75%<\/b> · 150K \/ 200K 토큰/);
+  assert.match(tip.innerHTML, /없음/);
+  chart.listeners.pointermove({ clientX: xOf(at(18, 10, 45)), currentTarget: chart }); // 10:30 점 → 요약은 10:10
+  assert.match(tip.innerHTML, /10:30 · 65%/);
+  assert.match(tip.innerHTML, /10:10/);
+  assert.equal(els['#cs-cur'].hidden, false);
+  chart.listeners.pointerleave();
+  assert.equal(tip.hidden, true);
+  doc.activeElement = chart;
+  chart.listeners.focus();
+  assert.match(tip.innerHTML, /10:30/); // 초점은 마지막 점부터
+  const e = { key: 'ArrowLeft', preventDefault() { this.p = true; } };
+  chart.listeners.keydown(e);
+  assert.equal(e.p, true);
+  assert.match(tip.innerHTML, /10:10 · 20%/);
+  chart.listeners.blur();
+  assert.equal(tip.hidden, true);
 });

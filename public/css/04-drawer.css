@@ -15,9 +15,22 @@
 .menu-pop { right: 0; padding: 6px; }
 .menu-pop.show { display: block; }
 .menu-pop button { width: 100%; white-space: nowrap; font-size: 13px; }
-.ctx-line { height: 2px; margin: 0 -12px 0 -16px; background: color-mix(in srgb, var(--ink) 5%, transparent); }
-.ctx-line i { display: block; height: 100%; background: var(--ok); transition: width .3s; }
-.ctx-line i.mid { background: var(--working); } .ctx-line i.high { background: var(--waiting); }
+/* 대화 창 띠(머리 아래 약 56px): 왼쪽 「대화 창 N%」(60/85 색) · 오른쪽 24시간 추이 — 올리면 그 지점 설명이 띠 아래로 */
+.ctx-strip { display: flex; align-items: center; gap: var(--sp-3); height: 56px; padding: 0 4px; border-top: 1px solid var(--border); }
+.ctx-strip[hidden] { display: none; }
+.cs-label { flex: none; display: flex; flex-direction: column; gap: 2px; color: var(--faint); font-size: 11px; }
+.cs-label b { color: var(--text); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.cs-label b.mid { color: var(--working-text); } .cs-label b.high { color: var(--waiting-text); }
+.cs-plot { position: relative; flex: 1; min-width: 0; height: 32px; }
+.cs-chart { height: 100%; border-radius: 4px; cursor: crosshair; }
+.cs-chart:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.cs-chart svg { display: block; overflow: visible; }
+.cs-line { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+.cs-80 { stroke: color-mix(in srgb, var(--working) 40%, transparent); stroke-dasharray: 3 3; }
+.cs-drop { fill: var(--working); }
+.cs-cur { position: absolute; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--text); box-shadow: 0 0 0 2px var(--surface); pointer-events: none; }
+.cs-tip { position: absolute; top: calc(100% + 8px); left: clamp(0px, calc(var(--x) - 120px), calc(100% - 240px)); z-index: var(--z-popover); width: 240px; padding: 6px 10px; border-radius: 8px; background: var(--surface-3); border: 1px solid var(--border-strong); box-shadow: var(--shadow); color: var(--dim); font-size: 12px; line-height: 1.6; pointer-events: none; }
+.cs-tip b { color: var(--text); font-variant-numeric: tabular-nums; }
 /* 폭 손잡이: 패널 테두리선(왼쪽) 위에 걸친 둥근 탭 — 목록의 「‹」 탭과 같은 모양 + ⋮⋮ 그립. 패널 밖 형제라 패널 폭(--dw)으로 자리를 잡는다.
    단추 자체는 선을 따라 세로로 긴 띠(누를 자리) · 보이는 건 가운데 탭. 평소엔 흐리게, 선에 올리면 진하게 */
 .drawer-handle { position: absolute; top: 0; bottom: 0; right: calc(var(--dw) - 6px); z-index: var(--z-tip); width: 12px; padding: 0; border: none; border-radius: 0; background: transparent; cursor: col-resize; }
@@ -44,15 +57,6 @@
 #drawer .info-pop { left: auto; right: 0; flex-wrap: wrap; align-items: center; gap: 8px 10px; color: var(--faint); font-size: 12px; }
 #drawer .info-pop .path { font-family: var(--mono); font-size: 11px; color: var(--dim); word-break: break-all; }
 /* 대화 창 추이(지금 탭 아래): 응답마다 사용률 선, 점선 = 80%, 노란 점 = 자동 요약으로 떨어진 곳 */
-#now-trend { flex: none; min-width: 0; }
-#now-trend:empty { display: none; }
-.trend-h, .trend-f { font-size: 11px; color: var(--faint); }
-.trend-f { display: flex; justify-content: space-between; }
-.trend svg { display: block; width: 100%; height: 48px; margin: 4px 0 2px; background: color-mix(in srgb, var(--shade) 20%, transparent); border-radius: 6px; overflow: visible; }
-.trend .tr-line { fill: none; stroke: var(--accent); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
-.trend .tr-80 { stroke: color-mix(in srgb, var(--working) 45%, transparent); stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
-.trend .tr-drop { fill: var(--working); }
-.trend .tr-tick { stroke: color-mix(in srgb, var(--ink) 7%, transparent); vector-effect: non-scaling-stroke; } /* 2시간마다 짝수 정각 */
 #drawer .now { margin-top: 12px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; max-height: 160px; overflow: auto; resize: vertical; }
 #drawer .search { position: relative; margin-top: 10px; }
 #drawer .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--faint); }

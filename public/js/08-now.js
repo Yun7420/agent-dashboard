@@ -58,7 +58,6 @@ function renderNow(s) {
   $('#stop').hidden = !(s.status === 'working' && s.tmux);
   renderChanges(s);
   renderTrend(s);
-  drawBig(); // 가운데 「대화 창」 큰 그래프(07-center.js)
   const ch = s.changes;
   document.querySelector('.now-card').classList.toggle('has-changes', Boolean(ch && (ch.edits.length || ch.commands.length)));
 }

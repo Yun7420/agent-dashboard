@@ -114,7 +114,6 @@ function renderGraph() {
   if (!view.init) autoFit(tree);
   applyView();
 }
-
 // 세션끼리 보낸 메시지: 보낸 세션 위쪽에서 받은 세션 위쪽으로 휘어지는 화살표. 서로 주고받으면 두 줄로 나눈다.
 function drawLinks(tree) {
   const pos = new Map();
@@ -185,8 +184,10 @@ function applyView() { $('#viewport').setAttribute('transform', `translate(${vie
   });
   window.addEventListener('pointermove', (e) => { if (!drag) return; view.x = e.clientX - drag.x; view.y = e.clientY - drag.y; applyView(); });
   window.addEventListener('pointerup', () => { drag = null; svg.classList.remove('drag'); });
+  // 휠 · 두 손가락 스크롤은 옮기기, 확대 · 축소는 ctrl(트랙패드 오므리기) · ⌘ 와 함께만 — 예전엔 몇 번 훑으면 0.6배(글자 약 7px)
   svg.addEventListener('wheel', (e) => {
     e.preventDefault();
+    if (!e.ctrlKey && !e.metaKey) { view.x -= e.deltaX; view.y -= e.deltaY; applyView(); return; }
     const r = svg.getBoundingClientRect();
     const mx = e.clientX - r.left, my = e.clientY - r.top;
     const k = Math.min(3, Math.max(0.2, view.k * (e.deltaY < 0 ? 1.1 : 0.9)));

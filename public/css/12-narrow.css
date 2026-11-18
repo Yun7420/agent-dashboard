@@ -30,13 +30,12 @@
   .gs.open .gs-field { display: flex; flex: 1; }
   .gs-drop { left: 12px; right: 12px; width: auto; translate: none; top: calc(100% - 4px); }
   /* 바탕 그래프 · 큰 % 는 넓은 화면에서만 — 좁으면 조직도만, 대화 창 추이는 지금 탭 아래 작은 그래프로 */
-  .ctx-bg, .cp-card, .zoom-btns { display: none !important; }
+  .zoom-btns { display: none !important; }
   /* 범례가 숨으니 사용 한도는 가운데 위 한 줄로(목록은 600 이하에서 좁은 띠가 되어 그 위엔 자리가 없다) · 추이 팝업은 그 아래 */
   .usage-line:not([hidden]) { position: absolute; top: var(--sp-2); left: var(--sp-2); z-index: var(--z-float); display: flex; align-items: center; gap: var(--sp-1); min-width: 0; overflow: hidden; padding: var(--sp-1) var(--sp-2); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); font-size: 13px; color: var(--dim); white-space: nowrap; width: fit-content; max-width: calc(100% - 2 * var(--sp-2)); }
   body:has(#drawer.open) .usage-line { display: none; } /* 좁은 화면은 패널이 가운데를 덮으니 그 위로 뜨지 않게 */
   #limits-pop { top: 52px; bottom: auto; left: var(--sp-2); right: var(--sp-2); width: auto; max-width: 420px; }
 }
-@media (min-width: 861px) { #now-trend { display: none; } } /* 넓은 화면은 가운데 바탕 그래프가 같은 추이를 보여 준다 */
 /* 휴대폰 크기 */
 @media (max-width: 600px) {
   .brand h1, #new-session { white-space: nowrap; }

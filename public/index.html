@@ -60,7 +60,6 @@
 <button type="button" class="edge-tab" id="aside-fold" title="Fold list" aria-label="Fold list" aria-expanded="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>
 <main>
   <!-- 바탕: 고른 세션의 대화 창 사용률(최근 24시간)을 흐리게 — 마우스는 조직도가 받는다(07-center.js) -->
-  <div class="ctx-bg" id="ctx-bg" aria-hidden="true"></div>
   <svg id="graph">
     <defs>
       <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="currentColor"/></marker>
@@ -89,19 +88,6 @@
     <button type="button" class="ghost icon-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
     <button type="button" class="ghost icon-btn" id="zoom-fit" title="Fit to screen (same as double-click)" aria-label="Fit to screen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
   </div>
-  <!-- 오른쪽 위: 고른 세션 이름 · 대화 창 큰 % · ⓘ — % 에 마우스를 올리면 토큰 · 응답 수 · 자동 요약(07-center.js) -->
-  <section class="cp-card" id="cp-card" aria-labelledby="cp-who" hidden>
-    <span id="cp-who"></span>
-    <span class="info-wrap">
-      <button type="button" class="ghost icon-btn sm" id="cp-info" aria-label="About the context window" title="About the context window"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></button>
-      <div class="info-pop cp-about">How much conversation Claude remembers at once. Near 80% Claude Code auto-compacts the earlier part, and details that are not in the summary may be forgotten. The faint background shows the last 24 hours (right edge = now).</div>
-    </span>
-    <span class="info-wrap cp-big">
-      <span class="cp-now" id="cp-now" tabindex="0" aria-describedby="cp-detail"></span>
-      <div class="info-pop cp-detail" id="cp-detail" role="tooltip"></div>
-    </span>
-    <div class="cp-note" id="cp-note"></div>
-  </section>
   <section id="drawer">
     <div class="head">
       <div class="head-top">
@@ -129,7 +115,11 @@
           <div class="info-pop" id="d-meta"></div>
         </span>
       </div>
-      <div class="ctx-line" id="d-ctx"></div>
+      <!-- 대화 창 띠: 지금 % + 최근 24시간 추이(06-history.js 의 renderTrend) — 마우스를 올리거나 초점이 가면 그 지점의 시각 · % · 토큰 · 자동 요약 -->
+      <div class="ctx-strip" id="ctx-strip" hidden>
+        <span class="cs-label">Context<b id="cs-pct"></b></span>
+        <div class="cs-plot"><div class="cs-chart" id="cs-chart" tabindex="0" role="img" aria-describedby="cs-tip"></div><span class="cs-cur" id="cs-cur" hidden></span><div class="cs-tip" id="cs-tip" role="tooltip" hidden></div></div>
+      </div>
     </div>
     <div id="now-view" role="tabpanel" aria-labelledby="tab-now">
       <div class="now-prompt" id="now-prompt"></div>
@@ -138,7 +128,6 @@
         <div class="now-reply md" id="now-reply"></div>
         <div id="now-changes"></div>
       </div>
-      <div id="now-trend"></div>
     </div>
     <div id="log-view" role="tabpanel" aria-labelledby="tab-log" hidden>
       <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="d-search" placeholder="Search prompts" /></div>

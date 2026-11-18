@@ -177,11 +177,10 @@ A session already running in a terminal has no official way to receive input fro
 </details>
 
 <details open>
-<summary><b>Center — structure + context</b></summary>
+<summary><b>Center — structure</b></summary>
 
-- One screen: the **org chart** sits on a faint background chart of the chosen session's **context-window usage over the last 24 hours** — right edge = now, a line every 2 hours, dashed 80%, auto-compact dots. Hours with no replies stay empty
-- Hover the **big %** (top right) for tokens · replies · compactions · last compaction time. Status counts sit bottom left, agent kinds bottom right
-- Org chart: drag to pan · wheel to zoom · double-click to fit · **click empty space = close the right panel** (the background chart never blocks the mouse)
+- One **org chart**, with status counts bottom left and agent kinds (usage limits) bottom right
+- Org chart: drag or wheel (two-finger scroll) to pan · **ctrl+wheel (trackpad pinch) or + − to zoom** · double-click to fit · **click empty space = close the right panel**. Fitting never shrinks node text below 12px (if it overflows, the chosen session stays in view and you drag for the rest)
 - Dashed line = working in the same folder, yellow = working, **purple arrow = messages between sessions**
 - **Status text color** under each session box: idle = purple · working = yellow · background = light yellow · **needs approval = pink (bold)**
 - **Click a project box** to open that folder in **VS Code · Cursor, or reveal it in Finder** (only installed apps are shown; only folders of listed sessions can be opened)
@@ -192,12 +191,12 @@ A session already running in a terminal has no official way to receive input fro
 <summary><b>Right — session panel</b></summary>
 
 - Header: status dot · name · **Now / History** tabs · model · ⋯ (ⓘ session info · ⤢ wide · end session)
-- A **vertical handle** at the middle of the left edge: drag to resize, drag past the minimum to fold the panel, double-click for the default width, or focus it and use ← → to resize · Enter to fold. The width is remembered; click a session to reopen (narrow screens: ⋯ → Close panel)
+- A **⋮⋮ handle** on the middle of the panel border: drag to resize, drag past the minimum to fold the panel, double-click for the default width, or focus it and use ← → to resize · Enter to fold. The width is remembered; click a session to reopen (narrow screens: ⋯ → Close panel)
 - **Now** tab: last request + **current answer** + **file diffs** + **commands** (✓/✕, output, "show all" for long ones)
 - While working, **■ Stop** on the answer card stops the current task only (sends Esc); the session and conversation stay
 - **History** tab: past prompts and answers, search, "load more". Turns started by a message from another session (SendMessage) are split out and shown as a **dashed bubble labelled "↙ sender"** (same in the Now tab and global search)
 - **What I did today**: ⋯ at the top right → Today's work → per session: prompts, edited files, command count, **commit titles** and **tokens** (input · output · cache read · cache write · subagents, plus a daily total) (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts). Each response is counted once, and tokens are never converted to money (pricing differs by plan)
-- **Context trend** (narrow screens up to 860px): a small chart under the Now tab — context-window usage per response, dashed line = 80%, amber dot = where auto-compact dropped it
+- **Context strip** (right under the header): "Context N%" (amber at 60%, red at 85%) + the last 24 hours as a line — faint dashed line = 80%, amber dot = auto-compact. Hover it, or focus it and use ← →, for that point's time · % · tokens · last auto-compact time. Hidden when there is no data (e.g. Codex)
 - **Search all history**: type straight into the **search bar** at the top center (or press `/`; 🔍 on narrow screens) and matches from prompts and answers across all sessions drop down below it → pick one with `↑`/`↓` and `Enter` (or click) to open that session's History tab with the same query. `Esc` once closes the list, twice clears the bar
 - **Keyboard shortcuts** (also under ⋯ → Help)
 

@@ -109,6 +109,4 @@ const KO_UI2 = {
   // 가운데 바탕 그래프(07-center.js)
   "none": "없음",
   "Last auto-compact": "마지막 자동 요약",
-  "Background: last 24 hours ({from} → now) · lines every 2 hours": "바탕 그래프: 최근 24시간({from} → 지금) · 세로 줄은 2시간마다",
-  "No replies in the last 24 hours": "최근 24시간 동안 응답이 없어요",
 };
