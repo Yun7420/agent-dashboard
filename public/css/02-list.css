@@ -1,7 +1,7 @@
 /* 왼쪽 목록: 카드 · 접힌 띠 · 재시동 복구 안내 · 키보드로 고른 카드 */
 /* ---------- 왼쪽 목록 ---------- */
 aside { border-right: 1px solid var(--border); overflow-y: auto; background: var(--surface); }
-.sort-bar { position: sticky; top: 0; z-index: 1; background: var(--surface); height: var(--bar-h); padding: 0 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+.sort-bar { position: sticky; top: 0; z-index: var(--z-raised); background: var(--surface); height: var(--bar-h); padding: 0 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
 .sort-bar select { height: 32px; }
 #aside-fold { width: 32px; height: 32px; flex: none; border-radius: 8px; }
 .sort-bar select { flex: 1; min-width: 0; }

@@ -42,7 +42,7 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 .empty[hidden] { display: none; }
 
 /* 프로젝트 박스를 누르면 뜨는 "폴더 열기" 메뉴 */
-#dir-menu { position: fixed; top: 0; left: 0; right: auto; display: none; z-index: 12; min-width: 200px; max-width: 280px; }
+#dir-menu { position: fixed; top: 0; left: 0; right: auto; display: none; z-index: var(--z-menu); min-width: 200px; max-width: 280px; }
 #dir-menu.show { display: block; }
 #dir-menu .dm-path { font-size: 11px; color: var(--faint); padding: 4px 6px 8px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #dir-menu button { text-align: left; margin-top: 4px; }

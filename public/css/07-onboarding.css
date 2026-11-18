@@ -1,6 +1,6 @@
 /* 연동 중 · 첫 실행 안내 */
 /* ---------- 연동 중 · 첫 실행 안내 ---------- */
-#boot { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(6px); transition: opacity .3s; }
+#boot { position: fixed; inset: 0; z-index: var(--z-overlay); display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(6px); transition: opacity .3s; }
 #boot.done { opacity: 0; pointer-events: none; }
 #boot.gone { display: none; }
 #boot.login .spinner, #boot.login .boot-steps { display: none; } /* 로그인이 필요하면 도는 표시 · 단계 대신 안내 문장만(01-core.js 의 loginNeeded) */

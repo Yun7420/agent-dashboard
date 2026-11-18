@@ -48,6 +48,17 @@
   --claude: #d39072;
   --codex: #8db6e6;
   --radius: 12px;
+  /* 겹침 층(z-index) — 구역 파일은 이 토큰만. 머리는 backdrop-filter 때문에 자기 층을 따로 만들어서, 머리 팝업이 패널 위에 오려면 머리 층 전체가 패널보다 높아야 한다 */
+  --z-raised: 1; /* 붙어 있는 줄(정렬 줄 · 패널 머리) */
+  --z-float: 3; /* 가운데 칸 위에 뜬 탭 · 확대 단추 */
+  --z-tip: 4; /* 그래프 말풍선 · 패널 폭 손잡이 */
+  --z-pop: 5; /* 패널 안 팝업(ⓘ · ⋯) */
+  --z-head: 8; /* 머리 전체(안의 팝업 포함) — 목록 · 가운데 · 패널 위 */
+  --z-toast: 10;
+  --z-menu: 12; /* 폴더 열기 메뉴(화면 고정) */
+  --z-popover: 20; /* 머리 팝업(한도 · 알림 · 설정) — 머리 층 안에서 */
+  --z-overlay: 20; /* 시작 화면 */
+  --z-modal: 60; /* 로그인 필요 안내 */
   --bar-h: 52px; /* 왼쪽 목록 맨 윗줄과 오른쪽 패널 머리의 공통 높이 */
   --shadow: 0 10px 30px color-mix(in srgb, var(--shade) 35%, transparent);
   --sans: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', 'Inter', system-ui, sans-serif;

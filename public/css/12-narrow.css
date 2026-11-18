@@ -51,5 +51,5 @@
 }
 /* 휴대폰 너비 승인 창: 위험 카드 → 터미널 화면 → 단추 순서는 그대로, 단추 줄만 상자 아래에 붙여 첫 화면에 보이게 */
 @media (max-width: 600px) {
-  #drawer.approving #approval .btns { position: sticky; bottom: -12px; z-index: 2; margin: 0 -14px -12px; padding: 8px 14px 12px; background: linear-gradient(color-mix(in srgb, var(--waiting) 6%, transparent), color-mix(in srgb, var(--waiting) 6%, transparent)), var(--surface); border-top: 1px solid color-mix(in srgb, var(--waiting) 25%, transparent); }
+  #drawer.approving #approval .btns { position: sticky; bottom: -12px; z-index: var(--z-raised); margin: 0 -14px -12px; padding: 8px 14px 12px; background: linear-gradient(color-mix(in srgb, var(--waiting) 6%, transparent), color-mix(in srgb, var(--waiting) 6%, transparent)), var(--surface); border-top: 1px solid color-mix(in srgb, var(--waiting) 25%, transparent); }
 }

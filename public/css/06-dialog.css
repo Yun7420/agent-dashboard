@@ -11,8 +11,8 @@ dialog .note { color: var(--faint); font-size: 12px; margin-top: 10px; line-heig
 /* 복구 단추 창: 체크 목록(이름 · 폴더 · 마지막으로 본 때), 직접 닫은 세션은 따로 */
 dialog label.check { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; cursor: pointer; }
 dialog label.check input { width: 16px; height: 16px; flex: none; accent-color: var(--accent); }
-#toast { position: fixed; left: 50%; bottom: 156px; transform: translateX(-50%); background: var(--surface-3); border: 1px solid var(--border-strong); border-radius: 999px; padding: 8px 16px; box-shadow: var(--shadow); display: none; font-size: 13px; z-index: 10; max-width: min(480px, 90vw); text-align: center; }
+#toast { position: fixed; left: 50%; bottom: 156px; transform: translateX(-50%); background: var(--surface-3); border: 1px solid var(--border-strong); border-radius: 999px; padding: 8px 16px; box-shadow: var(--shadow); display: none; font-size: 13px; z-index: var(--z-toast); max-width: min(480px, 90vw); text-align: center; }
 
 /* 로그인 필요(403): 토스트처럼 사라지지 않는 고정 안내 — 이 탭으로는 명령이 통하지 않아서(01-core.js 의 loginNeeded) */
-#login-needed { position: fixed; top: 68px; left: 50%; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); padding: 10px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--waiting) 50%, transparent); background: var(--waiting-bg); color: var(--waiting-text); font-size: 13px; box-shadow: 0 8px 24px color-mix(in srgb, var(--shade) 40%, transparent); }
+#login-needed { position: fixed; top: 68px; left: 50%; transform: translateX(-50%); z-index: var(--z-modal); display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); padding: 10px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--waiting) 50%, transparent); background: var(--waiting-bg); color: var(--waiting-text); font-size: 13px; box-shadow: 0 8px 24px color-mix(in srgb, var(--shade) 40%, transparent); }
 #login-needed[hidden] { display: none; }

@@ -82,6 +82,17 @@ test('화면 모양: 색은 토큰만 — 00-base.css 밖의 css 에 #hex · rgb
   assert.deepEqual(bad, [], '00-base.css 의 토큰(var(--…))을 쓰고, 새 색이 필요하면 00-base.css 에 토큰을 더해 주세요');
 });
 
+// 겹침 층도 00-base.css 의 토큰만: 숫자를 구역마다 따로 쓰면 머리 팝업이 패널 밑에 묻히는 일이 다시 생긴다(머리 층 --z-head)
+test('화면 모양: z-index 는 토큰만 — 00-base.css 밖의 css 에 z-index 숫자 없음', () => {
+  const bad = [];
+  for (const f of STYLES.slice(1)) {
+    read(f).replace(/\/\*[\s\S]*?\*\//g, '').split('\n').forEach((line, i) => {
+      if (/z-index:(?!\s*var\(--z-)/.test(line)) bad.push(`${f}:${i + 1}`);
+    });
+  }
+  assert.deepEqual(bad, [], '00-base.css 의 --z-* 토큰을 쓰고, 새 층이 필요하면 00-base.css 에 더해 주세요');
+});
+
 // 화면 글자는 영어로 쓰고 한국어 판은 사전(00-dict-*.js)에만 — 한글을 직접 쓰면 영어 화면에 한국어가 섞인다(주석은 상관없음)
 test('화면 언어: 사전(00-dict-*.js) 밖의 화면 js · index.html 에 한글을 직접 쓰지 않는다(주석 제외)', () => {
   const bad = [];
