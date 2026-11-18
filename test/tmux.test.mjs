@@ -105,4 +105,6 @@ test('sendText: 여러 세션에 거의 동시에 보내도 버퍼가 섞이지 
 test('isSlashLine: 명령 이름 꼴(첫 낱말에 / 없음)만 글자로 치고, 경로 · 여러 줄 · / 만은 붙여넣기', () => {
   for (const s of ['/compact', '/compact 끝낸 것: A', '/mcp:list', '/review-pr 12', '/Clear', '/init\t']) assert.equal(isSlashLine(s), true, s);
   for (const s of ['/Users/me/a.ts 고쳐줘', '/tmp/x 지워 줘', '/', '/ 공백', '/1abc', '//주석', '/compact\n둘째 줄', 'compact', ' /compact', '/한글명령']) assert.equal(isSlashLine(s), false, s);
+  for (const s of ['/compact 끝;', '/clear;']) assert.equal(isSlashLine(s), false, s); // B9: 끝 ; 는 tmux 명령 구분자 → 붙여넣기
+  assert.equal(isSlashLine('/compact a; b'), true); // 가운데 ; 는 글자 그대로
 });
