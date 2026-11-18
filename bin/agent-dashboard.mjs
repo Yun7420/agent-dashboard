@@ -5,13 +5,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkNode } from '../lib/node-check.mjs';
-import { tr, termLang } from '../lib/i18n.mjs';
+import { tr } from '../lib/i18n.mjs';
+import { termLang } from '../lib/lang-pref.mjs';
 
 checkNode({ notice: [undefined, 'start', 'run', 'restore'].includes(process.argv[2]) }); // 맨 먼저: Node 가 낮으면 안내하고 끝낸다(지원 종료 한 줄은 서버를 켜는 명령에서만)
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url))); // bin/ 의 부모 = 저장소(패키지) 폴더
 const { name, version, homepage } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-// 도움말은 통째로 두 언어(터미널 LANG 이 ko 면 한국어, 그 밖은 영어 — lib/i18n.mjs)
+// 도움말은 통째로 두 언어(화면에서 고른 언어 → 없으면 LANG 이 ko 면 한국어, 그 밖은 영어 — lib/lang-pref.mjs)
 const HELP_KO = `Agent Dashboard ${version} — 내 Mac 에 떠 있는 AI 코딩 세션(Claude Code · Codex)을 한 화면에서 보는 로컬 대시보드
 
 사용법

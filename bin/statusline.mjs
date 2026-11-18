@@ -58,8 +58,10 @@ if (original) {
   process.stdout.write(r.stdout || '');
 } else {
   const parts = [];
-  // 터미널 언어(LANG)를 따른다 — 이 파일은 홀로 복사돼 돌아서(lib 를 못 부름) 판정만 여기 한 줄(lib/i18n.mjs 의 termLang 과 같은 규칙)
-  const KO = /^ko(?![a-z])/i.test(process.env.LC_ALL || process.env.LC_MESSAGES || process.env.LANG || '');
+  // 언어: 화면에서 고른 값(settings.json 의 lang) → 못 읽으면 LANG. 이 파일은 홀로 복사돼 돌아서(lib 를 못 부름) 판정만 여기(lib/lang-pref.mjs 와 같은 규칙)
+  let saved = null;
+  try { saved = JSON.parse(fs.readFileSync(path.join(DATA, 'settings.json'), 'utf8')).lang; } catch { /* 없거나 깨짐 → LANG */ }
+  const KO = saved === 'ko' || (saved !== 'en' && /^ko(?![a-z])/i.test(process.env.LC_ALL || process.env.LC_MESSAGES || process.env.LANG || ''));
   if (input.model?.display_name) parts.push(input.model.display_name);
   const ctx = input.context_window?.used_percentage;
   if (ctx != null) parts.push(`${KO ? '대화 창' : 'Context'} ${Math.round(ctx)}%`);

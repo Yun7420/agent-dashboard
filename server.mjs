@@ -42,7 +42,7 @@ import * as demo from './lib/demo.mjs';
 import { saveSnapshot, restoreCandidates, restoreSessions, modelAlias, defaultAlias } from './lib/restore.mjs';
 import { createRecent, liveEntries, recentInfo } from './lib/recent.mjs';
 import { checkNode } from './lib/node-check.mjs';
-import { langOf, trEnv, termLog, termErr } from './lib/i18n.mjs';
+import { termLog, termErr, createLangRoute } from './lib/lang-pref.mjs';
 checkNode(); // 맨 먼저(import 다음): Node 가 낮으면 안내하고 끝낸다(lib/node-check.mjs)
 const DEMO = process.env.DEMO === '1'; // 가짜 데이터로 화면만 보여 주는 모드(스크린샷용)
 const PORT = Number(process.env.PORT ?? 4545);
@@ -96,7 +96,7 @@ const env = createEnvCheck({
   dialogIssues,
   unknownStatuses,
 });
-const { checkEnv, dialogEnvItem, statusEnvItem } = env;
+const { checkEnv } = env;
 
 // ---------- macOS 알림 (브라우저 탭을 닫아도) — 설정 · 보내기 · 경로는 lib/notify-api.mjs ----------
 const notify = createNotifyApi({ demo: DEMO });
@@ -206,7 +206,8 @@ const ROUTES = [
   { path: '/login', method: 'GET', handler: auth.loginRoute }, // 로그인 없이 받는 두 경로(링크 확인 · 서버 확인, lib/auth.mjs) — 토큰 · 기록은 주지 않는다
   { path: '/hello', method: 'GET', handler: auth.helloRoute },
   { path: '/events', handler: feed.openEvents },
-  { path: '/api/env', handler: getEnv },
+  { path: '/api/env', handler: env.route },
+  { path: '/api/lang', handler: createLangRoute({ demo: DEMO }) }, // 브라우저 밖 문구(터미널 · 알림 · 상태줄)의 언어 — 화면 설정에서 고른 값(lib/lang-pref.mjs)
   { path: '/api/notify', handler: notify.route },
   { path: '/api/notify/test', method: 'POST', handler: notify.test },
   { path: '/api/limits', handler: limitsRoute({ dir: LIMITS_DIR, demoLimits: DEMO ? demo.demoLimits : null }) },
@@ -221,12 +222,6 @@ const ROUTES = [
   { path: '/api/upload', method: 'POST', handler: postUpload },
   { prefix: '/api/cmd/', method: 'POST', handler: postCommand },
 ];
-
-async function getEnv(req, res, url) {
-  const e = url.searchParams.has('refresh') || !env.cached() ? await checkEnv() : env.cached();
-  // 「승인 감지」 줄은 서버가 켜진 뒤 쌓인 기록이라 캐시 없이 매번 붙인다
-  sendJson(res, 200, trEnv({ ...e, items: [...e.items, dialogEnvItem(), statusEnvItem()] }, langOf(req))); // 문구는 화면 언어로(lib/i18n.mjs)
-}
 
 // tmux 세션 화면(색 정보로 「지금 보고 있는 질문 탭」도)
 async function getPane(req, res, url) {

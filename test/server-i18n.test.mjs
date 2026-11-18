@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { tr, langOf, termLang, trSession, trEnv } from '../lib/i18n.mjs';
+import { tr, langOf, envLang, trSession, trEnv } from '../lib/i18n.mjs';
 import { EN } from '../lib/i18n-en.mjs';
 import { commandRisks } from '../lib/command-risk.mjs';
 
@@ -24,11 +24,11 @@ test('요청 언어: 머리글(X-Dashboard-Lang) → ?lang= → Accept-Language 
 });
 
 test('터미널 언어: LC_ALL → LC_MESSAGES → LANG, ko_KR 만 한국어(C.UTF-8 · 빈 값은 영어)', () => {
-  assert.equal(termLang({ LANG: 'ko_KR.UTF-8' }), 'ko');
-  assert.equal(termLang({ LANG: 'C.UTF-8' }), 'en');
-  assert.equal(termLang({}), 'en');
-  assert.equal(termLang({ LC_ALL: 'en_US.UTF-8', LANG: 'ko_KR.UTF-8' }), 'en');
-  assert.equal(termLang({ LC_ALL: '', LC_MESSAGES: 'ko_KR.UTF-8', LANG: 'en_US.UTF-8' }), 'ko');
+  assert.equal(envLang({ LANG: 'ko_KR.UTF-8' }), 'ko');
+  assert.equal(envLang({ LANG: 'C.UTF-8' }), 'en');
+  assert.equal(envLang({}), 'en');
+  assert.equal(envLang({ LC_ALL: 'en_US.UTF-8', LANG: 'ko_KR.UTF-8' }), 'en');
+  assert.equal(envLang({ LC_ALL: '', LC_MESSAGES: 'ko_KR.UTF-8', LANG: 'en_US.UTF-8' }), 'ko');
 });
 
 test('tr: 같은 글은 그대로, {자리} 는 값을 옮기고 값도 사전에 있으면 다시 바꿈, 빈 자리 · 모르는 글은 그대로', () => {

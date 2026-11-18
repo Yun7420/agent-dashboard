@@ -127,7 +127,7 @@
 | `lib/body.mjs` | 요청 본문 읽기(`readBody` · 실패하면 응답까지 하는 `jsonBody`) · 첨부 저장(`saveUpload`) · 실패 응답(`bodyFail`). 너무 큼 413 · 끊김 499 · 디스크 오류 500 을 구분 |
 | `lib/uploads.mjs` | 첨부 폴더 · 25MB 상한 · 14일 지난 첨부 지우기(`pruneUploads`) |
 | `lib/respond.mjs` | 응답 모양(`sendText` · `sendJson`), 시스템 오류를 한국어 문장으로(`friendly`) |
-| `lib/i18n.mjs` · `lib/i18n-en.mjs` | 서버 문구의 언어: 원문은 한국어, 내보낼 때 영어 사전으로(`tr`). 화면 요청은 `X-Dashboard-Lang`(SSE 는 `?lang=`), 브라우저가 바로 연 주소는 Accept-Language, 터미널 · macOS 알림은 `LANG`(`termLang`). ko 만 한국어, 그 밖은 영어 |
+| `lib/i18n.mjs` · `lib/i18n-en.mjs` | 서버 문구의 언어: 원문은 한국어, 내보낼 때 영어 사전으로(`tr`). 화면 요청은 `X-Dashboard-Lang`(SSE 는 `?lang=`), 브라우저가 바로 연 주소는 Accept-Language, 터미널 · macOS 알림 · 상태줄은 `lib/lang-pref.mjs`(화면 설정에서 고른 값 `~/.agent-dashboard/settings.json` 의 lang, 600 · `/api/lang` → 없으면 `LANG`). ko 만 한국어, 그 밖은 영어 |
 | `lib/validate.mjs` | 요청 값 검사(`isObject` · `validDate` · `KEY_RE`) |
 | `lib/paging.mjs` | 기록을 80개씩 나눠 보내기(`pageHistory`) |
 

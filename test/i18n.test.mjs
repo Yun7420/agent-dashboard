@@ -28,12 +28,14 @@ test('t(): {이름} 자리에 값을 넣고, 사전에 없는 글자는 원문(�
   assert.equal(ko("t('not in dict {x}', { x: 1 })"), 'not in dict 1');
 });
 
-test('설정 메뉴에서 언어를 고르면 agent-deck 의 lang 에 남기고 새로고침한다', () => {
-  const els = {}, saved = {};
+test('설정 메뉴에서 언어를 고르면 agent-deck 의 lang 과 서버(/api/lang)에 남기고 새로고침한다 — 서버 저장이 실패해도 새로고침', async () => {
+  const els = {}, saved = {}, posts = [];
+  let fail = false;
   let reloaded = 0;
   const el = (sel) => (els[sel] ??= { value: '', listeners: {}, classList: { toggle() {}, remove() {} }, addEventListener(t, fn) { this.listeners[t] = fn; } });
   loadFront(['00-md.js', '01-core.js', '13-controls.js'], {
     window: {}, navigator: { language: 'ko-KR' }, setInterval() {}, location: { reload: () => reloaded++ },
+    fetch: async (p, o) => { posts.push([p, o.method, o.body]); if (fail) throw new Error('down'); return { ok: true, status: 204, text: async () => '' }; },
     document: { querySelector: el, documentElement: { dataset: {} }, addEventListener() {} },
     localStorage: { getItem: () => null, setItem: (k, v) => (saved[k] = v) },
   });
@@ -41,7 +43,13 @@ test('설정 메뉴에서 언어를 고르면 agent-deck 의 lang 에 남기고 
   el('#set-lang').value = 'en';
   el('#set-lang').listeners.change({ target: el('#set-lang') });
   assert.equal(JSON.parse(saved['agent-deck']).lang, 'en');
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(posts, [['/api/lang', 'POST', '{"lang":"en"}']]);
   assert.equal(reloaded, 1);
+  fail = true;
+  el('#set-lang').listeners.change({ target: { value: 'ko' } });
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(reloaded, 2);
 });
 
 // ---------- 사전과 쓰는 글자의 짝 ----------
