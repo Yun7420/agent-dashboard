@@ -10,7 +10,7 @@ aside { position: relative; z-index: var(--z-float); justify-self: start; width:
 .sort-ic select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; padding: 0; }
 .card .ini { display: none; }
 /* 목록 접기 탭: 목록 오른쪽 가장자리 가운데에 반쯤 튀어나온 둥근 단추(목록 칸은 스크롤이라 밖에 두고 위치만 맞춘다) */
-.edge-tab { position: fixed; top: 50%; left: calc(var(--aw) - 12px); z-index: var(--z-tip); transition: left var(--slide); width: 24px; height: 40px; padding: 0; display: grid; place-items: center; border-radius: 999px; background: var(--surface-3); border-color: transparent; color: var(--dim); box-shadow: var(--shadow); transform: translateY(-50%); }
+.edge-tab { position: fixed; top: 50%; left: calc(var(--aw) - 4px); z-index: var(--z-tip); transition: left var(--slide); width: 24px; height: 40px; padding: 0; display: grid; place-items: center; border-radius: 999px; background: var(--surface-3); border-color: transparent; color: var(--dim); box-shadow: var(--shadow); transform: translateY(-50%); }
 .edge-tab:hover:not(:disabled) { color: var(--text); background: var(--surface-3); border-color: var(--border-strong); }
 .edge-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 body.aside-folded .edge-tab svg { transform: scaleX(-1); }

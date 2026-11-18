@@ -106,3 +106,12 @@ test('패널 ⋯ 메뉴에 「넓게 보기」는 없다(간추리기 B8) — �
   assert.doesNotMatch(menu, /id="wide"/);
   assert.match(menu, /id="d-info-btn"/);
 });
+
+// G5: 접기 탭(‹)이 목록 판 안으로 12px 들어와 카드 오른쪽 끝(목록 여백 8px)을 덮었다 — 판 안으로 들어오는 만큼은 목록 여백보다 작게
+test('접기 탭: 목록 판 안으로 들어오는 폭 < 목록 오른쪽 여백(카드를 덮지 않음)', async () => {
+  const fs = await import('node:fs');
+  const css = fs.readFileSync(new URL('../public/css/02-list.css', import.meta.url), 'utf8');
+  const inside = Number(css.match(/\.edge-tab \{[^}]*left: calc\(var\(--aw\) - (\d+)px\)/)[1]);
+  const listPad = Number(css.match(/^#list \{ padding: 0 (\d+)px/m)[1]);
+  assert.ok(inside < listPad, `탭 ${inside}px · 여백 ${listPad}px`);
+});
