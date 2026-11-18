@@ -4,6 +4,8 @@ const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0
 const shortPath = (f) => f.split('/').slice(-2).join('/');
 // 토큰: 메인 대화 + 서브에이전트. 돈으로는 바꾸지 않는다(요금표 · 요금제마다 달라서)
 const tokTotal = (x) => (x.tokens?.total ?? 0) + (x.subTokens?.total ?? 0);
+// 토큰은 합계 · 캐시 제외(입력 + 출력, 서브에이전트 포함)만 보이고, 다섯 갈래는 마우스를 올리면(간추리기 B5)
+const tokNoCache = (x) => [x.tokens, x.subTokens].reduce((n, k) => n + (k?.input ?? 0) + (k?.output ?? 0), 0);
 const tokParts = (x) => `${t('input')} ${fmtTok(x.tokens.input)} · ${t('output')} ${fmtTok(x.tokens.output)} · ${t('cache read')} ${fmtTok(x.tokens.cacheRead)} · ${t('cache write')} ${fmtTok(x.tokens.cacheWrite)}${x.subTokens?.total ? ` · ${t('subagents')} ${fmtTok(x.subTokens.total)}` : ''}`;
 const hm = (iso) => (iso ? new Date(iso).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', hour12: false }) : '');
 
@@ -26,8 +28,7 @@ async function loadDay(date) {
   $('#day-list').innerHTML = items.map((x) => `
     <div class="day-item">
       <div class="day-head"><button type="button" class="link" data-open="${esc(x.key)}">${esc(x.title)}</button><span>${esc(x.project ?? '')}</span><span>${hm(x.firstAt)}~${hm(x.lastAt)}</span>
-        <span class="grow"></span><span>${t('requests')} ${x.prompts} · ${t('commands')} ${x.commands}${tokTotal(x) ? ` · ${t('tokens')} ${fmtTok(tokTotal(x))}` : ''}</span></div>
-      ${tokTotal(x) ? `<div class="day-tokens"><b>${t('tokens')} ${fmtTok(tokTotal(x))}</b> — ${tokParts(x)}</div>` : ''}
+        <span class="grow"></span><span>${t('requests')} ${x.prompts} · ${t('commands')} ${x.commands}</span>${tokTotal(x) ? `<span class="day-tok" title="${esc(tokParts(x))}">${t('tokens')} ${fmtTok(tokTotal(x))} · ${t('excl. cache')} ${fmtTok(tokNoCache(x))}</span>` : ''}</div>
       ${x.commits.length ? `<ul class="day-commits">${x.commits.map((c) => `<li><span>${hm(c.at)}</span> ${esc(c.message)}</li>`).join('')}</ul>` : ''}
       ${x.files.length ? `<div class="day-files">${x.files.slice(0, 12).map((f) => `<span title="${esc(f.file)}">${esc(shortPath(f.file))}${f.edits > 1 ? ` ×${f.edits}` : ''}</span>`).join('')}${x.files.length > 12 ? `<span>${t('+{n} more', { n: x.files.length - 12 })}</span>` : ''}</div>` : ''}
     </div>`).join('');

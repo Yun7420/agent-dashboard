@@ -89,6 +89,7 @@ const KO_UI2 = {
   "output": "출력",
   "cache read": "캐시 읽기",
   "cache write": "캐시 쓰기",
+  "excl. cache": "캐시 제외",
   "subagents": "서브에이전트",
   "Reading logs… (the first time can take a few seconds)": "기록을 읽는 중… (처음엔 몇 초 걸릴 수 있어요)",
   "Could not read": "읽지 못했어요",
