@@ -77,10 +77,10 @@ You need: **macOS · Node 18+ · tmux · Claude Code**. If something is missing 
 git clone https://github.com/Yun7420/agent-dashboard.git
 cd agent-dashboard
 npm start          # → open the "login link (10 min)" printed in the terminal
-node bin/agent-dashboard.mjs open   # link expired, another browser, or after 30 days: opens a fresh login link in your browser
+node bin/agent-dashboard.mjs open   # link expired, another browser, or after 7 days: opens a fresh login link in your browser
 ```
 
-The page lives at `http://localhost:4545`, but the first visit has to come through a **login link**. That browser then stays logged in for 30 days (see "Security").
+The page lives at `http://localhost:4545`, but the first visit has to come through a **login link**. That browser then stays logged in for 7 days (see "Security").
 
 You can also run `node bin/agent-dashboard.mjs` (see `--help`); it's the command a future npm release will use.
 
@@ -248,10 +248,10 @@ A session already running in a terminal has no official way to receive input fro
 
 - **`127.0.0.1` only** — requests whose Host isn't localhost are rejected (blocks DNS rebinding). Prompts and code paths are visible, so don't share the address.
 - **`~/.agent-dashboard/token`** — a secret token just for this dashboard. It's generated per machine on first run (readable only by you, 600) and is **never put in the page** (anyone can fetch the page files — including other accounts on the same Mac).
-  - **Login**: only a browser that arrives through a **login link** (valid 10 minutes) made from this token gets a cookie. The link is printed in the terminal on start; later `node bin/agent-dashboard.mjs open` (or `agent-dashboard open` when installed) opens one for you. The link immediately redirects to `/`, so it doesn't stay in the address bar or history.
-  - The cookie can't be read by page scripts (HttpOnly), isn't sent with requests from other sites (SameSite=Strict) and expires after 30 days. Its value is a signature made with the token, not the token itself.
+  - **Login**: only a browser that arrives through a **login link** (valid 10 minutes, once — a second visit says it was already used) made from this token gets a cookie. The link is printed in the terminal on start; later `node bin/agent-dashboard.mjs open` (or `agent-dashboard open` when installed) opens one for you. The link immediately redirects to `/`, so it doesn't stay in the address bar or history.
+  - The cookie can't be read by page scripts (HttpOnly), isn't sent with requests from other sites (SameSite=Strict) and expires after 7 days. Its value is a signature made with the token, not the token itself.
   - Reading history and sending commands (send, approve, close …) require login. The page's requests carry a header other sites can't add, and requests from pages on other ports of this Mac are rejected too.
-  - Before handing over the link, `open` checks that the server on that port really is this dashboard (an answer signed with the token). If another program grabbed the port, the link is not sent. The server listens on both `127.0.0.1` and `[::1]` so another program can't take over the IPv6 side of `localhost`.
+  - Before handing over the link, `open` checks that the server on that port really is this dashboard (an answer signed with the token). If another program grabbed the port, the link is not sent. The server listens on both `127.0.0.1` and `[::1]` so another program can't take over the IPv6 side of `localhost`. If another program is already using the same port on `[::1]`, the server explains why and doesn't start (otherwise open tabs could send it the cookie).
   - Don't share it. If it leaks, delete the file and restart: you get a new token and every login is ended.
   - Older versions kept it in `.dashboard-token` inside the repo folder. On first start the value is moved to the new place once and the old file is deleted (open tabs keep working). A token file that is a symlink is never used.
 - Attachments outside `~/.agent-dashboard/uploads/` are rejected (symlinks are resolved first, and missing files are rejected too), and attachments are **deleted automatically after 14 days**.

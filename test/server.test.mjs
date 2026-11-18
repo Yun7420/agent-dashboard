@@ -96,16 +96,20 @@ test('로그인 없이 받는 것(화면 · js · css · /hello · /login 오류
   }
 });
 
-test('로그인 링크: 맞으면 303 → / 와 쿠키(HttpOnly · SameSite=Strict · Path=/ · 30일, 이름에 포트, 값은 토큰이 아님), 틀리거나 지나면 403 안내', async () => {
+test('로그인 링크: 한 번만 — 맞으면 303 → / 와 쿠키(HttpOnly · SameSite=Strict · Path=/ · 7일, 이름에 포트, 값은 토큰이 아님), 틀리거나 지나면 403 안내', async () => {
   const { loginUrl } = await import('../lib/auth.mjs');
   const u = new URL(loginUrl({ token: TOKEN, port: PORT }));
   const r = await request(PORT, u.pathname + u.search);
   assert.equal(r.status, 303);
   assert.equal(r.headers.location, '/'); // 주소창 · 방문 기록엔 서명 없는 / 만
   const c = r.headers['set-cookie'][0];
-  assert.match(c, new RegExp(`^ad_session_${PORT}=\\d+\\.[0-9a-f]{64}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000$`));
+  assert.match(c, new RegExp(`^ad_session_${PORT}=\\d+\\.[0-9a-f]{64}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800$`));
   assert.ok(!c.includes(TOKEN));
   assert.equal(r.headers['referrer-policy'], 'no-referrer');
+  const again = await request(PORT, u.pathname + u.search); // 같은 링크 두 번째(시작 로그 · server.log 에 남은 것을 다른 프로그램이 다시 씀)
+  assert.equal(again.status, 403);
+  assert.match(again.text, /^이미 쓴 링크예요 — 터미널에서 「node bin\/agent-dashboard\.mjs open」 로 새로 여세요/);
+  assert.equal(again.headers['set-cookie'], undefined);
   const old = new URL(loginUrl({ token: TOKEN, port: PORT, now: Date.now() - 11 * 60_000 })); // 10분 지남
   const other = new URL(loginUrl({ token: TOKEN, port: PORT + 1 })); // 다른 포트용 링크
   const forged = new URL(loginUrl({ token: 'f'.repeat(48), port: PORT }));

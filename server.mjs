@@ -60,16 +60,9 @@ const PUBLIC_DIR = path.join(ROOT, 'public');
 const spawned = createSpawned(); // 대시보드에서 연 세션의 이름 · 첫 프롬프트 상태(lib/spawn.mjs)
 const processes = createProcesses({ adapters, tmux });
 const { buildState, projectName, dialogIssues } = createStateBuilder({
-  demo: DEMO,
-  demoState: demo.demoState,
-  adapters,
-  tmux,
-  processes,
-  spawned,
-  readDefaultModel: () => usage.readDefaultModel(),
-  readStatus: () => usage.readStatusFiles(),
-  usageState: (status) => usage.usageState(status),
-  keepCaches: (listed) => history.keepCaches(listed),
+  demo: DEMO, demoState: demo.demoState, adapters, tmux, processes, spawned,
+  readDefaultModel: () => usage.readDefaultModel(), readStatus: () => usage.readStatusFiles(),
+  usageState: (status) => usage.usageState(status), keepCaches: (listed) => history.keepCaches(listed),
 });
 
 // ---------- 프롬프트 기록 · 검색 · 오늘 한 일 (lib/history-api.mjs) ----------
@@ -284,9 +277,14 @@ server.on('error', (e) => {
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  termLog(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}\n로그인 링크(10분): ${loginUrl({ token: TOKEN, port: PORT })} — 나중엔 「${OPEN_CMD}」`);
-  // [::1] 을 못 열면 이유만 남기고 127.0.0.1 로 계속(IPv6 가 꺼진 Mac 등). 다른 프로그램이 이미 쓰고 있으면 크게 알린다
-  server6.on('error', (e) => termErr(e.code === 'EADDRINUSE' ? `주의: 다른 프로그램이 [::1]:${PORT} 를 쓰고 있어요 — localhost 가 그쪽으로 갈 수 있어요. http://127.0.0.1:${PORT} 로 여세요` : `[::1]:${PORT} 은 열지 못했어요(${e.code ?? e.message}) — 127.0.0.1 로만 받아요`));
+  // localhost 는 [::1] 로도 가므로, 다른 프로그램이 [::1]:포트 를 쓰고 있으면 켜지 않고 끝낸다 — 그대로 켜면 열린 탭이 그쪽에
+  // 로그인 쿠키를 보낼 수 있다(보안 검토 2026-11-18). IPv6 가 없는 Mac(EADDRNOTAVAIL 등)은 이유만 남기고 127.0.0.1 로 계속. 링크는 그 뒤에
+  const link = () => termLog(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}\n로그인 링크(10분): ${loginUrl({ token: TOKEN, port: PORT })} — 나중엔 「${OPEN_CMD}」`);
+  server6.once('listening', link).once('error', (e) => {
+    if (e.code !== 'EADDRINUSE') return void (termErr(`[::1]:${PORT} 은 열지 못했어요(${e.code ?? e.message}) — 127.0.0.1 로만 받아요`), link());
+    termErr('서버를 열지 못했어요:', `다른 프로그램이 [::1]:${PORT} 를 쓰고 있어요 — 그대로 켜면 열린 탭이 그쪽에 로그인 쿠키를 보낼 수 있어요. 그 프로그램을 끄고 다시 켜 주세요`);
+    process.exit(1);
+  });
   server6.listen(PORT, '::1');
   // 없는 도구(tmux · Claude Code) · 다른 OS 는 로그에 한국어로 안내만 하고 서버는 계속(보기 전용으로라도)
   checkEnv().then((e) => { if (!DEMO) for (const line of startupNotices(e)) termLog(line); }).catch((e) => console.error('[환경 점검]', e.message)); // 시작 때 실패해도 서버는 계속(화면에서 다시 점검 가능)

@@ -8,26 +8,29 @@ const T0 = 1_800_000_000_000;
 const reqWith = (cookie) => ({ headers: { cookie } });
 const tOf = (url) => new URL(url).searchParams.get('t');
 
-test('로그인 링크: 10분 안 · 같은 포트 · 같은 토큰일 때만 쿠키, 쿠키 값은 토큰이 아니고 30일', () => {
+test('로그인 링크: 10분 안 한 번만 · 같은 포트 · 같은 토큰일 때만 쿠키, 쿠키 값은 토큰이 아니고 7일', () => {
   let now = T0;
   const auth = createAuth({ token: TOKEN, port: 4545, now: () => now });
   const url = new URL(loginUrl({ token: TOKEN, port: 4545, now: T0 }));
   assert.equal(url.origin + url.pathname, 'http://localhost:4545/login');
   const r = auth.login(url);
   assert.equal(r.ok, true);
-  assert.match(r.cookie, /^ad_session_4545=\d+\.[0-9a-f]{64}; HttpOnly; SameSite=Strict; Path=\/; Max-Age=2592000$/);
+  assert.match(r.cookie, /^ad_session_4545=\d+\.[0-9a-f]{64}; HttpOnly; SameSite=Strict; Path=\/; Max-Age=604800$/);
   assert.ok(!r.cookie.includes(TOKEN));
+  assert.deepEqual(auth.login(url), { ok: false, used: true }); // 한 번만: 같은 링크 두 번째는 거절
   now = T0 + LOGIN_TTL_MS - 1;
-  assert.equal(auth.login(url).ok, true);
-  now = T0 + LOGIN_TTL_MS;
-  assert.equal(auth.login(url).ok, false); // 10분 지남
+  assert.deepEqual(auth.login(url), { ok: false, used: true }); // 만료 전까지 기억
+  const late = new URL(loginUrl({ token: TOKEN, port: 4545, now: T0 + 1 }));
+  assert.equal(auth.login(late).ok, true); // 다른 링크는 그대로 된다
+  now = T0 + LOGIN_TTL_MS + 1;
+  assert.deepEqual(auth.login(late), { ok: false }); // 10분 지남(지난 것은 「이미 씀」이 아니라 만료)
   now = T0;
   assert.equal(auth.login(new URL(loginUrl({ token: TOKEN, port: 4546, now: T0 }))).ok, false); // 다른 포트용
   assert.equal(auth.login(new URL(loginUrl({ token: 'b2'.repeat(24), port: 4545, now: T0 }))).ok, false); // 다른 토큰
   assert.equal(auth.login(new URL(`http://localhost:4545/login?t=${T0 + 1000}.${'0'.repeat(64)}`)).ok, false); // 서명 틀림
 });
 
-test('쿠키: 30일 안만 로그인, 이름 · 서명에 포트(다른 포트 대시보드의 쿠키와 섞이지 않음), 이상한 값은 던지지 않고 거절', () => {
+test('쿠키: 7일 안만 로그인, 이름 · 서명에 포트(다른 포트 대시보드의 쿠키와 섞이지 않음), 이상한 값은 던지지 않고 거절', () => {
   let now = T0;
   const auth = createAuth({ token: TOKEN, port: 4545, now: () => now });
   const c = sessionCookie({ token: TOKEN, port: 4545, now: T0 });
@@ -36,7 +39,7 @@ test('쿠키: 30일 안만 로그인, 이름 · 서명에 포트(다른 포트 �
   now = T0 + SESSION_MS - 1;
   assert.equal(auth.loggedIn(reqWith(c)), true);
   now = T0 + SESSION_MS;
-  assert.equal(auth.loggedIn(reqWith(c)), false); // 30일 지남
+  assert.equal(auth.loggedIn(reqWith(c)), false); // 7일 지남
   now = T0;
   const demo = sessionCookie({ token: TOKEN, port: 4646, now: T0 });
   assert.equal(auth.loggedIn(reqWith(demo)), false); // 다른 포트 쿠키(이름이 다름)

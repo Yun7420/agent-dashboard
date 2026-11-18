@@ -10,7 +10,7 @@ import { openLogin } from '../lib/login-open.mjs';
 import { proofFor, LOGIN_TTL_MS } from '../lib/auth.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { request } from './_helpers/http.mjs';
-import { until } from './_helpers/until.mjs';
+import { until, wait } from './_helpers/until.mjs';
 import { ROOT, demoEnv, startServer, testEnv } from './_helpers/server.mjs';
 
 const PORT = 4690;
@@ -80,8 +80,9 @@ test('open: [::1] 이나 127.0.0.1 에 다른 프로그램이 떠 있으면 링�
   }
 });
 
-// 다른 프로그램이 [::1]:포트 를 먼저 열면 브라우저의 localhost 가 그쪽으로 갔다(점검 C2) → 서버는 [::1] 에도 함께 열고, 이미 차 있으면 크게 알린다
-test('서버: [::1] 에도 같은 포트로 열고, 다른 프로그램이 먼저 잡았으면 「주의」를 남기고 127.0.0.1 로 계속', async (t) => {
+// 다른 프로그램이 [::1]:포트 를 먼저 열면 브라우저의 localhost 가 그쪽으로 갔다(점검 C2) → 서버는 [::1] 에도 함께 연다.
+// 이미 차 있으면 경고만 하고 계속 돌면 열린 탭이 그쪽에 로그인 쿠키를 보낼 수 있어서(보안 검토 2026-11-18) 이유를 알리고 1 로 끝낸다
+test('서버: [::1] 에도 같은 포트로 열고, 다른 프로그램이 먼저 잡았으면 로그인 링크 없이 이유를 알리고 종료 코드 1', async (t) => {
   const P = 4691;
   const home = tmpDir('ad-v6-');
   const probe = await new Promise((resolve) => { const s = http.createServer(); s.once('error', () => resolve(null)); s.listen(P, '::1', () => resolve(s)); });
@@ -91,17 +92,19 @@ test('서버: [::1] 에도 같은 포트로 열고, 다른 프로그램이 먼�
     const r = http.get({ host: '::1', port: P, path: '/', headers: { host: `localhost:${P}` } }, (res) => { res.resume(); resolve(res.statusCode); });
     r.on('error', () => resolve(0));
   });
-  // 1) 평소: 둘 다 우리 서버
+  // 1) 평소: 둘 다 우리 서버, 로그인 링크는 [::1] 까지 연 뒤에
   let s = await startServer({ env: demoEnv({ home, port: P }), name: '데모(::1)', ready: async () => (await request(P, '/').catch(() => ({}))).status === 200 && (await ask6()) === 200 });
-  await s.stop();
+  try { assert.ok(await until(() => /login\?t=/.test(s.log()))); } finally { await s.stop(); }
   // 2) [::1] 을 다른 프로그램이 먼저
   const squat = await new Promise((resolve) => { const x = http.createServer((q, r) => r.end('가짜')); x.listen(P, '::1', () => resolve(x)); });
   try {
-    s = await startServer({ env: demoEnv({ home, port: P }), name: '데모(::1 차지됨)', ready: async (x) => /주의: 다른 프로그램이 \[::1\]:4691 를 쓰고 있어요/.test(x.log()) });
-    assert.equal((await request(P, '/')).status, 200); // 127.0.0.1 은 그대로 우리 서버
-    assert.ok(s.alive());
-    await s.stop();
+    s = await startServer({ env: demoEnv({ home, port: P }), name: '데모(::1 차지됨)' });
+    assert.equal(await Promise.race([s.exited, wait(8000).then(() => '계속 돎')]), 1);
+    assert.match(s.log(), /서버를 열지 못했어요: 다른 프로그램이 \[::1\]:4691 를 쓰고 있어요/);
+    assert.doesNotMatch(s.log(), /login\?t=/); // 링크도 남기지 않는다
+    assert.equal(await request(P, '/').then((r) => r.status, () => 0), 0); // 127.0.0.1 도 닫혔다
   } finally {
+    await s.stop();
     await close(squat);
   }
 });
