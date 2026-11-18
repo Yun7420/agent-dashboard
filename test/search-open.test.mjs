@@ -25,16 +25,19 @@ function load() {
   const calls = [];
   const fetch = (path) => new Promise((res) => calls.push({ q: new URL(path, 'http://x').searchParams.get('q'), reply: (body) => res({ status: 200, ok: true, text: async () => JSON.stringify(body) }) }));
   const picked = [];
+  let pick = () => {};
   const { run } = loadFront(['00-md.js', '01-core.js', '18-search.js'], {
     window: {}, document: doc, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, fetch,
     setTimeout: (fn, ms) => { clock.jobs.set(++clock.id, { fn, at: clock.now + ms }); return clock.id; }, clearTimeout: (id) => clock.jobs.delete(id),
-    select: async (k) => picked.push(['select', k]), setTab: (tab) => picked.push(['tab', tab]), loadHistory: async () => true, renderHistory: () => picked.push(['render', els['#d-search'].value]),
+    // select 는 진짜처럼 고른 세션을 바꾼다(목록에 없으면 안 바꿈 — gsPick 이 그 뒤를 멈춘다)
+    select: async (k) => { picked.push(['select', k]); pick(k); }, setTab: (tab) => picked.push(['tab', tab]), loadHistory: async () => true, renderHistory: () => picked.push(['render', els['#d-search'].value]),
   });
+  pick = (k) => run(`selected = ${JSON.stringify(k)}`);
   const q = els['#gs-q'];
   const type = (v) => { q.value = v; q.listeners.input(); };
   const key = (k, extra = {}) => { const e = { key: k, prevented: false, stopped: false, preventDefault() { this.prevented = true; }, stopPropagation() { this.stopped = true; }, ...extra }; q.listeners.keydown(e); return e; };
   const flush = () => new Promise((r) => setImmediate(r));
-  return { els, doc, run, q, type, key, calls, picked, flush, tick };
+  return { els, doc, run, q, type, key, calls, picked, flush, tick, setPick: (f) => (pick = f) };
 }
 
 test('입력: 200ms 동안 더 치지 않아야 한 번 보낸다 · 2글자 미만은 보내지 않고 목록을 닫는다', async (t) => {
@@ -171,4 +174,15 @@ test('/ 키: 아무 데도 초점이 없으면 검색칸으로(좁은 화면은 
   assert.equal(slash().prevented, false); // 이미 칸 안이면 그냥 글자
   els['#gs'].listeners.focusout({ relatedTarget: null });
   assert.equal(els['#gs'].cls.has('open'), false);
+});
+
+// B3: 고른 사이 목록에서 사라진 세션(select 가 고르지 않음)이면 기록 탭으로 넘어가거나 기록을 읽지 않는다
+test('검색 결과의 세션이 그 사이 목록에서 사라졌으면 고르기만 하고 멈춘다', async () => {
+  const { q, type, calls, tick, key, picked, flush, setPick } = load();
+  setPick(() => {}); // 목록에 없는 세션 — 진짜 select 는 selected 를 바꾸지 않는다
+  q.focus();
+  type('필터'); tick(200);
+  calls[0].reply([hit('gone', 'Gone')]); await flush();
+  key('ArrowDown'); key('Enter'); await flush();
+  assert.deepEqual(picked, [['select', 'gone']]);
 });

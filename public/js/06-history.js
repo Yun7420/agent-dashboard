@@ -56,13 +56,14 @@ document.addEventListener('click', (e) => {
   b.textContent = b.previousElementSibling.classList.toggle('closed') ? `${t('More')} ▾` : `${t('Fold')} ▴`;
 });
 
+// 지금 목록에 없는 세션(오늘 한 일의 24시간 지난 세션 · 그 사이 사라진 검색 결과)이면 아무것도 바꾸지 않는다 — 고름이 없는 세션을 가리키지 않게
 async function select(key) {
+  const s = state?.sessions.find((x) => x.key === key);
+  if (!s) return;
   selected = key;
   kbKey = key; // 클릭으로 고른 세션에서 j/k 가 이어지게
   renderList();
   renderGraph();
-  const s = state.sessions.find((x) => x.key === key);
-  if (!s) return;
   if (!$('#drawer').classList.contains('open')) { $('#drawer').classList.add('open'); renderGraph(); } // 조직도는 맞추지 않는다(가려진 고른 노드만 07-center 가 보이는 칸으로)
   if (key !== lastSelected) { useDraft(key); setTab('now'); promptLog = []; hist.key = null; hist.items = []; lastSelected = key; delete $('#pane').dataset.seen; openFiles.clear(); fullCmds.clear(); closedCmds = false; }
   renderDrawerHead(s);

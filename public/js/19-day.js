@@ -1,4 +1,5 @@
-// 오늘 한 일: 세션별로 하루 동안의 요청 수 · 고친 파일 · 실행한 명령 수 · 커밋을 모아 보고, 마크다운으로 복사
+// 오늘 한 일: 세션별로 하루 동안의 요청 수 · 고친 파일 · 실행한 명령 수 · 커밋을 모아 보고, 마크다운으로 복사.
+// 세션 이름은 지금 목록에 있는 것만 눌러 열 수 있다(기록은 24시간 지난 세션도 담지만 목록 · 패널엔 없다)
 const day = { date: null, items: [] };
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const shortPath = (f) => f.split('/').slice(-2).join('/');
@@ -27,7 +28,7 @@ async function loadDay(date) {
   $('#day-total').textContent = items.length ? t('{s} sessions · {p} requests · {f} files edited · {c} commands · {g} commits · {tk} tokens (Claude Code)', { s: items.length, p: sum('prompts'), f: sum('files'), c: sum('commands'), g: sum('commits'), tk: fmtTok(tokens) }) : t('No logs left for this day');
   $('#day-list').innerHTML = items.map((x) => `
     <div class="day-item">
-      <div class="day-head"><button type="button" class="link" data-open="${esc(x.key)}">${esc(x.title)}</button><span>${esc(x.project ?? '')}</span><span>${hm(x.firstAt)}~${hm(x.lastAt)}</span>
+      <div class="day-head">${state?.sessions.some((s) => s.key === x.key) ? `<button type="button" class="link" data-open="${esc(x.key)}">${esc(x.title)}</button>` : `<b>${esc(x.title)}</b>`}<span>${esc(x.project ?? '')}</span><span>${hm(x.firstAt)}~${hm(x.lastAt)}</span>
         <span class="grow"></span><span>${t('requests')} ${x.prompts} · ${t('commands')} ${x.commands}</span>${tokTotal(x) ? `<span class="day-tok" tabindex="0" data-tip="${esc(tokParts(x))}">${t('tokens')} ${fmtTok(tokTotal(x))} · ${t('excl. cache')} ${fmtTok(tokNoCache(x))}</span>` : ''}</div>
       ${x.commits.length ? `<ul class="day-commits">${x.commits.map((c) => `<li><span>${hm(c.at)}</span> ${esc(c.message)}</li>`).join('')}</ul>` : ''}
       ${x.files.length ? `<div class="day-files">${x.files.slice(0, 12).map((f) => `<span title="${esc(f.file)}">${esc(shortPath(f.file))}${f.edits > 1 ? ` ×${f.edits}` : ''}</span>`).join('')}${x.files.length > 12 ? `<span>${t('+{n} more', { n: x.files.length - 12 })}</span>` : ''}</div>` : ''}

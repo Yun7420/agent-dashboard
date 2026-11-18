@@ -62,6 +62,7 @@ async function gsPick(i) {
   gsFold();
   gsQ.blur();
   await select(r.key);
+  if (selected !== r.key) return; // 그 사이 목록에서 사라진 세션(select 가 고르지 않음)
   setTab('log');
   $('#d-search').value = q;
   if (await loadHistory(r.key)) renderHistory();
