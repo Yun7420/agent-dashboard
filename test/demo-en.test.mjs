@@ -35,7 +35,7 @@ test('영어 판은 새 값: 한국어 원본은 그대로 · 바꾸지 않는 �
 
 test('SSE: 상태에 영어 판(en)이 있으면 영어 탭엔 그것을, 한국어 탭엔 원본을 — 첫 상태와 틱 모두, en 자체는 보내지 않는다', async () => {
   let n = 0;
-  const buildState = async () => ({ generatedAt: String(n++), host: 'h', home: '/h', windowHours: 24, tools: [], usage: null, restore: null,
+  const buildState = async () => ({ generatedAt: String(n++), host: 'h', home: '/h', tools: [], usage: null, restore: null,
     sessions: [{ key: 'k', lastText: '한국어', project: '~ (홈)' }], links: [{ lastText: '링크' }], en: { sessions: [{ key: 'k', lastText: 'English', project: '~ (홈)' }], links: [{ lastText: 'link' }] } });
   const feed = createLiveFeed({ buildState, scanMs: 60_000 });
   feed.stop();

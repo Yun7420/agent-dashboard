@@ -213,7 +213,6 @@ const ROUTES = [
   { path: '/api/recent', handler: async (req, res) => sendJson(res, 200, DEMO ? demo.demoRecent() : await recentInfo({ recent, liveIds: liveIdSet(), capture: tmux.capture })) },
   { path: '/api/perf', handler: feed.getPerf },
   { path: '/api/changes', handler: feed.getChanges }, // 고른 세션의 이번 턴 변경 본문(목록엔 표식만)
-  { path: '/api/window', handler: feed.windowRoute },
   { path: '/api/history', handler: history.getHistory },
   { path: '/api/trend', handler: history.getTrend },
   { path: '/api/day', handler: history.getDay },

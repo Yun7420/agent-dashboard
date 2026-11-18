@@ -43,12 +43,10 @@ body.aside-folded #restore { display: none; }
 .ended-toggle:hover:not(:disabled) { background: var(--surface-2); border-color: transparent; }
 .ended-toggle b { color: var(--text); font-weight: 600; }
 .ended-toggle .chev { width: 10px; color: var(--faint); }
-#ended-window { height: 28px; font-size: 12px; padding: 0 24px 0 8px; background-position: right 8px center; }
 body.aside-folded .ended-h { justify-content: center; padding-top: 8px; margin-top: 8px; }
 body.aside-folded .ended-toggle { flex: none; justify-content: center; font-size: 0; }
 body.aside-folded .ended-toggle b { font-size: 11px; }
 body.aside-folded .ended-toggle .chev { display: none; }
-body.aside-folded #ended-window { display: none; }
 .group-h { padding: 12px 8px 6px; color: var(--faint); font-size: 11px; font-weight: 600; letter-spacing: .04em; }
 .empty-line { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-4) var(--sp-2); color: var(--dim); font-size: 13px; line-height: 1.6; white-space: normal; }
 .empty .empty-line { align-items: center; pointer-events: auto; } /* 가운데 칸(구조 탭) — 바탕 칸은 마우스를 통과시키지만 단추는 누를 수 있게 */

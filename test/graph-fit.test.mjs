@@ -35,8 +35,8 @@ test('좁은 나무는 가운데에, 크게 해도 1.2배까지', () => {
   assert.ok(v.x > 24);
 });
 
-// 휠 · 두 손가락 스크롤 = 확대 · 축소(마우스 위치 기준). delta 에 비례해 작은 delta 는 조금만 · 휠로는 0.6배 아래로 안 줄어든다
-test('휠: delta 에 비례해 마우스 위치 기준 확대 · 축소, 휠로는 0.6배가 하한(− 단추로 더 줄였으면 그 아래로만 안 감)', () => {
+// 휠 · 두 손가락 스크롤 = 확대 · 축소(마우스 위치 기준). delta 에 비례해 작은 delta 는 조금만 · 휠로는 0.75배 아래로 안 줄어든다
+test('휠: delta 에 비례해 마우스 위치 기준 확대 · 축소, 휠로는 0.75배가 하한(− 단추로 더 줄였으면 그 아래로만 안 감)', () => {
   const on = {};
   const el = (box) => ({ getBoundingClientRect: () => box, classList: { contains: () => false, add() {}, remove() {} }, addEventListener(ty, fn) { on[ty] = fn; }, setAttribute() {} });
   const els = { '#graph': el({ width: 1000, height: 700, left: 0, top: 0 }) };
@@ -54,9 +54,9 @@ test('휠: delta 에 비례해 마우스 위치 기준 확대 · 축소, 휠로�
   assert.ok(k > 1.2 && k < 1.23);
   assert.ok(Math.abs(run('view.x') - (500 - 500 * k)) < 1e-9 && Math.abs(run('view.y') - (300 - 300 * k)) < 1e-9);
   for (let i = 0; i < 40; i++) wheel({ deltaY: 100 }); // 계속 줄여도
-  assert.equal(run('view.k'), 0.6);
+  assert.equal(run('view.k'), 0.75);
   wheel({ deltaY: 3, ctrlKey: true }); // 오므리기도 같은 하한
-  assert.equal(run('view.k'), 0.6);
+  assert.equal(run('view.k'), 0.75);
   run('view.k = 0.4'); // − 단추로 더 줄인 경우
   wheel({ deltaY: 100 });
   assert.equal(run('view.k'), 0.4);

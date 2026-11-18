@@ -386,7 +386,6 @@ test('오류 응답 모양: text/plain; charset=utf-8 한국어 문장, 영어 �
     ['/', { headers: { host: 'evil.example:4699' } }, 403],
     ['/api/perf', {}, 403],
     ['/no-such-file.js', {}, 404],
-    ['/api/window', { method: 'POST', headers: T, body: '{"hours":5}' }, 400],
     ['/api/day?date=2026-02-30', { headers: T }, 400],
     ['/api/day?date=abc', { headers: T }, 400],
     ['/api/limits?range=30d', { headers: T }, 400],
@@ -406,15 +405,6 @@ test('오류 응답 모양: text/plain; charset=utf-8 한국어 문장, 영어 �
   }
 });
 
-test('창 기간(/api/window): 바꾸기는 POST, 틀리면 400, GET 은 읽기만', async () => {
-  const T = { ...AUTH, 'content-type': 'application/json' };
-  const now = async () => JSON.parse((await fetchText('/api/window', { headers: T })).text).hours;
-  assert.equal(await now(), 24);
-  await fetchText('/api/window?hours=6', { headers: T }); // 예전 방식(GET 으로 바꾸기)은 이제 바꾸지 않는다
-  assert.equal(await now(), 24);
-  assert.equal((await fetchText('/api/window', { method: 'POST', headers: T, body: '{"hours":72}' })).status, 204);
-  assert.equal(await now(), 72);
-  assert.equal((await fetchText('/api/window', { method: 'POST', headers: T, body: '{"hours":"72; x"}' })).status, 400);
-  assert.equal(await now(), 72);
-  assert.equal((await fetchText('/api/window', { method: 'POST', headers: T, body: '{"hours":24}' })).status, 204);
+test('기간 고르기는 없어졌다(종료된 세션은 24시간 고정): /api/window 는 404', async () => {
+  for (const method of ['GET', 'POST']) assert.equal((await fetchText('/api/window', { method, headers: { ...AUTH, 'content-type': 'application/json' }, body: method === 'POST' ? '{"hours":72}' : undefined })).status, 404);
 });

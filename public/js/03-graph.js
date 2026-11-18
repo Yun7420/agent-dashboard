@@ -185,12 +185,12 @@ function applyView() { $('#viewport').setAttribute('transform', `translate(${vie
   window.addEventListener('pointermove', (e) => { if (!drag) return; view.x = e.clientX - drag.x; view.y = e.clientY - drag.y; applyView(); });
   window.addEventListener('pointerup', () => { drag = null; svg.classList.remove('drag'); });
   // 휠 · 두 손가락 스크롤 · 오므리기(ctrl) = 마우스 위치 기준 확대 · 축소(옮기기는 끌기). delta 에 비례해서 트랙패드의 잦은 작은 delta 는 조금씩
-  // (예전 한 번에 0.9배라 몇 번 훑으면 글자 약 7px). 휠로는 0.6배 아래로 안 줄인다 — − 단추로 더 줄였으면 거기서 더 줄이지만 않음
+  // (예전 한 번에 0.9배라 몇 번 훑으면 글자 약 7px). 휠로는 0.75배 아래로 안 줄인다 — − 단추로 더 줄였으면 거기서 더 줄이지만 않음
   svg.addEventListener('wheel', (e) => {
     e.preventDefault();
     const r = svg.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
     const d = Math.max(-100, Math.min(100, e.deltaY * (e.deltaMode === 1 ? 16 : 1))); // 줄 단위(1)면 픽셀로
-    const k = Math.min(3, Math.max(Math.min(0.6, view.k), view.k * Math.exp(-d * (e.ctrlKey ? 0.01 : 0.002))));
+    const k = Math.min(3, Math.max(Math.min(0.75, view.k), view.k * Math.exp(-d * (e.ctrlKey ? 0.01 : 0.002))));
     view.x = mx - (mx - view.x) * (k / view.k);
     view.y = my - (my - view.y) * (k / view.k);
     view.k = k;

@@ -9,13 +9,12 @@ function renderList() {
     ? ['waiting', 'working', 'background', 'idle'].map((st) => [st, STATUS_KO[st]]).map(([st, label]) => [label, live.filter((s) => s.status === st)])
     : [[null, live]];
   const endedAll = ordered(state.sessions.filter((s) => s.status === 'ended' && !pref.hidden.includes(s.key)));
-  const PERIODS = [[6, t('6 hours')], [24, t('24 hours')], [72, t('3 days')], [168, t('7 days')]];
   groups.push(['__ended', pref.showEnded ? endedAll : []]);
   const manual = pref.sort === 'manual';
   let html = '';
   for (const [label, items] of groups) {
     if (label === '__ended') {
-      html += `<div class="ended-h"><button type="button" id="ended-toggle" class="ended-toggle" title="${t('Show / hide ended sessions')}"><span class="chev">${pref.showEnded ? '▾' : '▸'}</span>${t('Ended sessions')} <b>${endedAll.length}</b></button><select id="ended-window" title="${t('How far back to show ended sessions')}">${PERIODS.map(([h, l]) => `<option value="${h}" ${state.windowHours === h ? 'selected' : ''}>${t('Last {p}', { p: l })}</option>`).join('')}</select></div>`;
+      html += `<div class="ended-h"><button type="button" id="ended-toggle" class="ended-toggle" title="${t('Show / hide ended sessions')}"><span class="chev">${pref.showEnded ? '▾' : '▸'}</span>${t('Ended sessions')} <b>${endedAll.length}</b></button></div>`;
     }
     if (!items.length) continue;
     if (label && label !== '__ended') html += `<div class="group-h">${label} · ${items.length}</div>`;

@@ -112,7 +112,7 @@ It only starts things and never stops anything. Sessions that are already runnin
 
 If you open the dashboard first, the top of the list shows **"N sessions from before the restart · Reopen all"**. Sessions follow your default model; only ones you picked explicitly (Sonnet/Haiku) keep it. Conversations older than 30 days are cleaned up by Claude Code and can't be resumed.
 
-Even without a restart, if sessions stopped unexpectedly, expand **"Ended sessions"** under the list. Claude sessions that were running in the last 7 days but aren't now (including ones started outside tmux) get a **"Reopen"** button on their card, which resumes the same conversation in tmux (for older ones, set the period next to it to "last 7 days").
+Even without a restart, if sessions stopped unexpectedly, expand **"Ended sessions"** under the list. Claude sessions that were running in the last 24 hours but aren't now (including ones started outside tmux) get a **"Reopen"** button on their card, which resumes the same conversation in tmux.
 - Sessions that are running now or were just reopened have no button (no duplicates).
 - If the folder trust prompt appears, the dashboard doesn't answer it for you; it only tells you "trust confirmation needed".
 - The list lives in `~/.agent-dashboard/recent.json` (readable only by you). The page sends only the session ID; folders and names come only from the server's saved list.
@@ -172,7 +172,7 @@ A session already running in a terminal has no official way to receive input fro
 - Sorting is the small icon at the top right of the list
 - Card: name · status · context bar (green → yellow → red) + one faint line (folder · time). Tags only when not the default (Codex · "View only" outside tmux)
 - **Collapse the list** with the ‹ tab at the middle of its right edge — a thin rail keeps status dots + initials (› to expand, click to open)
-- Click **Ended sessions N** under the live sessions to expand, and pick the time window (6h · 24h · 3d · 7d)
+- Click **Ended sessions N** under the live sessions to expand (sessions that ended in the last 24 hours)
 - Hover for ✕ — close the session (with confirmation) / hide an ended session
 </details>
 
@@ -180,7 +180,7 @@ A session already running in a terminal has no official way to receive input fro
 <summary><b>Center — structure</b></summary>
 
 - One **org chart**, with status counts bottom left and agent kinds (usage limits) bottom right
-- Org chart: drag to pan · **wheel (two-finger scroll), trackpad pinch or + − to zoom** (the wheel stops at 0.6×) · double-click to fit · **click empty space = close the right panel**. Fitting never shrinks node text below 12px (if it overflows, the chosen session stays in view and you drag for the rest)
+- Org chart: drag to pan · **wheel (two-finger scroll), trackpad pinch or + − to zoom** (the wheel stops at 0.75×) · double-click to fit · **click empty space = close the right panel**. Fitting never shrinks node text below 12px (if it overflows, the chosen session stays in view and you drag for the rest)
 - Dashed line = working in the same folder, yellow = working, **purple arrow = messages between sessions**
 - **Status text color** under each session box: idle = purple · working = yellow · background = light yellow · **needs approval = pink (bold)**
 - **Click a project box** to open that folder in **VS Code · Cursor, or reveal it in Finder** (only installed apps are shown; only folders of listed sessions can be opened)
