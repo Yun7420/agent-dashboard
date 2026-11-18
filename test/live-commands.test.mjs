@@ -63,8 +63,8 @@ test('close · model: 선택 창이 떠 있으면 409 이고 tmux 에 아무것�
   assert.deepEqual(fakeLog().slice(n).filter((c) => c.cmd === 'tmux' && !['list-panes', 'capture-pane'].includes(c.args[0])), []);
   const m = tmuxCalls('send-keys').length;
   assert.equal((await cmd('model', { key: `claude:${A}`, model: 'sonnet' })).status, 200);
-  assert.deepEqual(sentKeys('%1', m), ['Escape', 'Enter']); // Esc 로 입력 정리 → /model sonnet 붙여넣기 → Enter
-  assert.equal(tmuxCalls('load-buffer').at(-1).stdin, '/model sonnet');
+  // Esc 로 입력 정리 → /model sonnet 을 글자로(붙여넣기면 Claude Code 가 명령으로 보지 않음) → Enter
+  assert.deepEqual(tmuxCalls('send-keys').slice(m).map((c) => c.args), [['send-keys', '-t', '%1', 'Escape'], ['send-keys', '-l', '-t', '%1', '--', '/model sonnet'], ['send-keys', '-t', '%1', 'Enter']]);
 });
 
 test('approve: 미리보기가 붙은 질문 창은 숫자 대신 커서(❯)에서 고른 번호까지 화살표 + Enter, 보통 창은 숫자 그대로', async () => {

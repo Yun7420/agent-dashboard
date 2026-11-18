@@ -89,6 +89,13 @@ test('send: 첨부가 uploads 안이면 load-buffer → paste → Enter, uploads
   assert.equal(load.stdin, '안녕');
   assert.deepEqual(tmuxCalls('paste-buffer').at(-1).args.slice(-2), ['-t', '%1']);
   assert.deepEqual(tmuxCalls('send-keys').at(-1).args, ['send-keys', '-t', '%1', 'Enter']);
+  // 슬래시 명령 한 줄은 붙여넣기 대신 글자로(Claude Code 가 붙여 넣은 글은 명령으로 보지 않음), 첨부가 붙으면 붙여넣기 그대로
+  const pastes = tmuxCalls('paste-buffer').length;
+  assert.equal((await cmd('send', { key: `claude:${ID[0]}`, text: '/compact 요약' })).status, 200);
+  assert.deepEqual(tmuxCalls('send-keys').slice(-2).map((c) => c.args), [['send-keys', '-l', '-t', '%1', '--', '/compact 요약'], ['send-keys', '-t', '%1', 'Enter']]);
+  assert.equal(tmuxCalls('paste-buffer').length, pastes);
+  assert.equal((await cmd('send', { key: `claude:${ID[0]}`, text: '/compact 요약', files: [path.join(day, 'a.png')] })).status, 200);
+  assert.equal(tmuxCalls('load-buffer').at(-1).stdin, '/compact 요약');
 });
 
 test('approve: 승인 기다리는 세션에만, 화면의 번호 · 글자가 맞으면 숫자를 그 창으로 보낸다', async () => {

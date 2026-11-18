@@ -62,6 +62,14 @@ test('sendText: 붙여넣기 버퍼(stdin) → paste-buffer → Enter 순서, se
   assert.deepEqual(calls().at(-1).args, ['new-session', '-d', '-P', '-F', '#{pane_id}', '-s', 'n', '-c', '/w', '-x', '200', '-y', '50', '--', 'claude', '--', '-x']);
 });
 
+test('sendText: 한 줄 슬래시 명령은 send-keys -l 로 쳐 넣고 Enter, 여러 줄 · 일반 글 · paste: true 는 붙여넣기', async () => {
+  const subs = async (text, opts) => { const before = calls().length; await sendText('%4', text, opts); return calls().slice(before).map((c) => c.args); };
+  assert.deepEqual(await subs('/compact 요약 -t x'), [['send-keys', '-l', '-t', '%4', '--', '/compact 요약 -t x'], ['send-keys', '-t', '%4', 'Enter']]);
+  for (const [text, opts] of [['/compact\n둘째 줄'], ['그냥 /compact'], ['/'], ['/compact', { paste: true }]]) {
+    assert.deepEqual((await subs(text, opts)).map((a) => a[0]), ['load-buffer', 'paste-buffer', 'send-keys'], JSON.stringify(text));
+  }
+});
+
 test('sendText: 여러 세션에 거의 동시에 보내도 버퍼가 섞이지 않고(이름이 매번 새로), 붙인 뒤 · 붙이기 실패 때 버퍼가 남지 않는다', async () => {
   const before = calls().length;
   const targets = ['%1', '%2', '%3', '%4', '%5', '%6'];

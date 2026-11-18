@@ -56,7 +56,9 @@ test('상태줄 node(점검 H3): 등록된 명령에서 node 경로를 읽고, �
   const bad = usageEnvItem({ enabled: true, node: gone, version: await probe(gone, ['--version']) });
   assert.equal(bad.level, 'warn');
   assert.match(bad.detail, /실행하지 못해요 — node 를 올린 뒤라면 대시보드를 다시 켜면/);
-  assert.equal(usageEnvItem({ enabled: false }).level, 'info');
+  const off = usageEnvItem({ enabled: false });
+  assert.equal(off.level, 'info');
+  assert.match(off.detail, /^꺼짐 — Claude Code 범례의 「사용 한도 보기」로 켤 수 있어요/); // 스위치는 헤더가 아니라 범례에
 });
 
 test('기본 모델: 없으면 exists false, /model 이 바꾼 값을 원래대로 되돌린다(다른 설정은 그대로)', async () => {
