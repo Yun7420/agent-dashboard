@@ -1,18 +1,30 @@
 /* 왼쪽 목록: 카드 · 접힌 띠 · 재시동 복구 안내 · 키보드로 고른 카드 */
 /* ---------- 왼쪽 목록 ---------- */
-aside { border-right: 1px solid var(--border); overflow-y: auto; background: var(--surface); }
-.sort-bar { position: sticky; top: 0; z-index: var(--z-raised); background: var(--surface); height: var(--bar-h); padding: 0 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
-.sort-bar select { height: 32px; }
-#aside-fold { width: 32px; height: 32px; flex: none; border-radius: 8px; }
-.sort-bar select { flex: 1; min-width: 0; }
+aside { overflow-y: auto; background: var(--surface); }
+.sort-bar { position: sticky; top: 0; z-index: var(--z-raised); background: var(--surface); height: var(--bar-h); padding: 0 var(--sp-3) 0 var(--sp-4); display: flex; gap: var(--sp-2); align-items: center; }
+.list-h { flex: 1; color: var(--dim); font-size: 13px; font-weight: 600; }
+/* 정렬 아이콘: 투명한 select 를 아이콘 위에 겹쳐 누르면 기본 목록이 뜬다 */
+.sort-ic { position: relative; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; color: var(--dim); cursor: pointer; transition: background .15s, color .15s; }
+.sort-ic:hover { background: var(--surface-2); color: var(--text); }
+.sort-ic:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sort-ic select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; padding: 0; }
 .card .ini { display: none; }
+/* 목록 접기 탭: 목록 오른쪽 가장자리 가운데에 반쯤 튀어나온 둥근 단추(목록 칸은 스크롤이라 밖에 두고 위치만 맞춘다) */
+.edge-tab { position: fixed; top: 50%; left: calc(296px - 12px); z-index: var(--z-tip); width: 24px; height: 40px; padding: 0; display: grid; place-items: center; border-radius: 999px; background: var(--surface-3); border-color: transparent; color: var(--dim); box-shadow: var(--shadow); transform: translateY(-50%); }
+.edge-tab:hover:not(:disabled) { color: var(--text); background: var(--surface-3); border-color: var(--border-strong); }
+.edge-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+body.aside-folded .edge-tab { left: calc(64px - 12px); }
+body.aside-folded .edge-tab svg { transform: scaleX(-1); }
 /* 접힌 목록: 얇은 띠에 상태 점 + 이니셜만 (눌러서 열기, 승인 필요는 그대로 눈에 띄게) */
 body.aside-folded { grid-template-columns: 64px 1fr; }
-body.aside-folded .sort-bar { padding: 0 8px; justify-content: center; }
-body.aside-folded #aside-fold { width: 100%; height: 36px; border-radius: var(--radius); }
-body.aside-folded .sort-bar select, body.aside-folded .group-h { display: none; }
-body.aside-folded #aside-fold svg { transform: scaleX(-1); }
-body.aside-folded #list { padding: 0 8px 12px; }
+body.aside-folded .sort-bar { padding: 0 var(--sp-2); justify-content: center; }
+body.aside-folded .list-h, body.aside-folded .group-h { display: none; }
+body.aside-folded #list { padding: 0 var(--sp-2) var(--sp-3); }
+body.aside-folded .card { padding: var(--sp-2) 0; margin: var(--sp-1) 0; text-align: center; }
+body.aside-folded .card > :not(.ini) { display: none; }
+body.aside-folded .card .ini { display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); font-size: 11px; font-weight: 700; color: var(--dim); letter-spacing: .02em; }
+body.aside-folded .card.sel .ini { color: var(--text); }
+#list { padding: 0 8px 12px; }
 body.aside-folded .card { padding: 8px 0; margin: 4px 0; text-align: center; }
 body.aside-folded .card > :not(.ini) { display: none; }
 body.aside-folded .card .ini { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--dim); letter-spacing: .02em; }
@@ -39,12 +51,11 @@ body.aside-folded .ended-toggle .chev { display: none; }
 body.aside-folded #ended-window { display: none; }
 .group-h { padding: 12px 8px 6px; color: var(--faint); font-size: 11px; font-weight: 600; letter-spacing: .04em; }
 .group-h.empty-hint { font-size: 12px; font-weight: 400; letter-spacing: 0; line-height: 1.6; color: var(--dim); white-space: normal; } /* 처음 설치 — 기록 폴더 없음 */
-.card { position: relative; padding: 10px 12px 10px; margin: 4px 0; border-radius: var(--radius); border: 1px solid transparent; cursor: pointer; transition: background .15s, border-color .15s; }
-.card { background: color-mix(in srgb, var(--ink) 2%, transparent); border-color: color-mix(in srgb, var(--ink) 6%, transparent) !important; }
-.card:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); border-color: color-mix(in srgb, var(--ink) 12%, transparent) !important; }
-.card.sel { border-color: color-mix(in srgb, var(--accent) 55%, transparent) !important; }
-.card.waiting:not(.sel) { border-color: color-mix(in srgb, var(--waiting) 45%, transparent) !important; }
-.card.sel { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+/* 카드는 테두리 없이 면 차이로: 평소 = 목록 바탕, 올림 = 한 단계 밝게, 고름 = 두 단계 + 왼쪽 초록 줄. 승인 필요만 테두리로 눈에 띄게 */
+.card { position: relative; padding: var(--sp-3); margin: var(--sp-1) 0; border-radius: var(--radius); border: 1px solid transparent; background: transparent; cursor: pointer; transition: background .15s, border-color .15s; }
+.card:hover { background: var(--surface-2); }
+.card.sel { background: var(--surface-3); box-shadow: inset 3px 0 0 var(--accent); }
+.card.waiting { border-color: color-mix(in srgb, var(--waiting) 45%, transparent); }
 /* 키보드(j/k)로 고른 카드 · 위험 요청에서 숫자를 한 번 누른 단추(한 번 더 누르면 허락) */
 .card.kb:not(.sel) { outline: 2px dashed color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: -2px; }
 #approve-btns button.kb-arm { outline: 2px solid var(--working); outline-offset: 2px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--working) 18%, transparent); }
@@ -54,14 +65,14 @@ kbd { font: 11px var(--mono); padding: 0 5px; border: 1px solid var(--border-str
 .card.drop-before { box-shadow: 0 -2px 0 var(--accent); }
 .card.drop-after { box-shadow: 0 2px 0 var(--accent); }
 .card.ended > :not(.re):not(.x) { opacity: .5; } /* 「다시 열기」 단추는 흐리지 않게 */
-.card .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.card .title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.01em; }
-.card .status { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--dim); flex: none; }
+.card .row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.card .title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.01em; }
+.card .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); flex: none; }
 .card .status.working { color: var(--working); }
 .card .status.waiting { color: var(--waiting); }
 .card .status.background { color: var(--working-text); }
-.card .sub { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--faint); font-size: 12px; white-space: nowrap; overflow: hidden; }
-.card .sub .proj { min-width: 2em; overflow: hidden; text-overflow: ellipsis; color: var(--dim); }
+.card .sub { display: flex; align-items: center; gap: 6px; margin-top: var(--sp-2); color: var(--faint); font-size: 12px; white-space: nowrap; overflow: hidden; }
+.card .sub .proj { min-width: 2em; overflow: hidden; text-overflow: ellipsis; }
 .card .sub .ago { flex: none; }
 .ctx { height: 3px; margin-top: 8px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 6%, transparent); overflow: hidden; }
 .ctx-bar { height: 100%; border-radius: 3px; background: var(--ok); }
@@ -82,4 +93,5 @@ body.aside-folded .card .re { display: none; }
 .tool.claude { background: color-mix(in srgb, var(--claude) 14%, transparent); color: var(--claude); }
 .tool.codex { background: color-mix(in srgb, var(--codex) 14%, transparent); color: var(--codex); }
 .badge-tmux { background: color-mix(in srgb, var(--ok) 12%, transparent); color: var(--ok); }
+.badge-view { background: var(--surface-3); color: var(--dim); font-weight: 500; }
 .id { font-family: var(--mono); font-size: 11px; color: var(--faint); }

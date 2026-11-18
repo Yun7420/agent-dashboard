@@ -51,6 +51,8 @@ const KO_UI2 = {
   "Show in {app}": "{app}에서 보기",
   "Open in {app}": "{app}로 열기",
   "Unfold list": "목록 펼치기",
+  "View only": "보기만",
+  "Started outside tmux — chat · approve are off": "tmux 밖에서 띄워 채팅 · 승인은 안 돼요",
   "Fold list": "목록 접기",
   "Unfold": "펼치기",
   "Demo mode, so no real notifications are sent.": "데모 모드라 실제 알림은 보내지 않아요.",

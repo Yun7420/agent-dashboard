@@ -106,6 +106,8 @@ const KO_PAGE = {
   "Setup…": "설정…",
   "Help": "도움말",
   "By name": "이름순",
+  "Sessions": "세션",
+  "Sort": "정렬",
   "Log": "기록",
   "Stop": "멈추기",
   "Send": "보내기",
