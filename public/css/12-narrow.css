@@ -36,8 +36,9 @@
   #limits-pop { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; }
   #new-session { padding: 0 12px; }
   #new-session span { display: none; } /* 「+」만(이름은 title · aria-label) */
-  header { gap: 3px; } /* 390px 에서도 오른쪽 여백이 남게(톱니 단추를 더해 아이콘 단추도 30px) */
-  header .icon-btn { width: 30px; }
+  header { gap: var(--sp-1); }
+  /* 휴대폰은 손가락으로 누르니 아이콘 · 주 단추의 누를 자리를 40px 로(docs/CONVENTIONS.md 「화면 디자인 규칙」) */
+  .icon-btn, .icon-btn.sm, #new-session, .appr-count { min-width: 40px; height: 40px; }
   body, body.aside-folded { grid-template-columns: 56px 1fr; }
   /* 패널 머리: 이름 · 탭 · ⋯ · 닫기만 남겨 오른쪽 단추가 잘리지 않게 */
   #d-model { display: none; }
