@@ -21,6 +21,20 @@ test('물 높이 = 사용률(10 · 45 · 70 · 90%), 색은 60 · 85% 에서, 80
   assert.match(draw(node(33, 'z')), /<title>대화 창 33% · 330K \/ 1M 토큰<\/title>/);
 });
 
+test('물낯 선은 이름 · 상태 글자 자리에서 끊긴다(evenodd 구멍 두 개, 한글은 더 넓게) — 물 면은 그대로', () => {
+  const { run } = load();
+  const svg = run(`waterSvg(${JSON.stringify({ ...node(45), label: 'Lead Manager', sub: '작업 중 · BASH' })})`);
+  const [, id] = svg.match(/<g clip-path="url\(#(wc\d+t)\)"><path class="water-top/);
+  const d = svg.match(new RegExp(`<clipPath id="${id}"><path clip-rule="evenodd" d="([^"]+)"`))[1];
+  const holes = [...d.matchAll(/M([\d.]+),([\d.]+) h([\d.]+) v(\d+)/g)].map((m) => m.slice(1).map(Number));
+  assert.equal(holes.length, 2);
+  const [[x1, y1, w1], [x2, y2, w2]] = holes;
+  assert.deepEqual([y1, y2], [10, 30]); // 이름 줄(기준선 23) · 상태 줄(기준선 40) 둘레
+  assert.ok(Math.abs(w1 - (12 * 7.4 + 8)) < 0.1 && Math.abs(x1 - (170 - w1) / 2) < 0.1);
+  assert.ok(w2 > 12 * 6.8 + 8 && w2 < 170, `상태 줄 폭 ${w2}`); // 한글 4자는 10px 씩
+  assert.doesNotMatch(svg, /<g clip-path="url\(#wc\d+t\)"><path class="water /); // 물 면은 끊지 않는다
+});
+
 test('값이 바뀐 그릴 때만 예전 높이에서 차오르고, 그대로면 움직임 없음(같은 HTML)', () => {
   const { run } = load();
   const draw = (p) => { run('clipSeq = 0'); return run(`waterSvg(${JSON.stringify(node(p))})`); };
