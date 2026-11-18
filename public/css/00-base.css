@@ -133,10 +133,11 @@ select { font: inherit; color: var(--text); background: var(--surface-2); border
 input, textarea { font: inherit; color: var(--text); }
 .switch { display: inline-flex; align-items: center; gap: 8px; color: var(--dim); cursor: pointer; user-select: none; font-size: 12px; }
 .switch input { display: none; }
+button.switch { background: transparent; border-color: transparent; } /* 단추로 된 스위치(role=switch · aria-checked) — 사용 한도 보기 */
 .switch .track { width: 30px; height: 18px; border-radius: 12px; background: var(--surface-3); border: 1px solid var(--border-strong); position: relative; transition: background .15s; }
 .switch .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--dim); transition: transform .15s, background .15s; }
-.switch input:checked + .track { background: var(--accent); border-color: transparent; }
-.switch input:checked + .track::after { transform: translateX(12px); background: var(--on-accent); }
+.switch input:checked + .track, .switch[aria-checked="true"] .track { background: var(--accent); border-color: transparent; }
+.switch input:checked + .track::after, .switch[aria-checked="true"] .track::after { transform: translateX(12px); background: var(--on-accent); }
 .dot-s { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; }
 .dot-s.working { background: var(--working); box-shadow: 0 0 0 3px color-mix(in srgb, var(--working) 15%, transparent); }
 .dot-s.waiting { background: var(--waiting); box-shadow: 0 0 0 3px color-mix(in srgb, var(--waiting) 18%, transparent); }

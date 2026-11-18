@@ -13,17 +13,20 @@ function resetIn(iso) {
   return t('resets {d}', { d });
 }
 // 사용 한도는 계정(에이전트) 몫이라 범례의 Claude Code 항목 안에 「· 5시간 68% 남음 · 주간 79% 남음」으로 붙인다(13-controls.js).
-// 좁은 화면(범례 숨김)은 가운데 위 한 줄(#usage-line)에 짧게 「5시간 68% · 주간 79% 남음」. 꺼져 있으면 켜는 창으로 가는 작은 링크만
+// 좁은 화면(범례 숨김)은 가운데 위 한 줄(#usage-line)에 짧게 「5시간 68% · 주간 79% 남음」. 꺼져 있으면 꺼진 「사용 한도 보기」 스위치만
+const switchHtml = (on, cls = '') => `<button type="button" class="switch ${cls}" role="switch" aria-checked="${on}" data-usage-sw title="${t('Turn on to show your Claude account 5h · weekly limits here')}"><span class="track"></span>${t('Show usage limits')}</button>`;
 function usageHtml(short = false) {
   const u = state?.usage;
-  if (!u?.enabled) return `<button type="button" class="k-use off" data-usage title="${t('Turn on to show your Claude account 5h · weekly limits here')}">${t('Show usage limits')}</button>`;
+  if (!u?.enabled) return `<span class="sep">·</span>${switchHtml(false, 'k-use off')}`;
   if (!u.fiveHour && !u.sevenDay) return `<span class="k-use" title="${t('Values arrive once a Claude session replies')}"><span class="sep">·</span><span class="dot-s pulse"></span>${t('Usage limits · updated on the next reply')}</span>`;
   const ws = [[t('5h'), u.fiveHour], [t('Weekly'), u.sevenDay]].filter(([, w]) => w);
   const item = ([label, w], i) => { const l = leftOf(w), last = i === ws.length - 1; return `<span class="sep">·</span><span class="u">${label} <b class="${leftLevel(l)}">${short && !last ? `${l}%` : t('{p}% left', { p: l })}</b></span>`; };
   return `<button type="button" class="k-use" data-usage aria-label="${t('Claude account usage limits (5h · weekly)')}" aria-controls="limits-pop">${ws.map(item).join('')}</button>`;
 }
-// 팝업: 창마다 「5시간: 68% 남음 · 4시간 27분 뒤 초기화」 + 남은 양 막대, 아래 흐린 「오후 2:12:50 기준」 · 작은 「설정…」
+// 팝업: 창마다 「5시간: 68% 남음 · 4시간 27분 뒤 초기화」 + 남은 양 막대, 아래 흐린 「오후 2:12:50 기준」 · 켜진 스위치.
+// 처음 켤 때만(이 브라우저에서 한 번도 연결한 적 없으면) 팝업이 동의 줄 + [연결] 로 바뀐다 — settings.json 을 고치는 일이라 한 번은 알리고
 function limitsHtml(u = state?.usage) {
+  if (lp.consent) return `<p class="lp-consent">${t('Connects a status line in Claude settings (~/.claude/settings.json) · turning it off restores it')}</p><div class="lp-act"><button type="button" class="primary" data-usage-ok>${t('Connect')}</button></div>`;
   const row = (label, w) => {
     if (!w) return '';
     const l = leftOf(w), lv = leftLevel(l);
@@ -36,18 +39,19 @@ function renderUsage() {
   line.hidden = !state?.tools?.some((x) => x.id === 'claude');
   setHtml(line, `${kmark('claude')}<span>${esc(state?.tools?.find((x) => x.id === 'claude')?.label ?? 'Claude')}</span>${usageHtml(true)}`);
   setHtml($('#limits-body'), limitsHtml());
-  const at = state?.usage?.updatedAt;
+  const on = !!state?.usage?.enabled, at = state?.usage?.updatedAt;
+  if (on && !pref.usageLinked) { pref.usageLinked = true; savePref(); } // 이미 켜 둔 사람은 다시 켤 때 묻지 않는다
+  $('.lp-foot').hidden = lp.consent;
   $('#limits-asof').textContent = at ? t('as of {tm}', { tm: new Date(at).toLocaleTimeString(LOCALE) }) : '';
+  setHtml($('#limits-sw'), switchHtml(on, 'ghost'));
 }
-$('#limits-pop').addEventListener('click', (e) => e.stopPropagation()); // 팝업 안을 눌러도 닫히지 않게
-$('#limits-setup').addEventListener('click', () => { $('#limits-pop').classList.remove('show'); openUsageDialog(); });
 // 마우스를 올리거나(범례 항목 · 한 줄) 초점이 가면 남은 양 팝업을 띄우고, 팝업으로 옮겨 가는 사이(150ms)에는 닫지 않는다
-const lp = { hide: null, at: 0 }; // at = 연 시각
+const lp = { hide: null, at: 0, consent: false }; // at = 연 시각, consent = 동의 줄을 띄운 중
 function showLimits(on) {
   clearTimeout(lp.hide);
   const pop = $('#limits-pop');
-  if (!on) { lp.hide = setTimeout(() => pop.classList.remove('show'), 150); return; }
-  if (!state?.usage?.enabled || pop.classList.contains('show')) return;
+  if (!on) { lp.hide = setTimeout(() => { pop.classList.remove('show'); lp.consent = false; }, 150); return; }
+  if (!(state?.usage?.enabled || lp.consent) || pop.classList.contains('show')) return;
   const k = $('#kinds').getBoundingClientRect(), m = $('main').getBoundingClientRect();
   pop.style.setProperty('--lp-b', `${Math.round(m.bottom - k.top + 6)}px`); // 범례 바로 위(범례 높이는 종류 수에 따라)
   pop.classList.add('show');
@@ -59,30 +63,31 @@ for (const box of [$('#kinds'), $('#usage-line'), $('#limits-pop')]) {
   box.addEventListener('focusin', (e) => { if (e.target.closest('[data-usage]:not(.off), #limits-pop')) showLimits(true); });
   box.addEventListener('focusout', (e) => { if (!e.relatedTarget?.closest?.('[data-lp], #limits-pop')) showLimits(false); });
 }
-// 누르면: 꺼져 있으면 켜는 창, 켜져 있으면 팝업 열기/닫기(손가락 화면용)
+// 스위치: 끄면 바로 원래 상태줄로(usage-off), 켜면 연결한 적 있을 때만 바로 · 처음이면 동의 줄부터. 스위치는 먼저 넘기고 실패하면 되돌린다
+async function setUsage(on, sw) {
+  sw?.setAttribute('aria-checked', String(on));
+  lp.consent = false;
+  $('#limits-pop').classList.remove('show');
+  try {
+    toast(await api(`/api/cmd/${on ? 'usage-on' : 'usage-off'}`, {}));
+    if (on) { pref.usageLinked = true; savePref(); }
+    loadEnv(true);
+  } catch (err) { sw?.setAttribute('aria-checked', String(!on)); toast(err.message); }
+}
+function toggleUsage(sw) {
+  if (state?.usage?.enabled) return setUsage(false, sw);
+  if (pref.usageLinked) return setUsage(true, sw);
+  lp.consent = true;
+  renderUsage();
+  showLimits(true);
+}
+// 누르면: 스위치 · [연결], 켜진 한도 표시는 팝업 열기/닫기(손가락 화면용)
 document.addEventListener('click', (e) => {
+  const sw = e.target.closest('[data-usage-sw]');
+  if (sw) { toggleUsage(sw); return; }
+  if (e.target.closest('[data-usage-ok]')) { setUsage(true); return; }
   const b = e.target.closest('[data-usage]');
-  if (b && !state?.usage?.enabled) { openUsageDialog(); return; }
   // 마우스로 누르면 올림(mouseover)이 방금 열었으니 그건 닫지 않는다 — 열린 지 조금 지난 것만 닫기
   if (b) { if ($('#limits-pop').classList.contains('show') && Date.now() - lp.at > 400) $('#limits-pop').classList.remove('show'); else showLimits(true); return; }
-  if (!e.target.closest('#limits-pop')) $('#limits-pop').classList.remove('show');
-});
-function openUsageDialog() {
-  const on = state?.usage?.enabled;
-  // 설명은 두세 줄만(간추리기 B7) — 자세한 동작은 README 「사용 한도」
-  $('#usage-body').innerHTML = (on
-    ? ['It is <b style="color:var(--text)">on</b>. Turning it off restores your previous status line setting.']
-    : [
-       'Shows your Claude <b style="color:var(--text)">5h · weekly limits</b> and each session\'s <b style="color:var(--text)">exact context use</b>.',
-       'It adds one status line to <code>~/.claude/settings.json</code> (an existing one is kept and shown as is); turning it off restores the backup.',
-       'Limits only come with Claude.ai plans (Pro · Max).']).map((k) => t(k)).join('<br>');
-  $('#usage-act').textContent = on ? t('Turn off') : t('Turn on');
-  $('#usage-act').className = on ? 'danger' : 'primary';
-  $('#usage-dlg').showModal();
-}
-$('#usage-dlg').addEventListener('close', async () => {
-  if ($('#usage-dlg').returnValue !== 'act') return;
-  const on = state?.usage?.enabled;
-  try { toast(await api(`/api/cmd/${on ? 'usage-off' : 'usage-on'}`, {})); loadEnv(true); }
-  catch (err) { toast(err.message); }
+  if (!e.target.closest('#limits-pop')) { $('#limits-pop').classList.remove('show'); lp.consent = false; }
 });

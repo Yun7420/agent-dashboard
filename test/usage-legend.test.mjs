@@ -23,13 +23,13 @@ test('남은 양 = 100 − 쓴 양(0~100), 색 경계: 15% 이하 빨강 · 40% 
   assert.deepEqual([15, 16, 40, 41, 100].map(leftLevel), ['high', 'mid', 'mid', '', '']);
 });
 
-test('usageHtml: 범례는 「· 5시간 74% 남음 · 주간 9% 남음」(남은 양 색) · 짧게는 마지막 창에만 「남음」 · 꺼져 있으면 링크 · 값이 없으면 안내', () => {
+test('usageHtml: 범례는 「· 5시간 74% 남음 · 주간 9% 남음」(남은 양 색) · 짧게는 마지막 창에만 「남음」 · 꺼져 있으면 꺼진 스위치 · 값이 없으면 안내', () => {
   const { run } = load();
   run(`state = { tools: ${JSON.stringify(TOOLS)}, sessions: [], usage: { enabled: true, fiveHour: { percent: 26 }, sevenDay: { percent: 91 } } }`);
   assert.match(run('usageHtml()'), /^<button type="button" class="k-use" data-usage[^>]*><span class="sep">·<\/span><span class="u">5시간 <b class="">74% 남음<\/b><\/span><span class="sep">·<\/span><span class="u">주간 <b class="high">9% 남음<\/b><\/span><\/button>$/);
   assert.match(run('usageHtml(true)'), /5시간 <b class="">74%<\/b>.*주간 <b class="high">9% 남음<\/b>/);
   run('state.usage = { enabled: false }');
-  assert.match(run('usageHtml()'), /^<button type="button" class="k-use off" data-usage title="[^"]+">사용 한도 보기<\/button>$/);
+  assert.match(run('usageHtml()'), /^<span class="sep">·<\/span><button type="button" class="switch k-use off" role="switch" aria-checked="false" data-usage-sw title="[^"]+"><span class="track"><\/span>사용 한도 보기<\/button>$/);
   run('state.usage = { enabled: true }');
   assert.doesNotMatch(run('usageHtml()'), /data-usage/); // 누를 것이 없는 안내
 });

@@ -27,7 +27,7 @@ button.k-use:hover:not(:disabled) { background: var(--surface-2); border-color: 
 .k-use .u b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .k-use .u b.mid { color: var(--working-text); }
 .k-use .u b.high { color: var(--waiting-text); }
-.k-use.off { color: var(--accent-text); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.k-use.off { font-size: 12px; } /* 꺼진 「사용 한도 보기」 스위치 */
 .usage-line { display: none; } /* 좁은 화면에서만(12-narrow.css) */
 .status-col button { display: flex; align-items: center; gap: var(--sp-2); height: 32px; padding: 0 var(--sp-3); background: transparent; border-color: transparent; color: var(--dim); font-size: 13px; text-align: left; }
 .status-col button:hover:not(:disabled) { background: var(--surface-2); color: var(--text); border-color: transparent; }

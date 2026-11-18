@@ -77,10 +77,10 @@
     <button type="button" data-st="ended"><span class="dot-s ended"></span><span class="sl">Ended</span><b id="n-ended">0</b></button>
   </div>
   <div class="kinds" id="kinds" aria-label="Agent kinds"></div>
-  <!-- 범례 Claude Code 항목(좁은 화면은 위 한 줄)에 마우스를 올리면: 창마다 남은 양 · 초기화 시각(11-usage.js) -->
+  <!-- 범례 Claude Code 항목(좁은 화면은 위 한 줄)에 마우스를 올리면: 창마다 남은 양 · 초기화 시각 + 「사용 한도 보기」 스위치(11-usage.js) -->
   <div class="menu-pop" id="limits-pop" role="group" aria-label="Claude account usage limits">
     <div id="limits-body"></div>
-    <div class="lp-foot"><span id="limits-asof"></span><button type="button" class="ghost" id="limits-setup">Setup…</button></div>
+    <div class="lp-foot"><span id="limits-asof"></span><span id="limits-sw"></span></div>
   </div>
   <div class="usage-line" id="usage-line" data-lp hidden></div>
   <div class="empty" id="empty" hidden><div class="empty-line"><span>No sessions running</span><button type="button" class="primary" data-new-session aria-label="New task — run an agent" title="New task — run an agent">+ New task</button></div></div>
@@ -211,13 +211,6 @@
     <h3 id="cl-title">Close session</h3>
     <div id="cl-body" style="color:var(--dim);font-size:12px;line-height:1.7"></div>
     <div class="row"><button value="cancel">Cancel</button><button class="danger" id="cl-ok" value="ok">Close</button></div>
-  </form>
-</dialog>
-<dialog id="usage-dlg">
-  <form method="dialog">
-    <h3><span class="badge tool claude" style="vertical-align:2px">Claude</span> account usage limits</h3>
-    <div id="usage-body" style="color:var(--dim);font-size:13px;line-height:1.75"></div>
-    <div class="row"><button value="cancel">Close</button><button class="primary" id="usage-act" value="act"></button></div>
   </form>
 </dialog>
 <div class="menu-pop" id="dir-menu"></div>
