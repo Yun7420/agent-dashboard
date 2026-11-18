@@ -59,8 +59,8 @@ lib/                  구역별 일(모듈은 createXxx(deps) 로 필요한 것�
   notify · limits · usage · status   알림 · 한도 추이 · 토큰 사용량 · 상태줄 파일 정리
   respond · validate · paging · paths · perms · filecache · lru · serial · lock   응답 모양 · 입력 검사 · 나눠 보내기 · 경로 · 파일 권한 정리 · 캐시 · 차례 · 잠금
   tmux · dialog · approval · spawn · demo · util   tmux 조작 · 선택창 감지 · 승인 카드 · 새 세션 인자 · 데모 · 기록 읽기
-bin/                  agent-dashboard.mjs(실행 명령: start · run · restore) · run.sh(예전 실행기) · restore.mjs(npm run restore) · statusline.mjs(상태줄 다리 원본)
-public/               index.html 뼈대 · css/00-base.css ~ 11-narrow.css(구역별 모양, 번호 순서 · @media 는 맨 뒤 파일) · js/00-md.js ~ 19-keys.js(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다)
+bin/                  agent-dashboard.mjs(실행 명령 하나: start · run · restore · open — 실행 방법은 이것과 `npm start` 만) · statusline.mjs(상태줄 다리 원본)
+public/               index.html 뼈대 · css/00-base.css ~ 12-narrow.css(구역별 모양, 번호 순서 · @media 는 맨 뒤 파일 · 색은 00-base 토큰만) · js/00-md.js ~ 20-keys.js(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다)
 test/                 node --test (lib 단위 + 데모 서버로 보안 · 응답 모양 + 시험 서버(가짜 tmux · 임시 홈)로 실제 모드)
 docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 ```
@@ -70,7 +70,7 @@ docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 2. 구현 — `docs/CONVENTIONS.md` 와 기존 구역 · 이름 · 주석 스타일을 따른다
 3. `npm test` 전부 통과 + 새 동작은 테스트 추가(가능하면 "되돌리면 실패하는지"도 확인)
 4. 화면이 바뀌면 **데모 모드로 확인**: `DEMO=1 PORT=4646 node server.mjs` → 헤드리스 Playwright 로 스크린샷(창 띄우지 않기), 콘솔 오류 0. 시험이 끝나면 4646 서버를 반드시 끈다(띄울 때 적어 둔 PID 로만 — 아래 「프로세스 끄기 사고」)
-5. 서버 코드를 바꿨으면 실제 대시보드를 다시 켠다: 실행기(tmux dashboard 의 `bin/run.sh` 또는 `node bin/agent-dashboard.mjs run`)가 자동 재시작하므로 `pgrep -lf "^node server.mjs$"` 가 1줄인지 확인하고 `kill $(pgrep -f "^node server.mjs$")` 후 몇 초 뒤 `http://localhost:4545` 200 확인. 화면 파일만 바꿨으면 새로고침이면 됨
+5. 서버 코드를 바꿨으면 실제 대시보드를 다시 켠다: 실행기(tmux dashboard 의 `node bin/agent-dashboard.mjs run`)가 서버가 꺼지면 2초 뒤 다시 켜므로, 아래 「알아 둘 것」 4번 방법으로 서버만 끄고 몇 초 뒤 `http://localhost:4545` 200 확인(실행기는 끄지 않는다). 화면 파일만 바꿨으면 새로고침이면 됨
 6. 커밋: 제목 한 줄(한국어, 무엇을) + 본문 2~4줄(왜 · 어떻게 확인) + 마지막 줄 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` → `git push origin main`. 항목 하나 = 커밋 하나 이상, 중간중간 커밋
 7. `docs/ROADMAP.md` 에 `[x]` 와 커밋 해시 · 한 줄 요약
 8. README(한국어 · 영어 둘 다)에 사용자에게 보이는 변화가 있으면 반영
@@ -90,6 +90,7 @@ docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
   1. `pkill` · `killall` · `lsof … | xargs kill` 금지
   2. 데모는 띄울 때 `… & echo $! > demo.pid` 로 번호를 적고 그 번호만 끈다(`kill "$(cat demo.pid)"`)
   3. 포트로 찾을 땐 `lsof -a -nP -iTCP:포트 -sTCP:LISTEN -t` 가 정확히 1개이고 `ps -o command= -p` 가 `node server.mjs` 인지 확인한 뒤 끈다
-  4. 실제 서버 재시작은 `pgrep -lf "^node server.mjs$"` 가 1줄인지 확인한 뒤 `kill $(pgrep -f "^node server.mjs$")`
+  4. 실제 서버 재시작은 4545 를 듣는 프로세스가 정확히 1개이고 명령이 `…/agent-dashboard/server.mjs` 로 끝나는지 확인한 뒤 그것만 끈다(데모 4646 · `node server.mjs` 는 안 잡힘):
+     `P=$(lsof -a -nP -iTCP:4545 -sTCP:LISTEN -t); C=$(ps -o command= -p "$P"); echo "대상: [$P] $C"; [ "$(printf '%s\n' "$P" | grep -c .)" = 1 ] && printf '%s' "$C" | grep -q '/agent-dashboard/server\.mjs$' && kill "$P"`
   5. 끄기 전에 대상 목록을 먼저 출력한다
   - 원칙: 보안 문제가 아니면 직접 띄운 것과 실제 서버 재시작 외에는 끄거나 재시작하지 않는다(다른 프로세스 · tmux 세션 · `respawn-pane -k` · `kill-session` · 다른 Claude 세션 · 앱 포함). 꼭 꺼야 하면 먼저 manager 창에서 사용자에게 승인 요청(PID · 명령 · 이유). 보안 문제로 바로 껐다면 끈 뒤 즉시 알린다.
