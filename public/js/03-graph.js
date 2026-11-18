@@ -5,7 +5,7 @@ function buildTree() {
   for (const tool of state.tools) {
     const ss = visible().filter((s) => s.tool === tool.id);
     if (!ss.length) continue;
-    const grp = { kind: 'group', label: tool.label, children: [], status: ss.some((s) => s.status === 'working') ? 'working' : ss.some((s) => s.status === 'background') ? 'background' : 'idle' };
+    const grp = { kind: 'group', tool: tool.id, label: tool.label, children: [], status: ss.some((s) => s.status === 'working') ? 'working' : ss.some((s) => s.status === 'background') ? 'background' : 'idle' };
     const byProject = new Map();
     for (const s of ss) {
       if (!byProject.has(s.project)) byProject.set(s.project, []);
@@ -15,7 +15,7 @@ function buildTree() {
       const p = { kind: 'group', label: project, dir: items.find((s) => s.cwd)?.cwd ?? null, children: [], status: items.some((s) => s.status === 'waiting') ? 'waiting' : items.some((s) => s.status === 'working') ? 'working' : items.some((s) => s.status === 'background') ? 'background' : items.some((s) => s.status === 'idle') ? 'idle' : 'ended' };
       for (const s of items) {
         p.children.push({
-          kind: 'session', key: s.key, label: s.title, sub: `${STATUS_KO[s.status]}${s.lastTool && s.status === 'working' ? ' · ' + s.lastTool : ''}`, status: s.status,
+          kind: 'session', key: s.key, tool: s.tool, label: s.title, sub: `${STATUS_KO[s.status]}${s.lastTool && s.status === 'working' ? ' · ' + s.lastTool : ''}`, status: s.status,
           children: subNodes(s),
         });
       }
@@ -104,7 +104,7 @@ function renderGraph() {
     const max = Math.floor((n.w - 14) / 7.4); // 12px 고정폭 글자 기준
     const subMax = Math.floor((n.w - 12) / 6.4); // 10px
     nodes += `<g class="${esc(cls)}" data-path="${p}" data-st="${esc(n.status || '')}" ${n.key ? `data-key="${esc(n.key)}"` : ''} ${n.toggle ? `data-toggle="${esc(n.toggle)}"` : ''} ${n.dir ? `data-dir="${esc(n.dir)}"` : ''} transform="translate(${n.x},${n.y})">
-      <rect width="${n.w}" height="${n.h}" rx="10"/>
+      <rect width="${n.w}" height="${n.h}" rx="10"/>${n.tool ? kmarkSvg(n.tool, 14, 14) : ''}
       <text x="${n.w / 2}" y="${n.sub ? n.h / 2 - 4 : n.h / 2 + 4}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
       ${n.sub ? `<text class="t2" x="${n.w / 2}" y="${n.h / 2 + 13}" text-anchor="middle">${esc(fit(String(n.sub).toUpperCase(), subMax))}</text>` : ''}
     </g>`;

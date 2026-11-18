@@ -69,6 +69,14 @@
     </defs>
     <g id="viewport"></g>
   </svg>
+  <!-- 구조 탭 아래 모서리: 왼쪽 = 상태 숫자 칸(누르면 그 상태의 첫 세션), 오른쪽 = 지금 떠 있는 에이전트 종류 범례(13-controls.js) -->
+  <div class="status-col" id="status-col" role="group" aria-label="Sessions by status">
+    <button type="button" data-st="waiting"><span class="dot-s waiting"></span><span class="sl">Needs approval</span><b id="n-waiting">0</b></button>
+    <button type="button" data-st="working"><span class="dot-s working"></span><span class="sl">Working</span><b id="n-working">0</b></button>
+    <button type="button" data-st="idle"><span class="dot-s idle"></span><span class="sl">Idle</span><b id="n-idle">0</b></button>
+    <button type="button" data-st="ended"><span class="dot-s ended"></span><span class="sl">Ended</span><b id="n-ended">0</b></button>
+  </div>
+  <div class="kinds" id="kinds" aria-label="Agent kinds"></div>
   <div class="empty" id="empty" hidden><div class="empty-line"><span>No sessions running</span><button type="button" class="primary" data-new-session>+ <span>New session</span></button></div></div>
   <div class="center-tabs" role="tablist" aria-label="Center view">
     <button type="button" class="tab" data-view="org" role="tab" aria-selected="false">Structure</button>
@@ -301,6 +309,7 @@
 <script src="/js/00-i18n.js"></script>
 <script src="/js/00-md.js"></script>
 <script src="/js/01-core.js"></script>
+<script src="/js/02-kinds.js"></script>
 <script src="/js/03-graph.js"></script>
 <script src="/js/04-list.js"></script>
 <script src="/js/05-approval.js"></script>

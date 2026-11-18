@@ -49,6 +49,7 @@ async function walk(dir, depth, out) {
 export default {
   id: 'codex',
   label: 'Codex',
+  mark: 'X',
 
   matchProcess(exeBase, command) {
     return exeBase === 'codex' || /\/bin\/codex(\s|$)/.test(command);

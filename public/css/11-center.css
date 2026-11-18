@@ -62,3 +62,19 @@ body.cv-ctx #graph, body.cv-ctx .zoom-btns { visibility: hidden; }
 #graph .node.on rect { stroke: var(--accent); }
 .node.bump rect { animation: bump 1.2s ease-out; }
 @keyframes bump { 0% { filter: drop-shadow(0 0 0 var(--accent)); } 30% { filter: drop-shadow(0 0 8px var(--deco-line)); } 100% { filter: none; } }
+
+/* 구조 탭 아래 모서리: 상태 숫자 칸(왼쪽) · 에이전트 종류 범례(오른쪽, 패널 왼쪽까지). 「대화 창」 탭 · 휴대폰 폭에선 숨김(12-narrow.css) */
+.status-col, .kinds { position: absolute; bottom: var(--sp-4); z-index: var(--z-float); display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-2); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+.status-col { left: var(--sp-4); }
+.kinds { right: calc(var(--dw) + var(--sp-4)); font-size: 13px; color: var(--dim); }
+.kinds:empty { display: none; }
+.kind { display: inline-flex; align-items: center; gap: var(--sp-2); height: 28px; padding: 0 var(--sp-2); }
+.status-col button { display: flex; align-items: center; gap: var(--sp-2); height: 32px; padding: 0 var(--sp-3); background: transparent; border-color: transparent; color: var(--dim); font-size: 13px; text-align: left; }
+.status-col button:hover:not(:disabled) { background: var(--surface-2); color: var(--text); border-color: transparent; }
+.status-col .sl { flex: 1; }
+.status-col b { min-width: 2ch; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+body.cv-ctx .status-col, body.cv-ctx .kinds { display: none; }
+/* 종류 표식: 머리글자 + --kind-<id> 색(02-kinds.js 가 --k 로 넣음) */
+.kmark { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border-radius: 50%; font: 700 11px/1 var(--sans); vertical-align: 1px; color: var(--k); background: color-mix(in srgb, var(--k) 18%, transparent); flex: none; }
+.km circle { fill: color-mix(in srgb, var(--k) 18%, var(--surface-2)); stroke: none; }
+.km text { fill: var(--k); font: 700 9px var(--sans); }

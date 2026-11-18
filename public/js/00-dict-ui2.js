@@ -53,6 +53,7 @@ const KO_UI2 = {
   "Open in {app}": "{app}로 열기",
   "Unfold list": "목록 펼치기",
   "View only": "보기만",
+  "No sessions in this state": "이 상태의 세션이 없어요",
   "Allows a risky request": "위험한 요청을 허락해요",
   "Handled when the current task finishes": "끝나면 이어서 처리해요",
   "Started outside tmux — chat · approve are off": "tmux 밖에서 띄워 채팅 · 승인은 안 돼요",

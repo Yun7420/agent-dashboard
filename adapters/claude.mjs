@@ -170,6 +170,7 @@ const historyReader = createIncremental({
 export default {
   id: 'claude',
   label: 'Claude Code',
+  mark: 'C', // 화면 범례 · 노드 · 카드의 종류 표식(머리글자 — 색만으로 가르지 않게)
 
   matchProcess(exeBase, command = "") {
     // `claude agents`, `claude --version` 같은 잠깐 실행되는 명령은 세션이 아니라서 뺀다

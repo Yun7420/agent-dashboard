@@ -1,6 +1,6 @@
 // 왼쪽 세션 목록
-// 꼬리표는 기본값이 아닐 때만: Claude Code 는 표시하지 않고 Codex 만, tmux 는 기본이라 tmux 밖(보기만 되는) 세션에만 「보기만」
-const tags = (s) => (s.tool !== 'claude' ? `<span class="badge tool ${esc(s.tool)}">${esc(s.toolLabel)}</span>` : '') + (s.tmux ? '' : `<span class="badge badge-view" title="${t('Started outside tmux — chat · approve are off')}">${t('View only')}</span>`);
+// 꼬리표는 기본값이 아닐 때만: tmux 밖(보기만 되는) 세션에만 「보기만」. 에이전트 종류는 이름 앞 표식(02-kinds.js 의 kmark)
+const tags = (s) => (s.tmux ? '' : `<span class="badge badge-view" title="${t('Started outside tmux — chat · approve are off')}">${t('View only')}</span>`);
 function renderList() {
   const list = $('#list');
   if (dragKey) return; // 끌고 있는 동안은 다시 그리지 않는다
@@ -23,7 +23,7 @@ function renderList() {
       // 카드는 Tab 으로 닿고 Enter · Space 로 연다(아래 keydown). 안의 닫기(✕) 단추는 따로 Tab 으로 닿는다
       html += `<div class="card ${esc(s.status)} ${selected === s.key ? 'sel' : ''} ${kbKey === s.key ? 'kb' : ''}" data-key="${esc(s.key)}" title="${esc(s.title)} · ${STATUS_KO[s.status]}" tabindex="0" role="button" aria-label="${esc(s.title)} · ${STATUS_KO[s.status]}${selected === s.key ? ` · ${t('open')}` : ''}" ${manual && s.status !== 'ended' ? 'draggable="true"' : ''}>
         <span class="ini"><span class="dot-s ${esc(s.status)} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${esc(initials(s.title))}</span>
-        <div class="row"><div class="title">${esc(s.title)}</div><span class="status ${esc(s.status)}"><span class="dot-s ${esc(s.status)} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${STATUS_KO[s.status]}</span></div>
+        <div class="row"><div class="title">${kmark(s.tool)}${esc(s.title)}</div><span class="status ${esc(s.status)}"><span class="dot-s ${esc(s.status)} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${STATUS_KO[s.status]}</span></div>
         <button class="x" data-close="${esc(s.key)}" title="${s.status === 'ended' ? t('Hide from list') : t('End session')}" aria-label="${esc(s.title)} ${s.status === 'ended' ? t('Hide from list') : t('End session')}">✕</button>
         ${s.context && s.status !== 'ended' ? `<div class="ctx" title="${t('Context window')} ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)}${s.context.estimated ? ` (${t('window size estimated')})` : ''}"><div class="ctx-bar ${ctxLevel(s.context.percent)}" style="width:${s.context.percent}%"></div></div>` : ''}
         <div class="sub">${tags(s)}<span class="proj">${esc(s.project)}</span><span class="ago" data-key="${esc(s.key)}"></span>${s.subagents?.length ? `<span class="ago">· ${t('sub {n}', { n: s.subagents.length })}</span>` : ''}</div>

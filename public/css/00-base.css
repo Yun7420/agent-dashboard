@@ -42,6 +42,10 @@
   --on-status: #171a19;
   --claude: #d39072;
   --codex: #8db6e6;
+  /* 에이전트 종류 표식(범례 · 노드 · 카드) — 어댑터 id 마다 --kind-<id>. 새 어댑터는 여기 한 줄(없으면 --dim) */
+  --kind-claude: var(--claude);
+  --kind-codex: var(--codex);
+  --kind-gemini: #a99ad8;
   --radius: 12px;
   /* 간격은 이 여섯 단계만(4 · 8 · 12 · 16 · 24 · 32) — docs/CONVENTIONS.md 「화면 디자인 규칙」 */
   --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
@@ -97,6 +101,7 @@
   --on-status: #f8f9f5;
   --claude: #92482b;
   --codex: #2f5a8f;
+  --kind-gemini: #5b4a92;
 }
 * { box-sizing: border-box; }
 ::selection { background: var(--accent-soft); }
