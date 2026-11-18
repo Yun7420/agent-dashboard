@@ -48,7 +48,7 @@ async function runSearch() {
   $('#gs-meta').textContent = results.length ? `${t('{n} found', { n: results.length })}${results.length === 100 ? ` (${t('latest 100 only')})` : ''}` : t('Nothing found');
   gsList.innerHTML = results.map((r, i) => `
     <div role="option" id="gs-o-${i}" class="gs-item" aria-selected="false">
-      <span class="gs-head"><b>${esc(r.title)}</b><span class="${r.from ? 'gs-peer' : ''}">${r.where === 'reply' ? t('Reply') : r.from ? `↙ ${esc(r.from.name)}` : t('Request')}</span><time>${new Date(r.at).toLocaleString(LOCALE, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</time></span>
+      <span class="gs-head"><b>${esc(r.title)}</b>${r.where === 'reply' ? `<span>${t('Reply')}</span>` : askWho(r.from)}<time>${new Date(r.at).toLocaleString(LOCALE, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</time></span>
       <span class="gs-snip">${mark(r.snippet, q)}</span>
     </div>`).join('');
   gsActive(-1);

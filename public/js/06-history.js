@@ -26,7 +26,7 @@ async function loadHistory(key, more = false) {
 const compact = { key: null, at: null };
 function ctxTitle(c, at) {
   const hm = at ? new Date(at).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', hour12: false }) : t('none');
-  return `${fmtTok(c.used)} / ${fmtTok(c.window)} ${t('tokens')} · ${t('Last auto-compact')} ${hm}`;
+  return `${t('Context')} ${c.percent}% · ${fmtTok(c.used)} / ${fmtTok(c.window)} ${t('tokens')} · ${t('Last auto-compact')} ${hm}`; // 좁아 % 글자를 뺐을 때도 여기서 보이게
 }
 function renderCtxLine(s) {
   const c = s.context, row = $('#ctx-line');
@@ -40,6 +40,19 @@ function renderCtxLine(s) {
   $('#cl-fill').style.width = `${Math.min(100, c.percent)}%`;
   row.title = ctxTitle(c, at);
 }
+
+// 요청 말풍선 하나(지금 탭 · 기록 탭): 사람이 보냈든 다른 세션이 보냈든 같은 모양 · 같은 함수 — 위 이름표만 다르다(「나」 / 「↙ 세션 이름」).
+// 길면 4줄까지 + 「더 보기」(안쪽 스크롤 없음). 이름표(askWho)는 맨 위 검색 결과도 쓰므로 01-core.js
+const askLong = (text) => text.length > 240 || text.split('\n').length > 4;
+function askBubble(text, from) {
+  const long = askLong(text);
+  return `<div class="ask">${askWho(from)}<div class="ask-p md${long ? ' fold closed' : ''}">${md(text)}</div>${long ? `<button class="more ask-more" type="button">${t('More')} ▾</button>` : ''}</div>`;
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest?.('.ask-more');
+  if (!b) return;
+  b.textContent = b.previousElementSibling.classList.toggle('closed') ? `${t('More')} ▾` : `${t('Fold')} ▴`;
+});
 
 async function select(key) {
   selected = key;

@@ -2,7 +2,7 @@
 const KO_PAGE = {
   "boot.intro": "내 맥에 있는 Claude Code · Codex 세션 기록과 실행 중인 프로세스를 <b>읽기만</b> 해요.<br>모든 처리는 이 컴퓨터 안에서만 이뤄지고, 외부로 보내는 데이터는 없어요.",
   "help.local": "<b>내 컴퓨터 전용</b>이에요. 127.0.0.1 에서만 열리고, 프롬프트·코드 경로가 그대로 보이니 다른 사람과 주소를 공유하지 마세요.",
-  "help.tmux": "여기서 <b>채팅·승인·종료</b>는 <b>tmux 로 띄운 세션</b>만 돼요. 일반 터미널·에디터(Cursor 등)에서 띄운 세션은 보기만 돼요. <b>+ 에이전트</b> 단추로 실행하면 자동으로 tmux 안에서 열려요.",
+  "help.tmux": "여기서 <b>채팅·승인·종료</b>는 <b>tmux 로 띄운 세션</b>만 돼요. 일반 터미널·에디터(Cursor 등)에서 띄운 세션은 보기만 돼요. <b>+ 새 작업</b> 단추로 실행하면 자동으로 tmux 안에서 열려요.",
   "help.approve": "<b>승인 버튼</b>은 실제 권한을 허락하는 거예요. 패널에 보이는 터미널 화면(명령·파일)을 확인하고 누르세요.",
   "help.auto": "세션 기본 권한 모드가 <b>auto</b> 면 대부분 자동 허용돼서 승인 창이 거의 안 떠요.",
   "help.graph": "<b>구조 탭</b>: 끌어서 이동 · 휠이나 + − 단추로 확대 · 두 번 눌러 화면에 맞춤 · 노드를 누르면 프롬프트 기록. <span class=\"peer-t\">파란 화살표</span>는 세션 사이 메시지예요.",
@@ -31,7 +31,7 @@ const KO_PAGE = {
   "Getting started with Agent Dashboard": "Agent Dashboard 시작하기",
   "e.g. Frontend Manager": "예: Frontend Manager",
   "Sonnet — balanced · everyday coding": "Sonnet — 균형 · 일반 개발",
-  "Run agent (Claude Code · tmux)": "에이전트 실행 (Claude Code · tmux)",
+  "New task (Claude Code · tmux)": "새 작업 (Claude Code · tmux)",
   "Fit to screen (same as double-click)": "화면에 맞춤(더블클릭과 같아요)",
   "Change model (tmux sessions only)": "모델 바꾸기 (tmux 세션만)",
   "Search history ( / )": "기록 검색 ( / )",
@@ -76,8 +76,8 @@ const KO_PAGE = {
   "5h": "5시간",
   "Theme": "화면 색",
   "Light": "밝은 판",
-  "Run agent": "에이전트 실행",
-  "btn.agent": " 에이전트", // 머리 단추 글자만(로고의 「Agent」와 겹치지 않게 키로) — 뜻은 aria-label 「에이전트 실행」
+  "New task — run an agent": "새 작업 — 에이전트 실행",
+  "btn.agent": " 새 작업", // 머리 단추 글자만(로고의 「Agent」 번역과 겹치지 않게 키로) — 뜻은 aria-label 「새 작업 — 에이전트 실행」
   "Run": "실행",
   "More": "더 보기",
   "Reload": "새로고침",

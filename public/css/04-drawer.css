@@ -3,15 +3,16 @@
 #drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(620px, 92%); background: var(--surface); border-left: 1px solid var(--border); border-radius: 0; box-shadow: -12px 0 30px color-mix(in srgb, var(--shade) 25%, transparent); transform: translateX(calc(100% + 24px)); transition: transform .2s cubic-bezier(.2, .8, .2, 1); display: flex; flex-direction: column; overflow: hidden; }
 #drawer.open { transform: none; }
 #drawer .head { position: relative; padding: 0 12px 0 16px; /* 오른쪽은 아이콘 버튼 자체 여백 때문에 12 */ border-bottom: 1px solid var(--border); }
-#drawer .head-top { display: flex; align-items: center; gap: 6px; height: calc(var(--bar-h) - 3px); }
-#drawer .head-top h2 { margin: 0 2px 0 4px; font-size: 16px; font-weight: 700; letter-spacing: -.01em; min-width: 0; max-width: 34%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#drawer .head-top { display: flex; align-items: center; gap: 6px; height: calc(var(--bar-h) - 3px); container-type: inline-size; } /* 좁을 때 대화 창 표시를 줄이는 기준(12-narrow.css 의 @container) */
+#drawer .head-top h2 { margin: 0 2px 0 4px; font-size: 16px; font-weight: 700; letter-spacing: -.01em; min-width: 4em; max-width: 34%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #drawer .head-top .grow { flex: 1; }
-/* 대화 창 줄(renderCtxLine): 「대화 창 33%」 + 80px 막대 · 80% 눈금(자동 요약이 가까워지는 곳) */
-.ctx-line { display: flex; align-items: center; gap: 6px; height: 24px; margin-top: -4px; padding: 0 4px; color: var(--faint); font-size: 12px; cursor: help; }
+#drawer .head-top > :not(h2, .grow) { flex-shrink: 0; } /* 좁아지면 이름만 줄어든다(탭 · 대화 창 · 모델 · ⋯ 는 그대로) */
+/* 대화 창(renderCtxLine): 머리 첫 줄 모델 선택 바로 왼쪽에 「대화 창 33%」 + 64px 막대 · 80% 눈금(자동 요약이 가까워지는 곳) */
+.ctx-line { flex: none; display: flex; align-items: center; gap: 6px; margin-right: 4px; color: var(--faint); font-size: 12px; white-space: nowrap; cursor: help; }
 .ctx-line[hidden] { display: none; }
 .ctx-line b { color: var(--text); font-variant-numeric: tabular-nums; }
 .ctx-line b.mid { color: var(--working-text); } .ctx-line b.high { color: var(--waiting-text); }
-.cl-bar { position: relative; width: 80px; height: 4px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.cl-bar { position: relative; width: 64px; height: 4px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 8%, transparent); }
 .cl-bar::after { content: ''; position: absolute; left: 80%; top: -2px; width: 1px; height: 8px; background: var(--faint); }
 .cl-bar .ctx-bar { display: block; height: 100%; border-radius: 3px; }
 #drawer .tabs { margin: 0 0 0 6px; }
@@ -66,11 +67,15 @@
 .tab:hover:not(.on) { color: var(--text); background: transparent !important; }
 #now-view { flex: 1; min-height: 0; overflow: hidden; padding: 14px 16px 8px; display: flex; flex-direction: column; gap: 10px; }
 #now-view[hidden] { display: none; }
-.now-prompt { flex: none; align-self: flex-end; max-width: 88%; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); border-radius: 12px 12px 4px 12px; padding: 8px 12px; font-size: 13px; color: var(--accent-text); white-space: pre-wrap; word-break: break-word; max-height: 7.5em; overflow: auto; }
+.now-prompt { flex: none; max-height: 60%; overflow-y: auto; } /* 펼친 긴 요청이 답변 카드를 다 밀어내지 않게만 */
 .now-prompt:empty { display: none; }
-/* 다른 세션이 보낸 메시지로 시작한 턴: 사람 요청과 구별되게 점선 말풍선 + 「↙ 보낸 세션」 */
-.now-prompt.peer { background: transparent; border: 1px dashed color-mix(in srgb, var(--peer) 55%, transparent); color: var(--dim); }
-.now-prompt.peer::before { content: attr(data-from); display: block; margin-bottom: 2px; font-size: 11px; font-weight: 700; color: var(--peer); }
+/* 요청 말풍선(06-history.js 의 askBubble): 사람 · 다른 세션 모두 같은 모양 — 위 흐린 이름표(「나」 / 「↙ 세션」)만 다르다. 4줄 넘으면 접고 「더 보기」 */
+.ask { display: flex; flex-direction: column; align-items: flex-end; max-width: 88%; margin-left: auto; }
+.ask-who { margin: 0 4px 3px; font-size: 11px; color: var(--faint); }
+.ask-p { max-width: 100%; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); border-radius: 12px 12px 4px 12px; padding: 8px 12px; font-size: 13px; line-height: 1.6; color: var(--accent-text); white-space: pre-wrap; word-break: break-word; }
+.ask-p.fold.closed { max-height: calc(6.4em + 18px); -webkit-mask-image: linear-gradient(currentColor 65%, transparent); mask-image: linear-gradient(currentColor 65%, transparent); }
+.ask-p.fold.closed::after { display: none; }
+.ask .more { margin-top: 4px; }
 .now-card { flex: 1 1 0; min-height: 0; overflow-y: auto; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; }
 .now-card.working { border-color: color-mix(in srgb, var(--working) 45%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--working) 8%, transparent); }
 .now-card.waiting { border-color: color-mix(in srgb, var(--waiting) 50%, transparent); }
@@ -131,16 +136,10 @@
 .commit .m .sha { color: var(--accent); font-weight: 700; font-family: var(--mono); }
 .commit .m .tools { margin-left: auto; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 0 8px; }
 .commit .who { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--claude); margin: 12px 0 4px; }
-.commit .p { background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); border-radius: 12px 12px 12px 4px; padding: 9px 13px; white-space: pre-wrap; word-break: break-word; }
-.commit .p.peer { background: transparent; border: 1px dashed color-mix(in srgb, var(--peer) 55%, transparent); color: var(--dim); }
-.commit .who.peer { color: var(--peer); margin-top: 0; }
-.gs-head .gs-peer { color: var(--peer); }
 .commit .r { color: var(--reply-text); font-size: 13px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; padding: 0 2px; }
 .fold { position: relative; }
 .fold.closed { max-height: 9.4em; overflow: hidden; }
 .fold.closed::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2.6em; background: linear-gradient(transparent, var(--fade, var(--surface))); pointer-events: none; }
-.commit .p.fold { --fade: var(--surface-2); }
-.commit .p.peer.fold { --fade: var(--surface); }
 .more { display: inline-block; margin-top: 8px; background: transparent; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--accent); padding: 2px 12px; font-size: 11px; }
 .more:hover { border-color: var(--accent) !important; background: var(--accent-soft) !important; }
 .md b { color: var(--text); }

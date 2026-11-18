@@ -154,7 +154,7 @@ A session already running in a terminal has no official way to receive input fro
 [Dashboard] ────┘   (manages the input channel)
 ```
 
-- **New session** — use the **+ Agent** button in the dashboard (folder · name · model · first prompt); it opens inside tmux automatically.
+- **New session** — use the **+ New task** button in the dashboard (folder · name · model · first prompt); it opens inside tmux automatically.
 - **Move an existing session** — `/exit` in that session, then in a **regular shell**:
   ```bash
   cd <folder where the session started> && tmux new -s name claude --resume <session-id>
@@ -194,9 +194,9 @@ A session already running in a terminal has no official way to receive input fro
 - A **⋮⋮ handle** on the middle of the panel border: drag to resize, drag past the minimum to fold the panel, double-click for the default width, or focus it and use ← → to resize · Enter to fold. The width is remembered; click a session to reopen (narrow screens: ⋯ → Close panel)
 - **Now** tab: last request + **current answer** + **file diffs** + **commands** (✓/✕, output, "show all" for long ones)
 - While working, **■ Stop** on the answer card stops the current task only (sends Esc); the session and conversation stay
-- **History** tab: past prompts and answers, search, "load more". Turns started by a message from another session (SendMessage) are split out and shown as a **dashed bubble labelled "↙ sender"** (same in the Now tab and global search)
+- **History** tab: past prompts and answers, search, "load more". Every request uses the same bubble with a faint label above it — "You" for yours, "↙ sender" for a message from another session (SendMessage); the Now tab and global search match. Long requests show 4 lines and "More"
 - **What I did today**: ⋯ at the top right → Today's work → per session: prompts, edited files, command count, **commit titles** and **tokens** (total · excluding cache; hover for input · output · cache read · cache write · subagents, plus a daily total) (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts). Each response is counted once, and tokens are never converted to money (pricing differs by plan)
-- **Context line** (right under the header): "Context N%" (amber at 60%, red at 85%) + a small bar with an 80% tick. Hover it for tokens (331K / 1M) and the last auto-compact time. Hidden when there is no data (e.g. Codex)
+- **Context** (header row, left of the model picker): "Context N%" (amber at 60%, red at 85%) + a small bar with an 80% tick. Hover it for %, tokens (331K / 1M) and the last auto-compact time. When the panel is narrow it drops the word, then shortens the bar, then truncates the name — the bar always stays. Hidden when there is no data (e.g. Codex)
 - **Search all history**: type straight into the **search bar** at the top center (or press `/`; 🔍 on narrow screens) and matches from prompts and answers across all sessions drop down below it → pick one with `↑`/`↓` and `Enter` (or click) to open that session's History tab with the same query. `Esc` once closes the list, twice clears the bar
 - **Keyboard shortcuts** (also under ⋯ → Help)
 
@@ -223,7 +223,7 @@ A session already running in a terminal has no official way to receive input fro
 <details open>
 <summary><b>Header — approval · limits · ⋯ menu</b></summary>
 
-- "Needs approval N" (hidden at 0, click to open the first waiting session) · search bar · + Agent (run agent) · ⋯
+- "Needs approval N" (hidden at 0, click to open the first waiting session) · search bar · + New task (run an agent) · ⋯
 - Account usage limits sit inside the **Claude Code** item of the kinds legend at the bottom right of the structure view as "· 5h % · Weekly %" (hover for reset times and the trend). On narrow screens (860 or less) they move to one line at the top of the center
 - The connection shows only when it drops
 - **Esc**: close popups → press again to collapse the panel
@@ -232,7 +232,7 @@ A session already running in a terminal has no official way to receive input fro
 
 ## Model · usage
 
-- **Model** — choose in + Agent (the run-agent window); change a running tmux session's model from the panel header (sends `/model`). Claude's `/model` also saves your default model, so when you change it from the dashboard **only that session** changes and your default is restored automatically.
+- **Model** — choose in + New task (the New task window); change a running tmux session's model from the panel header (sends `/model`). Claude's `/model` also saves your default model, so when you change it from the dashboard **only that session** changes and your default is restored automatically.
 - **Account usage limits (5-hour · weekly)** — turn on with **Show usage limits** in the Claude Code item of the legend. Claude Code only passes this to the status line, so turning it on registers a status line (`bin/statusline.mjs`) in `~/.claude/settings.json`.
   - Every Claude session gets one line at the bottom: `model · context % · 5-hour limit %` (if you already had a status line, it keeps showing yours).
   - Your previous settings are backed up to `~/.agent-dashboard/` and **restored exactly** when you turn it off. While on, context usage becomes exact instead of estimated.

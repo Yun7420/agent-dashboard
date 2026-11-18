@@ -74,9 +74,9 @@ test('결과 줄: 세션 이름 · 요청/답변 · 강조 · 시각, option 역
   calls[0].reply([hit('a', '대시보드', 'reply'), hit('b', '<b>x</b>', 'prompt')]); await flush();
   const html = els['#gs-list'].innerHTML;
   assert.equal((html.match(/role="option"/g) ?? []).length, 2);
-  assert.match(html, /id="gs-o-0"[\s\S]*<b>대시보드<\/b><span class="">답변<\/span><time>/);
+  assert.match(html, /id="gs-o-0"[\s\S]*<b>대시보드<\/b><span>답변<\/span><time>/);
   assert.match(html, /<mark>필터<\/mark>/);
-  assert.match(html, /&lt;b&gt;x&lt;\/b&gt;[\s\S]*요청/);
+  assert.match(html, /&lt;b&gt;x&lt;\/b&gt;<\/b><span class="ask-who">나<\/span>/);
   assert.equal(els['#gs-meta'].textContent, '2개');
   type('없는말'); tick(200);
   calls[1].reply([]); await flush();

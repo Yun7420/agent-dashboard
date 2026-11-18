@@ -31,7 +31,7 @@
     <div class="gs-field"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="gs-q" type="search" role="combobox" aria-label="Search history" aria-autocomplete="list" aria-expanded="false" aria-controls="gs-list" aria-keyshortcuts="/" placeholder="Search history…" maxlength="200" autocomplete="off" spellcheck="false"><kbd>/</kbd></div>
     <div class="gs-drop" id="gs-drop" hidden><div id="gs-meta" role="status"></div><div id="gs-list" role="listbox" aria-label="Search history"></div></div>
   </div>
-  <button id="new-session" class="primary" title="Run agent" aria-label="Run agent">+<span data-th="btn.agent"> Agent</span></button>
+  <button id="new-session" class="primary" title="New task — run an agent" aria-label="New task — run an agent">+<span data-th="btn.agent"> New task</span></button>
   <span class="info-wrap">
     <button type="button" id="app-more" class="ghost icon-btn" title="More" aria-label="More" aria-haspopup="menu" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
     <div class="menu-pop" id="app-menu" role="menu">
@@ -81,7 +81,7 @@
     <div class="lp-foot"><span class="lp-key"><i class="k5"></i>5h <i class="k7"></i>Weekly <i class="kr"></i>Reset</span><button type="button" class="ghost" id="limits-setup">Setup…</button></div>
   </div>
   <div class="usage-line" id="usage-line" data-lp hidden></div>
-  <div class="empty" id="empty" hidden><div class="empty-line"><span>No sessions running</span><button type="button" class="primary" data-new-session aria-label="Run agent" title="Run agent">+ Agent</button></div></div>
+  <div class="empty" id="empty" hidden><div class="empty-line"><span>No sessions running</span><button type="button" class="primary" data-new-session aria-label="New task — run an agent" title="New task — run an agent">+ New task</button></div></div>
   <div class="zoom-btns" role="group" aria-label="Org chart zoom">
     <button type="button" class="ghost icon-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
     <button type="button" class="ghost icon-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
@@ -97,6 +97,8 @@
           <button type="button" class="tab" data-tab="log" id="tab-log" role="tab" aria-selected="false" aria-controls="log-view" tabindex="-1">Log</button>
         </div>
         <span class="grow"></span>
+        <!-- 대화 창: 지금 % + 작은 막대(06-history.js 의 renderCtxLine) — 마우스를 올리면 토큰 · 마지막 자동 요약. 좁으면 글자 → 막대 순으로 뺀다(12-narrow.css) -->
+        <span class="ctx-line" id="ctx-line" hidden><span id="cl-label"></span><b id="cl-pct"></b><span class="cl-bar"><span id="cl-fill"></span></span></span>
         <select id="d-model" title="Change model (tmux sessions only)">
           <option value="" disabled>Model</option>
           <option value="opus">Opus</option>
@@ -113,8 +115,6 @@
           <div class="info-pop" id="d-meta"></div>
         </span>
       </div>
-      <!-- 대화 창 줄: 지금 % + 작은 막대(06-history.js 의 renderCtxLine) — 마우스를 올리면 토큰 · 마지막 자동 요약 -->
-      <div class="ctx-line" id="ctx-line" hidden><span id="cl-label"></span><b id="cl-pct"></b><span class="cl-bar"><span id="cl-fill"></span></span></div>
     </div>
     <div id="now-view" role="tabpanel" aria-labelledby="tab-now">
       <div class="now-prompt" id="now-prompt"></div>
@@ -171,7 +171,7 @@
 </dialog>
 <dialog id="spawn-dlg">
   <form method="dialog" id="spawn-form">
-    <h3>Run agent (Claude Code · tmux)</h3>
+    <h3>New task (Claude Code · tmux)</h3>
     <label>Working folder</label>
     <input id="sp-cwd" list="cwd-list" placeholder="~/Documents/..." required />
     <datalist id="cwd-list"></datalist>
@@ -242,7 +242,7 @@
       <h4>Good to know</h4>
       <ul>
         <li data-th="help.local"><b>This computer only.</b> It opens on 127.0.0.1 alone, and prompts and code paths are shown as they are, so don't share the address with anyone.</li>
-        <li data-th="help.tmux"><b>Chat · approve · end</b> work only for <b>sessions started in tmux</b>. Sessions from a plain terminal or editor (Cursor etc.) are view-only. The <b>+ Agent</b> button runs one inside tmux for you.</li>
+        <li data-th="help.tmux"><b>Chat · approve · end</b> work only for <b>sessions started in tmux</b>. Sessions from a plain terminal or editor (Cursor etc.) are view-only. The <b>+ New task</b> button runs one inside tmux for you.</li>
         <li data-th="help.approve"><b>Approve buttons</b> grant real permissions. Check the terminal screen (command · file) in the panel before you press.</li>
         <li data-th="help.auto">If a session's default permission mode is <b>auto</b>, most actions are allowed automatically and approval prompts rarely appear.</li>
         <li data-th="help.graph"><b>Structure tab</b>: drag to move · wheel or the + − buttons to zoom · double-click to fit · click a node for its prompts. A <span class="peer-t">blue arrow</span> means messages between sessions.</li>

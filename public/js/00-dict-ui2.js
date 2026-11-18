@@ -38,7 +38,7 @@ const KO_UI2 = {
   "End command sent": "종료 명령을 보냈어요",
   "Agent started. It shows up in the list in a few seconds": "에이전트를 실행했어요. 몇 초 뒤 목록에 나타나요",
   "Could not deliver the first message, so it is back in the input — check and send it": "첫 메시지를 넣지 못해 입력 칸에 돌려놨어요 — 확인하고 보내 주세요",
-  "The session closed before the first message was sent — the text is back in Run agent": "세션이 닫혀 첫 메시지를 보내지 못했어요 — 쓴 글은 「에이전트 실행」 창에 돌려놨어요",
+  "The session closed before the first message was sent — the text is back in New task": "세션이 닫혀 첫 메시지를 보내지 못했어요 — 쓴 글은 「새 작업」 창에 돌려놨어요",
   "More": "더 보기",
   "Could not read the log": "기록을 읽지 못했어요",
   "Show {n} earlier ({left} left)": "이전 기록 {n}개 더 보기 ({left}개 남음)",
@@ -80,7 +80,7 @@ const KO_UI2 = {
   "latest 100 only": "최신 100개까지",
   "Nothing found": "찾은 기록이 없어요",
   "Reply": "답변",
-  "Request": "요청",
+  "You": "나",
   "input": "입력",
   "output": "출력",
   "cache read": "캐시 읽기",
@@ -102,7 +102,7 @@ const KO_UI2 = {
   "Copied as Markdown": "마크다운으로 복사했어요",
   "Could not copy": "복사하지 못했어요",
   "This request is marked risky — press {k} again within 2 seconds to send": "위험 표시가 있는 요청이에요 — 2초 안에 {k} 키를 한 번 더 누르면 보내요",
-  "+ Agent": "+ 에이전트", // 빈 화면 단추(01-core.js · index.html) — 로고의 「Agent」와 겹치지 않게 「+」까지 한 덩어리
+  "+ New task": "+ 새 작업", // 빈 화면 단추(01-core.js · index.html) — 로고의 「Agent」와 겹치지 않게 「+」까지 한 덩어리
   // 가운데 바탕 그래프(07-center.js)
   "none": "없음",
   "Last auto-compact": "마지막 자동 요약",

@@ -94,7 +94,7 @@ function restoreFirstPrompts(list, sessions) {
       toast(`[${name}] ${t('Could not deliver the first message, so it is back in the input — check and send it')}`, 10000);
     } else {
       $('#sp-prompt').value = f.text;
-      toast(`[${name}] ${t('The session closed before the first message was sent — the text is back in Run agent')}`, 10000);
+      toast(`[${name}] ${t('The session closed before the first message was sent — the text is back in New task')}`, 10000);
     }
     api('/api/cmd/first-prompt-ack', { key: f.key }).catch(() => fpSeen.delete(f.key));
   }
@@ -107,7 +107,7 @@ function foldable(cls, text) {
   return `<div class="${cls} md fold closed">${md(text)}</div><button class="more" type="button">${t('More')} ▾</button>`;
 }
 $('#log-list').addEventListener('click', (e) => {
-  const b = e.target.closest('.more:not(#hist-more)'); // "이전 기록 더 보기"도 같은 모양(.more)이라 빼고
+  const b = e.target.closest('.more:not(#hist-more):not(.ask-more)'); // "이전 기록 더 보기" · 요청 말풍선(06 askBubble 이 따로 펼침)도 같은 모양(.more)이라 빼고
   if (!b) return;
   const box = b.previousElementSibling;
   const open = box.classList.toggle('closed');
@@ -124,7 +124,7 @@ function renderHistory() {
   $('#log-list').innerHTML = hist.items.map((h) => `
     <div class="commit">
       <div class="m"><span class="sha">#${h.n}</span><span>${new Date(h.at).toLocaleString(LOCALE)}</span><span class="tools">${t('tools {n}×', { n: h.tools })}</span></div>
-      ${h.from ? `<div class="who peer">↙ ${esc(h.from.name)}</div>${foldable('p peer', h.prompt)}` : foldable('p', h.prompt)}
+      ${askBubble(h.prompt, h.from)}
       ${h.reply ? `<div class="who">CLAUDE</div>${foldable('r', h.reply)}` : ''}
     </div>`).join('') + more || emptyLine(hist.q ? t('No matching prompts') : t('No prompts yet'));
 }
