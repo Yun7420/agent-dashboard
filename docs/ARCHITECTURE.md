@@ -100,12 +100,12 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `lib/history-api.mjs` | 세션 열쇠로 어댑터 · 기록 파일을 찾아 기록 탭(`promptHistory`) · 마지막 자동 요약 시각(`lastCompact` — 패널 머리 대화 창 말풍선) · 전체 기록 검색(`searchHistory` — 한 번에 하나, 새 검색이 오면 하던 것은 멈춤(409) · 검색어 200자 상한, 점검 G1) · 오늘 한 일(`daySummary`). 크기가 같으면 다시 읽지 않는 캐시. 경로 처리 함수 `getHistory` · `getTrend` · `getDay` · `getSearch` |
+| `lib/history-api.mjs` | 세션 열쇠로 어댑터 · 기록 파일을 찾아 기록 탭(`promptHistory`) · 마지막 자동 요약 시각(`lastCompact` — 패널 머리 대화 창 말풍선) · 전체 기록 검색(`searchHistory` — 한 번에 하나, 새 검색이 오면 하던 것은 멈춤(409) · 검색어 200자 상한, 점검 G1) · 오늘 한 일(`daySummary`). 크기가 같으면 다시 읽지 않는 캐시. 경로 처리 함수 `getHistory` · `getDay` · `getSearch` |
 | `lib/usage-bridge.mjs` | 상태줄 다리 켜기 · 끄기 · 켜질 때 맞추기(`enableUsage` · `sync`) · 상태줄 파일 읽기(`readStatusFiles` · `usageState`) · `/model` 뒤 기본 모델 되돌리기(`restoreDefaultModel`) |
 | `lib/dialog.mjs` | 화면 맨 아래를 보고 선택창인지(`hasDialog` · `detectDialog`), 선택지와 커서 위치(`parseOptions`), 승인 단추로 쓸 커서 묶음(`dialogOptions` · `cursorRun` — 화면 `05-approval.js:approvalChoices` 와 같은 규칙). 입력칸(가로줄 + `> `)보다 위는 답변이라 보지 않고, 줄마다 앞 500자만 본다 |
 | `lib/approval.mjs` | 승인 창 맨 위 「허락할 내용」 카드: 종류 · 내용 · 위험 이유(`summarizeTool` · `fileRisks`). 위험은 자르기 전 전체 명령으로 판정한 값(기록 · 화면에서 읽을 때 붙임)을 쓴다 |
 | `lib/command-risk.mjs` | 명령 위험 판정(`commandRisks`): 낱말 단위 — 이름 정리(`/bin/rm` · `\rm` · `"rm"`), 앞에 붙는 명령(sudo · env · xargs …) 건너뛰기, `sh -c` · `eval` 안까지, 다른 삭제(find -delete) · git(push --force · clean -f · checkout .) · 디스크 · 내려받아 실행 · 보이지 않는 글자. 글 길이에 비례, 20만 자 넘으면 앞부분만 |
-| `lib/usage.mjs` | 토큰 수 세기(`usageOf` · `addUsage`) · 대화 창 추이 줄이기(`thinTrend`) |
+| `lib/usage.mjs` | 토큰 수 세기(`usageOf` · `addUsage`) |
 | `lib/status.mjs` | 상태줄 다리가 세션마다 남기는 파일 정리(`pruneStatusFiles`) |
 
 ### lib — 명령 (채팅 · 승인 · 새 세션 …)
@@ -185,7 +185,8 @@
 | `00-dict-page.js` · `00-dict-ui.js` · `00-dict-ui2.js` | 한국어 사전(영어 원문 → 한국어): index.html 고정 글자 · 화면 js 글자 |
 | `00-i18n.js` | 화면 언어(`LANG`: agent-deck 의 lang → 브라우저 언어 ko 면 한국어, 그 밖 영어) · `t('원문', {값})` · index.html 글자 바꿔 끼우기 · `<html lang>` |
 | `00-md.js` | 답변 마크다운 일부만 그리기(`md`) · 글자 안전하게 바꾸기(`esc`) |
-| `01-core.js` | 공통: 서버 요청 한 길(`apiFetch` · `api` · `apiJson`, 요청 머리글 `REQ_HEADER`, 403 이면 `loginNeeded` — 연동 카드 또는 위쪽 고정 안내, SSE 오류 판단 `sseOnError` · `probeVerdict`) · 바뀐 곳만 그리기(`setHtml`) · 토스트(`toast`) · 설정 저장(`savePref`) · 오래된 설정 정리(`prunePrefs`) · 대화상자(`openModal`) · 빈 상태 줄(`emptyLine` · `newSessionBtn`) · 목록 순서 · 보이는 세션(`ordered` · `visible`) · 여러 파일이 같이 쓰는 화면 상태(`view` · `drawerTab` · `openFiles` · `sentAt` · `canSend` · `envData` …) · 도우미(`fmtTok` · `ctxLevel` · `modelName` · `initials`) |
+| `00-prefs.js` | 브라우저 저장값(agent-deck): 읽을 때 키마다 모양 검사(`cleanPrefs` · `PREF_SHAPE` — 객체가 아니면 통째로 기본값, 틀린 키만 지우고 고쳤으면 바로 저장) · `pref` · 저장(`savePref`) |
+| `01-core.js` | 공통: 서버 요청 한 길(`apiFetch` · `api` · `apiJson`, 요청 머리글 `REQ_HEADER`, 403 이면 `loginNeeded` — 연동 카드 또는 위쪽 고정 안내, SSE 오류 판단 `sseOnError` · `probeVerdict`) · 바뀐 곳만 그리기(`setHtml`) · 토스트(`toast`) · 오래된 설정 정리(`prunePrefs`) · 대화상자(`openModal`) · 빈 상태 줄(`emptyLine` · `newSessionBtn`) · 목록 순서 · 보이는 세션(`ordered` · `visible`) · 여러 파일이 같이 쓰는 화면 상태(`view` · `drawerTab` · `openFiles` · `sentAt` · `canSend` · `envData` …) · 도우미(`fmtTok` · `ctxLevel` · `modelName` · `initials`) |
 | `02-kinds.js` | 에이전트 종류 표식(머리글자 + `--kind-<id>` 색 — `kmark` · `kmarkSvg`) · 지금 떠 있는 종류만(`runningKinds`, 범례가 씀) |
 | `02-water.js` | 조직도 세션 노드 물 채우기(`waterSvg`: 대화 창 % 만큼 차오름 · 60 · 85% 색 · 80% 눈금, 값이 바뀔 때만 0.5초) · 물낯 선을 이름 · 상태 글자 자리에서 끊기(`textHoles`) |
 | `03-graph.js` | 가운데 조직도(`buildTree` · `layout` · `renderGraph`) · 세션 사이 화살표(`drawLinks`) · 맞춤 · 이동 · 확대(`autoFit` · `applyView` · 보이는 칸 `visibleBox` · 목록 판 폭 `asideW`) |
@@ -194,7 +195,7 @@
 | `06-history.js` | 오른쪽 패널: 세션 고르기(`select`) · 기록 읽기(`loadHistory`) · ⓘ 세션 정보의 대화 창 한 줄(`ctxText` — 패널 머리 대화 창 줄은 없앰) · 요청 말풍선(`askBubble`) · 코드 복사(`copyCode`) · 입력 칸 안내(`renderComposer`) |
 | `07-center.js` | 가운데 칸(조직도 = 머리 아래 전체 바탕, 목록 · 패널은 뜬 판): 패널 폭 `--dw`(`dwSync`) · 가려진 고른 노드만 보이는 칸으로(`revealSel` · `glideTo`) · + − ⌖(`zoomBy` · `recenter`) · 마우스 올린 노드 강조 · 바탕 스포트라이트(`.spot`, `spotOff`) · 상태가 바뀐 노드 빛남 · 메시지 점(`msgDots` · `msgDot`) · 노드 등장 · 퇴장(`nodeMoves`) |
 | `08-now.js` | 지금 탭(`renderNow`) · 탭 바꾸기(`setTab`) · 바꾼 파일 diff · 실행한 명령(`renderChanges`) · 진행 표시(`renderBusy`) |
-| `09-attach.js` | 입력 칸: 세션별 임시 글 · 첨부(`useDraft` · `pruneDrafts`) · 첨부 · 보내기(`addFiles` · `sendMsg`) · 🎤 음성 입력 |
+| `09-attach.js` | 입력 칸: 세션별 임시 글 · 첨부(`useDraft` · `pruneDrafts`) · 첨부 · 보내기(`addFiles` · `sendMsg`) |
 | `10-env.js` | 환경 점검 화면(`renderEnv`) · 없는 도구면 단추 끄기(`applyTools`) |
 | `11-usage.js` | 계정 사용 한도: 범례 Claude Code 항목 안 「5시간 68% 남음 · 주간 79% 남음」(`usageHtml`, 짧은 꼴 같이) · 남은 양 팝업(`limitsHtml` · `showLimits`) · 사용 한도 보기 스위치(`setUsage` · `toggleUsage`) |
 | `12-panel.js` | 패널 머리 ⋯ 메뉴 · 폭(`applyDrawerWidth`) · 패널 닫기(`closeDrawer`) · 기록 탭(`renderHistory`) · 폴더 열기 메뉴(`openDirMenu`) |

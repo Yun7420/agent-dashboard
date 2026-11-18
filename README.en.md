@@ -16,7 +16,6 @@ Claude Code · Codex · zero dependencies · everything stays on your machine
 >
 > ⚠️ **This is a personal, experimental tool.** It types into your AI sessions, so please read [Security](#security) first and use it at your own judgment. Features and structure may change without notice.
 >
-> 🌐 **The UI is currently in Korean.** The screenshots below show what each part does.
 
 **Roadmap** — ✅ Stage 1: vanilla JS, built fast and used for real · 🔄 Stage 2: split files (done) · clean up (in progress), still zero dependencies · ⏳ Stage 3: move to React
 
@@ -181,7 +180,7 @@ A session already running in a terminal has no official way to receive input fro
 <details open>
 <summary><b>Center — structure</b></summary>
 
-- One **org chart**, with status counts bottom left and agent kinds (usage limits) bottom right
+- One **org chart** with three groups floating over it: status chips at top left · legend with usage limits at bottom left · + − ⌖ at bottom right
 - The org chart fills the whole screen below the header, and the session list and right panel float over it. Opening, closing, resizing or folding a panel **keeps the chart's zoom and position**; only when the chosen session's node ends up behind a panel does the chart slide just enough to show it, at the same zoom.
 - Org chart controls: drag to pan · **wheel (two-finger scroll), trackpad pinch or the + − buttons at bottom right (keys `+` · `-`) to zoom** (the wheel stops at 0.75×) · **⌖ Recenter (key `0`)** = put the chosen session in the middle of the visible area at 1×, or fit everything when nothing is chosen · double-click to fit · **click empty space = close the right panel**. Fitting uses the visible area between the panels and never shrinks node text below 12px (if it overflows, the chosen session stays in view and you drag for the rest)
 - Session nodes **fill up from the bottom with the context window used** (colour changes at 60% and 85%, the short line on the right = 80%). Hover for "Context 33% · 331K / 1M tokens"
@@ -209,14 +208,16 @@ A session already running in a terminal has no official way to receive input fro
   | `j` / `k` | Next / previous session (within the open list tab, in list order, stops at the ends). If the panel is open, it switches to that session |
   | `g` · `Enter` | Open the chosen session's panel |
   | `/` | Search all history |
+  | `+` · `=` · `-` | Zoom the org chart in · out |
+  | `0` | Recenter the org chart (⌖ — the chosen session in the middle, or fit everything) |
   | `1`–`9` | Pick that numbered option in an approval prompt. **For requests flagged as risky, press the same number again within 2 seconds** |
   | `Esc` | With an approval prompt shown, press twice within 2 seconds to reject (the first press only says "press again to reject"), otherwise close popups / the panel |
   | `Enter` · `Shift+Enter` | In the message box: send · new line |
   | `←` `→` · `Enter` | With the panel handle focused: resize · fold |
 
   Shortcuts are off while typing, during Korean IME composition, with Ctrl/⌘/Alt, on key repeat, and while a dialog (search etc.) is open.
-- Answers render **bold** · `code` · headings · **tables** (`| head |` + `|---|`) · **lists** (`-` · `1.`, one nesting level) · **quotes** (`>`) · **code blocks** (```). Wide tables and long code scroll horizontally inside the block The **copy button** at the top right of a code block copies just the code, without the ``` or language name (on wide screens it shows on hover or focus; on touch or narrow screens it is always visible).
-- Input: **Enter** to send · Shift+Enter for a new line · 📎 attach (drag & drop or ⌘V, up to 25MB)
+- Answers render **bold** · `code` · headings · **tables** (`| head |` + `|---|`) · **lists** (`-` · `1.`, one nesting level) · **quotes** (`>`) · **code blocks** (fenced with three backticks). Wide tables and long code scroll horizontally inside the block. The **copy button** at the top right of a code block copies just the code, without the backticks or language name (on wide screens it shows on hover or focus; on touch or narrow screens it is always visible).
+- Input: **Enter** to send · Shift+Enter for a new line · 📎 attach (drag & drop or ⌘V, up to 25MB). A one-line slash command (e.g. `/compact`) is sent as a command
 - Drafts and attachments are kept **per session** — switching sessions shows that session's own, so nothing goes to the wrong session. Text survives a reload (stored only in your browser); attachments need to be added again after a reload. They're cleared when the session ends
 - Needs approval: a **"what you're allowing" card** on top (run command · edit/write file · web · MCP · question — the full command, or the file path relative to the session folder, flagged if outside it), then the real terminal screen and option buttons. For `rm -rf` · `sudo` · `git push --force` · `git reset --hard` · `curl | sh` · `chmod 777` · files outside the folder · `.env`/key files the card turns **amber** with a one-line reason. **Check what you're allowing before you click.** The approval view fills the panel with the input pinned at the bottom, and keeps your scroll position while you read.
 - Multi-question prompts show **← Previous / Next →** and progress (✓ answered). You can go back to change an answer; you can't skip ahead before answering the current one.
@@ -228,7 +229,7 @@ A session already running in a terminal has no official way to receive input fro
 <summary><b>Header — approval · limits · ⋯ menu</b></summary>
 
 - "Needs approval N" (hidden at 0, click to open the first waiting session) · search bar · + New task (run an agent) · ⋯
-- Three groups float over the org chart, like a map app: **status chips at top left** ("● Needs approval 0 · ● Working 2 · ● Idle 6 · ● Ended 2"; click one to open the first session in that state; Needs approval is dimmed at 0 and highlighted from 1), **the kinds legend with usage limits at bottom left**, and **+ · − · ⌖ at bottom right** (they follow the right panel's edge). Narrow screens (860 or less, phones) use the same places.
+- Three groups float over the org chart, like a map app: **status chips at top left** ("● Needs approval 0 · ● Working 2 · ● Idle 6 · ● Ended 2"; click one to open the first session in that state — Ended first switches the list to the Ended tab; Needs approval is dimmed at 0 and highlighted from 1), **the kinds legend with usage limits at bottom left**, and **+ · − · ⌖ at bottom right** (they follow the right panel's edge). Narrow screens (860 or less, phones) use the same places.
 - Account usage limits sit inside the **Claude Code** item of the bottom-left legend as "· 5h 68% left · Weekly 79% left" (amber at 40% left or less, red at 15% or less). When the visible area between the list and the panel runs short, the legend shrinks first to "C 68% · 79%" (▾ — tap or hover for the full popup), and if that is still not enough the status chips keep only dots and numbers — nothing is hidden.
 - The connection shows only when it drops
 - **Esc**: close popups → press again to collapse the panel
@@ -265,11 +266,11 @@ A session already running in a terminal has no official way to receive input fro
 - Every response carries `X-Frame-Options: DENY`, `frame-ancestors 'none'` and `nosniff`, so another website can't load this page in a hidden iframe and trick you into clicking approve.
 - A Content Security Policy limits the damage if a bug (XSS) ever slips into the page: scripts only from this server (`script-src 'self'`, no inline scripts or onclick), connections only to this server (`connect-src 'self'`), no plugins or `<base>`, and `Referrer-Policy: no-referrer`.
 - Permission modes follow your own Claude settings. The dashboard never uses permission-skipping flags.
-- A new session's first prompt is never passed as a claude argument (arguments are visible to other accounts on this Mac via `ps`). Once the session's input box appears (usually about a second), it is pasted through a tmux buffer, so text starting with `-` (e.g. `--permission-mode …`) can't be read as an option either. If the folder-trust prompt is showing, the card says so and it waits (up to 10 minutes) for your answer. If it still can't be delivered, your text is put back into that session's input box and noted in the activity log.
+- A new session's first prompt is never passed as a claude argument (arguments are visible to other accounts on this Mac via `ps`). Once the session's input box appears (usually about a second), it is pasted through a tmux buffer, so text starting with `-` (e.g. `--permission-mode …`) can't be read as an option either. If the folder-trust prompt is showing, the card says so and it waits (up to 10 minutes) for your answer. If it still can't be delivered, your text is put back into that session's input box (or the first-prompt box of New task if the session already closed) and a notice tells you.
 
 ## How it works
 
-It doesn't touch hooks or global settings — it **only reads** (except for one status line, if you turn on usage limits).
+It doesn't touch hooks or global settings — it **only reads**. Two exceptions: one status line if you turn on usage limits, and after you switch a session's model in the panel, putting the `model` line that Claude Code rewrote in `settings.json` back as it was.
 
 | Reads | To learn |
 |---|---|
@@ -292,19 +293,23 @@ agent-dashboard/
 │  ├─ commands · spawn · open-dir · env · launch  commands (chat · approve · new session …) · new-session args · open folder · environment check · hints matching how you started it
 │  ├─ body · uploads · respond · validate         request bodies · attachments · response shapes · input checks
 │  ├─ token · auth · login-open · paths · perms    secret token · login link · cookie · open (server check) · paths (inside-folder checks) · file permissions
-│  ├─ usage-bridge · claude-settings · bridge · status · limits · usage   usage limits (status-line bridge · keeping the default model · limit history · token totals)
+│  ├─ usage-bridge · claude-settings · bridge · status · limits · usage   usage limits (status-line bridge · keeping the default model · clearing old limit history · token totals)
+│  ├─ i18n · i18n-en · lang-pref · atomic-write   server text in two languages (dictionary) · terminal · notification language · safe file writes
+│  ├─ command-risk · node-check                   risk check for approval cards · Node version check at start
 │  ├─ recent · restore · restore-cli · runner     restore · restore after reboot · runner
 │  ├─ history-core · history-api · git-commits    shared transcript reading (new lines only · grouping into turns — adapters only interpret lines) · history tab · search · today's work · commit titles
 │  ├─ notify · notify-api · housekeeping           notifications (what and when · settings · routes) · cleanup at start and every 6 hours
 │  ├─ paging · filecache · lru · serial · lock · util   paged history · caches · ordering
-│  └─ demo                                        demo data
+│  └─ demo · demo-en                              demo data (both languages)
 ├─ bin/                # agent-dashboard.mjs (start · run · restore · open) · statusline.mjs (status-line bridge source)
 ├─ public/             # UI (vanilla HTML/CSS/JS, no build)
 │  ├─ index.html       # structure (no token — login is a cookie)
 │  ├─ css/00-base.css ~ 12-narrow.css   # styles, one file per area, loaded in number order (narrow-screen @media in the last file)
-│  └─ js/00-dict-*.js ~ 20-keys.js # behavior — UI language (dictionary · t()) · one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
-└─ test/               # node --test, 58 files · _helpers (temp folders · starting servers · requests) · fake-bin (fake tmux · claude · ps · lsof · open · osascript)
+│  └─ js/00-dict-*.js ~ 20-keys.js # behavior — UI language (dictionary · t()) · saved settings (00-prefs) · one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
+└─ test/               # node --test · _helpers (temp folders · starting servers · requests) · fake-bin (fake tmux · claude · ps · lsof · open · osascript)
 ```
+
+What each file does, the path of one request and where the security checks sit are in the [code map (docs/ARCHITECTURE.md, Korean)](docs/ARCHITECTURE.md).
 
 ### Adding another agent
 
@@ -325,8 +330,8 @@ Shows the UI with fake data (Project1, Lead Manager, …). No commands are execu
 npm test
 ```
 
-Uses Node's built-in test runner (`node --test`), nothing to install. 338 tests (2026-11-17): transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
-- Test servers briefly use ports 4692 and 4694–4699. Instead of real sessions and tmux they use a temporary home folder and the fake commands in `test/fake-bin` (tmux · claude · ps · lsof · open · osascript), so your `~/.claude` and `~/.agent-dashboard` are never touched.
+Uses Node's built-in test runner (`node --test`), nothing to install. The tests cover transcript parsing · prompt detection · risk checks on approval cards · security (token, Host, Origin, paths, file permissions) · commands · restore · runner and more.
+- Test servers briefly use ports 4683 and 4690–4699. Instead of real sessions and tmux they use a temporary home folder and the fake commands in `test/fake-bin` (tmux · claude · ps · lsof · open · osascript), so your `~/.claude` and `~/.agent-dashboard` are never touched.
 - GitHub Actions runs `npm test` on every push to main and every PR, on Ubuntu · macOS × Node 18 · 20 · 22 · 24 (badge above). Real macOS notifications (osascript) are tested only on macOS; the "approval needed → notification" wiring is also tested on Linux with a fake osascript.
 
 ## Supported environment and limits
@@ -340,7 +345,7 @@ Uses Node's built-in test runner (`node --test`), nothing to install. 338 tests 
 | Record folders | Folders moved with `CLAUDE_CONFIG_DIR` · `CODEX_HOME` | Only the **one** value of the shell that started the dashboard — several accounts (folders) at once aren't shown |
 
 - **Chat · approve · close work only for sessions started in tmux.** Sessions started in a plain terminal or an editor extension (VS Code · Cursor) are view-only.
-- **It doesn't open a browser by itself on first start.** Open the login link printed in the terminal or run `agent-dashboard open`. If you started it with `run` (the runner), the link is in `~/.agent-dashboard/server.log`.
+- **It doesn't open a browser by itself on first start.** Open the login link printed in the terminal or run `node bin/agent-dashboard.mjs open` (`agent-dashboard open` if installed). If you started it with `run` (the runner), the link is in `~/.agent-dashboard/server.log`.
 - If a project's `.claude/settings.json` has its own `statusLine`, sessions in that project don't get account usage limits (the status-line bridge isn't called).
 - **Codex is partial** — list · status · Now tab (request · answer · context) · History tab · search · chat work. Prompt detection · Today's work · tokens · account usage limits · last auto-compact time · subagents · messages between sessions · new session · restore are Claude Code only.
 - No Gemini or other tools yet (each can be added as one adapter file).
