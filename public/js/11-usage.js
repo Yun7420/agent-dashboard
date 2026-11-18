@@ -101,14 +101,13 @@ document.addEventListener('click', (e) => {
 });
 function openUsageDialog() {
   const on = state?.usage?.enabled;
-  $('#usage-body').innerHTML = on
-    ? t('It is <b style="color:var(--text)">on</b> now. Turning it off restores the Claude status line setting to how it was before (your old status line, if any, comes back as is).')
+  // 설명은 두세 줄만(간추리기 B7) — 자세한 동작은 README 「사용 한도」
+  $('#usage-body').innerHTML = (on
+    ? ['It is <b style="color:var(--text)">on</b>. Turning it off restores your previous status line setting.']
     : [
-       'Shows your Claude <b style="color:var(--text)">5h · weekly usage limits</b> and the <b style="color:var(--text)">exact context usage</b> of each session.',
-       'Claude Code only tells this to the <b style="color:var(--text)">status line (statusLine)</b>, so turning it on registers one status line in <code>~/.claude/settings.json</code>.',
-       '· Every Claude session gets one line at the bottom: <code>model · context % · 5h limit %</code>. If you already had a status line, it is shown as is.',
-       '· The settings before turning on are backed up in <code>~/.agent-dashboard/</code> and restored when you turn it off.',
-       '· Values update each time a session replies. Limit info only comes with Claude.ai plans (Pro · Max).'].map((k) => t(k)).join('<br>');
+       'Shows your Claude <b style="color:var(--text)">5h · weekly limits</b> and each session\'s <b style="color:var(--text)">exact context use</b>.',
+       'It adds one status line to <code>~/.claude/settings.json</code> (an existing one is kept and shown as is); turning it off restores the backup.',
+       'Limits only come with Claude.ai plans (Pro · Max).']).map((k) => t(k)).join('<br>');
   $('#usage-act').textContent = on ? t('Turn off') : t('Turn on');
   $('#usage-act').className = on ? 'danger' : 'primary';
   $('#usage-dlg').showModal();
