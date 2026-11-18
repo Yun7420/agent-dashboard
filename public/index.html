@@ -160,12 +160,12 @@
 <dialog id="notify-dlg" class="modal" aria-labelledby="notify-t">
   <div class="modal-h"><h3 id="notify-t">Notifications</h3><button type="button" class="ghost icon-btn modal-x" data-close-modal title="Close" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
   <p class="np-sub">Needs approval · tasks over 1 min finished</p>
-  <div class="np-row"><span>Browser<small>While this tab is open</small></span><button type="button" class="ghost" id="np-browser">Turn on</button></div>
-  <div class="np-row"><span>macOS<small>Even with the tab closed</small></span><label class="switch"><input type="checkbox" id="np-mac"><span class="track"></span></label></div>
-  <div class="np-row"><span>Sound<small>macOS</small></span><select id="np-sound"></select></div>
+  <!-- 켜기는 하나: macOS 면 macOS 알림, 아니면 브라우저 알림(15-notify.js 가 글자를 바꾼다) -->
+  <div class="np-row"><span id="np-what">macOS<small>Even with the tab closed</small></span><label class="switch"><input type="checkbox" id="np-on" aria-labelledby="np-what"><span class="track"></span></label></div>
+  <div class="np-row np-mac"><span>Sound<small>macOS</small></span><select id="np-sound"></select></div>
   <button type="button" class="ghost" id="np-test">Send a test notification</button>
   <p class="np-hint" id="np-note"></p>
-  <p class="np-hint">macOS notifications may need permission for 'Script Editor' (or Terminal) in System Settings › Notifications.</p>
+  <p class="np-hint np-mac">macOS notifications may need permission for 'Script Editor' (or Terminal) in System Settings › Notifications.</p>
 </dialog>
 <dialog id="settings-dlg" class="modal" aria-labelledby="settings-t">
   <div class="modal-h"><h3 id="settings-t">Display</h3><button type="button" class="ghost icon-btn modal-x" data-close-modal title="Close" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
