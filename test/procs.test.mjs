@@ -59,6 +59,22 @@ test('Linux: 작업 폴더는 /proc/<pid>/cwd 먼저, 못 읽은 PID 만 lsof �
   assert.deepEqual(read, []);
 });
 
+// npm 으로 깐 Codex 는 「node …/bin/codex」 래퍼 아래 vendor 의 진짜 codex 가 자식으로 떠서 카드가 둘(유령)이었다(호환성 검토 C2)
+test('같은 도구로 잡힌 부모 아래 자식은 빼고 부모 하나만 — 셸을 거친 claude -p 는 그대로 · 모든 PID 의 켜진 시각(startOf)', async () => {
+  fs.writeFileSync(path.join(dir, 'ps.txt'), [
+    '700 1 05:00 node /usr/local/bin/codex',
+    '701 700 05:00 /usr/local/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex/codex',
+    `710 1 03:00 claude --resume ${ID}`,
+    '711 710 01:00 /bin/bash -c claude -p hi',
+    '712 711 01:00 claude -p hi',
+  ].join('\n') + '\n');
+  fs.writeFileSync(path.join(dir, 'lsof.txt'), '');
+  const codex = { id: 'codex', matchProcess: (exe, cmd) => exe === 'codex' || /\/bin\/codex(\s|$)/.test(cmd) };
+  const { procs, startOf } = await createProcesses({ adapters: [claude, codex], tmux: { listPanes: async () => [] } }).processes('c2');
+  assert.deepEqual(procs.map((p) => [p.pid, p.tool]), [[700, 'codex'], [710, 'claude'], [712, 'claude']]);
+  assert.ok(Math.abs(startOf.get(711) - (Date.now() - 60_000)) < 5000); // 고르지 않은 PID 도
+});
+
 test('캐시: 같은 구성(sig)이면 6초 안에 ps 를 다시 부르지 않고, 구성이 바뀌거나 invalidate 면 다시', async () => {
   fs.writeFileSync(path.join(dir, 'ps.txt'), `501 1 01:00 claude --resume ${ID}\n`);
   let paneCalls = 0;

@@ -168,9 +168,11 @@ export default {
   label: 'Claude Code',
   mark: 'C', // 화면 범례 · 노드 · 카드의 종류 표식(머리글자 — 색만으로 가르지 않게)
 
-  matchProcess(exeBase, command = "") {
+  matchProcess(exeBase, command = '') {
+    // 네이티브 설치는 실행 파일 이름이 claude. npm 으로 깐 옛 버전은 「node …/bin/claude」 · 「node …/claude-code/cli.js」 꼴이라 명령줄로도 본다(호환성 검토 C4).
     // `claude agents`, `claude --version` 같은 잠깐 실행되는 명령은 세션이 아니라서 뺀다
-    return exeBase === 'claude' && !/\bclaude\s+(agents|--version|-v|doctor|mcp|update|upgrade|auth|config|logs|attach|stop|kill|rm)\b/.test(command);
+    const mine = exeBase === 'claude' || /\/bin\/claude(\s|$)/.test(command) || /claude-code\/cli\.js(\s|$)/.test(command);
+    return mine && !/(?:\bclaude|cli\.js)\s+(agents|--version|-v|doctor|mcp|update|upgrade|auth|config|logs|attach|stop|kill|rm)\b/.test(command);
   },
 
   async scan() {

@@ -89,3 +89,14 @@ for (const a of adapters) {
     assert.deepEqual([h[0].prompt, h[0].tools, h[0].reply], ['예시 요청', 1, '볼게요\n\n끝났어요']); // 답은 덩어리를 이어 붙임
   });
 }
+
+// npm 으로 깐 옛 Claude Code 는 「node …/bin/claude」 · 「node …/claude-code/cli.js」 꼴이라 실행 파일 이름(node)만 보면 못 찾았다(호환성 검토 C4)
+test('claude matchProcess: 네이티브 · npm 래퍼 · cli.js 모두 세션, 잠깐 실행되는 하위 명령(agents · --version …)은 아님', () => {
+  const claude = adapters.find((a) => a.id === 'claude');
+  for (const [exe, cmd] of [['claude', 'claude --resume x'], ['node', 'node /usr/local/bin/claude'], ['node', 'node /opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/cli.js --model opus']]) {
+    assert.equal(claude.matchProcess(exe, cmd), true, cmd);
+  }
+  for (const [exe, cmd] of [['claude', 'claude agents --json'], ['node', 'node /usr/local/bin/claude --version'], ['node', 'node /x/claude-code/cli.js agents --json'], ['node', 'node server.mjs'], ['node', 'node /x/claude-code/cli.js.bak']]) {
+    assert.equal(claude.matchProcess(exe, cmd), false, cmd);
+  }
+});

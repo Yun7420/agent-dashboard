@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { HOME } from '../lib/paths.mjs';
 import { createSpawned } from '../lib/spawn.mjs';
-import { createStateBuilder, matchProcesses, mergeStatusline } from '../lib/state.mjs';
+import { createStateBuilder, matchProcesses, mergeStatusline, samePidStart } from '../lib/state.mjs';
 
 const cwdKey = (dir) => dir.replace(/[/.]/g, '-');
 const adapter = (id, extra = {}) => ({ id, label: id === 'claude' ? 'Claude Code' : 'Codex', cwdKey, ...extra });
@@ -20,8 +20,25 @@ test('matchProcesses: --resume ID 가 있으면 그 세션, 공식 목록(liveSe
   assert.equal(alive.get('claude:r1').pid, 1);
   assert.equal(alive.get('claude:L2').pid, 2); // 프로세스 목록에 있는 PID 는 그 프로세스에 공식 값을 붙인다
   assert.equal(alive.get('claude:L2').live.status, 'busy');
-  assert.deepEqual(alive.get('claude:L9'), { pid: 9, tool: 'claude', etime: null, ide: false, live: { pid: 9, sessionId: 'L9', status: 'idle' } }); // ps 에 없어도 공식 목록에 있으면 살아 있음
+  assert.deepEqual(alive.get('claude:L9'), { pid: 9, tool: 'claude', etime: null, ide: false, live: { pid: 9, sessionId: 'L9', status: 'idle' }, cwd: null }); // ps 에 없어도 공식 목록에 있으면 살아 있음
   assert.deepEqual(orphans, []);
+});
+
+// PID 재사용(호환성 검토 C11): 세션은 끝났는데 같은 PID 를 다른 프로그램이 받으면 kill(0) 이 성공해 살아 보였다 →
+// 세션 파일의 procStart(UTC 로 적힌 ps lstart 꼴)와 지금 그 PID 의 켜진 시각이 2분 넘게 다르면 버린다. 작업 폴더는 세션 파일의 cwd 로(C4)
+test('matchProcesses: 공식 목록의 PID 가 재사용됐으면(procStart ≠ ps 켜진 시각) 버리고, 같으면 짝짓고 세션 파일 cwd 를 붙인다', () => {
+  const T = Date.parse('2026-11-13T04:24:21Z');
+  const live = [[byId.claude, [
+    { pid: 7, sessionId: 'same', status: 'idle', procStart: 'Fri Nov 13 04:24:21 2026', cwd: '/w/a' },
+    { pid: 8, sessionId: 'reused', status: 'idle', procStart: 'Fri Nov 13 04:24:21 2026', cwd: '/w/b' },
+    { pid: 9, sessionId: 'old-version', status: 'idle' }, // procStart 없는 옛 버전은 그대로 믿는다
+  ]]];
+  const procs = [proc(7, { cwd: null })];
+  const { alive } = matchProcesses(live, procs, [], byId, new Map([[7, T + 1000], [8, T + 3 * 3600_000], [9, T]]));
+  assert.deepEqual([...alive.keys()].sort(), ['claude:old-version', 'claude:same']);
+  assert.equal(procs[0].cwd, '/w/a');
+  assert.equal(samePidStart('Fri Nov 13 13:24:21 2026', Date.parse('2026-11-13T13:24:21')), true); // 로컬 시각으로 적힌 것도
+  assert.equal(samePidStart(null, T), true);
 });
 
 test('matchProcesses: 같은 폴더면 늦게 켜진 프로세스가 가장 최근 세션을, 켜지기 2분 넘게 전에 만든 기록은 고르지 않는다', () => {

@@ -44,7 +44,8 @@ export function createLiveSessions({ dir = path.join(CLAUDE_DIR, 'sessions'), ru
       for (const f of files) {
         const a = await readJsonOrNull(path.join(dir, f));
         if (!a?.pid || !a.sessionId || !alive(a.pid)) continue; // 살아 있는 프로세스만
-        out.push({ pid: a.pid, sessionId: a.sessionId, status: liveStatus(a.status), waitingFor: a.waitingFor ?? null, name: a.name ?? null, background: a.kind && a.kind !== 'interactive', startedAt: a.startedAt });
+        // cwd: lsof 로 작업 폴더를 못 읽은 프로세스도 짝짓게 · procStart: PID 재사용 확인(lib/state.mjs samePidStart, 호환성 검토 C4 · C11)
+        out.push({ pid: a.pid, sessionId: a.sessionId, status: liveStatus(a.status), waitingFor: a.waitingFor ?? null, name: a.name ?? null, background: a.kind && a.kind !== 'interactive', startedAt: a.startedAt, cwd: a.cwd ?? null, procStart: a.procStart ?? null });
       }
       return out;
     }
