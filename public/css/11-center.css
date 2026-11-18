@@ -7,7 +7,7 @@ button:not(.primary):not(.ghost):not(.tab):not(.danger):not(.drawer-handle):not(
 
 /* 조직도 위 세 무리(지도 앱처럼): 왼쪽 위 상태 칩 · 왼쪽 아래 범례 + 한도 · 오른쪽 아래 + − ⌖. 모두 보이는 칸(--aw · --dw) 안에서 판과 같은 --slide 로 움직인다.
    높이 · 모서리 · 반투명 면은 같게. 자리가 모자라면 범례부터 짧게, 그다음 상태 칩을 점 + 숫자로(.short — 13-controls.js) — 숨기지는 않는다 */
-.status-chips, .kinds, .zoom-btns { position: absolute; z-index: var(--z-float); display: flex; padding: 2px; border-radius: var(--radius); background: var(--float-bg); box-shadow: var(--shadow); backdrop-filter: blur(8px); white-space: nowrap; }
+.status-chips, .kinds, .zoom-btns { position: absolute; z-index: var(--z-float); display: flex; padding: 2px; border-radius: var(--radius); background: var(--float-bg); box-shadow: var(--shadow); backdrop-filter: var(--float-blur); white-space: nowrap; }
 .status-chips { top: var(--sp-4); left: calc(var(--aw) + var(--sp-4)); transition: left var(--slide); }
 .kinds { bottom: var(--sp-4); left: calc(var(--aw) + var(--sp-4)); font-size: 13px; color: var(--dim); transition: left var(--slide); }
 .zoom-btns { bottom: var(--sp-4); right: calc(var(--dw) + var(--sp-4)); flex-direction: column; overflow: hidden; transition: right var(--slide); }

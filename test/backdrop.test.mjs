@@ -63,12 +63,29 @@ test('터치 · 동작 줄이기면 스포트라이트 없음(멈춘 오로라 �
   assert.match(narrow, /prefers-reduced-motion: reduce\) \{\n[^}]*\}\n  \.spot \{ display: none; \}/);
 });
 
-test('오로라는 바탕보다 아주 옅게(5% 이하) · 움직임 없음, 스포트라이트는 점만 +0.15', () => {
+test('오로라는 바탕보다 옅게(8% 이하 — 모든 테마 ΔL* 4 안팎) · 움직임 없음, 스포트라이트는 점만 +0.15', () => {
   const base = fs.readFileSync(new URL('../public/css/00-base.css', import.meta.url), 'utf8');
-  for (const m of base.matchAll(/--aurora-\d: color-mix\(.* (\d+)%, transparent\);/g)) assert.ok(Number(m[1]) <= 5, m[0]);
+  for (const m of base.matchAll(/--aurora-\d: color-mix\(.* (\d+)%, transparent\);/g)) assert.ok(Number(m[1]) <= 8, m[0]);
   assert.match(base, /--grid-dot: color-mix\(in srgb, var\(--ink\) 5%/);
   assert.match(base, /--grid-dot-lit: color-mix\(in srgb, var\(--ink\) 20%/);
   const css = fs.readFileSync(new URL('../public/css/03-graph.css', import.meta.url), 'utf8');
   const main = css.match(/main \{ position: relative;[\s\S]*?\}/)[0];
   assert.doesNotMatch(main, /animation|transition/);
+});
+
+// 조직도 위계(2026-11-18 다듬기): 세션 = 밝은 면 + 그림자 1단계, 맥 · 도구 · 프로젝트 = 면 없이 점선(그림자 없음), 고른 세션 = 강조 테두리 + 빛 한 겹,
+// 선은 단계(lv1~lv4)마다 굵기 · 진하기, 끝은 둥글게 — 색은 모두 00-base 토큰이라 테마마다 같이 바뀐다
+test('조직도 위계: 노드 면 · 그림자 토큰, 묶음은 가볍게, 고른 세션 빛, 선 단계 클래스와 둥근 끝', () => {
+  const css = fs.readFileSync(new URL('../public/css/03-graph.css', import.meta.url), 'utf8');
+  assert.match(css, /\.node rect \{ fill: var\(--node-bg\);[^}]*filter: var\(--node-shadow\); \}/);
+  assert.match(css, /\.node\.group rect \{ fill: var\(--group-bg\);[^}]*stroke-dasharray: 4 4; filter: none; \}/);
+  assert.match(css, /\.node\.sel rect \{ stroke: var\(--accent\);[^}]*filter: var\(--node-shadow\) drop-shadow\(/);
+  assert.match(css, /\.edge \{[^}]*stroke-linecap: round; \}/);
+  for (const lv of ['lv1', 'lv2', 'lv4']) assert.match(css, new RegExp(`\\.edge\\.${lv} \\{`));
+  const graph = fs.readFileSync(new URL('../public/js/03-graph.js', import.meta.url), 'utf8');
+  assert.match(graph, /lv = `lv\$\{Math\.min\(4, cp\.split\('\.'\)\.length - 1\)\}`/);
+  assert.equal((graph.match(/<path class="edge (?:stack )?\$\{lv\} /g) ?? []).length, 2); // 곧은 · 쌓인 선 둘 다
+  const base = fs.readFileSync(new URL('../public/css/00-base.css', import.meta.url), 'utf8');
+  for (const k of ['--node-bg', '--node-shadow', '--group-bg', '--float-blur']) assert.match(base, new RegExp(`${k}: `));
+  assert.match(fs.readFileSync(new URL('../public/css/11-center.css', import.meta.url), 'utf8'), /backdrop-filter: var\(--float-blur\)/);
 });

@@ -80,17 +80,17 @@ function renderGraph() {
   let edges = '', nodes = '';
   clipSeq = 0;
   const walk = (n, p = '0') => { // p = 뿌리부터의 자리(0.1.2) — 마우스를 올린 노드의 위아래 줄기를 찾는 데 쓴다(07-center.js)
-    n.children.forEach((c, ci) => { const cp = `${p}.${ci}`;
+    n.children.forEach((c, ci) => { const cp = `${p}.${ci}`, lv = `lv${Math.min(4, cp.split('.').length - 1)}`; // 선 단계: 맥 → 도구 1 · → 프로젝트 2 · → 세션 3 · 그 아래 4(03-graph.css)
       const hot = c.status === 'working';
       if (c.stacked) {
         const ex = n.x + 10, ey = c.y + c.h / 2;
-        edges += `<path class="edge stack ${hot ? 'working' : ''}" data-path="${cp}" d="M${ex},${n.y + n.h} V${ey} H${c.x}"/>`;
+        edges += `<path class="edge stack ${lv} ${hot ? 'working' : ''}" data-path="${cp}" d="M${ex},${n.y + n.h} V${ey} H${c.x}"/>`;
         walk(c, cp);
         return;
       }
       const x1 = n.x + n.w / 2, y1 = n.y + n.h, x2 = c.x + c.w / 2, y2 = c.y;
       const my = (y1 + y2) / 2;
-      edges += `<path class="edge ${hot ? 'working' : ''}" data-path="${cp}" d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}"/>`;
+      edges += `<path class="edge ${lv} ${hot ? 'working' : ''}" data-path="${cp}" d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}"/>`;
       edges += `<circle class="dot ${hot ? 'working' : ''}" data-path="${cp}" cx="${(x1 + x2) / 2}" cy="${my}" r="2.5"/>`;
       walk(c, cp);
     });

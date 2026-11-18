@@ -15,20 +15,21 @@ main { position: relative; overflow: hidden; background:
 #graph { position: relative; width: 100%; height: 100%; cursor: grab; } /* relative: 스포트라이트 위에 그린다 */
 #graph.drag { cursor: grabbing; }
 .node { cursor: pointer; }
-.node rect { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1; transition: stroke .15s; }
+.node rect { fill: var(--node-bg); stroke: var(--border-strong); stroke-width: 1; transition: stroke .15s; filter: var(--node-shadow); }
 .node:hover rect { stroke: color-mix(in srgb, var(--ink) 30%, transparent); }
-.node.group rect { fill: color-mix(in srgb, var(--surface-2) 70%, var(--bg)); stroke: color-mix(in srgb, var(--ink) 14%, transparent); stroke-dasharray: 4 4; }
-.node.working rect { stroke: color-mix(in srgb, var(--working) 75%, transparent); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--working) 14%, transparent)); }
-.node.sub.working rect { filter: none; }
+.node.group rect { fill: var(--group-bg); stroke: color-mix(in srgb, var(--ink) 18%, transparent); stroke-dasharray: 4 4; filter: none; } /* 맥 · 도구 · 프로젝트는 가볍게(그림자 · 면 없음) */
+.node.working rect { stroke: color-mix(in srgb, var(--working) 75%, transparent); filter: var(--node-shadow) drop-shadow(0 0 6px color-mix(in srgb, var(--working) 14%, transparent)); }
+.node.sub.working rect, .node.group.working rect { filter: none; }
 .node.more rect { fill: var(--bg); stroke-dasharray: 3 3; } /* 비침 대신 바탕색으로 막아 둔다 — 가운데 바탕 그래프가 글자 밑으로 들어와도 대비가 그대로 */
 .node.more text { fill: var(--dim); opacity: 1 !important; }
 .node.more:hover rect { stroke: var(--accent); } /* 서브에이전트가 많을 때 그림자 효과가 화면을 무겁게 해서 테두리만 */
 .edge.stack.working { stroke-dashoffset: 0; }
-.node.waiting rect { stroke: var(--waiting); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--waiting) 22%, transparent)); }
+.node.waiting rect { stroke: var(--waiting); filter: var(--node-shadow) drop-shadow(0 0 6px color-mix(in srgb, var(--waiting) 22%, transparent)); }
+.node.group.waiting rect { filter: none; }
 .node.ended rect { stroke: color-mix(in srgb, var(--ink) 6%, transparent); }
 .node.background rect { stroke: color-mix(in srgb, var(--working) 55%, transparent); stroke-dasharray: 4 3; }
 .node.ended text { opacity: .45; }
-.node.sel rect { stroke: var(--accent); stroke-width: 1.6; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 24%, transparent)); }
+.node.sel rect { stroke: var(--accent); stroke-width: 1.8; filter: var(--node-shadow) drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 30%, transparent)); } /* 고른 세션: 강조 테두리 + 바깥 빛 한 겹 */
 .node text { fill: var(--text); font: 600 12px var(--sans); }
 /* 물 채우기(02-water.js 의 waterSvg): 글자 대비가 그대로이게 아주 흐리게, 차오를 때만 0.5초 */
 .node .water { fill: color-mix(in srgb, var(--ok) 6%, transparent); transform: translateY(var(--y)); }
@@ -39,7 +40,7 @@ main { position: relative; overflow: hidden; background:
 .node .water-top.high { stroke: color-mix(in srgb, var(--waiting) 60%, transparent); }
 .node .water.moving, .node .water-top.moving { animation: fill-rise .5s ease-out; }
 @keyframes fill-rise { from { transform: translateY(var(--from)); } }
-.node[data-key] > text { paint-order: stroke; stroke: var(--surface-2); stroke-width: 3px; stroke-linejoin: round; } /* 물낯 선이 글자를 긋지 않게 글자 둘레를 바탕색으로(지도 글씨처럼) */
+.node[data-key] > text { paint-order: stroke; stroke: var(--node-bg); stroke-width: 3px; stroke-linejoin: round; } /* 물낯 선이 글자를 긋지 않게 글자 둘레를 바탕색으로(지도 글씨처럼) */
 .node .tick80 { stroke: var(--faint); stroke-width: 1; opacity: .6; }
 .node text.t2 { fill: var(--faint); font: 500 10px var(--sans); letter-spacing: .04em; }
 /* 세션 상태는 점 대신 아래 줄(대기 · 작업 중 …) 글자색으로 */
@@ -47,7 +48,11 @@ main { position: relative; overflow: hidden; background:
 .node:not(.proj):not(.group).working text.t2 { fill: var(--working); }
 .node:not(.proj):not(.group).background text.t2 { fill: var(--working-text); }
 .node:not(.proj):not(.group).waiting text.t2 { fill: var(--waiting); font-weight: 700; }
-.edge { fill: none; stroke: color-mix(in srgb, var(--ink) 55%, transparent); stroke-width: 1.1; stroke-dasharray: 3 4; }
+/* 선은 단계마다(03-graph.js 의 lv1~lv4): 맥 → 도구 → 프로젝트 → 세션으로 갈수록 굵고 또렷하게, 끝은 둥글게 */
+.edge { fill: none; stroke: color-mix(in srgb, var(--ink) 55%, transparent); stroke-width: 1.4; stroke-dasharray: 3 4; stroke-linecap: round; }
+.edge.lv1 { stroke: color-mix(in srgb, var(--ink) 26%, transparent); stroke-width: 1; }
+.edge.lv2 { stroke: color-mix(in srgb, var(--ink) 38%, transparent); stroke-width: 1.2; }
+.edge.lv4 { stroke: color-mix(in srgb, var(--ink) 42%, transparent); stroke-width: 1.1; } /* 서브에이전트(세션 아래)는 다시 옅게 */
 /* 작업 중 · 방금 오간 메시지 선은 점선으로만(흐르게 움직이지 않음 — 오래 보는 화면이라 눈이 끌리지 않게) */
 .edge.working { stroke: var(--working); }
 .dot { fill: var(--text); opacity: .8; }
