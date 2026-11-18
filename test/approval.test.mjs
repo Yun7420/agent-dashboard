@@ -2,7 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import os from 'node:os';
 import { fileRisks, relPath, summarizeTool, guessFromScreen } from '../lib/approval.mjs';
-import { pendingToolOf } from '../adapters/claude/changes.mjs';
+import { trackPending } from '../adapters/claude/changes.mjs';
+
+// 기록 줄들 → 마지막으로 결과가 없는 도구 호출(없으면 null) — describe 와 같은 규칙(trackPending)으로
+function pendingToolOf(records) {
+  const pending = new Map();
+  for (const d of records) if (d) trackPending(d, pending);
+  return [...pending.values()].at(-1) ?? null;
+}
 import { DEMO_PANE } from '../lib/demo.mjs';
 
 const use = (id, name, input) => ({ type: 'assistant', message: { content: [{ type: 'tool_use', id, name, input }] } });

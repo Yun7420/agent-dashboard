@@ -61,9 +61,4 @@ export function trackPending(d, pending) {
     if (d.type === 'user' && c.type === 'tool_result') pending.delete(c.tool_use_id);
   }
 }
-// 기록 줄들 → 마지막으로 결과가 없는 도구 호출(없으면 null). describe 와 같은 규칙(테스트용으로 따로 내보냄)
-export function pendingToolOf(records) {
-  const pending = new Map();
-  for (const d of records) if (d) trackPending(d, pending);
-  return [...pending.values()].at(-1) ?? null;
-}
+

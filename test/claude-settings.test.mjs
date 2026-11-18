@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { updateJson, updateText, writeAtomic, enableStatusLine, disableStatusLine, restoreModelText, modelOf, isBridge, pruneBackups, SettingsError } from '../lib/claude-settings.mjs';
+import { writeAtomic } from '../lib/atomic-write.mjs';
+import { updateJson, updateText, enableStatusLine, disableStatusLine, restoreModelText, modelOf, isBridge, pruneBackups, SettingsError } from '../lib/claude-settings.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 
 // 실제 ~/.claude 는 건드리지 않는다 — 모두 임시 폴더의 가짜 settings.json

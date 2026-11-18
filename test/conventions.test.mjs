@@ -183,7 +183,7 @@ test('외부 명령: child_process 는 execFile · spawn(+Sync) 만, shell 옵�
 // lib · adapters 는 불러오기만 해서는 프로세스를 끝내거나 파일 · 화면에 쓰지 않는다 — 그런 일은 부르는 쪽(server.mjs · bin)이 함수를 불러서.
 // 맨 앞(들여쓰기 없음) 줄의 process.exit · console.* · fs 쓰기를 찾는다(예전 node-check.mjs 는 import 만으로 exit 했다, 2026-11-17)
 test('모듈 부수 효과: lib · adapters 의 맨 바깥에서 process.exit · console · fs 쓰기를 하지 않는다', () => {
-  const TOP = /^(?:if \(.*\) )?(?:process\.exit|console\.|fs\.(?:write|append|mkdir|rm|unlink|rename|chmod|copy)\w*\()/;
+  const TOP = /^(?:if \(.*\) )?(?:process\.(?:exit|on)\(|console\.|fsp?\.(?:write|append|mkdir|rm|unlink|rename|chmod|copy)\w*\(|writeAtomic(?:In)?\()/;
   const bad = [];
   for (const f of [...listDeep('lib', /\.mjs$/), ...listDeep('adapters', /\.mjs$/)]) {
     read(f).split('\n').forEach((l, i) => { if (TOP.test(l)) bad.push(`${f}:${i + 1}`); });
@@ -228,8 +228,8 @@ test('CSP 와 맞는 화면: index.html · 화면 js 에 인라인 <script> 본�
 });
 
 // 링크를 따라 쓰지 않게(점검 C7): 서버 쪽 파일 쓰기는 lib/atomic-write.mjs(난수 임시 파일 'wx' → rename) 하나로. 첨부는 'wx' 스트림(lib/body)
-test('파일 쓰기: lib · bin · adapters · server 에 writeFileSync · appendFileSync 없음(writeAtomic 을 씀)', () => {
-  const where = SERVER.filter((f) => /\b(writeFileSync|appendFileSync)\s*\(/.test(read(f)));
+test('파일 쓰기: lib · bin · adapters · server 에 writeFileSync · appendFileSync · fsp.writeFile 없음(writeAtomic 을 씀)', () => {
+  const where = SERVER.filter((f) => /\b(writeFileSync|appendFileSync)\s*\(|\bfsp?\.(?:writeFile|appendFile)\s*\(|fs\.promises\.(?:writeFile|appendFile)\s*\(/.test(read(f)));
   assert.deepEqual(where, []);
 });
 

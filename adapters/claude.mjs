@@ -200,9 +200,8 @@ export default {
   async describe(s) {
     const c = await describeReader.read(s);
     const { currentDir, aiTitle, titlePrompt, lastPrompt, lastPromptAt, lastPromptFrom, lastText, lastTool, turnState, lastAt, model, contextUsed, changes, pending } = c.st;
-    let cwd = null;
     // 프로젝트는 세션을 시작한 폴더로 묶는다(중간에 cd 해도 흔들리지 않게). 바뀌지 않는 값이라 파일당 한 번만 읽는다.
-    cwd = startCwd.get(s.file) ?? null;
+    let cwd = startCwd.get(s.file) ?? null;
     if (cwd == null) {
       for (const l of await readHeadLines(s.file, 256 * 1024)) {
         const d = parse(l);
