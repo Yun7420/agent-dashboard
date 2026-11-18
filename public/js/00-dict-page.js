@@ -36,7 +36,6 @@ const KO_PAGE = {
   "Run agent (Claude Code · tmux)": "에이전트 실행 (Claude Code · tmux)",
   "Fit to screen (same as double-click)": "화면에 맞춤(더블클릭과 같아요)",
   "Change model (tmux sessions only)": "모델 바꾸기 (tmux 세션만)",
-  "Claude account usage limits": "Claude 계정 사용 한도",
   "Search history ( / )": "기록 검색 ( / )",
   "Search history": "기록 검색",
   "Search history…": "기록 검색…",

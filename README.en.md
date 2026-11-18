@@ -138,7 +138,7 @@ Everything the dashboard writes lives in `~/.agent-dashboard/` (it never writes 
 ### Stopping and uninstalling
 
 1. **Stop the server** — if you started it with `npm start`, press Ctrl+C in that terminal. If you used the runner (`run`), press Ctrl+C in its window (the server stops too). To stop the whole tmux `dashboard` session: `tmux kill-session -t dashboard`.
-2. **Turn off usage limits** — if it's on, do this **before deleting anything**: click the limits display in the header → "설정…" (Settings) → **끄기** (Turn off). This puts the status line in `~/.claude/settings.json` back the way it was.
+2. **Turn off usage limits** — if it's on, do this **before deleting anything**: hover the limits in the legend's Claude Code item → "설정…" (Settings) → **끄기** (Turn off). This puts the status line in `~/.claude/settings.json` back the way it was.
 3. **Delete the data folder** — `rm -rf ~/.agent-dashboard`
 4. If you cloned the repo, delete that folder and you're done.
 
@@ -224,7 +224,8 @@ A session already running in a terminal has no official way to receive input fro
 <details open>
 <summary><b>Header — approval · limits · ⋯ menu</b></summary>
 
-- "Needs approval N" (hidden at 0, click to open the first waiting session) · "5h % · Weekly %" (hover for reset times, click for the trend) · search bar · + Agent (run agent) · ⋯
+- "Needs approval N" (hidden at 0, click to open the first waiting session) · search bar · + Agent (run agent) · ⋯
+- Account usage limits sit inside the **Claude Code** item of the kinds legend at the bottom right of the structure view as "· 5h % · Weekly %" (hover for reset times and the trend). On narrow screens (860 or less) they move to one line at the top of the center
 - The connection shows only when it drops
 - **Esc**: close popups → press again to collapse the panel
 - ⋯ → Notifications: notification settings (approval needed · task over 1 minute finished) — browser notifications (while this tab is open) · macOS notifications (even with the tab closed, sent by the server) · sound · test notification. When macOS notifications are on, browser notifications are skipped so you don't get two. The same session and reason alerts at most once a minute, and simultaneous alerts are merged into one. Settings live in `~/.agent-dashboard/notify.json` (readable only by you). macOS notifications may need notification permission for Script Editor (or Terminal)
@@ -233,13 +234,13 @@ A session already running in a terminal has no official way to receive input fro
 ## Model · usage
 
 - **Model** — choose in + Agent (the run-agent window); change a running tmux session's model from the panel header (sends `/model`). Claude's `/model` also saves your default model, so when you change it from the dashboard **only that session** changes and your default is restored automatically.
-- **Account usage limits (5-hour · weekly)** — turn on with **Show usage limits** in the header. Claude Code only passes this to the status line, so turning it on registers a status line (`bin/statusline.mjs`) in `~/.claude/settings.json`.
+- **Account usage limits (5-hour · weekly)** — turn on with **Show usage limits** in the Claude Code item of the legend. Claude Code only passes this to the status line, so turning it on registers a status line (`bin/statusline.mjs`) in `~/.claude/settings.json`.
   - Every Claude session gets one line at the bottom: `model · context % · 5-hour limit %` (if you already had a status line, it keeps showing yours).
   - Your previous settings are backed up to `~/.agent-dashboard/` and **restored exactly** when you turn it off. While on, context usage becomes exact instead of estimated.
   - When turned on, the status-line script is copied to `~/.agent-dashboard/bin/statusline.mjs` and that path is registered (so moving or deleting the dashboard folder doesn't break your status line). A newer version refreshes the copy automatically, and an older registration is switched to the new path. If the node or copy path contains a quote, `$`, `` ` `` or `\`, it refuses to turn on and tells you why.
   - The status line is registered with the node path at the time you turned it on (with Homebrew, `…/Cellar/node/<version>/…`). Upgrading node can remove that path and stop the limit readings. The environment check's "usage limits" row shows the status line's node path and version, and warns if it can't run. Restarting the dashboard switches it to the current node.
   - If `~/.claude/settings.json` is a **symlink** (e.g. to your dotfiles), on/off is refused with "the settings file is a link" so the real file it points to isn't edited behind your back. Register it in the linked file yourself in that case.
-  - While on, click the limits in the header to open a **limits trend chart** (last 24 hours · 7 days, 5-hour and weekly lines, reset points). A line with time · % · reset times is appended to `~/.agent-dashboard/limits/<date>.jsonl` only when values change (at most once a minute, readable only by you), and files older than 30 days are deleted. Settings are under "Settings…" below the chart.
+  - While on, hover the limits in the legend (tap the top line on narrow screens) to open a **limits trend chart** (last 24 hours · 7 days, 5-hour and weekly lines, reset points). A line with time · % · reset times is appended to `~/.agent-dashboard/limits/<date>.jsonl` only when values change (at most once a minute, readable only by you), and files older than 30 days are deleted. Settings are under "Settings…" below the chart.
 
 ## Security
 

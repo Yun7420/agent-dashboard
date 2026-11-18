@@ -7,16 +7,26 @@ function resetIn(iso) {
   if (m < 60 * 24) return t('reset {h}h {m}m', { h: Math.floor(m / 60), m: m % 60 });
   return t('reset {d}', { d: new Date(ms).toLocaleDateString(LOCALE, { month: 'numeric', day: 'numeric', weekday: 'short' }) });
 }
-function renderUsage() {
+// 사용 한도는 계정(에이전트) 몫이라 범례의 Claude Code 항목 안에 「· 5시간 19% · 주간 14%」로 붙인다(13-controls.js).
+// 좁은 화면(범례 숨김)은 가운데 위 한 줄(#usage-line)에 같은 글자. 꺼져 있으면 켜는 창으로 가는 작은 링크만
+function usageHtml() {
   const u = state?.usage;
-  const el = $('#usage');
-  // 머리에는 짧게 「5시간 19% · 주간 14%」만. 초기화 시각 · 기준 시각은 마우스 올림(title)으로
-  if (!u?.enabled) { el.textContent = t('Show usage limits'); el.title = t('Turn on to show your Claude account 5h · weekly limits here'); return; }
-  if (!u.fiveHour && !u.sevenDay) { el.innerHTML = `<span class="dot-s pulse"></span>${t('Usage limits · updated on the next reply')}`; el.title = t('Values arrive once a Claude session replies'); return; }
-  const item = (label, w) => w ? `<span class="u">${label} <b class="${ctxLevel(w.percent)}">${w.percent}%</b></span>` : '';
-  el.innerHTML = [item(t('5h'), u.fiveHour), item(t('Weekly'), u.sevenDay)].filter(Boolean).join('<span class="sep">·</span>');
-  const rs = [u.fiveHour && `${t('5h')} ${resetIn(u.fiveHour.resetsAt)}`, u.sevenDay && `${t('Weekly')} ${resetIn(u.sevenDay.resetsAt)}`].filter(Boolean).join(' · ');
-  el.title = `${t('Claude account usage limits (5h · weekly)')}${rs ? ` · ${rs}` : ''}${u.updatedAt ? ` · ${t('as of {tm}', { tm: new Date(u.updatedAt).toLocaleTimeString(LOCALE) })}` : ''}`;
+  if (!u?.enabled) return `<button type="button" class="k-use off" data-usage title="${t('Turn on to show your Claude account 5h · weekly limits here')}">${t('Show usage limits')}</button>`;
+  if (!u.fiveHour && !u.sevenDay) return `<span class="k-use" title="${t('Values arrive once a Claude session replies')}"><span class="sep">·</span><span class="dot-s pulse"></span>${t('Usage limits · updated on the next reply')}</span>`;
+  const item = (label, w) => w ? `<span class="sep">·</span><span class="u">${label} <b class="${ctxLevel(w.percent)}">${w.percent}%</b></span>` : '';
+  return `<button type="button" class="k-use" data-usage aria-label="${t('Claude account usage limits (5h · weekly)')}" aria-controls="limits-pop">${item(t('5h'), u.fiveHour)}${item(t('Weekly'), u.sevenDay)}</button>`;
+}
+// 팝업 맨 위 한 줄: 초기화 시각 · 기준 시각(예전엔 머리 단추의 title)
+function usageResets() {
+  const u = state?.usage;
+  const rs = [u?.fiveHour && `${t('5h')} ${resetIn(u.fiveHour.resetsAt)}`, u?.sevenDay && `${t('Weekly')} ${resetIn(u.sevenDay.resetsAt)}`].filter(Boolean).join(' · ');
+  return `${rs}${u?.updatedAt ? `${rs ? ' · ' : ''}${t('as of {tm}', { tm: new Date(u.updatedAt).toLocaleTimeString(LOCALE) })}` : ''}`;
+}
+function renderUsage() {
+  const line = $('#usage-line');
+  line.hidden = !state?.tools?.some((x) => x.id === 'claude');
+  setHtml(line, `${kmark('claude')}<span>${esc(state?.tools?.find((x) => x.id === 'claude')?.label ?? 'Claude')}</span>${usageHtml()}`);
+  $('#limits-resets').textContent = usageResets();
 }
 // 사용 한도 보기가 켜져 있으면 누를 때 추이(최근 24시간 · 7일)를, 꺼져 있으면 켜기 안내 창을 연다
 const limits = { range: '24h', data: null, seq: 0 };
@@ -62,10 +72,32 @@ $('#limits-pop').addEventListener('click', (e) => {
   if (b && b.dataset.range !== limits.range) { limits.range = b.dataset.range; loadLimits(); }
 });
 $('#limits-setup').addEventListener('click', () => { $('#limits-pop').classList.remove('show'); openUsageDialog(); });
-document.addEventListener('click', (e) => { if (!e.target.closest('#usage')) $('#limits-pop').classList.remove('show'); });
-$('#usage').addEventListener('click', () => {
-  if (!state?.usage?.enabled) { openUsageDialog(); return; }
-  if ($('#limits-pop').classList.toggle('show')) loadLimits();
+// 마우스를 올리거나(범례 항목 · 한 줄) 초점이 가면 초기화 시각 · 추이를 띄우고, 팝업으로 옮겨 가는 사이(150ms)에는 닫지 않는다
+const lp = { hide: null, at: 0 }; // at = 연 시각
+function showLimits(on) {
+  clearTimeout(lp.hide);
+  const pop = $('#limits-pop');
+  if (!on) { lp.hide = setTimeout(() => pop.classList.remove('show'), 150); return; }
+  if (!state?.usage?.enabled || pop.classList.contains('show')) return;
+  const k = $('#kinds').getBoundingClientRect(), m = $('main').getBoundingClientRect();
+  pop.style.setProperty('--lp-b', `${Math.round(m.bottom - k.top + 6)}px`); // 범례 바로 위(범례 높이는 종류 수에 따라)
+  pop.classList.add('show');
+  lp.at = Date.now();
+  loadLimits();
+}
+for (const box of [$('#kinds'), $('#usage-line'), $('#limits-pop')]) {
+  box.addEventListener('mouseover', (e) => { if (e.target.closest('[data-lp], #limits-pop')) showLimits(true); });
+  box.addEventListener('mouseout', (e) => { if (!e.relatedTarget?.closest?.('[data-lp], #limits-pop')) showLimits(false); });
+  box.addEventListener('focusin', (e) => { if (e.target.closest('[data-usage]:not(.off), #limits-pop')) showLimits(true); });
+  box.addEventListener('focusout', (e) => { if (!e.relatedTarget?.closest?.('[data-lp], #limits-pop')) showLimits(false); });
+}
+// 누르면: 꺼져 있으면 켜는 창, 켜져 있으면 팝업 열기/닫기(손가락 화면용)
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-usage]');
+  if (b && !state?.usage?.enabled) { openUsageDialog(); return; }
+  // 마우스로 누르면 올림(mouseover)이 방금 열었으니 그건 닫지 않는다 — 열린 지 조금 지난 것만 닫기
+  if (b) { if ($('#limits-pop').classList.contains('show') && Date.now() - lp.at > 400) $('#limits-pop').classList.remove('show'); else showLimits(true); return; }
+  if (!e.target.closest('#limits-pop')) $('#limits-pop').classList.remove('show');
 });
 function openUsageDialog() {
   const on = state?.usage?.enabled;

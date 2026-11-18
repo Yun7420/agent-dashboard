@@ -18,7 +18,8 @@ function render() {
   $('#c-waiting').textContent = count('waiting');
   $('#appr-count').hidden = !count('waiting');
   for (const st of ['waiting', 'working', 'idle', 'ended']) $(`#n-${st}`).textContent = st === 'working' ? count('working') + count('background') : count(st);
-  setHtml($('#kinds'), runningKinds(state.tools, state.sessions).map((k) => `<span class="kind">${kmark(k.id)}${esc(k.label)}</span>`).join(''));
+  // Claude Code 항목에는 계정 사용 한도를 붙인다(11-usage.js) — 마우스를 올리면 초기화 시각 · 추이
+  setHtml($('#kinds'), runningKinds(state.tools, state.sessions).map((k) => (k.id === 'claude' ? `<span class="kind" data-lp>${kmark(k.id)}${esc(k.label)}${usageHtml()}</span>` : `<span class="kind">${kmark(k.id)}${esc(k.label)}</span>`)).join(''));
   renderList();
   renderGraph();
   if (selected) {

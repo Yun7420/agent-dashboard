@@ -31,17 +31,16 @@
   .gs-drop { left: 12px; right: 12px; width: auto; translate: none; top: calc(100% - 4px); }
   /* 바탕 그래프 · 큰 % 는 넓은 화면에서만 — 좁으면 조직도만, 대화 창 추이는 지금 탭 아래 작은 그래프로 */
   .ctx-bg, .cp-card, .zoom-btns { display: none !important; }
+  /* 범례가 숨으니 사용 한도는 가운데 위 한 줄로(목록은 600 이하에서 좁은 띠가 되어 그 위엔 자리가 없다) · 추이 팝업은 그 아래 */
+  .usage-line:not([hidden]) { position: absolute; top: var(--sp-2); left: var(--sp-2); z-index: var(--z-float); display: flex; align-items: center; gap: var(--sp-1); min-width: 0; overflow: hidden; padding: var(--sp-1) var(--sp-2); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); font-size: 13px; color: var(--dim); white-space: nowrap; width: fit-content; max-width: calc(100% - 2 * var(--sp-2)); }
+  #limits-pop { top: 52px; bottom: auto; left: var(--sp-2); right: var(--sp-2); width: auto; max-width: 420px; }
 }
 @media (min-width: 861px) { #now-trend { display: none; } } /* 넓은 화면은 가운데 바탕 그래프가 같은 추이를 보여 준다 */
-/* 휴대폰 크기: 사용 한도는 막대 · 주간을 빼고 짧게(줄바꿈되며 가로로 넘치지 않게) */
+/* 휴대폰 크기 */
 @media (max-width: 600px) {
-  /* 사용 한도는 「5시간 %」 만 짧게 남겨 누르면 추이를 볼 수 있게 */
-  .usage-pill { padding: 0 10px; gap: 6px; white-space: nowrap; flex: none; }
   .brand h1, #new-session { white-space: nowrap; }
   .brand h1 { display: none; } /* 로고만 남겨 머리 단추가 줄바꿈되지 않게 */
-  .usage-pill .u + .sep, .usage-pill .sep + .u { display: none; }
   .appr-count { font-size: 0; gap: var(--sp-1); } .appr-count em { font-size: 13px; } /* 점 + 숫자만(글자는 화면 읽기용으로 남김) */
-  #limits-pop { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; }
   #new-session { padding: 0 12px; }
   #new-session span { display: none; } /* 「+」만(이름은 title · aria-label) */
   header { gap: var(--sp-1); }

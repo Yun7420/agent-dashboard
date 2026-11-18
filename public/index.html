@@ -31,14 +31,6 @@
     <div class="gs-field"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="gs-q" type="search" role="combobox" aria-label="Search history" aria-autocomplete="list" aria-expanded="false" aria-controls="gs-list" aria-keyshortcuts="/" placeholder="Search history…" maxlength="200" autocomplete="off" spellcheck="false"><kbd>/</kbd></div>
     <div class="gs-drop" id="gs-drop" hidden><div id="gs-meta" role="status"></div><div id="gs-list" role="listbox" aria-label="Search history"></div></div>
   </div>
-  <span class="info-wrap">
-    <button id="usage" class="usage-pill" title="Claude account usage limits"></button>
-    <div class="menu-pop" id="limits-pop">
-      <div class="lp-head"><b>Limit trend</b><span class="lp-range"><button type="button" class="ghost on" data-range="24h">24h</button><button type="button" class="ghost" data-range="7d">7d</button></span></div>
-      <div id="limits-chart"></div>
-      <div class="lp-foot"><span class="lp-key"><i class="k5"></i>5h <i class="k7"></i>Weekly <i class="kr"></i>Reset</span><button type="button" class="ghost" id="limits-setup">Setup…</button></div>
-    </div>
-  </span>
   <button id="new-session" class="primary" title="Run agent" aria-label="Run agent">+<span data-th="btn.agent"> Agent</span></button>
   <span class="info-wrap">
     <button type="button" id="app-more" class="ghost icon-btn" title="More" aria-label="More" aria-haspopup="menu" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
@@ -83,6 +75,14 @@
     <button type="button" data-st="ended"><span class="dot-s ended"></span><span class="sl">Ended</span><b id="n-ended">0</b></button>
   </div>
   <div class="kinds" id="kinds" aria-label="Agent kinds"></div>
+  <!-- 범례 Claude Code 항목(좁은 화면은 위 한 줄)에 마우스를 올리면: 사용 한도 초기화 시각 · 추이(11-usage.js) -->
+  <div class="menu-pop" id="limits-pop" role="group" aria-label="Limit trend">
+    <div class="lp-head"><b>Limit trend</b><span class="lp-range"><button type="button" class="ghost on" data-range="24h">24h</button><button type="button" class="ghost" data-range="7d">7d</button></span></div>
+    <div id="limits-resets" class="lp-resets"></div>
+    <div id="limits-chart"></div>
+    <div class="lp-foot"><span class="lp-key"><i class="k5"></i>5h <i class="k7"></i>Weekly <i class="kr"></i>Reset</span><button type="button" class="ghost" id="limits-setup">Setup…</button></div>
+  </div>
+  <div class="usage-line" id="usage-line" data-lp hidden></div>
   <div class="empty" id="empty" hidden><div class="empty-line"><span>No sessions running</span><button type="button" class="primary" data-new-session aria-label="Run agent" title="Run agent">+ Agent</button></div></div>
   <div class="zoom-btns" role="group" aria-label="Org chart zoom">
     <button type="button" class="ghost icon-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
