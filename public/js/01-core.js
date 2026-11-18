@@ -119,7 +119,6 @@ function ago(iso) {
   if (s < 86400) return `${Math.floor(s / 3600)}시간 전`;
   return `${Math.floor(s / 86400)}일 전`;
 }
-const shortId = (s) => (s.id.startsWith('pid-') ? s.id : s.id.slice(0, 4));
 // 토큰 수 읽기 쉽게: 625843 → 626K, 1000000 → 1M
 function fmtTok(n) {
   if (n >= 1e6) return `${(n / 1e6).toFixed(n % 1e6 ? 1 : 0)}M`;

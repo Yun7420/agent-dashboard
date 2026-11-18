@@ -194,7 +194,7 @@
     <label>첫 프롬프트 (선택)</label>
     <textarea id="sp-prompt" rows="3"></textarea>
     <div class="note">tmux 안에서 열려서 대시보드로 채팅·승인할 수 있어요. 터미널에서 보려면 <code>tmux attach -t dash-…</code></div>
-    <div class="row"><button value="cancel" formnovalidate>취소</button><button class="primary" id="sp-ok" value="ok">열기</button></div>
+    <div class="row"><button value="cancel" formnovalidate>취소</button><button class="primary" value="ok">열기</button></div>
   </form>
 </dialog>
 <dialog id="day-dlg">
@@ -285,13 +285,13 @@
     </div>
     <div class="row">
       <span class="note" style="margin:0 auto 0 0">이 안내는 오른쪽 위 <b>?</b> 버튼으로 언제든 다시 볼 수 있어요</span>
-      <button value="recheck" id="env-recheck" formnovalidate>다시 점검</button>
+      <button value="recheck" formnovalidate>다시 점검</button>
       <button class="primary" value="ok" autofocus>시작하기</button>
     </div>
   </form>
 </dialog>
 <footer>
-  <div class="h" id="events-h"><span class="ttl"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>활동</span><span class="h-right"><span id="updated"></span><button type="button" class="fold-btn" id="fold-ic">접기 ▾</button></span></div>
+  <div class="h"><span class="ttl"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>활동</span><span class="h-right"><span id="updated"></span><button type="button" class="fold-btn" id="fold-ic">접기 ▾</button></span></div>
   <div id="events"></div>
 </footer>
 
