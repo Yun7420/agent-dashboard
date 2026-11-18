@@ -59,8 +59,10 @@ lib/                  구역별 일(모듈은 createXxx(deps) 로 필요한 것�
   notify · limits · usage · status   알림 · 옛 한도 기록 정리 · 토큰 사용량 · 상태줄 파일 정리
   respond · validate · paging · paths · perms · filecache · lru · serial · lock   응답 모양 · 입력 검사 · 나눠 보내기 · 경로 · 파일 권한 정리 · 캐시 · 차례 · 잠금
   tmux · dialog · approval · spawn · demo · util   tmux 조작 · 선택창 감지 · 승인 카드 · 새 세션 인자 · 데모 · 기록 읽기
+  i18n · i18n-en · lang-pref · demo-en   서버 문구 언어(한국어 원문 → 내보낼 때 영어 사전) · 브라우저 밖 문구 언어 저장(/api/lang) · 영어 데모 글
+  atomic-write         파일 한 번에 바꾸기(난수 임시 파일 → fsync → rename, 링크를 따라가지 않음)
 bin/                  agent-dashboard.mjs(실행 명령 하나: start · run · restore · open — 실행 방법은 이것과 `npm start` 만) · statusline.mjs(상태줄 다리 원본)
-public/               index.html 뼈대 · css/00-base.css ~ 12-narrow.css(구역별 모양, 번호 순서 · @media 는 맨 뒤 파일 · 색은 00-base 토큰만) · js/00-md.js ~ 20-keys.js(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다)
+public/               index.html 뼈대 · css/00-base.css ~ 12-narrow.css(구역별 모양, 번호 순서 · @media 는 맨 뒤 파일 · 색은 00-base 토큰만) · js/00-*.js ~ 20-keys.js(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다 · 00-prefs.js 브라우저 저장값 모양 검사 · 00-i18n.js + 00-dict-*.js 화면 글자는 영어 원문, 한국어는 사전)
 test/                 node --test (lib 단위 + 데모 서버로 보안 · 응답 모양 + 시험 서버(가짜 tmux · 임시 홈)로 실제 모드)
 docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 ```
