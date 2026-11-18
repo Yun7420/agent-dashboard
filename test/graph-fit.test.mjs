@@ -35,8 +35,8 @@ test('좁은 나무는 가운데에, 크게 해도 1.2배까지', () => {
   assert.ok(v.x > 24);
 });
 
-// 휠: ctrl · ⌘ 없이는 옮기기만(트랙패드 두 손가락 스크롤이 글자를 줄이지 않게) · ctrl(오므리기)이면 확대 · 축소
-test('휠: 그냥 스크롤은 옮기기만 하고 배율은 그대로 · ctrl 이나 ⌘ 와 함께면 확대 · 축소', () => {
+// 휠 · 두 손가락 스크롤 = 확대 · 축소(마우스 위치 기준). delta 에 비례해 작은 delta 는 조금만 · 휠로는 0.6배 아래로 안 줄어든다
+test('휠: delta 에 비례해 마우스 위치 기준 확대 · 축소, 휠로는 0.6배가 하한(− 단추로 더 줄였으면 그 아래로만 안 감)', () => {
   const on = {};
   const el = (box) => ({ getBoundingClientRect: () => box, classList: { contains: () => false, add() {}, remove() {} }, addEventListener(ty, fn) { on[ty] = fn; }, setAttribute() {} });
   const els = { '#graph': el({ width: 1000, height: 700, left: 0, top: 0 }) };
@@ -46,12 +46,20 @@ test('휠: 그냥 스크롤은 옮기기만 하고 배율은 그대로 · ctrl �
   });
   const wheel = (o) => on.wheel({ deltaX: 0, deltaY: 0, clientX: 500, clientY: 300, preventDefault() {}, ...o });
   run('view.x = 0; view.y = 0; view.k = 1');
-  for (let i = 0; i < 5; i++) wheel({ deltaY: 40 });
-  assert.deepEqual({ ...run('view') }, { x: 0, y: -200, k: 1, init: false });
-  wheel({ deltaX: 30 });
-  assert.equal(run('view.x'), -30);
-  wheel({ deltaY: 40, ctrlKey: true });
-  assert.ok(Math.abs(run('view.k') - 0.9) < 1e-9);
-  wheel({ deltaY: -40, metaKey: true });
-  assert.ok(Math.abs(run('view.k') - 0.99) < 1e-9);
+  wheel({ deltaY: 4 }); // 트랙패드의 작은 delta 한 번은 아주 조금만
+  assert.ok(Math.abs(run('view.k') - Math.exp(-0.008)) < 1e-9);
+  run('view.x = 0; view.y = 0; view.k = 1');
+  wheel({ deltaY: -100 }); // 마우스 휠 한 칸 위 = 확대, 마우스 자리(500,300)는 그대로
+  const k = run('view.k');
+  assert.ok(k > 1.2 && k < 1.23);
+  assert.ok(Math.abs(run('view.x') - (500 - 500 * k)) < 1e-9 && Math.abs(run('view.y') - (300 - 300 * k)) < 1e-9);
+  for (let i = 0; i < 40; i++) wheel({ deltaY: 100 }); // 계속 줄여도
+  assert.equal(run('view.k'), 0.6);
+  wheel({ deltaY: 3, ctrlKey: true }); // 오므리기도 같은 하한
+  assert.equal(run('view.k'), 0.6);
+  run('view.k = 0.4'); // − 단추로 더 줄인 경우
+  wheel({ deltaY: 100 });
+  assert.equal(run('view.k'), 0.4);
+  wheel({ deltaY: -100 });
+  assert.ok(run('view.k') > 0.4);
 });

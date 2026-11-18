@@ -180,7 +180,7 @@ A session already running in a terminal has no official way to receive input fro
 <summary><b>Center — structure</b></summary>
 
 - One **org chart**, with status counts bottom left and agent kinds (usage limits) bottom right
-- Org chart: drag or wheel (two-finger scroll) to pan · **ctrl+wheel (trackpad pinch) or + − to zoom** · double-click to fit · **click empty space = close the right panel**. Fitting never shrinks node text below 12px (if it overflows, the chosen session stays in view and you drag for the rest)
+- Org chart: drag to pan · **wheel (two-finger scroll), trackpad pinch or + − to zoom** (the wheel stops at 0.6×) · double-click to fit · **click empty space = close the right panel**. Fitting never shrinks node text below 12px (if it overflows, the chosen session stays in view and you drag for the rest)
 - Dashed line = working in the same folder, yellow = working, **purple arrow = messages between sessions**
 - **Status text color** under each session box: idle = purple · working = yellow · background = light yellow · **needs approval = pink (bold)**
 - **Click a project box** to open that folder in **VS Code · Cursor, or reveal it in Finder** (only installed apps are shown; only folders of listed sessions can be opened)
