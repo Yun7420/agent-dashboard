@@ -46,7 +46,7 @@ function subNodes(s) {
   ];
 }
 
-const NODE_W = 170, NODE_H = 54, GAP_X = 24, SUB_W = 150, SUB_H = 44;
+const NODE_W = 152, NODE_H = 54, GAP_X = 20, SUB_W = 136, SUB_H = 44; // 세션 6개 한 줄(약 1010px)이 1440 가운데 칸에 12px 글자 그대로 들어가게
 let GAP_Y = 64; // 세션 사이 메시지 화살표가 있으면 위 칸을 넓혀 화살표 자리를 만든다
 function layout(node, depth = 0, x0 = 0) {
   node.w = node.kind === 'sub' ? SUB_W : NODE_W;
@@ -101,12 +101,12 @@ function renderGraph() {
       walk(c, cp);
     });
     const cls = ['node', n.dir ? 'proj' : '', n.kind === 'sub' ? 'sub' : '', n.more ? 'more' : '', n.kind === 'group' || n.kind === 'root' ? 'group' : '', n.status || '', n.key && n.key === selected ? 'sel' : ''].join(' ');
-    const max = Math.floor((n.w - 14) / 7.4); // 12px 고정폭 글자 기준
+    const mx = n.tool ? 8 : 0, max = Math.floor((n.w - 14 - 2 * mx) / 7.4); // 12px 글자 기준 — 종류 표식이 있으면 글자를 그만큼 오른쪽으로(mx)
     const subMax = Math.floor((n.w - 12) / 6.4); // 10px
     nodes += `<g class="${esc(cls)}" data-path="${p}" data-st="${esc(n.status || '')}" ${n.key ? `data-key="${esc(n.key)}"` : ''} ${n.toggle ? `data-toggle="${esc(n.toggle)}"` : ''} ${n.dir ? `data-dir="${esc(n.dir)}"` : ''} transform="translate(${n.x},${n.y})">
       <rect width="${n.w}" height="${n.h}" rx="10"/>${n.tool ? kmarkSvg(n.tool, 14, 14) : ''}
-      <text x="${n.w / 2}" y="${n.sub ? n.h / 2 - 4 : n.h / 2 + 4}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
-      ${n.sub ? `<text class="t2" x="${n.w / 2}" y="${n.h / 2 + 13}" text-anchor="middle">${esc(fit(String(n.sub).toUpperCase(), subMax))}</text>` : ''}
+      <text x="${n.w / 2 + mx}" y="${n.sub ? n.h / 2 - 4 : n.h / 2 + 4}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
+      ${n.sub ? `<text class="t2" x="${n.w / 2 + mx}" y="${n.h / 2 + 13}" text-anchor="middle">${esc(fit(String(n.sub).toUpperCase(), subMax))}</text>` : ''}
     </g>`;
   };
   walk(tree);

@@ -6,10 +6,10 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 .node { cursor: pointer; }
 .node rect { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1; transition: stroke .15s; }
 .node:hover rect { stroke: color-mix(in srgb, var(--ink) 30%, transparent); }
-.node.group rect { fill: color-mix(in srgb, var(--surface-2) 70%, transparent); stroke: color-mix(in srgb, var(--ink) 14%, transparent); stroke-dasharray: 4 4; }
+.node.group rect { fill: color-mix(in srgb, var(--surface-2) 70%, var(--bg)); stroke: color-mix(in srgb, var(--ink) 14%, transparent); stroke-dasharray: 4 4; }
 .node.working rect { stroke: color-mix(in srgb, var(--working) 75%, transparent); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--working) 14%, transparent)); }
 .node.sub.working rect { filter: none; }
-.node.more rect { fill: transparent; stroke-dasharray: 3 3; }
+.node.more rect { fill: var(--bg); stroke-dasharray: 3 3; } /* 비침 대신 바탕색으로 막아 둔다 — 가운데 바탕 그래프가 글자 밑으로 들어와도 대비가 그대로 */
 .node.more text { fill: var(--dim); opacity: 1 !important; }
 .node.more:hover rect { stroke: var(--accent); } /* 서브에이전트가 많을 때 그림자 효과가 화면을 무겁게 해서 테두리만 */
 .edge.stack.working { stroke-dashoffset: 0; }
