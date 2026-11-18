@@ -44,7 +44,11 @@
 </header>
 <aside>
   <div class="sort-bar">
-    <span class="list-h">Sessions</span>
+    <!-- 목록 탭: 활성(지금 떠 있는 세션 · 정렬 · 끌기) / 종료(최근 24시간, 다시 열기) — 고른 탭은 agent-deck 의 listTab(04-list.js) -->
+    <div class="list-tabs" role="tablist" aria-label="Sessions">
+      <button type="button" role="tab" id="tab-live" data-tab="live" aria-selected="true">Active <b id="tab-live-n">0</b></button>
+      <button type="button" role="tab" id="tab-ended" data-tab="ended" aria-selected="false">Ended <b id="tab-ended-n">0</b></button>
+    </div>
     <!-- 정렬: 작은 아이콘 위에 투명한 select 를 겹쳐 둔다(키보드 · 화면 읽기는 select 그대로) -->
     <label class="sort-ic" title="Sort"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13M3 12h9M3 18h5M18 9V20M15 17l3 3 3-3"/></svg>
       <select id="sort" aria-label="Sort">
@@ -244,7 +248,7 @@
         <li data-th="help.approve"><b>Approve buttons</b> grant real permissions. Check the terminal screen (command · file) in the panel before you press.</li>
         <li data-th="help.auto">If a session's default permission mode is <b>auto</b>, most actions are allowed automatically and approval prompts rarely appear.</li>
         <li data-th="help.graph"><b>Structure tab</b>: drag to move · wheel or the + − buttons to zoom · double-click to fit · click a node for its prompts. A <span class="peer-t">blue arrow</span> means messages between sessions.</li>
-        <li data-th="help.keys"><b>Shortcuts</b>: <kbd>j</kbd>/<kbd>k</kbd> next · previous session, <kbd>g</kbd> or <kbd>Enter</kbd> open panel, <kbd>/</kbd> search everything, in the message box <kbd>Enter</kbd> send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line, in an approval prompt <kbd>1</kbd>~<kbd>9</kbd> choose · <kbd>Esc</kbd> reject (if marked risky, press the same number again within 2 seconds), otherwise <kbd>Esc</kbd> closes the panel. They don't work while you are typing.</li>
+        <li data-th="help.keys"><b>Shortcuts</b>: <kbd>j</kbd>/<kbd>k</kbd> next · previous session in the open list tab, <kbd>g</kbd> or <kbd>Enter</kbd> open panel, <kbd>/</kbd> search everything, in the message box <kbd>Enter</kbd> send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line, in an approval prompt <kbd>1</kbd>~<kbd>9</kbd> choose · <kbd>Esc</kbd> reject (if marked risky, press the same number again within 2 seconds), otherwise <kbd>Esc</kbd> closes the panel. They don't work while you are typing.</li>
       </ul>
     </div>
     <div class="notice key">

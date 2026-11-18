@@ -46,7 +46,7 @@ Agent Dashboard puts all of this on one screen.
 | 🗺️ | **Org chart** | This Mac → tool → project → session → subagent. Messages between sessions are **purple arrows** (count + last message) |
 | 💬 | **Chat · approve** | Send messages to tmux sessions (Enter), **file/image attachments**. Approval prompts show a **"what you're allowing" card** (warns on risky commands or files outside the folder), the real terminal screen and option buttons; multi-question prompts let you go back and forth |
 | ⌨️ | **Shortcuts** | `j`/`k` move between sessions · `/` search everything · `1`–`9` pick an approval option (risky requests need a second press) · `Esc` reject · close |
-| ♻️ | **Restore** | Reopen ended sessions in tmux — all at once after a Mac restart (`restore`), or one at a time with "Reopen" on a card under "Ended sessions" |
+| ♻️ | **Restore** | Reopen ended sessions in tmux — all at once after a Mac restart (`restore`), or one at a time with "Reopen" on a card in the list's "Ended" tab |
 | 📂 | **Open the folder** | Click a project box to open that folder in VS Code · Cursor or reveal it in Finder — no hunting for the folder when you want to check what changed |
 | ■ | **Stop · close** | Stop only what a session is doing (the conversation stays), or close a session from the dashboard |
 | 📝 | **Live code diff** | Files changed in the current request with +/− counts and red/green diffs; commands with ✓ pass / ✕ fail and output |
@@ -112,7 +112,7 @@ It only starts things and never stops anything. Sessions that are already runnin
 
 If you open the dashboard first, the top of the list shows **"N sessions from before the restart · Reopen all"**. Sessions follow your default model; only ones you picked explicitly (Sonnet/Haiku) keep it. Conversations older than 30 days are cleaned up by Claude Code and can't be resumed.
 
-Even without a restart, if sessions stopped unexpectedly, expand **"Ended sessions"** under the list. Claude sessions that were running in the last 24 hours but aren't now (including ones started outside tmux) get a **"Reopen"** button on their card, which resumes the same conversation in tmux.
+Even without a restart, if sessions stopped unexpectedly, open the **"Ended"** tab at the top of the list. Claude sessions that were running in the last 24 hours but aren't now (including ones started outside tmux) get a **"Reopen"** button on their card, which resumes the same conversation in tmux.
 - Sessions that are running now or were just reopened have no button (no duplicates).
 - If the folder trust prompt appears, the dashboard doesn't answer it for you; it only tells you "trust confirmation needed".
 - The list lives in `~/.agent-dashboard/recent.json` (readable only by you). The page sends only the session ID; folders and names come only from the server's saved list.
@@ -172,7 +172,7 @@ A session already running in a terminal has no official way to receive input fro
 - Sorting is the small icon at the top right of the list
 - Card: name · status · context bar (green → yellow → red) + one faint line (folder · time). Tags only when not the default (Codex · "View only" outside tmux)
 - **Collapse the list** with the ‹ tab at the middle of its right edge — a thin rail keeps status dots + initials (› to expand, click to open)
-- Click **Ended sessions N** under the live sessions to expand (sessions that ended in the last 24 hours)
+- List tabs **Active N** · **Ended N** — the Ended tab shows sessions that ended in the last 24 hours (with "Reopen"); your tab is remembered. The folded strip shows active sessions only
 - Hover for ✕ — close the session (with confirmation) / hide an ended session
 </details>
 
@@ -202,7 +202,7 @@ A session already running in a terminal has no official way to receive input fro
 
   | Key | Action |
   |---|---|
-  | `j` / `k` | Next / previous session (in list order, stops at the ends). If the panel is open, it switches to that session |
+  | `j` / `k` | Next / previous session (within the open list tab, in list order, stops at the ends). If the panel is open, it switches to that session |
   | `g` · `Enter` | Open the chosen session's panel |
   | `/` | Search all history |
   | `1`–`9` | Pick that numbered option in an approval prompt. **For requests flagged as risky, press the same number again within 2 seconds** |

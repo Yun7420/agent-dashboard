@@ -62,7 +62,7 @@ function toast(msg, ms = 3500) {
 const STATUS_KO = { working: t('Working'), background: t('Background task'), waiting: t('Needs approval'), idle: t('Idle'), ended: t('Ended') };
 const pref = (() => { try { return JSON.parse(localStorage.getItem('agent-deck') || '{}'); } catch { return {}; } })();
 // 없앤 기능의 저장값은 버린다(간추리기 B3 음성 입력) — 다음 저장 때 사라진다
-for (const k of ['micNoticeOk']) delete pref[k];
+for (const k of ['micNoticeOk', 'showEnded']) delete pref[k];
 const savePref = () => { try { localStorage.setItem('agent-deck', JSON.stringify(pref)); } catch {} };
 
 let state = null;
@@ -197,4 +197,4 @@ function prunePrefs(p, liveKeys, now, keepMs = PREF_KEEP_MS) {
   for (const k of gone) { if (p.expandSubs) delete p.expandSubs[k]; delete seen[k]; }
   return true;
 }
-const visible = () => ordered(state.sessions.filter((s) => (pref.showEnded || s.status !== 'ended') && !(s.status === 'ended' && pref.hidden.includes(s.key))));
+const visible = () => ordered(state.sessions.filter((s) => s.status !== 'ended' || (pref.listTab === 'ended' && !document.body?.classList?.contains('aside-folded') && !pref.hidden.includes(s.key)))); // 종료는 「종료」 탭을 펼쳐 볼 때만

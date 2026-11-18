@@ -9,9 +9,9 @@ function applyAsideFold() {
   $('#aside-fold').setAttribute('aria-label', label);
   $('#aside-fold').setAttribute('aria-expanded', String(!pref.asideFolded));
 }
-$('#aside-fold').addEventListener('click', () => { pref.asideFolded = !pref.asideFolded; savePref(); applyAsideFold(); view.init = false; setTimeout(() => { applyDrawerWidth(); renderGraph(); }, 0); });
+$('#aside-fold').addEventListener('click', () => { pref.asideFolded = !pref.asideFolded; savePref(); applyAsideFold(); view.init = false; setTimeout(() => { applyDrawerWidth(); render(); }, 0); /* 접힌 띠는 활성만 — 목록도 다시 */ });
 applyAsideFold();
-narrowScreen.addEventListener('change', () => { applyAsideFold(); view.init = false; setTimeout(() => { applyDrawerWidth(); renderGraph(); }, 0); });
+narrowScreen.addEventListener('change', () => { applyAsideFold(); view.init = false; setTimeout(() => { applyDrawerWidth(); render(); }, 0); });
 
 // ---------- 오른쪽 패널 폭 손잡이 ----------
 // 폭 손잡이(왼쪽 가장자리 가운데 알약): 끌면 폭, 최소 폭(380)보다 FOLD_PX 넘게 더 오른쪽으로 끌면 접힘(세션을 누르면 다시 열림).

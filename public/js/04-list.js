@@ -1,23 +1,28 @@
 // 왼쪽 세션 목록
 // 꼬리표는 기본값이 아닐 때만: tmux 밖(보기만 되는) 세션에만 「보기만」. 에이전트 종류는 이름 앞 표식(02-kinds.js 의 kmark)
 const tags = (s) => (s.tmux ? '' : `<span class="badge badge-view" title="${t('Started outside tmux — chat · approve are off')}">${t('View only')}</span>`);
+// 탭: 활성 = 지금 떠 있는 세션(정렬 · 끌기) / 종료 = 최근 24시간에 끝난 세션(서버가 24시간만 보낸다) · 다시 열기.
+// 접힌 띠는 탭과 상관없이 활성만(띠의 점 · 머리글자로 지금 일을 보는 자리)
+pref.listTab = pref.listTab === 'ended' ? 'ended' : 'live';
+const endedTab = () => pref.listTab === 'ended' && !document.body.classList.contains('aside-folded');
 function renderList() {
   const list = $('#list');
   if (dragKey) return; // 끌고 있는 동안은 다시 그리지 않는다
   const live = visible().filter((s) => s.status !== 'ended');
-  const groups = pref.sort === 'status'
-    ? ['waiting', 'working', 'background', 'idle'].map((st) => [st, STATUS_KO[st]]).map(([st, label]) => [label, live.filter((s) => s.status === st)])
-    : [[null, live]];
   const endedAll = ordered(state.sessions.filter((s) => s.status === 'ended' && !pref.hidden.includes(s.key)));
-  groups.push(['__ended', pref.showEnded ? endedAll : []]);
+  for (const [tab, n] of [['live', live.length], ['ended', endedAll.length]]) {
+    $(`#tab-${tab}-n`).textContent = n;
+    $(`#tab-${tab}`).setAttribute('aria-selected', String(pref.listTab === tab));
+  }
+  const groups = endedTab() ? [[null, endedAll]]
+    : pref.sort === 'status'
+      ? ['waiting', 'working', 'background', 'idle'].map((st) => [st, STATUS_KO[st]]).map(([st, label]) => [label, live.filter((s) => s.status === st)])
+      : [[null, live]];
   const manual = pref.sort === 'manual';
   let html = '';
   for (const [label, items] of groups) {
-    if (label === '__ended') {
-      html += `<div class="ended-h"><button type="button" id="ended-toggle" class="ended-toggle" title="${t('Show / hide ended sessions')}"><span class="chev">${pref.showEnded ? '▾' : '▸'}</span>${t('Ended sessions')} <b>${endedAll.length}</b></button></div>`;
-    }
     if (!items.length) continue;
-    if (label && label !== '__ended') html += `<div class="group-h">${label} · ${items.length}</div>`;
+    if (label) html += `<div class="group-h">${label} · ${items.length}</div>`;
     for (const s of items) {
       // 카드는 Tab 으로 닿고 Enter · Space 로 연다(아래 keydown). 안의 닫기(✕) 단추는 따로 Tab 으로 닿는다
       html += `<div class="card ${esc(s.status)} ${selected === s.key ? 'sel' : ''} ${kbKey === s.key ? 'kb' : ''}" data-key="${esc(s.key)}" title="${esc(s.title)} · ${STATUS_KO[s.status]}" tabindex="0" role="button" aria-label="${esc(s.title)} · ${STATUS_KO[s.status]}${selected === s.key ? ` · ${t('open')}` : ''}" ${manual && s.status !== 'ended' ? 'draggable="true"' : ''}>
@@ -33,7 +38,7 @@ function renderList() {
   // 기록 폴더가 아예 없으면(처음 설치) 「떠 있는 세션이 없어요」 대신 무엇을 하면 되는지 안내
   const noRecords = !state.sessions.length && envData?.tools?.claudeRecords === false;
   const emptyHint = noRecords ? emptyLine(t('No Claude Code session logs yet — run claude once in a terminal and it shows up here')) : emptyLine(t('No sessions running'), newSessionBtn());
-  const listHtml = (live.length ? '' : emptyHint) + html;
+  const listHtml = endedTab() ? html || emptyLine(t('No sessions ended in the last 24 hours')) : (live.length ? '' : emptyHint) + html;
   // 다시 그리면 요소가 바뀌어 키보드 위치(포커스)가 사라진다 → 같은 카드(또는 그 ✕)로 돌려놓는다
   const f = document.activeElement?.closest?.('#list .card');
   const onX = Boolean(document.activeElement?.closest?.('#list .card .x'));

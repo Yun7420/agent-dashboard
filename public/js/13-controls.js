@@ -1,9 +1,4 @@
 // 컨트롤
-// 종료된 세션 구역: 펼치기·접기는 목록 안에서 (목록은 다시 그려지므로 이벤트는 위임)
-$('#list').addEventListener('click', (e) => {
-  if (!e.target.closest('#ended-toggle')) return;
-  pref.showEnded = !pref.showEnded; savePref(); view.init = false; render();
-});
 
 function render() {
   if (!state) return;
@@ -38,12 +33,24 @@ applyTheme();
 $('#app-more').addEventListener('click', (e) => { e.stopPropagation(); $('#limits-pop').classList.remove('show'); /* 한도 추이 팝업과 겹치지 않게 */ $('#app-more').setAttribute('aria-expanded', $('#app-menu').classList.toggle('show')); });
 $('#app-menu').addEventListener('click', () => { $('#app-menu').classList.remove('show'); $('#app-more').setAttribute('aria-expanded', 'false'); }, true);
 document.addEventListener('click', (e) => { if (!e.target.closest('#app-menu')) { $('#app-menu').classList.remove('show'); $('#app-more').setAttribute('aria-expanded', 'false'); } });
-// 상태 칸: 누르면 그 상태의 첫 세션(목록 순서)을 연다 — 종료는 접혀 있으면 펼친 뒤. 없으면 알림만
+// 목록 탭 바꾸기(← → 로도, 04-list.js). 종료 탭에선 정렬 · 끌기가 없다(종료 세션은 끝난 차례대로)
+function setListTab(tab) {
+  if (pref.listTab === tab) return;
+  pref.listTab = tab; savePref(); view.init = false; render();
+}
+$('.list-tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setListTab(b.dataset.tab); });
+$('.list-tabs').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  e.preventDefault();
+  setListTab(pref.listTab === 'live' ? 'ended' : 'live');
+  $(`#tab-${pref.listTab}`).focus();
+});
+// 상태 칸: 누르면 그 상태의 첫 세션(목록 순서)을 연다 — 종료는 목록을 「종료」 탭으로 바꾼 뒤. 없으면 알림만
 $('#status-col').addEventListener('click', (e) => {
   const st = e.target.closest('[data-st]')?.dataset.st;
   if (!st) return;
-  if (st === 'ended' && !pref.showEnded) { pref.showEnded = true; savePref(); render(); }
-  const s = visible().find((x) => x.status === st || (st === 'working' && x.status === 'background'));
+  if (st === 'ended') setListTab('ended');
+  const s = (st === 'ended' ? ordered(state.sessions.filter((x) => !pref.hidden.includes(x.key))) : visible()).find((x) => x.status === st || (st === 'working' && x.status === 'background'));
   if (s) select(s.key); else toast(t('No sessions in this state'));
 });
 $('#appr-count').addEventListener('click', () => { const s = visible().find((x) => x.status === 'waiting'); if (s) select(s.key); }); // 승인 필요 → 첫 세션 열기
