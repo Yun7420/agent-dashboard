@@ -8,9 +8,9 @@ button:not(.primary):not(.ghost):not(.tab):not(.danger):not(.drawer-handle):not(
 /* 조직도 위 세 무리(지도 앱처럼): 왼쪽 위 상태 칩 · 왼쪽 아래 범례 + 한도 · 오른쪽 아래 + − ⌖. 모두 보이는 칸(--aw · --dw) 안에서 판과 같은 --slide 로 움직인다.
    높이 · 모서리 · 반투명 면은 같게. 자리가 모자라면 범례부터 짧게, 그다음 상태 칩을 점 + 숫자로(.short — 13-controls.js) — 숨기지는 않는다 */
 .status-chips, .kinds, .zoom-btns { position: absolute; z-index: var(--z-float); display: flex; padding: 2px; border-radius: var(--radius); background: var(--float-bg); box-shadow: var(--shadow); backdrop-filter: var(--float-blur); white-space: nowrap; }
-.status-chips { top: var(--sp-4); left: calc(var(--aw) + var(--sp-4)); transition: left var(--slide); }
-.kinds { bottom: var(--sp-4); left: calc(var(--aw) + var(--sp-4)); font-size: 13px; color: var(--dim); transition: left var(--slide); }
-.zoom-btns { bottom: var(--sp-4); right: calc(var(--dw) + var(--sp-4)); flex-direction: column; overflow: hidden; transition: right var(--slide); }
+.status-chips { top: var(--sp-4); left: calc(var(--aw) + var(--sp-4)); transition: left var(--slide), visibility var(--slide); }
+.kinds { bottom: var(--sp-4); left: calc(var(--aw) + var(--sp-4)); font-size: 13px; color: var(--dim); transition: left var(--slide), visibility var(--slide); }
+.zoom-btns { bottom: var(--sp-4); right: calc(var(--dw) + var(--sp-4)); flex-direction: column; overflow: hidden; transition: right var(--slide), visibility var(--slide); }
 .zoom-btns button { width: 32px; height: 32px; padding: 0; border: none; border-radius: 0; font-size: 16px; line-height: 1; }
 .zoom-btns button + button { border-top: 1px solid var(--border); }
 #graph.hl .node:not(.on), #graph.hl .edge:not(.on), #graph.hl .dot:not(.on) { opacity: .28; }
@@ -45,6 +45,7 @@ button.k-use:hover:not(:disabled) { background: var(--surface-2); border-color: 
 .kinds.short .us { display: inline; }
 .kinds.short .kind { gap: 0; padding: 0 var(--sp-1); }
 .kinds.tiny .k-use :is(.u, .sep) { display: none; } /* 「C ▾」만 — 누르면 팝업(#limits-pop)에 전체 */
+main.floats-off :is(.status-chips, .kinds, .zoom-btns) { visibility: hidden; } /* 보이는 칸 200px 미만 = 조직도 대신 패널을 넓게 보는 중 — 판이 다 미끄러진 뒤 숨김(13-controls.js) */
 .zoom-btns.up { bottom: calc(var(--sp-4) + var(--kh, 36px) + var(--sp-2)); } /* 범례 위로(겹치지 않게, 숨기지 않음) */
 /* 종류 표식: 머리글자 + --kind-<id> 색(02-kinds.js 가 --k 로 넣음) */
 .kmark { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border-radius: 50%; font: 700 11px/1 var(--sans); vertical-align: 1px; color: var(--k); background: color-mix(in srgb, var(--k) 18%, transparent); flex: none; }

@@ -30,8 +30,9 @@ function renderKinds() {
 }
 // 세 무리가 보이는 칸(목록 판 · 패널 사이)에 다 들어가는지: 아래 줄은 범례 + 확대 단추, 위 줄은 상태 칩. 어떤 폭에서도 서로 겹치지 않고 숨기지도 않는다.
 // 넘치면 범례부터 짧게(.short) → 「C ▾」만(.tiny, 누르면 팝업에 전체) → 그래도 모자라면 + − ⌖ 를 범례 위로(.up), 상태 칩은 점 + 숫자로(한도 · 승인 수는 꼭 봐야 하는 정보).
+// 보이는 칸이 200px 미만이면(패널을 넓게 끌어 조직도 대신 창을 보는 중 — 사용자) 세 무리를 숨긴다(.floats-off). 200px 이상에선 숨기지 않는다
 // 판이 미끄러지는 중의 사각형이 아니라 끝난 자리(--aw · --dw)로 세고, 폭은 .short 를 잠깐 떼고 긴 꼴로 잰다
-const GAP = 16;
+const GAP = 16, FLOATS_MIN = 200;
 const dwOf = () => parseFloat($('main').style.getPropertyValue?.('--dw')) || 0;
 const visibleW = () => $('main').clientWidth - asideW() - dwOf();
 function fitShort(el, room) {
@@ -39,6 +40,7 @@ function fitShort(el, room) {
   el.classList.toggle('short', el.offsetWidth > room);
 }
 function floatSync() {
+  $('main').classList.toggle('floats-off', visibleW() < FLOATS_MIN);
   const room = visibleW() - 2 * GAP, k = $('#kinds'), z = $('.zoom-btns'), beside = room - GAP - z.offsetWidth;
   k.classList.remove('tiny');
   fitShort(k, beside);

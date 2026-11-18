@@ -98,6 +98,12 @@ test('세 무리 배치: 범례 + 확대 단추가 보이는 칸에 안 들어�
     if (!up()) assert.ok(k + 16 + 36 <= room, `${visible}: 범례 ${k} + 확대 단추가 옆에 들어감`); // 같은 줄이면 겹치지 않는다
   }
   assert.equal(props['--kh'], '36px'); // 올릴 높이 = 범례 높이
+  // 200px 미만: 조직도 대신 패널을 넓게 보는 중 — 세 무리를 숨긴다(main.floats-off). 200 부터는 숨기지 않는다
+  for (const [visible, off] of [[199, true], [200, false], [120, true], [320, false]]) {
+    props['--dw'] = `${1180 - 296 - visible}px`;
+    run('floatSync()');
+    assert.equal(els.main.classList.contains('floats-off'), off, `보이는 칸 ${visible}`);
+  }
   props['--dw'] = '0px';
   run('floatSync()');
   assert.deepEqual([short('#kinds'), tiny(), up()], [false, false, false]); // 넓어지면 모두 되돌림
