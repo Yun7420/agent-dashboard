@@ -126,8 +126,8 @@ test('첨부를 빼면(✕) 미리보기 메모리를 돌려준다', async () =>
   assert.deepEqual(revoked, ['blob:1']);
 });
 
-// 새 세션에 넣지 못한 첫 프롬프트(서버 state.firstPrompts → 12-panel.js restoreFirstPrompts): 떠 있으면 그 세션 임시 글 앞에, 닫혔으면 「새 세션」 창 첫 프롬프트 칸에, 둘 다 한 번만 · 받았다고 알림
-test('restoreFirstPrompts: 떠 있는 세션은 임시 글로(쓰던 글은 뒤에 남김) · 닫힌 세션은 새 세션 칸에 글 · 알림은 길게 · 한 번만 · ack 보냄', async () => {
+// 새 세션에 넣지 못한 첫 프롬프트(서버 state.firstPrompts → 12-panel.js restoreFirstPrompts): 떠 있으면 그 세션 임시 글 앞에, 닫혔으면 「에이전트 실행」 창 첫 프롬프트 칸에, 둘 다 한 번만 · 받았다고 알림
+test('restoreFirstPrompts: 떠 있는 세션은 임시 글로(쓰던 글은 뒤에 남김) · 닫힌 세션은 에이전트 실행 칸에 글 · 알림은 길게 · 한 번만 · ack 보냄', async () => {
   const { run, stored, sent, el } = load();
   run("function toast(text, ms) { (globalThis.__log ??= []).push([text, ms]); }"); // 01-core.js 의 알림
   run(fs.readFileSync(new URL('../public/js/12-panel.js', import.meta.url), 'utf8').match(/const fpSeen[\s\S]*?\n}\n/)[0]); // 12-panel 의 그 함수만
@@ -139,7 +139,7 @@ test('restoreFirstPrompts: 떠 있는 세션은 임시 글로(쓰던 글은 뒤�
   await flush();
   assert.equal(run("pref.drafts['claude:a']"), '첫 메시지\n\n쓰던 글');
   assert.match(stored['agent-deck'], /첫 메시지/);
-  assert.deepEqual(JSON.parse(JSON.stringify(run('globalThis.__log'))), [['[일] 첫 메시지를 넣지 못해 입력 칸에 돌려놨어요 — 확인하고 보내 주세요', 10000], ['[b] 세션이 닫혀 첫 메시지를 보내지 못했어요 — 쓴 글은 「새 세션」 창에 돌려놨어요', 10000]]);
+  assert.deepEqual(JSON.parse(JSON.stringify(run('globalThis.__log'))), [['[일] 첫 메시지를 넣지 못해 입력 칸에 돌려놨어요 — 확인하고 보내 주세요', 10000], ['[b] 세션이 닫혀 첫 메시지를 보내지 못했어요 — 쓴 글은 「에이전트 실행」 창에 돌려놨어요', 10000]]);
   assert.equal(el('#sp-prompt').value, '닫힌 세션 글');
   assert.deepEqual(sent.map((x) => x.key), ['claude:a', 'claude:b']);
 });

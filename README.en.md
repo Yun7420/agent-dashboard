@@ -154,7 +154,7 @@ A session already running in a terminal has no official way to receive input fro
 [Dashboard] ────┘   (manages the input channel)
 ```
 
-- **New session** — use **+ New session** in the dashboard (folder · name · model · first prompt); it opens inside tmux automatically.
+- **New session** — use **+ Run agent** in the dashboard (folder · name · model · first prompt); it opens inside tmux automatically.
 - **Move an existing session** — `/exit` in that session, then in a **regular shell**:
   ```bash
   cd <folder where the session started> && tmux new -s name claude --resume <session-id>
@@ -223,7 +223,7 @@ A session already running in a terminal has no official way to receive input fro
 <details open>
 <summary><b>Header — approval · limits · ⋯ menu</b></summary>
 
-- "Needs approval N" (hidden at 0, click to open the first waiting session) · "5h % · Weekly %" (hover for reset times, click for the trend) · 🔍 search all · + New session · ⋯
+- "Needs approval N" (hidden at 0, click to open the first waiting session) · "5h % · Weekly %" (hover for reset times, click for the trend) · 🔍 search all · + Run agent · ⋯
 - The connection shows only when it drops
 - **Esc**: close popups → press again to collapse the panel
 - ⋯ → Notifications: notification settings (approval needed · task over 1 minute finished) — browser notifications (while this tab is open) · macOS notifications (even with the tab closed, sent by the server) · sound · test notification. When macOS notifications are on, browser notifications are skipped so you don't get two. The same session and reason alerts at most once a minute, and simultaneous alerts are merged into one. Settings live in `~/.agent-dashboard/notify.json` (readable only by you). macOS notifications may need notification permission for Script Editor (or Terminal)
@@ -231,7 +231,7 @@ A session already running in a terminal has no official way to receive input fro
 
 ## Model · usage
 
-- **Model** — choose in + New session; change a running tmux session's model from the panel header (sends `/model`). Claude's `/model` also saves your default model, so when you change it from the dashboard **only that session** changes and your default is restored automatically.
+- **Model** — choose in + Run agent; change a running tmux session's model from the panel header (sends `/model`). Claude's `/model` also saves your default model, so when you change it from the dashboard **only that session** changes and your default is restored automatically.
 - **Account usage limits (5-hour · weekly)** — turn on with **Show usage limits** in the header. Claude Code only passes this to the status line, so turning it on registers a status line (`bin/statusline.mjs`) in `~/.claude/settings.json`.
   - Every Claude session gets one line at the bottom: `model · context % · 5-hour limit %` (if you already had a status line, it keeps showing yours).
   - Your previous settings are backed up to `~/.agent-dashboard/` and **restored exactly** when you turn it off. While on, context usage becomes exact instead of estimated.

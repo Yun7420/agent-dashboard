@@ -82,7 +82,7 @@ $('#spawn-form').addEventListener('submit', async (e) => {
     const r = JSON.parse(await api('/api/cmd/spawn', { cwd: $('#sp-cwd').value, name: $('#sp-name').value, model: $('#sp-model').value, prompt: $('#sp-prompt').value }));
     $('#spawn-dlg').close();
     $('#sp-name').value = ''; $('#sp-prompt').value = '';
-    toast(t('New session opened. It shows up in the list in a few seconds'));
+    toast(t('Agent started. It shows up in the list in a few seconds'));
     pendingSelect = r.key;
   } catch (err) { toast(err.message); }
 });
@@ -100,7 +100,7 @@ function restoreFirstPrompts(list, sessions) {
       toast(`[${name}] ${t('Could not deliver the first message, so it is back in the input — check and send it')}`, 10000);
     } else {
       $('#sp-prompt').value = f.text;
-      toast(`[${name}] ${t('The session closed before the first message was sent — the text is back in New session')}`, 10000);
+      toast(`[${name}] ${t('The session closed before the first message was sent — the text is back in Run agent')}`, 10000);
     }
     api('/api/cmd/first-prompt-ack', { key: f.key }).catch(() => fpSeen.delete(f.key));
   }

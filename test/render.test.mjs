@@ -47,9 +47,9 @@ test('홈 줄이기 · esc · 검색 강조: 맥 · 리눅스 홈, 옆 폴더는
   assert.equal(mark('a.b', '.'), 'a<mark>.</mark>b'); // 정규식 글자도 글자 그대로
 });
 
-test('빈 상태: 한 줄 안내 + 할 일 하나(새 세션 단추는 data-new-session 으로 머리 단추와 같은 창) · 할 일이 없으면 안내만', () => {
+test('빈 상태: 한 줄 안내 + 할 일 하나(에이전트 실행 단추는 data-new-session 으로 머리 단추와 같은 창) · 할 일이 없으면 안내만', () => {
   const { run } = loadFront(['00-md.js', '01-core.js'], browserStub());
   assert.equal(run('emptyLine')('없음'), '<div class="empty-line"><span>없음</span></div>');
   const html = run('emptyLine')('떠 있는 세션이 없어요', run('newSessionBtn')());
-  assert.match(html, /^<div class="empty-line"><span>떠 있는 세션이 없어요<\/span><button type="button" class="primary" data-new-session>\+ 새 세션<\/button><\/div>$/);
+  assert.match(html, /^<div class="empty-line"><span>떠 있는 세션이 없어요<\/span><button type="button" class="primary" data-new-session>\+ 에이전트 실행<\/button><\/div>$/);
 });
