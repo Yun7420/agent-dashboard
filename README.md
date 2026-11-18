@@ -20,9 +20,9 @@ Claude Code · Codex 지원 · 설치할 패키지 없음 · 모든 처리는 �
 
 **📝 개발 일기** — [#1 AI 코딩 세션 6개를 한 화면에서: 하루 만에 만들고, 하루 종일 고친 이야기](https://velog.io/@yun7420/AI-세션-대시보드-개발-일기-1-AI-코딩-세션-6개를-한-화면에서-하루-만에-만들고-하루-종일-고친-이야기) (velog · [티스토리](https://hsy742010.tistory.com/entry/AI-세션-대시보드-개발-일기-1-AI-코딩-세션-6개를-한-화면에서-하루-만에-만들고-하루-종일-고친-이야기))
 
-![데모 — 대화 창 그래프, 위험 경고가 붙은 승인 카드, 작업 중 세션의 바뀐 코드, 계정 한도 추이, ⋯ 메뉴](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/demo.gif)
+![데모 — 조직도 노드 강조, 메시지 점, 사용 한도 팝업, 위험 경고가 붙은 승인 카드, 작업 중 세션의 바뀐 코드, 기록 검색, ⋯ 메뉴](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/demo.gif)
 
-![전체 화면 — 세션 목록, 대화 창 그래프, 세션 패널, 승인 필요 수 · 사용 한도](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/overview.png)
+![전체 화면 — 세션 목록, 조직도(대화 창만큼 차오른 노드), 왼쪽 위 상태 칩 · 왼쪽 아래 범례와 사용 한도 · 오른쪽 아래 확대 단추](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/overview.png)
 
 <sub>화면의 프로젝트·세션 이름은 데모 모드의 예시 데이터예요.</sub>
 

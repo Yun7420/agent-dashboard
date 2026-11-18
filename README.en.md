@@ -20,9 +20,9 @@ Claude Code · Codex · zero dependencies · everything stays on your machine
 
 **Roadmap** — ✅ Stage 1: vanilla JS, built fast and used for real · 🔄 Stage 2: split files (done) · clean up (in progress), still zero dependencies · ⏳ Stage 3: move to React
 
-![Demo — the context chart, an approval card with a risk warning, live diffs of a working session, the usage-limit trend and the ⋯ menu](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/demo-en.gif)
+![Demo — org chart node highlight, a message dot, the usage-limit popup, an approval card with a risk warning, live diffs of a working session, history search and the ⋯ menu](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/demo-en.gif)
 
-![Overview — session list, context chart, session panel, approval count · usage limits](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/overview-en.png)
+![Overview — session list, the org chart (nodes filled by context use), status chips at top left · legend with usage limits at bottom left · zoom buttons at bottom right](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/overview-en.png)
 
 <sub>Project and session names in the screenshots are sample data from demo mode.</sub>
 
