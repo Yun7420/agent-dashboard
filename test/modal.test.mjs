@@ -47,3 +47,18 @@ test('modalClick: 창 네모 밖(뒤 흐림) 누름 · ✕ 는 닫고, 창 안 �
   assert.equal(d.open, false);
   click({ target: { closest: () => null } }); // 모달 밖 다른 곳은 아무 일 없음
 });
+
+test('openModal: 열 때 returnValue 를 비운다 — 지난번 「확인」(ok) · 「다시 점검」(recheck) 뒤 Esc 로 닫아도 그 일이 다시 돌지 않게', () => {
+  const d = dialog();
+  d.returnValue = 'ok'; // 지난번 「닫기」 단추로 닫힌 창
+  run('openModal')(d, btn());
+  assert.equal(d.returnValue, ''); // 이번에 Esc 로 닫으면(브라우저는 값을 안 바꿈) '' 그대로 → 닫기 명령을 보내지 않는다
+});
+
+test('창(dialog)은 모두 openModal 로 연다 — showModal 을 직접 부르는 곳은 openModal 안 한 곳뿐', async () => {
+  const fs = await import('node:fs');
+  const dir = new URL('../public/js/', import.meta.url); // import.meta.dirname 은 Node 20.11 부터라 쓰지 않는다
+  const calls = fs.readdirSync(dir).flatMap((f) => fs.readFileSync(new URL(f, dir), 'utf8').split('\n').map((l, i) => [f, i + 1, l]))
+    .filter(([, , l]) => /\.showModal\(/.test(l) && !/^\s*\/\//.test(l));
+  assert.deepEqual(calls.map(([f, , l]) => [f, l.trim()]), [['01-core.js', 'if (!dlg.open) dlg.showModal();']]);
+});

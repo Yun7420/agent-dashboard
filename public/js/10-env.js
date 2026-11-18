@@ -44,7 +44,7 @@ function openWelcome() { renderEnv(); openModal($('#welcome'), $('#app-more')); 
 $('#help').addEventListener('click', openWelcome);
 $('#welcome').addEventListener('close', async () => {
   pref.welcomed = true; savePref();
-  if ($('#welcome').returnValue === 'recheck') { $('#env-list').innerHTML = `<div class="env-row"><span class="spinner"></span>${t('Checking environment…')}</div>`; $('#welcome').showModal(); await loadEnv(true); }
+  if ($('#welcome').returnValue === 'recheck') { $('#env-list').innerHTML = `<div class="env-row"><span class="spinner"></span>${t('Checking environment…')}</div>`; openModal($('#welcome'), $('#app-more')); await loadEnv(true); }
 });
 let booted = false;
 async function finishBoot() {

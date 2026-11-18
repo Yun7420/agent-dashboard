@@ -113,15 +113,15 @@ function ago(iso) {
 }
 // 모달 틀(⋯ 메뉴의 오늘 한 일 · 알림 · 화면 설정 · 도움말): <dialog class="modal"> 를 showModal 로 — 브라우저 맨 위 층(top layer)이라
 // 어떤 칸 밑에도 묻히지 않고, 뒤는 흐리게 · Esc 로 닫기 · 포커스 가두기는 브라우저가 한다. 여기서는 ✕ · 바깥 누름으로 닫기와
-// 닫힌 뒤 연 단추로 포커스 돌려주기만(⋯ 메뉴 항목은 메뉴와 함께 사라지므로 그땐 ⋯ 단추로)
+// 닫힌 뒤 연 단추로 포커스 돌려주기만(⋯ 메뉴 항목은 메뉴와 함께 사라지므로 그땐 ⋯ 단추로).
+// 창(dialog)은 모두 openModal 로 연다 — returnValue 를 비워서(Esc 닫기는 값을 안 바꿔 지난번 'ok' · 'recheck' 가 남아 다시 실행됐다)
 const modalOpener = new WeakMap();
 function openModal(dlg, opener = document.activeElement) {
-  modalOpener.set(dlg, opener);
+  modalOpener.set(dlg, opener); dlg.returnValue = '';
   if (!dlg.open) dlg.showModal();
 }
 function modalClosed(dlg, fallback) {
-  const o = modalOpener.get(dlg);
-  modalOpener.delete(dlg);
+  const o = modalOpener.get(dlg); modalOpener.delete(dlg);
   (o?.isConnected && o.offsetParent !== null ? o : fallback)?.focus?.();
 }
 // 바깥 누름: 클릭 자리가 창 네모 밖이면(뒤 흐림을 누름) 닫기. ✕(data-close-modal)도 닫기

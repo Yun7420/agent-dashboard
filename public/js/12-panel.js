@@ -52,7 +52,7 @@ function askClose(key) {
     t('If a loop is running, Claude shows a confirm prompt → choose in the approval panel.'),
   ].filter(Boolean).join('<br>');
   $('#cl-ok').disabled = s.status === 'waiting';
-  $('#close-dlg').showModal();
+  openModal($('#close-dlg'));
 }
 $('#close-dlg').addEventListener('close', async () => {
   if ($('#close-dlg').returnValue !== 'ok' || !closing) return;
@@ -67,7 +67,7 @@ document.addEventListener('click', (e) => { if (e.target.closest('[data-new-sess
 $('#new-session').addEventListener('click', () => {
   const dirs = [...new Set((state?.sessions || []).map((s) => s.cwd).filter(Boolean))];
   $('#cwd-list').innerHTML = dirs.map((d) => `<option value="${esc(d)}">`).join('');
-  $('#spawn-dlg').showModal();
+  openModal($('#spawn-dlg'));
 });
 $('#spawn-form').addEventListener('submit', async (e) => {
   if (e.submitter?.value !== 'ok') return;
