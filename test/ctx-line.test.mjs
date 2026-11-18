@@ -31,3 +31,9 @@ test('추이 띠 · /api/trend 를 부르는 화면 코드는 없다', () => {
   const js = fs.readdirSync(new URL('../public/js/', import.meta.url)).map((f) => fs.readFileSync(new URL(`../public/js/${f}`, import.meta.url), 'utf8')).join('\n');
   assert.ok(!js.includes('/api/trend'));
 });
+
+test('좁은 패널 머리에서도 「%」 와 막대는 숨기지 않는다 — 이름 · 탭 여백이 먼저 준다', () => {
+  const css = fs.readdirSync(new URL('../public/css/', import.meta.url)).map((f) => fs.readFileSync(new URL(`../public/css/${f}`, import.meta.url), 'utf8')).join('\n');
+  assert.ok(!/(#cl-pct|\.cl-bar)[^{]*\{[^}]*display:\s*none/.test(css));
+  assert.match(css, /@container \(max-width: 385px\) \{ #drawer \.head-top h2 \{ min-width: 2em; \}/);
+});

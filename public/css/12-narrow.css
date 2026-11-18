@@ -48,7 +48,6 @@
   body, body.aside-folded { grid-template-columns: 56px 1fr; }
   /* 패널 머리: 이름 · 탭 · ⋯ · 닫기만 남겨 오른쪽 단추가 잘리지 않게 */
   #d-model { display: none; }
-  #drawer .ctx-line #cl-pct { display: inline; } /* 모델 선택이 빠져 자리가 남으니 % 는 보인다(아래 @container ④보다 강하게) */
   #drawer .head-top h2 { max-width: none; flex: 1 1 auto; }
   #drawer .head-top .grow { display: none; }
 }
@@ -64,7 +63,7 @@
   #drawer.approving #approval .btns { position: sticky; bottom: -12px; z-index: var(--z-raised); margin: 0 -14px -12px; padding: 8px 14px 12px; background: linear-gradient(color-mix(in srgb, var(--waiting) 6%, transparent), color-mix(in srgb, var(--waiting) 6%, transparent)), var(--surface); border-top: 1px solid color-mix(in srgb, var(--waiting) 25%, transparent); }
 }
 /* 패널 머리가 좁으면 줄이는 순서: ① 「대화 창」 글자 → ② 막대 64 → 32px · 모델 선택 여백 · 화살표 줄이기 → ③ 이름 말줄임(최소 4글자, 04-drawer.css)
-   → ④ 그래도 모자라면 「%」 글자를 빼고 막대만(마우스 올림 설명에 % · 토큰). 막대는 어떤 폭에서도 남는다. 탭 · ⋯ 는 줄이지 않는다 */
+   → ④ 이름 최소 2글자(점 + 말줄임) · 탭 여백 6px. 「%」 와 막대는 어떤 폭에서도 남는다. 탭 글자 · ⋯ 는 줄이지 않는다 */
 @container (max-width: 540px) { .ctx-line #cl-label { display: none; } }
 @container (max-width: 480px) {
   .ctx-line { margin-right: 0; }
@@ -72,6 +71,6 @@
   #d-model { padding: 0 18px 0 7px; background-position: right 6px center; }
 }
 @container (max-width: 420px) { #drawer .head-top h2 { margin-inline: 0; } #drawer .head-top .tab { padding: 0 8px; } } /* 탭은 글자 그대로, 여백만 */
-@container (max-width: 385px) { .ctx-line #cl-pct { display: none; } }
+@container (max-width: 385px) { #drawer .head-top h2 { min-width: 2em; } #drawer .head-top .tab { padding: 0 6px; } } /* % 와 막대는 끝까지 — 이름(점 + 말줄임까지)과 탭 여백이 먼저 준다 */
 /* 터치 화면 · 좁은 화면은 마우스를 올릴 수 없으니 코드 복사 단추를 늘 보인다 */
 @media (hover: none), (max-width: 860px) { .copy-code { opacity: 1; } }
