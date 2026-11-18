@@ -91,8 +91,7 @@ On first launch you'll see an **environment check** and a short guide, with fixe
 Run it inside tmux with the auto-restart runner; if the server stops it comes back after 2 seconds. Logs go to `~/.agent-dashboard/server.log` (readable only by you).
 
 ```bash
-tmux new -d -s dashboard -c <repo path> node bin/agent-dashboard.mjs run   # the runner you can use now
-tmux new -d -s dashboard -c <repo path> ./bin/run.sh                       # the older script (same job, kept as is)
+tmux new -d -s dashboard -c <repo path> node bin/agent-dashboard.mjs run   # the runner
 tmux respawn-pane -k -t dashboard     # restart after editing code (sending Ctrl+C would kill the tmux session too)
 ```
 
@@ -104,8 +103,7 @@ tmux respawn-pane -k -t dashboard     # restart after editing code (sending Ctrl
 A restart kills tmux and every session inside it, but the conversations are saved, so they can be reopened with `--resume`. The dashboard keeps saving the list of live tmux Claude sessions (name · folder · session ID) to `~/.agent-dashboard/restore.json`, so you can bring them all back in one go.
 
 ```bash
-npm run restore    # reopens the pre-restart sessions in tmux and starts the dashboard
-node bin/agent-dashboard.mjs restore   # same job (starts the dashboard with the run runner)
+node bin/agent-dashboard.mjs restore   # reopens the pre-restart sessions in tmux and starts the dashboard with the run runner
 ```
 
 It only starts things and never stops anything. Sessions that are already running aren't started again.
@@ -287,7 +285,7 @@ agent-dashboard/
 │  ├─ notify · notify-api · housekeeping           notifications (what and when · settings · routes) · cleanup at start and every 6 hours
 │  ├─ paging · filecache · lru · serial · lock · util   paged history · caches · ordering
 │  └─ demo                                        demo data
-├─ bin/                # agent-dashboard.mjs (start · run · restore) · run.sh (older runner) · restore.mjs (npm run restore) · statusline.mjs (status-line bridge source)
+├─ bin/                # agent-dashboard.mjs (start · run · restore · open) · statusline.mjs (status-line bridge source)
 ├─ public/             # UI (vanilla HTML/CSS/JS, no build)
 │  ├─ index.html       # structure (no token — login is a cookie)
 │  ├─ css/00-base.css ~ 12-narrow.css   # styles, one file per area, loaded in number order (narrow-screen @media in the last file)

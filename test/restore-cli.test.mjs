@@ -23,7 +23,7 @@ function fakeTmux(sessions) {
 }
 const run = async (tmux) => {
   const lines = [];
-  await restoreAll({ root: '/repo', launcher: ['./bin/run.sh'], log: (l) => lines.push(l), tmux });
+  await restoreAll({ root: '/repo', launcher: ['node', 'bin/agent-dashboard.mjs', 'run'], log: (l) => lines.push(l), tmux });
   return lines;
 };
 
@@ -31,7 +31,7 @@ test('저장된 목록이 없으면 그렇다고 알리고, 대시보드만 켠�
   const t = fakeTmux([]);
   const lines = await run(t);
   assert.match(lines[0], /재시동 전에 저장된 세션 목록이 없어요/);
-  assert.deepEqual(t.made, [{ name: 'dashboard', cwd: '/repo', command: ['./bin/run.sh'] }]);
+  assert.deepEqual(t.made, [{ name: 'dashboard', cwd: '/repo', command: ['node', 'bin/agent-dashboard.mjs', 'run'] }]);
   assert.match(lines.at(-1), /대시보드도 켰어요/);
 });
 

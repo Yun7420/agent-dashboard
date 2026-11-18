@@ -285,7 +285,7 @@ function serveStatic(res, url) {
 }
 
 // 처리기 밖에서 놓친 Promise 거절도 로그만 남기고 서버는 계속 돈다.
-// 실행기(run.sh)가 2초 뒤 다시 살려도 열린 탭의 SSE 가 끊기고, 같은 요청을 웹사이트가 반복해서 보내면 계속 꺼지기 때문.
+// 실행기(agent-dashboard run)가 2초 뒤 다시 살려도 열린 탭의 SSE 가 끊기고, 같은 요청을 웹사이트가 반복해서 보내면 계속 꺼지기 때문.
 // uncaughtException 은 삼키지 않는다 — 동기 코드가 중간에 멈춰 상태가 망가졌을 수 있어 다시 켜는 편이 안전하다
 process.on('unhandledRejection', (e) => console.error('[처리 안 된 거절]', e?.stack ?? e));
 

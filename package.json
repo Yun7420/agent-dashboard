@@ -28,7 +28,6 @@
   ],
   "scripts": {
     "start": "node server.mjs",
-    "restore": "node bin/restore.mjs",
     "test": "node --test test/*.test.mjs"
   },
   "engines": {

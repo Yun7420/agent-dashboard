@@ -149,7 +149,7 @@
 |---|---|
 | `lib/recent.mjs` | 꺼진 세션 다시 열기: 최근 7일 떠 있던 세션 기억 · 종료 카드에 reopen 표시(`createRecent` · `liveEntries`) |
 | `lib/restore.mjs` | 재시동 복구: 떠 있는 tmux 세션 목록 저장(`saveSnapshot`) · 다시 띄우기(`restoreSessions`) |
-| `lib/restore-cli.mjs` | 한 줄 명령 복구(`restoreAll`) — `npm run restore` 와 `agent-dashboard restore` 가 같이 씀 |
+| `lib/restore-cli.mjs` | 한 줄 명령 복구(`restoreAll`) — `agent-dashboard restore` 가 씀 |
 | `lib/runner.mjs` | 실행기: 서버가 죽으면 다시 켜기(`createRunner`) · 로그 5MB 넘으면 `.1` 로 돌리기 |
 | `lib/notify.mjs` | 무엇을 언제 알릴지(`createNotifier`) · macOS 알림 인자(`osascriptArgs`) · 설정 파일 |
 | `lib/notify-api.mjs` | 알림 설정 값을 들고(`createNotifyApi`) 틱마다 알리기(`tick`) · 경로 `/api/notify` · `/api/notify/test` |
@@ -172,9 +172,7 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `bin/agent-dashboard.mjs` | 실행 명령: 그냥 실행 · `start` = 서버, `run` = 실행기, `restore` = 재시동 복구 |
-| `bin/run.sh` | 예전 실행기(셸). 하는 일은 `agent-dashboard run` 과 같아요 |
-| `bin/restore.mjs` | `npm run restore` 가 부르는 파일 → `lib/restore-cli.mjs:restoreAll` |
+| `bin/agent-dashboard.mjs` | 실행 명령: 그냥 실행 · `start` = 서버, `run` = 실행기, `restore` = 재시동 복구, `open` = 로그인 링크로 열기 |
 | `bin/statusline.mjs` | 상태줄 다리 원본. Claude Code 가 상태줄을 그릴 때 넘겨 주는 값(대화 창 · 한도)을 파일로 남겨요 |
 
 ### public — 화면
@@ -356,7 +354,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 | 붙여넣기 버퍼 | `lib/tmux.mjs:sendText` | 보낼 때마다 새 이름(`agent-deck-<무작위>`)으로 넣고 붙이면서 지움(`-d`), 붙이기가 실패해도 지움. 두 세션에 거의 동시에 보내도 글이 섞이지 않고 tmux 에 남지 않게 |
 | 상태줄 명령 | `lib/bridge.mjs:bridgeCommand` | 경로에 따옴표 · `$` · `` ` `` 등이 있으면 켜지 않음(설정 파일 속 명령에 끼어들지 못하게) |
 | 파일 권한 | `lib/perms.mjs:tightenTree` · `lib/runner.mjs` 의 `openLog` · `lib/body.mjs:saveUpload` | 폴더 700, 파일 600. 예전에 넓게 만든 폴더 · 하위 폴더(uploads/<날짜> · status · limits · bin)와 파일도 켤 때 좁힘(넓히지는 않음 — mkdir 의 mode 는 이미 있던 폴더엔 닿지 않아서). 링크는 따라가지 않음 |
-| 로그 | `lib/respond.mjs:logPath` · `lib/runner.mjs`(`LOG_MAX`) · `bin/run.sh` | 요청 오류 로그에는 경로만(`?token=` · `?q=` 를 남기지 않음). server.log 는 5MB 를 넘으면 `.1` 로 한 번 돌려 디스크를 채우지 않음(600 그대로) |
+| 로그 | `lib/respond.mjs:logPath` · `lib/runner.mjs`(`LOG_MAX`) | 요청 오류 로그에는 경로만(`?token=` · `?q=` 를 남기지 않음). server.log 는 5MB 를 넘으면 `.1` 로 한 번 돌려 디스크를 채우지 않음(600 그대로) |
 | 첨부 정리 | `lib/uploads.mjs:pruneUploads` | 14일 지난 첨부 삭제(스크린샷에 민감한 화면이 남지 않게) |
 | 시험 모드 조건 | `lib/paths.mjs:TEST_MODE` | `DASHBOARD_TEST=1` 이고 데모가 아닐 때만 `DASHBOARD_HOME` 등 시험용 값을 읽어요. 평소엔 무시 — 환경 변수 하나로 토큰 위치를 바꾸지 못하게 |
 | 오류 문장 | `lib/respond.mjs:friendly` · `server.mjs` 의 500 처리 | 시스템 오류 원문(경로가 섞일 수 있음)은 로그에만, 화면엔 짧은 한국어 |

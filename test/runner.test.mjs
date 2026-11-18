@@ -47,8 +47,8 @@ test('run: 서버가 죽으면 다시 켜고, 로그는 600 으로 이어 쓴다
   assert.equal(fs.statSync(logFile).mode & 0o777, 0o600);
 });
 
-// run.sh 와 같은 일인지: 기본값(restartMs 를 주지 않음)이면 비정상 종료 2초 뒤 다시 켠다
-test('run: 기본 간격은 run.sh 처럼 2초 — 죽은 뒤 2초가 지나서야 다시 켠다', async () => {
+// 예전 run.sh 와 같은 일: 기본값(restartMs 를 주지 않음)이면 비정상 종료 2초 뒤 다시 켠다
+test('run: 기본 간격은 2초 — 죽은 뒤 2초가 지나서야 다시 켠다', async () => {
   const dir = tmp();
   const logFile = path.join(dir, 'data', 'server.log');
   const r = createRunner({ command: [process.execPath, fakeServer(dir, 'crash')], cwd: dir, logFile });
@@ -64,6 +64,22 @@ test('run: 기본 간격은 run.sh 처럼 2초 — 죽은 뒤 2초가 지나서�
   await r.done;
   assert.ok(gap >= 1800, `${gap}ms 만에 다시 켬`);
   assert.match(fs.readFileSync(logFile, 'utf8'), /서버 종료\(코드 3\) — 2초 뒤 다시 켭니다/);
+});
+
+// 실제 서버 다시 켜기 = 자식 서버만 SIGTERM(실행기는 그대로) → 실행기가 다시 켠다
+test('run: 자식 서버만 밖에서 SIGTERM 으로 끄면 실행기가 다시 켠다', async () => {
+  const dir = tmp();
+  const r = createRunner({ command: [process.execPath, fakeServer(dir, 'live')], cwd: dir, logFile: path.join(dir, 'data', 'server.log'), restartMs: 30 });
+  try {
+    assert.ok(await until(() => fs.existsSync(path.join(dir, 'pid'))));
+    const first = Number(fs.readFileSync(path.join(dir, 'pid'), 'utf8'));
+    process.kill(first, 'SIGTERM');
+    assert.ok(await until(() => count(dir) >= 2 && Number(fs.readFileSync(path.join(dir, 'pid'), 'utf8')) !== first));
+    assert.equal(fs.readFileSync(path.join(dir, 'signal'), 'utf8'), 'SIGTERM');
+  } finally {
+    r.stop();
+  }
+  await r.done;
 });
 
 test('run: 짧은 시간에 계속 죽으면 다시 켜는 간격을 늘린다', async () => {
@@ -180,16 +196,16 @@ test('restore(실행 파일): 떠 있는 세션은 빼고 꺼진 것만 --resume
   assert.deepEqual(t.calls().filter((c) => c.args.some((a) => /^kill/.test(a)) || c.cmd === 'kill'), []);
 });
 
-test('restore(npm run restore 와 같은 bin/restore.mjs): 대시보드가 떠 있으면 다시 켜지 않고, 저장소에선 run.sh 로', () => {
+test('restore(실행 파일): 대시보드가 떠 있으면 다시 켜지 않고, 꺼져 있으면 run 실행기로', () => {
   const up = restoreSetup(['sa', 'sb', 'dashboard']);
-  const r = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'restore.mjs')], { env: up.env, encoding: 'utf8' });
+  const r = spawnSync(process.execPath, [BIN, 'restore'], { env: up.env, encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /다시 열 세션이 없어요\(이미 떠 있어요\)[\s\S]*대시보드는 이미 켜져 있어요/);
   assert.equal(up.calls().filter((c) => c.args[0] === 'new-session').length, 0);
   const down = restoreSetup(['sa', 'sb']);
-  spawnSync(process.execPath, [path.join(ROOT, 'bin', 'restore.mjs')], { env: down.env, encoding: 'utf8' });
+  spawnSync(process.execPath, [BIN, 'restore'], { env: down.env, encoding: 'utf8' });
   const dash = down.calls().find((c) => c.args[0] === 'new-session');
-  assert.deepEqual(dash.args.slice(dash.args.indexOf('--') + 1), ['./bin/run.sh']);
+  assert.deepEqual(dash.args.slice(dash.args.indexOf('--') + 1).slice(-2), [BIN, 'run']);
 });
 
 test('--help: 하위 명령(run · restore) 목록', () => {

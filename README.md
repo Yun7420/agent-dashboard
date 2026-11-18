@@ -91,8 +91,7 @@ node bin/agent-dashboard.mjs open   # 링크가 지났거나 다른 브라우저
 tmux 안에서 자동 재시작 실행기로 띄우면, 서버가 멈춰도 2초 뒤 다시 켜져요. 기록은 `~/.agent-dashboard/server.log`(본인만 읽기).
 
 ```bash
-tmux new -d -s dashboard -c <저장소 경로> node bin/agent-dashboard.mjs run   # 지금 쓸 수 있는 실행기
-tmux new -d -s dashboard -c <저장소 경로> ./bin/run.sh                       # 예전 방식(같은 일, 그대로 둠)
+tmux new -d -s dashboard -c <저장소 경로> node bin/agent-dashboard.mjs run   # 실행기
 tmux respawn-pane -k -t dashboard     # 코드를 고친 뒤 다시 켜기 (Ctrl+C 를 보내면 tmux 세션까지 꺼지니 주의)
 ```
 
@@ -104,8 +103,7 @@ tmux respawn-pane -k -t dashboard     # 코드를 고친 뒤 다시 켜기 (Ctrl
 재시동하면 tmux 와 그 안의 세션이 모두 꺼지지만, 대화 기록은 남아 있어 `--resume` 으로 이어서 열 수 있어요. 대시보드가 떠 있는 tmux Claude 세션 목록(이름 · 폴더 · 세션 ID)을 `~/.agent-dashboard/restore.json` 에 계속 저장해 두기 때문에, 한 번에 다시 띄울 수 있어요.
 
 ```bash
-npm run restore    # 재시동 전 세션들을 tmux 로 다시 띄우고, 대시보드도 켜요
-node bin/agent-dashboard.mjs restore   # 같은 일(대시보드는 run 실행기로 켜요)
+node bin/agent-dashboard.mjs restore   # 재시동 전 세션들을 tmux 로 다시 띄우고, 대시보드도 run 실행기로 켜요
 ```
 
 띄우기만 하고 아무것도 끄지 않아요. 이미 떠 있는 세션은 다시 띄우지 않아요.
@@ -287,7 +285,7 @@ agent-dashboard/
 │  ├─ notify · notify-api · housekeeping           알림(무엇을 언제 · 설정 · 경로) · 켤 때 · 6시간마다 정리
 │  ├─ paging · filecache · lru · serial · lock · util   기록 나눠 받기 · 캐시 · 차례 지키기
 │  └─ demo                                        데모 데이터
-├─ bin/                # agent-dashboard.mjs(실행 명령: start · run · restore) · run.sh(예전 실행기) · restore.mjs(npm run restore) · statusline.mjs(상태줄 다리 원본)
+├─ bin/                # agent-dashboard.mjs(실행 명령: start · run · restore · open) · statusline.mjs(상태줄 다리 원본)
 ├─ public/             # 화면 (바닐라 HTML/CSS/JS, 빌드 없음)
 │  ├─ index.html       # 뼈대(토큰 없음 — 로그인은 쿠키)
 │  ├─ css/00-base.css ~ 12-narrow.css   # 모양(구역별, 번호 순서대로 불러옴 — 좁은 창 @media 는 맨 뒤 파일)
