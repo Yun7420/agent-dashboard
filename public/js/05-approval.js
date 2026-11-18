@@ -25,7 +25,7 @@ $('#approve-card').addEventListener('click', (e) => {
 // 서버의 lib/dialog.mjs dialogOptions 와 같은 규칙(같은 화면 예시로 시험 — 서버는 승인 직전에 화면을 다시 읽어 번호 · 글자를 맞춰 본다):
 //   선택지는 화면 맨 아래 선택창 안에서만(여러 질문 창이면 "← … →" 줄 아래, 아니면 마지막 40줄),
 //   커서(❯ › >) 줄을 기준으로 번호가 1씩 이어지는 묶음만 — 승인 창 속 명령 본문의 가짜 「1. No」 줄은 빠진다(점검 B1).
-//   줄 끝 상자 테두리(│) 떼기 · 고른 답(✔) · 거절 쪽 답(No · 아니)은 화면 쪽만
+//   줄 끝 상자 테두리(│) 떼기 · 고른 답(✔)은 화면 쪽만
 const TAB_LINE = /^\s*←.*(Submit|→)\s*$/;
 const OPTION_LINE = /^[\s│|]*(❯|›|>)?\s*([1-9])\.\s+(.+?)[\s│|]*$/;
 function approvalChoices(text, focus = '') {
@@ -48,7 +48,7 @@ function approvalChoices(text, focus = '') {
   const options = (a < 0 ? [] : entries.slice(a, b + 1)).map(({ n, raw }) => {
     const picked = /✔\s*$/.test(raw);
     const label = raw.replace(/\s*✔\s*$/, '');
-    return { n, label, picked, danger: !picked && /^no\b|\uC544\uB2C8/i.test(label) };
+    return { n, label, picked };
   });
   // 질문이 여러 개인 선택창: 맨 위 "←  ☒ 질문1  ☐ 질문2 … ✔ Submit  →" 줄이 보이면 이전/다음 질문으로 오갈 수 있게
   const tabLine = lines.find((l) => TAB_LINE.test(l));
@@ -59,6 +59,14 @@ function approvalChoices(text, focus = '') {
     tabs = { steps, cur, canNext: cur >= 0 && steps[cur].done && cur < steps.length - 1, canPrev: cur > 0 || (cur < 0 && focus === 'Submit') };
   }
   return { options, tabs };
+}
+// 단추 경고색: 선택지 글자가 아니라 서버 정보로 정한다(글자는 화면 속 명령 본문으로 꾸밀 수 있어서).
+// 서버가 위험으로 판정한 권한 요청(질문 창 제외)이면 허락하는 쪽 = 마지막 번호가 아닌 선택지에 경고색 — Claude Code 권한 창은 허락(Yes · 다시 묻지 않기)이 앞, 거절(No)이 맨 끝.
+// 거절 · Esc · 위험 아닌 요청은 모두 보조 모양. 순수 판정(test/approval-ui.test.mjs)
+function choiceTone(n, options, pendingTool) {
+  const risky = Boolean(pendingTool?.risks?.length) && pendingTool.tool !== 'AskUserQuestion';
+  const last = Math.max(...options.map((o) => Number(o.n)));
+  return risky && options.length > 1 && Number(n) < last ? 'risky' : '';
 }
 async function renderApproval(s) {
   const box = $('#approval');
@@ -94,10 +102,11 @@ async function renderApproval(s) {
   const btnHtml = nav +
     // 보라색은 실제로 고른 답(✔)에만 — 고르기 전엔 모든 선택지가 같은 모양
     options.map((o) => {
-      const cls = o.picked ? 'primary' : o.danger ? 'danger' : '';
-      return `<button data-choice="${o.n}" data-label="${esc(o.label)}" class="${cls}" title="${o.picked ? `${t('Current answer')} · ` : ''}${t('Key')} ${o.n}">${o.picked ? '✓ ' : ''}${esc(o.n)}. ${esc(o.label)}</button>`;
+      const risky = choiceTone(o.n, options, s.pendingTool) === 'risky';
+      const cls = o.picked ? 'primary' : risky ? 'danger' : '';
+      return `<button data-choice="${o.n}" data-label="${esc(o.label)}" class="${cls}" title="${o.picked ? `${t('Current answer')} · ` : ''}${risky ? `${t('Allows a risky request')} · ` : ''}${t('Key')} ${o.n}">${o.picked ? '✓ ' : ''}${esc(o.n)}. ${esc(o.label)}</button>`;
     }).join('') +
-    `<button data-choice="esc" class="danger" title="${t('Key')} Esc">${t('Reject')} (Esc)</button>` +
+    `<button data-choice="esc" title="${t('Key')} Esc">${t('Reject')} (Esc)</button>` +
     (options.length ? '' : `<span style="color:var(--faint);align-self:center">${t('Prompt without numbers')} →</span><button data-choice="up">↑</button><button data-choice="down">↓</button><button data-choice="enter" class="primary">Enter (${t('pick the ❯ item')})</button>`);
   setHtml($('#approve-btns'), btnHtml);
   paneTimer = setTimeout(() => { const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 2000);

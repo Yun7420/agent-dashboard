@@ -29,7 +29,6 @@ test('서버(dialogOptions)와 같은 화면에서 같은 번호 · 글자를 �
 
 test('가짜 선택지 줄은 단추가 되지 않는다: 커서 줄에서 번호가 1씩 이어지는 묶음만(본문 속 「1. No」 · 커서 없는 번호 목록 · 위로 밀린 옛 선택지 무시)', () => {
   assert.deepEqual(front(FAKE).map((o) => `${o.n}. ${o.label}`), ['1. Yes', "2. Yes, and don't ask again", '3. No, and tell Claude what to do differently (esc)']);
-  assert.deepEqual(choices(FAKE).options.map((o) => o.danger), [false, false, true]); // 빨간(거절) 단추는 진짜 3 뿐
   assert.deepEqual(front(' ❯ 1. 처음\n   1. 다시\n   2. 둘').map((o) => o.label), ['처음']); // 같은 번호가 이어지지 않으면 묶음이 끊긴다
   assert.deepEqual(front('   1. 본문\n   2. 본문\n ❯ 2. 커서\n   3. 셋').map((o) => o.label), ['커서', '셋']); // 커서 쪽 묶음(앞의 2 와 커서의 2 는 이어지지 않음)
   assert.deepEqual(front(' > 1. Yes\n   2. No'), [{ n: '1', label: 'Yes' }, { n: '2', label: 'No' }]); // > 도 커서(서버 dialogOptions 도 같게)
@@ -38,10 +37,25 @@ test('가짜 선택지 줄은 단추가 되지 않는다: 커서 줄에서 번�
   assert.deepEqual(front(old).map((o) => o.label), ['지금 것']);
 });
 
-test('고른 답(✔)은 표시를 떼고 picked, 거절 쪽 답(No · 아니)은 danger', () => {
+test('고른 답(✔)은 표시를 떼고 picked', () => {
   const opts = choices(' ❯ 1. 빠르게\n   2. 꼼꼼하게 ✔\n   3. No, 그만\n   4. 아니요').options;
-  assert.deepEqual(opts.map((o) => [o.label, o.picked, o.danger]), [['빠르게', false, false], ['꼼꼼하게', true, false], ['No, 그만', false, true], ['아니요', false, true]]);
+  assert.deepEqual(opts.map((o) => [o.label, o.picked]), [['빠르게', false], ['꼼꼼하게', true], ['No, 그만', false], ['아니요', false]]);
   assert.equal(choices('').options.length, 0);
+});
+
+// 단추 경고색(choiceTone): 서버 위험 판정 + 번호로만 — 위험 요청이면 허락 쪽(마지막 번호가 아닌 것)만, 거절 · 위험 아닌 요청 · 질문 창은 보조
+test('단추 경고색: 위험 요청은 허락 쪽(1 · 2)만 경고, 거절(맨 끝)은 보조 · 글자에 속지 않음 · 위험 아님 · 질문 창은 모두 보조', () => {
+  const { run } = loadFront(['00-md.js', '01-core.js', '05-approval.js'], browserStub({ document: { querySelector: () => ({ addEventListener() {}, classList: { toggle() {} }, dataset: {}, style: {} }), hidden: true } }));
+  const tone = run('choiceTone');
+  const opts = choices(FAKE).options;
+  const risky = { tool: 'Bash', risks: ['rm -rf — 폴더째 지우고 되돌릴 수 없음'] };
+  assert.deepEqual(opts.map((o) => tone(o.n, opts, risky)), ['risky', 'risky', '']);
+  const lying = choices(' ❯ 1. No (safe, really)\n   2. Yes').options; // 글자가 거꾸로여도 번호로 — 맨 끝이 거절
+  assert.deepEqual(lying.map((o) => tone(o.n, lying, risky)), ['risky', '']);
+  assert.deepEqual(opts.map((o) => tone(o.n, opts, { tool: 'Bash', risks: [] })), ['', '', '']);
+  assert.deepEqual(opts.map((o) => tone(o.n, opts, null)), ['', '', '']);
+  assert.deepEqual(opts.map((o) => tone(o.n, opts, { tool: 'AskUserQuestion', risks: ['x'] })), ['', '', '']);
+  assert.deepEqual(tone('1', [{ n: '1' }], risky), ''); // 선택지가 하나뿐이면 무엇이 거절인지 모르니 보조
 });
 
 test('여러 질문 창: 맨 위 「← … →」 줄 아래에서만 선택지, 지금 질문(focus)에 따라 이전 · 다음', () => {
