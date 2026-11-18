@@ -113,11 +113,8 @@
           <div class="info-pop" id="d-meta"></div>
         </span>
       </div>
-      <!-- 대화 창 띠: 지금 % + 최근 24시간 추이(06-history.js 의 renderTrend) — 마우스를 올리거나 초점이 가면 그 지점의 시각 · % · 토큰 · 자동 요약 -->
-      <div class="ctx-strip" id="ctx-strip" hidden>
-        <span class="cs-label">Context<b id="cs-pct"></b></span>
-        <div class="cs-plot"><div class="cs-chart" id="cs-chart" tabindex="0" role="img" aria-describedby="cs-tip"></div><span class="cs-cur" id="cs-cur" hidden></span><div class="cs-tip" id="cs-tip" role="tooltip" hidden></div></div>
-      </div>
+      <!-- 대화 창 줄: 지금 % + 작은 막대(06-history.js 의 renderCtxLine) — 마우스를 올리면 토큰 · 마지막 자동 요약 -->
+      <div class="ctx-line" id="ctx-line" hidden><span id="cl-label"></span><b id="cl-pct"></b><span class="cl-bar"><span id="cl-fill"></span></span></div>
     </div>
     <div id="now-view" role="tabpanel" aria-labelledby="tab-now">
       <div class="now-prompt" id="now-prompt"></div>

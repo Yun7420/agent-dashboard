@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { usageOf, addUsage, emptyTokens, thinTrend, drops } from '../lib/usage.mjs';
+import { usageOf, addUsage, emptyTokens } from '../lib/usage.mjs';
 import claude from '../adapters/claude.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 
@@ -24,18 +24,6 @@ test('종류별 합 · usage 없는 줄 · 잘못된 줄은 건너뜀', () => {
   assert.equal(usageOf(null), null);
   assert.deepEqual(usageOf(asst('m', { input_tokens: -5, output_tokens: 'x', cache_read_input_tokens: 7 })), { id: 'm|req-m', input: 0, output: 0, cacheRead: 7, cacheWrite: 0 });
   assert.equal(usageOf(asst('m', U(0, 0, 0, 0))), null);
-});
-
-test('추이 줄이기: 상한(N개) 안으로, 처음 · 끝 · 자동 요약으로 떨어진 곳은 남김', () => {
-  const pts = Array.from({ length: 1000 }, (_, i) => [i, i < 600 ? 1000 + i * 100 : 500 + (i - 600) * 10]); // 600 에서 떨어짐
-  const thin = thinTrend(pts, 120);
-  assert.ok(thin.length <= 120 && thin.length > 100, String(thin.length));
-  assert.deepEqual(thin[0], pts[0]);
-  assert.deepEqual(thin.at(-1), pts.at(-1));
-  assert.ok(thin.some((p) => p[0] === 599) && thin.some((p) => p[0] === 600), '떨어지기 직전 · 직후 점');
-  assert.equal(drops(thin), 1);
-  assert.equal(drops(pts), 1);
-  assert.equal(thinTrend(pts.slice(0, 50), 120).length, 50); // 상한보다 적으면 그대로
 });
 
 function transcript(lines) {
@@ -63,7 +51,7 @@ test('하루 토큰: 로컬 자정 경계 · 중복 · 메인과 서브에이전
   assert.equal(sum.prompts, 1);
 });
 
-test('세션 추이: 응답마다 한 점(중복 제외), 자동 요약 뒤 떨어짐이 보인다', async () => {
+test('마지막 자동 요약: 앞 응답보다 절반 넘게 줄어든 마지막 응답 시각(중복 · usage 없는 줄 제외)', async () => {
   const s = transcript([
     { type: 'user', timestamp: at(9), message: { role: 'user', content: '요청' } },
     asst('a', U(1, 5, 100000, 1000), at(9)), asst('a', U(1, 5, 100000, 1000), at(9)),
@@ -71,9 +59,5 @@ test('세션 추이: 응답마다 한 점(중복 제외), 자동 요약 뒤 떨�
     asst('c', U(1, 5, 20000, 500), at(11)), // 요약 뒤
     { type: 'assistant', timestamp: at(12), message: { id: 'n', content: [] } }, // usage 없음
   ]);
-  const t = await claude.contextTrend(s);
-  assert.deepEqual(t.points.map((p) => p[1]), [101001, 182001, 20501]);
-  assert.equal(t.total, 3);
-  assert.equal(t.drops, 1);
-  assert.equal(drops(t.points), 1); // 어댑터가 센 값과 점으로 다시 센 값이 같다(줄이지 않았을 때)
+  assert.equal(await claude.lastCompact(s), Date.parse(at(11)));
 });

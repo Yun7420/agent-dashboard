@@ -241,12 +241,13 @@ test('기록 API: 나눠 보내기 · 검색어 거르기 (데모 기록 132개)
   assert.equal(await req('/api/history?key=claude:demo-ops&offset=0&limit=80'), 403); // 토큰 없이는 그대로 막힘
 });
 
-test('대화 창 추이 API: 토큰 필요, 데모는 점 · 자동 요약 수를 돌려준다', async () => {
-  assert.equal(await req('/api/trend?key=claude:demo-fe'), 403);
-  const t = await (await fetch(`http://127.0.0.1:${PORT}/api/trend?key=claude:demo-fe`, { headers: { ...AUTH } })).json();
-  assert.equal(t.supported, true);
-  assert.ok(t.points.length >= 2 && t.points.length <= 120);
-  assert.equal(t.drops, 1);
+// 대화 창 추이 그래프를 없애며(/api/trend 없음) 패널 머리 줄의 「마지막 자동 요약」 시각만 기록 응답에 실어 보낸다
+test('마지막 자동 요약 시각: 기록 응답의 compactAt(데모: 40% 넘은 세션만), /api/trend 는 없다', async () => {
+  const get = async (key) => (await fetch(`http://127.0.0.1:${PORT}/api/history?key=${key}&offset=0&limit=1`, { headers: { ...AUTH } })).json();
+  assert.equal(typeof (await get('claude:demo-fe')).compactAt, 'number');
+  assert.equal((await get('claude:demo-ops')).compactAt, null);
+  const r = await fetch(`http://127.0.0.1:${PORT}/api/trend?key=claude:demo-fe`, { headers: { ...AUTH } });
+  assert.equal(r.status, 404);
 });
 
 test('알림 설정 API: 토큰 없거나 다른 Origin 이면 403, 소리는 허용 목록만, 데모는 설정 파일을 건드리지 않는다', async () => {
@@ -390,7 +391,6 @@ test('오류 응답 모양: text/plain; charset=utf-8 한국어 문장, 영어 �
     ['/api/day?date=abc', { headers: T }, 400],
     ['/api/limits?range=30d', { headers: T }, 400],
     ['/api/history', { headers: T }, 400],
-    ['/api/trend?key=', { headers: T }, 400],
     ['/api/cmd/send', { method: 'POST', headers: T, body: 'null' }, 400],
     ['/api/cmd/send', { method: 'POST', headers: T, body: '[1]' }, 400],
     ['/api/cmd/send', { method: 'POST', headers: T, body: '{' }, 400],

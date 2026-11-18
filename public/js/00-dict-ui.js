@@ -42,7 +42,6 @@ const KO_UI = {
   "Prompt without numbers": "번호 없는 선택창",
   "pick the ❯ item": "❯ 표시된 항목 선택",
   "Rejected": "거절했어요",
-  "Context window usage trend": "대화 창 사용률 추이",
   "Reading log…": "기록 읽는 중…",
   "This session has no log file yet": "아직 기록 파일이 없는 세션이에요",
   "Context": "대화 창",

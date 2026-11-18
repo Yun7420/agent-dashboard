@@ -58,8 +58,7 @@ test('합성 응답(usage 0)이 마지막이어도 대화 창 사용량은 앞 �
   ]);
   const x = await claude.describe(scanned(file));
   assert.equal(x.contextUsed, 50105);
-  const t = await claude.contextTrend(scanned(file));
-  assert.deepEqual(t.points.map((p) => p[1]), [50105]); // 추이에도 0 점이 없다
+  assert.equal(await claude.lastCompact(scanned(file)), null); // 0 점을 자동 요약(떨어짐)으로 세지 않는다
 });
 
 test('서브에이전트: 파일이 그대로면 메타 · 끝을 다시 읽지 않고, 바뀌면 다시 읽는다', async () => {
@@ -80,7 +79,7 @@ test('서브에이전트: 파일이 그대로면 메타 · 끝을 다시 읽지 
   assert.equal(two[0].done, true);
 });
 
-test('추이: 응답이 아주 많아도 점은 상한 안으로 줄이고, 응답 수 · 떨어짐 횟수 · 떨어진 곳은 그대로', async () => {
+test('자동 요약 시각: 응답이 아주 많아도(같은 응답 두 줄) 떨어진 마지막 응답 시각 하나', async () => {
   const lines = [user('긴 세션')];
   const N = 4500;
   for (let i = 0; i < N; i++) {
@@ -88,10 +87,6 @@ test('추이: 응답이 아주 많아도 점은 상한 안으로 줄이고, 응�
     const d = said(`m${i}`, `답 ${i}`, { input_tokens: 0, output_tokens: 1, cache_read_input_tokens: ctx });
     lines.push(d, { ...d, message: { ...d.message, content: [{ type: 'tool_use', id: `t${i}`, name: 'Bash', input: {} }] } }); // 같은 응답의 둘째 줄(중복)
   }
-  const t = await claude.contextTrend(scanned(makeSession(lines)));
-  assert.equal(t.total, N); // 같은 응답 두 줄은 한 번만
-  assert.equal(t.drops, 1);
-  assert.ok(t.points.length <= 4000, `점 ${t.points.length}개`);
-  assert.ok(t.points.some((p) => p[1] === 10_000)); // 떨어진 점은 남는다
-  assert.equal(t.points.at(-1)[1], 100_000 + N - 1); // 마지막 점도
+  const file = makeSession(lines);
+  assert.equal(await claude.lastCompact(scanned(file)), Date.parse(lines[1 + 3000 * 2].timestamp));
 });

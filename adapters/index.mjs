@@ -28,10 +28,10 @@
 //   liveSessions() → Promise<[{ pid, sessionId, status, waitingFor, name, background, startedAt }] | null>
 //                              도구가 알려 주는 「떠 있는 세션」 공식 목록. 없으면 ps · lsof 로 추정
 //   peers(s) → Promise<{ msgs: [{ at, fromAddr, fromName, fromPid, text }], names: [] }>   세션 사이 메시지(보라 화살표)
-//   contextTrend(s) → Promise<{ points: [[시각ms, 토큰]…], total, drops }>   대화 창 추이(없으면 supported: false)
+//   lastCompact(s) → Promise<시각ms | null>   마지막 자동 요약 시각(패널 대화 창 줄의 설명, 없으면 「없음」)
 //   daySummary(s, fromMs, toMs)  오늘 한 일 — 지금은 서버가 Claude 것만 부른다
 //
-// 지금 Codex 는 필수만 있어서 오늘 한 일 · 추이 · 세션 간 메시지 · 공식 상태가 없다(README 「지원 환경과 한계」)
+// 지금 Codex 는 필수만 있어서 오늘 한 일 · 자동 요약 시각 · 세션 간 메시지 · 공식 상태가 없다(README 「지원 환경과 한계」)
 
 import claude from './claude.mjs';
 import codex from './codex.mjs';

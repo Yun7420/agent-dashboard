@@ -196,7 +196,7 @@ A session already running in a terminal has no official way to receive input fro
 - While working, **■ Stop** on the answer card stops the current task only (sends Esc); the session and conversation stay
 - **History** tab: past prompts and answers, search, "load more". Turns started by a message from another session (SendMessage) are split out and shown as a **dashed bubble labelled "↙ sender"** (same in the Now tab and global search)
 - **What I did today**: ⋯ at the top right → Today's work → per session: prompts, edited files, command count, **commit titles** and **tokens** (total · excluding cache; hover for input · output · cache read · cache write · subagents, plus a daily total) (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts). Each response is counted once, and tokens are never converted to money (pricing differs by plan)
-- **Context strip** (right under the header): "Context N%" (amber at 60%, red at 85%) + the last 24 hours as a line — faint dashed line = 80%, amber dot = auto-compact. Hover it, or focus it and use ← →, for that point's time · % · tokens · last auto-compact time. Hidden when there is no data (e.g. Codex)
+- **Context line** (right under the header): "Context N%" (amber at 60%, red at 85%) + a small bar with an 80% tick. Hover it for tokens (331K / 1M) and the last auto-compact time. Hidden when there is no data (e.g. Codex)
 - **Search all history**: type straight into the **search bar** at the top center (or press `/`; 🔍 on narrow screens) and matches from prompts and answers across all sessions drop down below it → pick one with `↑`/`↓` and `Enter` (or click) to open that session's History tab with the same query. `Esc` once closes the list, twice clears the bar
 - **Keyboard shortcuts** (also under ⋯ → Help)
 
@@ -327,7 +327,7 @@ Uses Node's built-in test runner (`node --test`), nothing to install. 338 tests 
 ## Supported environment and limits
 
 - Built for and used daily on **macOS · tmux · Claude Code**. On Linux only the tests have been run. Open folder (`open`) and macOS notifications (`osascript`) exist only on macOS. Windows is not supported.
-- **Codex is partial** — list · status · Now tab (request · answer · context) · History tab · search work. Today's work · tokens · account usage limits · context trend · subagents · messages between sessions · new session · restore are Claude Code only. Prompt detection is based on the Claude Code screen too.
+- **Codex is partial** — list · status · Now tab (request · answer · context) · History tab · search work. Today's work · tokens · account usage limits · last auto-compact time · subagents · messages between sessions · new session · restore are Claude Code only. Prompt detection is based on the Claude Code screen too.
 - No Gemini or other tools yet (each can be added as one adapter file).
 - If you moved the record folders with `CLAUDE_CONFIG_DIR` · `CODEX_HOME`, those folders are read (the shell that starts the dashboard needs the same variables).
 - **This Mac only.** The server listens on `127.0.0.1` only; there is no access from other devices or remote access (login · tunnels · cloud).

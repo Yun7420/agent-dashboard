@@ -7,7 +7,7 @@ import { clip, parse, readHeadLines, readJsonOrNull, readTailLines, statOrNull }
 import { createLru } from '../lib/lru.mjs';
 import { CLAUDE_DIR } from '../lib/paths.mjs';
 import { createIncremental, findTurnStart, newTurns, addTurnEvent } from '../lib/history-core.mjs';
-import { usageOf, contextOf, thinTrend, DROP } from '../lib/usage.mjs';
+import { usageOf, contextOf, DROP } from '../lib/usage.mjs';
 // 이 어댑터의 조각들(adapters/claude/). 밖(서버 · lib)은 이 파일만 부른다
 import { turnStart } from './claude/prompts.mjs';
 import { collectChange, attachResult, trackPending } from './claude/changes.mjs';
@@ -128,7 +128,6 @@ const peerReader = createIncremental({
 // 기록 전체(요청 · 답변): 가장 큰 세션(375MB 파일, 요청 301개)도 응답 0.5MB 정도 → 최근 30개면 15MB 안쪽.
 // 목록 세션 수(보통 10~30개)보다 작으면 전체 검색 때마다 처음부터 다시 읽게 되므로 30. 비워진 뒤엔 처음부터 다시 읽는다
 const SEEN_MAX = 1000, SEEN_KEEP = 200; // 응답 id 기억(중복 줄 거르기용)
-const TREND_KEEP = 2000; // 대화 창 추이 점: 두 배를 넘으면 이만큼으로 줄인다(가장 긴 실제 세션 3,549개 · 화면엔 120개)
 // 기록 탭(lib/history-core.mjs 의 턴 묶기)에 넘길 이벤트
 function historyEvents(d) {
   const t = turnStart(d);
@@ -144,9 +143,9 @@ function historyEvents(d) {
 const historyReader = createIncremental({
   name: 'history',
   max: 30,
-  // trend = 응답마다 [시각ms, 대화 창 토큰] — 기록을 읽는 김에 같이 모은다(같은 응답이 여러 줄이면 한 번만).
-  // total · drops 는 줄이기 전 전체 기준으로 따로 센다(점을 줄여도 「응답 수 · 자동 요약 횟수」는 그대로)
-  init: () => ({ ...newTurns(), trend: [], total: 0, drops: 0, last: null, seen: new Set() }),
+  // 기록을 읽는 김에 응답마다의 대화 창 토큰을 앞 응답과 견줘, 절반 넘게 줄어든 마지막 시각(자동 요약 = compactAt)만 기억한다
+  // (같은 응답이 여러 줄이면 한 번만). 패널 머리 대화 창 줄의 마우스 설명이 쓴다
+  init: () => ({ ...newTurns(), last: 0, compactAt: null, seen: new Set() }),
   onLine(h, line) {
     if (!line.includes('"type":"user"') && !line.includes('"type":"assistant"')) return;
     const d = parse(line);
@@ -156,12 +155,9 @@ const historyReader = createIncremental({
       if (u.id) h.seen.add(u.id);
       // 같은 응답의 줄들은 붙어서 나오니 최근 id 만 기억하면 된다(긴 세션에서 끝없이 늘지 않게)
       if (h.seen.size > SEEN_MAX) h.seen = new Set([...h.seen].slice(-SEEN_KEEP));
-      const p = [Date.parse(d.timestamp), contextOf(u)];
-      h.total += 1;
-      if (h.last && p[1] < h.last[1] * DROP) h.drops += 1;
-      h.last = p;
-      h.trend.push(p);
-      if (h.trend.length > TREND_KEEP * 2) h.trend = thinTrend(h.trend, TREND_KEEP); // 떨어진 곳은 남기고 줄인다
+      const v = contextOf(u);
+      if (v < h.last * DROP) h.compactAt = Date.parse(d.timestamp);
+      h.last = v;
     }
     for (const ev of historyEvents(d)) addTurnEvent(h, ev);
   },
@@ -278,12 +274,10 @@ export default {
     return (await historyReader.read(s)).items;
   },
 
-  // 대화 창 사용 추이(history 와 같은 캐시 · 증분 읽기)
-  // 돌려주는 값: { points: [[시각ms, 토큰]…](길면 줄인 것), total: 응답 수, drops: 자동 요약으로 떨어진 횟수 }
-  async contextTrend(s) {
+  // 마지막 자동 요약 시각(ms, 없으면 null) — history 와 같은 캐시 · 증분 읽기
+  async lastCompact(s) {
     await this.history(s);
-    const h = historyReader.peek(s.file);
-    return { points: h?.trend ?? [], total: h?.total ?? 0, drops: h?.drops ?? 0 };
+    return historyReader.peek(s.file)?.compactAt ?? null;
   },
 
   // 하루 동안 한 일(adapters/claude/day.mjs)

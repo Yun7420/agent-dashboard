@@ -55,13 +55,10 @@ test('history: 먼저 받은 크기(오래된 stat)로 늦게 불러도 처음�
   assert.deepEqual(plain(b), want);
 });
 
-test('contextTrend: 동시에 불러도 응답마다 한 점', async () => {
+test('lastCompact: 동시에 불러도 같은 값', async () => {
   const file = makeFile(turns(100, '앞'));
-  const rs = await Promise.all([1, 2, 3].map(() => claude.contextTrend(stat(file))));
-  for (const r of rs) {
-    assert.equal(r.points.length, 200); // 턴마다 글 응답 2개(도구 호출엔 usage 없음)
-    assert.equal(r.total, 200);
-  }
+  const rs = await Promise.all([1, 2, 3].map(() => claude.lastCompact(stat(file))));
+  assert.deepEqual(rs, [null, null, null]);
 });
 
 test('peers: 동시에 불러도 메시지가 한 번씩', async () => {

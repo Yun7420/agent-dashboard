@@ -57,7 +57,7 @@ function renderNow(s) {
   $('#now-time').textContent = working ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : ago(s.lastAt);
   $('#stop').hidden = !(s.status === 'working' && s.tmux);
   renderChanges(s);
-  renderTrend(s);
+  renderCtxLine(s);
 }
 
 // 이번 턴 변경 본문은 고른 세션 것만 /api/changes 로 받는다 — 목록 상태엔 짧은 표식(changesSig)만(점검 P2, lib/live-feed.mjs).

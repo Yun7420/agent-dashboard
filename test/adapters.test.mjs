@@ -51,7 +51,7 @@ const DESCRIBE = {
   lastPrompt: strOrNull, lastPromptAt: strOrNull, lastText: strOrNull, lastTool: strOrNull,
   turnState: (v) => v === 'idle' || v === 'working', lastAt: strOrNull, subagents: Array.isArray,
 };
-const OPTIONAL = ['liveSessions', 'peers', 'contextTrend', 'daySummary'];
+const OPTIONAL = ['liveSessions', 'peers', 'lastCompact', 'daySummary'];
 
 test('어댑터 목록: 모든 어댑터에 예시 기록이 있고, id 가 겹치지 않는다', () => {
   assert.deepEqual(adapters.map((a) => a.id).sort(), Object.keys(SAMPLES).sort());

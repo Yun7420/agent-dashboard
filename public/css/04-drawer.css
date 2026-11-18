@@ -6,6 +6,14 @@
 #drawer .head-top { display: flex; align-items: center; gap: 6px; height: calc(var(--bar-h) - 3px); }
 #drawer .head-top h2 { margin: 0 2px 0 4px; font-size: 16px; font-weight: 700; letter-spacing: -.01em; min-width: 0; max-width: 34%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #drawer .head-top .grow { flex: 1; }
+/* 대화 창 줄(renderCtxLine): 「대화 창 33%」 + 80px 막대 · 80% 눈금(자동 요약이 가까워지는 곳) */
+.ctx-line { display: flex; align-items: center; gap: 6px; height: 24px; margin-top: -4px; padding: 0 4px; color: var(--faint); font-size: 12px; cursor: help; }
+.ctx-line[hidden] { display: none; }
+.ctx-line b { color: var(--text); font-variant-numeric: tabular-nums; }
+.ctx-line b.mid { color: var(--working-text); } .ctx-line b.high { color: var(--waiting-text); }
+.cl-bar { position: relative; width: 80px; height: 4px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.cl-bar::after { content: ''; position: absolute; left: 80%; top: -2px; width: 1px; height: 8px; background: var(--faint); }
+.cl-bar .ctx-bar { display: block; height: 100%; border-radius: 3px; }
 #drawer .tabs { margin: 0 0 0 6px; }
 .icon-btn.sm { width: 32px; height: 32px; border-radius: 8px; }
 .info-wrap { position: relative; display: inline-flex; }
@@ -16,21 +24,6 @@
 .menu-pop.show { display: block; }
 .menu-pop button { width: 100%; white-space: nowrap; font-size: 13px; }
 /* 대화 창 띠(머리 아래 약 56px): 왼쪽 「대화 창 N%」(60/85 색) · 오른쪽 24시간 추이 — 올리면 그 지점 설명이 띠 아래로 */
-.ctx-strip { display: flex; align-items: center; gap: var(--sp-3); height: 56px; padding: 0 4px; border-top: 1px solid var(--border); }
-.ctx-strip[hidden] { display: none; }
-.cs-label { flex: none; display: flex; flex-direction: column; gap: 2px; color: var(--faint); font-size: 11px; }
-.cs-label b { color: var(--text); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.cs-label b.mid { color: var(--working-text); } .cs-label b.high { color: var(--waiting-text); }
-.cs-plot { position: relative; flex: 1; min-width: 0; height: 32px; }
-.cs-chart { height: 100%; border-radius: 4px; cursor: crosshair; }
-.cs-chart:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.cs-chart svg { display: block; overflow: visible; }
-.cs-line { fill: none; stroke: var(--accent); stroke-width: 1.5; }
-.cs-80 { stroke: color-mix(in srgb, var(--working) 40%, transparent); stroke-dasharray: 3 3; }
-.cs-drop { fill: var(--working); }
-.cs-cur { position: absolute; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--text); box-shadow: 0 0 0 2px var(--surface); pointer-events: none; }
-.cs-tip { position: absolute; top: calc(100% + 8px); left: clamp(0px, calc(var(--x) - 120px), calc(100% - 240px)); z-index: var(--z-popover); width: 240px; padding: 6px 10px; border-radius: 8px; background: var(--surface-3); border: 1px solid var(--border-strong); box-shadow: var(--shadow); color: var(--dim); font-size: 12px; line-height: 1.6; pointer-events: none; }
-.cs-tip b { color: var(--text); font-variant-numeric: tabular-nums; }
 /* 폭 손잡이: 패널 테두리선(왼쪽) 위에 걸친 둥근 탭 — 목록의 「‹」 탭과 같은 모양 + ⋮⋮ 그립. 패널 밖 형제라 패널 폭(--dw)으로 자리를 잡는다.
    단추 자체는 선을 따라 세로로 긴 띠(누를 자리) · 보이는 건 가운데 탭. 평소엔 흐리게, 선에 올리면 진하게 */
 .drawer-handle { position: absolute; top: 0; bottom: 0; right: calc(var(--dw) - 6px); z-index: var(--z-tip); width: 12px; padding: 0; border: none; border-radius: 0; background: transparent; cursor: col-resize; }
