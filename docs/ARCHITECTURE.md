@@ -77,7 +77,7 @@
 | 파일 | 하는 일 |
 |---|---|
 | `server.mjs` | 서버 켜기 · 요청 입구의 보안 검사(`handle` · `authorized` · 보안 헤더) · 토큰 · 경로 표(`ROUTES`) · 화면 파일(`serveStatic`) · 틱 뒤에 할 일(`afterBuild`: 알림 · 한도 기록 · 복구 목록) · 각 구역을 잇는 일. 바뀌는 값을 가진 구역의 처리 함수는 그 모듈에, 남은 처리 함수(환경 · 한도 · 복구 · 창 화면 · 업로드 · 명령)는 여기 |
-| `lib/live-feed.mjs` | 2초 틱과 SSE(`createLiveFeed`): 마지막 상태(`latest`) · 보는 기간 · 열린 탭을 들고, 바뀐 것만 보냄. 경로 `/events` · `/api/perf` · `/api/window` |
+| `lib/live-feed.mjs` | 2초 틱과 SSE(`createLiveFeed`): 마지막 상태(`latest`) · 열린 탭을 들고, 바뀐 세션만 보냄(첫 연결 · 다시 보내기는 전체). 경로 `/events` · `/api/perf` |
 | `adapters/index.mjs` | 쓸 어댑터 목록(`adapters`). 새 도구는 여기에 한 줄 |
 | `adapters/claude.mjs` | Claude Code 어댑터의 입구: 세션 찾기(`scan`) · 요약(`describe`) · 기록 탭(`history`) · 대화 창 추이(`contextTrend`) · 세션 간 메시지(`peers`) · 서브에이전트. 서버 · lib 는 이 파일만 불러요 |
 | `adapters/claude/prompts.mjs` | 줄 하나가 새 턴의 시작인가: 사람이 친 요청(`promptText`) · 다른 세션 메시지(`turnStart`) — 요약 · 기록 탭 · 승인 카드 · 오늘 한 일이 같이 써요 |
