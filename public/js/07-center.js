@@ -64,6 +64,24 @@ $('#graph').addEventListener('pointerover', (e) => {
   svg.classList.add('hl');
 });
 $('#graph').addEventListener('pointerleave', () => $('#graph').classList.remove('hl'));
+// 바탕 스포트라이트: 마우스(터치 아님) 둘레 점만 진하게 — 위치는 rAF 한 번에 모아 .spot 에만(다른 요소의 스타일 다시 계산 없음).
+// 멈춘 지 2초 · 조직도를 벗어나면(목록 · 패널 · 범례 위) 꺼진다. 동작 줄이기면 멈춘 바탕만
+let spotXY = null, spotRaf = 0, spotIdle = 0;
+const spotOff = () => { clearTimeout(spotIdle); $('#spot').classList.remove('on'); };
+$('#graph').addEventListener('pointermove', (e) => {
+  if (e.pointerType !== 'mouse' || reduceMotion.matches) return;
+  spotXY = [e.clientX, e.clientY];
+  spotRaf ||= requestAnimationFrame(() => {
+    spotRaf = 0;
+    const r = $('main').getBoundingClientRect(), spot = $('#spot');
+    spot.style.setProperty('--mx', `${spotXY[0] - r.left}px`);
+    spot.style.setProperty('--my', `${spotXY[1] - r.top}px`);
+    spot.classList.add('on');
+  });
+  clearTimeout(spotIdle);
+  spotIdle = setTimeout(spotOff, 2000);
+});
+$('#graph').addEventListener('pointerleave', spotOff);
 // 조직도를 다시 그릴 때마다(바뀐 곳이 있을 때만 setHtml) 상태가 바뀐 노드에 bump — 동작 줄이기면 CSS 가 끈다
 const lastSt = new Map();
 let lastSel = null;

@@ -56,6 +56,7 @@
 /* 「동작 줄이기」를 켠 사람: 한 번 깜빡임 · 상태가 바뀐 노드 빛남 · 그래프 나타남 효과도 끈다· 로딩 고리는 멈춘 고리로(계속 움직이는 효과는 로딩 고리 말고는 처음부터 없음) */
 @media (prefers-reduced-motion: reduce) {
   .pulse, .spinner, .node.bump rect, .node .water.moving, .node .water-top.moving { animation: none !important; }
+  .spot { display: none; } /* 바탕 스포트라이트 없음 — 멈춘 오로라 · 점 격자만 */
   *, *::before, *::after { transition-duration: 0s !important; scroll-behavior: auto !important; }
 }
 /* 휴대폰 너비 승인 창: 위험 카드 → 터미널 화면 → 단추 순서는 그대로, 단추 줄만 상자 아래에 붙여 첫 화면에 보이게 */

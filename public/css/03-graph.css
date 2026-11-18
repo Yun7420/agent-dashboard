@@ -1,7 +1,18 @@
 /* 가운데 조직도: 노드 · 선 · 흐르는 점선 · 세션 사이 화살표 — 프로젝트 박스를 누르면 뜨는 폴더 열기 메뉴도 여기 */
 /* ---------- 가운데 조직도 ---------- */
-main { position: relative; overflow: hidden; background: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 5%, transparent) 1px, transparent 0) 0 0 / 22px 22px, var(--bg); }
-#graph { width: 100%; height: 100%; cursor: grab; }
+/* 바탕 층: 멈춘 점 격자 + 가장자리 오로라(--aurora-*). 노드 · 선 · 글자 밑이라 글자 대비는 그대로(노드는 제 바탕을 칠한다) */
+main { position: relative; overflow: hidden; background:
+  radial-gradient(circle at 1px 1px, var(--grid-dot) 1px, transparent 0) 0 0 / 22px 22px,
+  radial-gradient(ellipse 55% 60% at 0% 0%, var(--aurora-1), transparent 70%),
+  radial-gradient(ellipse 50% 55% at 100% 100%, var(--aurora-1), transparent 70%),
+  radial-gradient(ellipse 45% 50% at 100% 0%, var(--aurora-2), transparent 70%),
+  var(--bg); }
+/* 마우스 둘레 반지름 180px 만 점이 조금 진해진다(07-center.js 가 --mx · --my 를 rAF 한 번에). 멈춘 지 2초면 0.5초에 걸쳐 사라짐 */
+.spot { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .5s;
+  background: radial-gradient(circle at 1px 1px, var(--grid-dot-lit) 1px, transparent 0) 0 0 / 22px 22px;
+  mask-image: radial-gradient(180px circle at var(--mx, -999px) var(--my, -999px), var(--ink) 0, transparent 100%); }
+.spot.on { opacity: 1; }
+#graph { position: relative; width: 100%; height: 100%; cursor: grab; } /* relative: 스포트라이트 위에 그린다 */
 #graph.drag { cursor: grabbing; }
 .node { cursor: pointer; }
 .node rect { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1; transition: stroke .15s; }
