@@ -108,10 +108,37 @@ function msgDots() {
   }
   linksSeen = true;
 }
+// 등장 · 퇴장: 새 세션 노드는 0.25초에 0.92 → 1배 · 흐림 → 또렷 + 이어진 줄기가 나타나고, 빠진 노드(종료 등)는 제자리에서 0.3초 흐려지며 사라진다.
+// 한 번에 넷 이상 바뀌면(탭 바꾸기 · 목록 접기) 화면 전환이라 효과 없음. 처음 그릴 때 · 동작 줄이기면 없음. 한 번만 — 계속 도는 효과 없음
+const NODE_IN_MS = 250, NODE_OUT_MS = 300;
+let nodeKeys = null;
+const atOf = (g) => { const [, x = 0, y = 0] = /translate\(([-\d.]+),([-\d.]+)\)/.exec(g.getAttribute('transform')) || []; return `translate(${x}px, ${y}px)`; };
+function nodeMoves(removed) {
+  const now = new Map([...document.querySelectorAll('#graph .node[data-key]')].map((g) => [g.dataset.key, g]));
+  const was = nodeKeys;
+  nodeKeys = new Set(now.keys());
+  if (!was || reduceMotion.matches) return;
+  const added = [...now.keys()].filter((k) => !was.has(k)), gone = removed.filter((g) => !now.has(g.dataset.key));
+  if (!added.length && !gone.length || added.length + gone.length > 3) return;
+  for (const k of added) {
+    const g = now.get(k), at = atOf(g);
+    g.animate([{ transform: `${at} scale(.92)`, opacity: 0, filter: 'blur(2px)' }, { transform: `${at} scale(1)`, opacity: 1, filter: 'blur(0)' }], { duration: NODE_IN_MS, easing: 'ease-out' });
+    for (const e of document.querySelectorAll(`#graph [data-path="${g.dataset.path}"]:not(.node)`)) e.animate([{ opacity: 0 }, { opacity: 1 }], { duration: NODE_IN_MS, easing: 'ease-out' });
+  }
+  for (const g of gone) { // 빠진 노드 그 자체를 맨 아래 층에 잠깐 되돌려 흐리게(다른 노드를 가리지 않게)
+    const at = atOf(g);
+    g.classList.add('leaving');
+    $('#viewport').prepend(g);
+    g.animate([{ transform: `${at} scale(1)`, opacity: 1 }, { transform: `${at} scale(.96)`, opacity: 0 }], { duration: NODE_OUT_MS, easing: 'ease-in', fill: 'forwards' });
+    setTimeout(() => g.remove(), NODE_OUT_MS + 50);
+  }
+}
 // 조직도를 다시 그릴 때마다(바뀐 곳이 있을 때만 setHtml) 상태가 바뀐 노드에 bump — 동작 줄이기면 CSS 가 끈다
 const lastSt = new Map();
 let lastSel = null;
-new MutationObserver(() => {
+new MutationObserver((recs) => {
+  const real = (n) => !n.classList?.contains('leaving');
+  if (!recs.some((r) => [...r.addedNodes, ...r.removedNodes].some(real))) return; // 퇴장 노드를 넣고 뺄 때는 다시 볼 것 없음
   if (selected !== lastSel) { lastSel = selected; revealSel(); } // 다른 세션을 고르면(목록 · j/k) 가려졌을 때만 보이게
   for (const g of document.querySelectorAll('#graph .node[data-key]')) {
     const k = g.dataset.key, st = g.dataset.st;
@@ -119,5 +146,6 @@ new MutationObserver(() => {
     lastSt.set(k, st);
   }
   msgDots();
+  nodeMoves(recs.flatMap((r) => [...r.removedNodes]).filter((n) => n.matches?.('.node[data-key]') && real(n)));
   if (!$('#graph .node:hover')) $('#graph').classList.remove('hl'); // 새로 그린 노드엔 on 표시가 없으니 강조도 푼다
 }).observe($('#viewport'), { childList: true });

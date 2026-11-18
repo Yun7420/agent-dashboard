@@ -16,6 +16,8 @@ button:not(.primary):not(.ghost):not(.tab):not(.danger):not(.drawer-handle):not(
 #graph.hl .node:not(.on), #graph.hl .edge:not(.on), #graph.hl .dot:not(.on) { opacity: .28; }
 #graph .node, #graph .edge, #graph .dot { transition: opacity .2s; }
 #graph .node.on rect { stroke: var(--accent); }
+#graph .node { transform-box: fill-box; transform-origin: center; } /* 등장 · 퇴장 크기 변화는 노드 가운데 기준(07-center.js 의 nodeMoves) — 자리 translate 는 그대로 */
+.node.leaving { pointer-events: none; }
 .node.bump rect { animation: bump 1.2s ease-out; }
 @keyframes bump { 0% { filter: drop-shadow(0 0 0 var(--accent)); } 30% { filter: drop-shadow(0 0 8px var(--deco-line)); } 100% { filter: none; } }
 
