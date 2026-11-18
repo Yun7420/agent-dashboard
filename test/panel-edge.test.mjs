@@ -25,7 +25,7 @@ function loadHandle(startW = 620) {
     window: {}, document: { querySelector: (s) => els[s] ?? null, addEventListener() {} }, setInterval() {},
     localStorage: { getItem: () => null, setItem: (k, v) => log.push(['save', JSON.parse(v).drawerW]) },
   });
-  run('var DRAWER_DEFAULT = 620; var applyDrawerWidth = () => {}; var renderGraph = () => {};');
+  run('var DRAWER_DEFAULT = 620; var applyDrawerWidth = () => {}; var renderGraph = () => {}; var revealSel = () => {};');
   run('var closeDrawer = () => (globalThis.__closed = (globalThis.__closed ?? 0) + 1);');
   run(readFront('14-collapse.js').match(/const FOLD_PX[\s\S]*?\n\}\)\(\);\n/)[0]);
   const h = els['#resize'].listeners;

@@ -84,10 +84,13 @@
   </div>
   <div class="usage-line" id="usage-line" data-lp hidden></div>
   <div class="empty" id="empty" hidden><div class="empty-line"><span>No sessions running</span><button type="button" class="primary" data-new-session aria-label="New task — run an agent" title="New task — run an agent">+ New task</button></div></div>
+  <!-- 조직도 + − (한 덩어리) · ⌖ 제자리로(07-center.js) — 키 + · - · 0 -->
   <div class="zoom-btns" role="group" aria-label="Org chart zoom">
-    <button type="button" class="ghost icon-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
-    <button type="button" class="ghost icon-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
-    <button type="button" class="ghost icon-btn" id="zoom-fit" title="Fit to screen (same as double-click)" aria-label="Fit to screen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    <div class="zb">
+      <button type="button" class="ghost icon-btn" id="zoom-in" title="Zoom in (+)" aria-label="Zoom in" aria-keyshortcuts="+">+</button>
+      <button type="button" class="ghost icon-btn" id="zoom-out" title="Zoom out (-)" aria-label="Zoom out" aria-keyshortcuts="-">−</button>
+    </div>
+    <div class="zb"><button type="button" class="ghost icon-btn" id="zoom-home" title="Recenter (0)" aria-label="Recenter" aria-keyshortcuts="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button></div>
   </div>
   <section id="drawer">
     <div class="head">
@@ -241,7 +244,7 @@
         <li data-th="help.approve"><b>Approve buttons</b> grant real permissions. Check the terminal screen (command · file) in the panel before you press.</li>
         <li data-th="help.auto">If a session's default permission mode is <b>auto</b>, most actions are allowed automatically and approval prompts rarely appear.</li>
         <li data-th="help.graph"><b>Structure tab</b>: drag to move · wheel or the + − buttons to zoom · double-click to fit · click a node for its prompts. A <span class="peer-t">blue arrow</span> means messages between sessions.</li>
-        <li data-th="help.keys"><b>Shortcuts</b>: <kbd>j</kbd>/<kbd>k</kbd> next · previous session in the open list tab, <kbd>g</kbd> or <kbd>Enter</kbd> open panel, <kbd>/</kbd> search everything, in the message box <kbd>Enter</kbd> send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line, in an approval prompt <kbd>1</kbd>~<kbd>9</kbd> choose · <kbd>Esc</kbd> reject (if marked risky, press the same number again within 2 seconds), otherwise <kbd>Esc</kbd> closes the panel. They don't work while you are typing.</li>
+        <li data-th="help.keys"><b>Shortcuts</b>: <kbd>j</kbd>/<kbd>k</kbd> next · previous session in the open list tab, <kbd>g</kbd> or <kbd>Enter</kbd> open panel, <kbd>/</kbd> search everything, <kbd>+</kbd> · <kbd>-</kbd> zoom the org chart · <kbd>0</kbd> recenter, in the message box <kbd>Enter</kbd> send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line, in an approval prompt <kbd>1</kbd>~<kbd>9</kbd> choose · <kbd>Esc</kbd> reject (if marked risky, press the same number again within 2 seconds), otherwise <kbd>Esc</kbd> closes the panel. They don't work while you are typing.</li>
       </ul>
     </div>
     <div class="notice key">

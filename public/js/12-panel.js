@@ -9,7 +9,7 @@ document.addEventListener('click', (e) => {
 });
 const DRAWER_DEFAULT = 620;
 function applyDrawerWidth() {
-  const max = Math.max(380, $('main').clientWidth - 40);
+  const max = Math.max(380, $('main').clientWidth - asideW() - 40); // 목록 판까지 덮지 않게
   const w = Math.min(max, Math.max(380, pref.drawerW || DRAWER_DEFAULT));
   $('#drawer').style.width = window.innerWidth <= 860 ? '' : `${w}px`;
 }
@@ -141,7 +141,7 @@ $('#d-search').addEventListener('input', () => {
   histSearchTimer = setTimeout(async () => { if (selected && (await loadHistory(selected))) renderHistory(); }, 200);
 });
 // 패널 접기: 손잡이 · Esc · 조직도 빈 곳 누르기. 앞 번호 파일(03-graph)은 #drawer 에 'fold' 이벤트를 보내 부른다(함수를 거꾸로 부르지 않게)
-function closeDrawer() { clearTimeout(paneTimer); $('#drawer').classList.remove('open'); selected = null; view.init = false; renderList(); renderGraph(); }
+function closeDrawer() { clearTimeout(paneTimer); $('#drawer').classList.remove('open'); selected = null; renderList(); renderGraph(); }
 $('#drawer').addEventListener('fold', closeDrawer);
 $('#fold-panel').addEventListener('click', closeDrawer); // 좁은 화면(패널이 화면을 덮음)에서만 보이는 ⋯ 메뉴 항목
 document.addEventListener('click', (e) => {

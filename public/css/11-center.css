@@ -6,8 +6,10 @@ main { --dw: 0px; } /* 오른쪽 패널 폭(07-center.js 가 채움) — 범례 
 button:not(.primary):not(.ghost):not(.tab):not(.danger):not(.drawer-handle):not(.edge-tab) { background: transparent; }
 
 /* 조직도: 확대 단추(왼쪽 위 — 아래 두 모서리는 상태 칸 · 범례) · 마우스 올린 노드와 그 위아래 줄기만 또렷하게 · 상태가 바뀐 노드는 한 번 은은히 빛남 */
-.zoom-btns { position: absolute; top: var(--sp-3); left: var(--sp-4); z-index: var(--z-float); display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1px solid var(--border); }
-.zoom-btns button { font-size: 16px; line-height: 1; }
+.zoom-btns { position: absolute; top: var(--sp-3); left: calc(var(--aw) + var(--sp-4)); z-index: var(--z-float); display: flex; flex-direction: column; gap: var(--sp-2); transition: left var(--slide); }
+.zoom-btns .zb { display: flex; flex-direction: column; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); overflow: hidden; } /* 지도처럼 + · − 를 한 덩어리로, ⌖ 는 그 아래 따로 */
+.zoom-btns button { width: 32px; height: 32px; padding: 0; border: none; border-radius: 0; font-size: 16px; line-height: 1; }
+.zoom-btns .zb + .zb, .zoom-btns .zb button + button { border-top: 1px solid var(--border); }
 #graph.hl .node:not(.on), #graph.hl .edge:not(.on), #graph.hl .dot:not(.on) { opacity: .28; }
 #graph .node, #graph .edge, #graph .dot { transition: opacity .2s; }
 #graph .node.on rect { stroke: var(--accent); }
@@ -16,8 +18,9 @@ button:not(.primary):not(.ghost):not(.tab):not(.danger):not(.drawer-handle):not(
 
 /* 아래 모서리: 상태 숫자 칸(왼쪽) · 에이전트 종류 범례(오른쪽, 패널 왼쪽까지). 좁은 폭에선 숨김(12-narrow.css) */
 .status-col, .kinds { position: absolute; bottom: var(--sp-4); z-index: var(--z-float); display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-2); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
-.status-col { left: var(--sp-4); }
-.kinds { right: calc(var(--dw) + var(--sp-4)); font-size: 13px; color: var(--dim); }
+.status-col { left: calc(var(--aw) + var(--sp-4)); transition: left var(--slide); }
+.kinds { right: calc(var(--dw) + var(--sp-4)); max-width: calc(100% - var(--aw) - var(--dw) - 2 * var(--sp-4)); overflow: hidden; font-size: 13px; color: var(--dim); transition: right var(--slide); } /* 보이는 칸이 좁으면 목록 판 위로 넘지 않고 잘린다 */
+main:has(#drawer.dragging) :is(.kinds, .drawer-handle) { transition: none; } /* 폭을 끄는 동안엔 손을 바로 따라오게 */
 .kinds:empty { display: none; }
 .kind { display: inline-flex; align-items: center; gap: var(--sp-2); height: 28px; padding: 0 var(--sp-2); }
 /* Claude Code 항목 안의 사용 한도 「· 5시간 26% · 주간 15%」 — 높으면 숫자 색만(ctxLevel). 꺼져 있으면 작은 링크 */

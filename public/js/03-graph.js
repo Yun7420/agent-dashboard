@@ -147,22 +147,27 @@ function bounds(n, b = { x1: Infinity, y1: Infinity, x2: -Infinity, y2: -Infinit
   n.children.forEach((c) => bounds(c, b));
   return b;
 }
+// 조직도는 화면 전체 바탕이고 목록 · 패널은 그 위에 뜬 판 — 보이는 칸 = 목록 판 오른쪽(--aw) ~ 열린 패널 왼쪽
+const asideW = () => parseFloat(getComputedStyle(document.body).getPropertyValue('--aw')) || 0;
+const visibleBox = () => {
+  const svg = $('#graph').getBoundingClientRect(), L = asideW();
+  const R = $('#drawer').classList.contains('open') && innerWidth > 860 ? $('#drawer').getBoundingClientRect().width : 0;
+  return { L, width: Math.max(120, svg.width - L - R), height: svg.height };
+};
+// 맞춤은 처음 · 더블클릭 · ⌖(고름 없음) · 나무 모양이 바뀔 때만 — 판을 열고 닫거나 폭을 바꿔도 배율 · 위치는 그대로
 function autoFit(tree) {
-  const svg = $('#graph').getBoundingClientRect();
-  // 오른쪽 패널이 열려 있으면 그 폭을 빼고 남은 공간에 맞춘다
-  const drawer = $('#drawer').classList.contains('open') ? $('#drawer').getBoundingClientRect().width : 0;
-  const width = Math.max(120, svg.width - drawer); // 패널에 가려지지 않는 보이는 폭
+  const { L, width, height } = visibleBox();
   const b = bounds(tree);
   // 가로는 보이는 폭에 맞추되, 노드 이름(12px)이 작아지지 않게 1배 아래로는 줄이지 않는다(0.45배는 1440 에서 거의 안 읽혔다)
   // (그 경우 고른 세션 — 없으면 나무 가운데 — 를 가운데에 두고 나머지는 드래그로 본다)
   const fitW = (width - 48) / (b.x2 - b.x1);
-  const fitH = (svg.height - 60) / (b.y2 - b.y1);
+  const fitH = (height - 60) / (b.y2 - b.y1);
   const k = Math.max(1, Math.min(1.2, fitW, Math.max(fitH, Math.min(fitW, 0.7))));
   view.k = k;
   const graphW = (b.x2 - b.x1) * k;
   const sel = (function find(n) { return n.key && n.key === selected ? n : n.children.reduce((a, c) => a || find(c), null); })(tree);
-  view.x = graphW <= width - 48 ? (width - graphW) / 2 - b.x1 * k : Math.min(24 - b.x1 * k, Math.max(width - 24 - b.x2 * k, width / 2 - (sel ? sel.x + sel.w / 2 : (b.x1 + b.x2) / 2) * k));
-  view.y = Math.max(64, (svg.height - (b.y2 - b.y1) * k) / 2.6) - b.y1 * k;
+  view.x = L + (graphW <= width - 48 ? (width - graphW) / 2 - b.x1 * k : Math.min(24 - b.x1 * k, Math.max(width - 24 - b.x2 * k, width / 2 - (sel ? sel.x + sel.w / 2 : (b.x1 + b.x2) / 2) * k)));
+  view.y = Math.max(64, (height - (b.y2 - b.y1) * k) / 2.6) - b.y1 * k;
   view.init = true;
 }
 function applyView() { $('#viewport').setAttribute('transform', `translate(${view.x},${view.y}) scale(${view.k})`); }

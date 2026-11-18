@@ -9,7 +9,8 @@ function applyAsideFold() {
   $('#aside-fold').setAttribute('aria-label', label);
   $('#aside-fold').setAttribute('aria-expanded', String(!pref.asideFolded));
 }
-$('#aside-fold').addEventListener('click', () => { pref.asideFolded = !pref.asideFolded; savePref(); applyAsideFold(); view.init = false; setTimeout(() => { applyDrawerWidth(); render(); }, 0); /* 접힌 띠는 활성만 — 목록도 다시 */ });
+// 접고 펴도 조직도는 그대로(판만 미끄러짐), 접힌 띠는 활성만이라 목록 · 조직도는 다시 그린다
+$('#aside-fold').addEventListener('click', () => { pref.asideFolded = !pref.asideFolded; savePref(); applyAsideFold(); setTimeout(() => { applyDrawerWidth(); render(); }, 0); });
 applyAsideFold();
 narrowScreen.addEventListener('change', () => { applyAsideFold(); view.init = false; setTimeout(() => { applyDrawerWidth(); render(); }, 0); });
 
@@ -21,7 +22,7 @@ const dragVerdict = (startW, dx, min = 380) => (startW - dx < min - FOLD_PX ? 'f
 (() => {
   const handle = $('#resize');
   let start = null;
-  const done = () => { savePref(); view.init = false; renderGraph(); };
+  const done = () => { savePref(); revealSel(); }; // 폭을 바꿔도 맞추지 않고, 고른 노드가 가려졌을 때만 옮긴다
   handle.addEventListener('pointerdown', (e) => { start = { x: e.clientX, w: $('#drawer').getBoundingClientRect().width }; handle.classList.add('on'); $('#drawer').classList.add('dragging'); handle.setPointerCapture(e.pointerId); });
   handle.addEventListener('pointermove', (e) => {
     if (!start) return;

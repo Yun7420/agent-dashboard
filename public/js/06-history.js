@@ -74,7 +74,7 @@ async function select(key) {
   renderGraph();
   const s = state.sessions.find((x) => x.key === key);
   if (!s) return;
-  if (!$('#drawer').classList.contains('open')) { $('#drawer').classList.add('open'); view.init = false; renderGraph(); }
+  if (!$('#drawer').classList.contains('open')) { $('#drawer').classList.add('open'); renderGraph(); } // 조직도는 맞추지 않는다(가려진 고른 노드만 07-center 가 보이는 칸으로)
   if (key !== lastSelected) { useDraft(key); setTab('now'); promptLog = []; hist.key = null; hist.items = []; lastSelected = key; delete $('#pane').dataset.seen; openFiles.clear(); fullCmds.clear(); closedCmds = false; }
   renderDrawerHead(s);
   if (drawerTab === 'log') $('#log-list').innerHTML = `<div class="commit"><span class="m">${t('Reading log…')}</span></div>`;

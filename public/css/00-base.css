@@ -64,6 +64,8 @@
   --z-modal: 60; /* 로그인 필요 안내 */
   --bar-h: 52px; /* 왼쪽 목록 맨 윗줄과 오른쪽 패널 머리의 공통 높이 */
   --shadow: 0 10px 30px color-mix(in srgb, var(--shade) 35%, transparent);
+  --shadow-panel: 0 0 30px color-mix(in srgb, var(--shade) 25%, transparent); /* 조직도 위에 뜬 판(목록 · 패널) 한 단계 */
+  --slide: .22s cubic-bezier(.2, .8, .2, 1); /* 판 열고 닫기 · 접기 — 판 가장자리에 붙은 단추 · 범례도 같은 시간으로 */
   --sans: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', 'Inter', system-ui, sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, 'D2Coding', monospace;
 }
@@ -106,7 +108,9 @@
 * { box-sizing: border-box; }
 ::selection { background: var(--accent-soft); }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
-body { display: grid; grid-template-columns: 296px 1fr; grid-template-rows: 60px 1fr; height: 100vh; overflow: hidden; }
+/* 조직도(main)가 머리 아래 화면 전체 바탕, 목록(aside) · 패널(#drawer)은 그 위에 뜬 판. --aw = 목록 판 폭(보이는 칸의 왼쪽 끝) */
+body { --aw: 296px; display: grid; grid-template-columns: 1fr; grid-template-rows: 60px 1fr; height: 100vh; overflow: hidden; }
+body > aside, body > main { grid-area: 2 / 1; }
 code, .mono { font-family: var(--mono); font-size: .92em; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 8%, transparent); border-radius: 12px; border: 3px solid transparent; background-clip: padding-box; }

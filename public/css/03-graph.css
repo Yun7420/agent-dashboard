@@ -48,7 +48,7 @@ main { position: relative; overflow: hidden; background: radial-gradient(circle 
 .link-label text { fill: var(--peer-text); font: 600 10px var(--sans); }
 .peer-t { color: var(--peer); }
 #arrow path { fill: var(--peer); } /* 세션 사이 메시지 화살촉(index.html 의 marker) */
-.empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--faint); pointer-events: none; }
+.empty { position: absolute; inset: 0 var(--dw) 0 var(--aw); display: grid; place-items: center; color: var(--faint); pointer-events: none; }
 .empty[hidden] { display: none; }
 
 /* 프로젝트 박스를 누르면 뜨는 "폴더 열기" 메뉴 */

@@ -180,7 +180,8 @@ A session already running in a terminal has no official way to receive input fro
 <summary><b>Center — structure</b></summary>
 
 - One **org chart**, with status counts bottom left and agent kinds (usage limits) bottom right
-- Org chart: drag to pan · **wheel (two-finger scroll), trackpad pinch or + − to zoom** (the wheel stops at 0.75×) · double-click to fit · **click empty space = close the right panel**. Fitting never shrinks node text below 12px (if it overflows, the chosen session stays in view and you drag for the rest)
+- The org chart fills the whole screen below the header, and the session list and right panel float over it. Opening, closing, resizing or folding a panel **keeps the chart's zoom and position**; only when the chosen session's node ends up behind a panel does the chart slide just enough to show it, at the same zoom.
+- Org chart controls: drag to pan · **wheel (two-finger scroll), trackpad pinch or the + − buttons at top left (keys `+` · `-`) to zoom** (the wheel stops at 0.75×) · **⌖ Recenter (key `0`)** = put the chosen session in the middle of the visible area at 1×, or fit everything when nothing is chosen · double-click to fit · **click empty space = close the right panel**. Fitting uses the visible area between the panels and never shrinks node text below 12px (if it overflows, the chosen session stays in view and you drag for the rest)
 - Session nodes **fill up from the bottom with the context window used** (colour changes at 60% and 85%, the short line on the right = 80%). Hover for "Context 33% · 331K / 1M tokens"
 - Dashed line = working in the same folder, yellow = working, **purple arrow = messages between sessions**
 - **Status text color** under each session box: idle = purple · working = yellow · background = light yellow · **needs approval = pink (bold)**
