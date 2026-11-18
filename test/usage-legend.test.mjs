@@ -7,7 +7,7 @@ import { loadFront } from './_helpers/vm.mjs';
 
 function load(lang = 'ko') {
   const els = {};
-  const el = (s) => (els[s] ??= { id: s, hidden: false, innerHTML: '', textContent: '', dataset: {}, style: { setProperty() {} }, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, getBoundingClientRect: () => ({}) });
+  const el = (s) => (els[s] ??= { id: s, hidden: false, innerHTML: '', textContent: '', dataset: {}, style: { setProperty() {} }, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, setAttribute(k, v) { this[k] = v; }, getBoundingClientRect: () => ({}) });
   const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '11-usage.js', '13-controls.js'], {
     window: {}, document: { documentElement: { dataset: {} }, querySelector: el, querySelectorAll: () => [], addEventListener() {}, body: { classList: { toggle() {}, add() {}, remove() {} } } },
     localStorage: { getItem: () => JSON.stringify({ lang }), setItem() {} }, setInterval() {}, setTimeout, clearTimeout, matchMedia: () => ({ matches: false, addEventListener() {} }),
@@ -27,7 +27,7 @@ test('남은 양 = 100 − 쓴 양(0~100), 색 경계: 15% 이하 빨강 · 40% 
 test('usageHtml: 범례는 「· 5시간 74% 남음 · 주간 9% 남음」(남은 양 색) + 짧은 꼴 숫자(.us) · 꺼져 있으면 꺼진 스위치 · 값이 없으면 안내', () => {
   const { run } = load();
   run(`state = { tools: ${JSON.stringify(TOOLS)}, sessions: [], usage: { enabled: true, fiveHour: { percent: 26 }, sevenDay: { percent: 91 } } }`);
-  assert.match(run('usageHtml()'), /^<button type="button" class="k-use" data-usage[^>]*><span class="sep">·<\/span><span class="u"><span class="ul">5시간 <\/span><b class=""><span class="ul">74% 남음<\/span><span class="us">74%<\/span><\/b><\/span><span class="sep">·<\/span><span class="u"><span class="ul">주간 <\/span><b class="high"><span class="ul">9% 남음<\/span><span class="us">9%<\/span><\/b><\/span><\/button>$/);
+  assert.match(run('usageHtml()'), /^<button type="button" class="k-use pops" data-usage[^>]*><span class="sep">·<\/span><span class="u"><span class="ul">5시간 <\/span><b class=""><span class="ul">74% 남음<\/span><span class="us">74%<\/span><\/b><\/span><span class="sep">·<\/span><span class="u"><span class="ul">주간 <\/span><b class="high"><span class="ul">9% 남음<\/span><span class="us">9%<\/span><\/b><\/span><\/button>$/);
   run('state.usage = { enabled: false }');
   assert.match(run('usageHtml()'), /^<span class="sep">·<\/span><button type="button" class="switch k-use off" role="switch" aria-checked="false" data-usage-sw title="[^"]+"><span class="track"><\/span>사용 한도 보기<\/button>$/);
   run('state.usage = { enabled: true }');
@@ -40,7 +40,7 @@ test('범례: Claude Code 항목에만 사용 한도(마우스 올림 자리 dat
     renderList = () => {}; renderGraph = () => {};`);
   run('render()');
   const [claude, codex] = els['#kinds'].innerHTML.split('</span><span class="kind"');
-  assert.match(claude, /^<span class="kind" data-lp>.*<span class="kl">Claude Code<\/span><button type="button" class="k-use" data-usage.*5시간 <\/span><b class=""><span class="ul">68% 남음.*주간 <\/span><b class=""><span class="ul">79% 남음/);
+  assert.match(claude, /^<span class="kind" data-lp>.*<span class="kl">Claude Code<\/span><button type="button" class="k-use pops" data-usage.*5시간 <\/span><b class=""><span class="ul">68% 남음.*주간 <\/span><b class=""><span class="ul">79% 남음/);
   assert.match(codex, /<span class="kl">Codex<\/span><\/span>$/);
   assert.doesNotMatch(codex, /k-use|data-lp/);
 });
@@ -65,9 +65,9 @@ test('세 무리 배치: 범례 + 확대 단추가 보이는 칸에 안 들어�
   const els = {
     main: { clientWidth: 1440, classList: cls(), style: { getPropertyValue: (k) => props[k] ?? '' } },
     '#kinds': box(330, 120), '#status-chips': box(420, 170), '.zoom-btns': { offsetWidth: 36 },
-    '#status-chips [data-st="waiting"]': { classList: cls() },
+    '#status-chips [data-st="waiting"]': { classList: cls(), setAttribute() {} },
   };
-  const el = (s) => (els[s] ??= { id: s, hidden: false, innerHTML: '', textContent: '', dataset: {}, style: { setProperty() {} }, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, getBoundingClientRect: () => ({}) });
+  const el = (s) => (els[s] ??= { id: s, hidden: false, innerHTML: '', textContent: '', dataset: {}, style: { setProperty() {} }, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, setAttribute(k, v) { this[k] = v; }, getBoundingClientRect: () => ({}) });
   let aw = 296;
   const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '11-usage.js', '13-controls.js'], {
     window: {}, document: { documentElement: { dataset: {} }, querySelector: el, querySelectorAll: () => [], addEventListener() {}, body: { classList: { toggle() {}, add() {}, remove() {} } } },
@@ -104,4 +104,5 @@ test('세 무리 배치: 범례 + 확대 단추가 보이는 칸에 안 들어�
   assert.deepEqual([short('#kinds'), short('#status-chips')], [false, true]);
   run(`state.sessions[0].status = 'idle'; render()`);
   assert.ok(!els['#status-chips [data-st="waiting"]'].classList.contains('hot')); // 0 이면 흐리게
+  assert.equal(els['#status-chips [data-st="waiting"]'].disabled, true); // 0 인 칩은 누를 수 없다(열 세션이 없음)
 });

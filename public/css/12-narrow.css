@@ -64,4 +64,4 @@
 @container (max-width: 420px) { #drawer .head-top h2 { margin-inline: 0; } #drawer .head-top .tab { padding: 0 8px; } } /* 탭은 글자 그대로, 여백만 */
 @container (max-width: 385px) { #drawer .head-top h2 { min-width: 2em; } #drawer .head-top .tab { padding: 0 6px; } } /* 이름(점 + 말줄임까지)과 탭 여백이 먼저 준다 */
 /* 터치 화면 · 좁은 화면은 마우스를 올릴 수 없으니 코드 복사 단추를 늘 보인다 */
-@media (hover: none), (max-width: 860px) { .copy-code { opacity: 1; } }
+@media (hover: none), (max-width: 860px) { .copy-code, .card .x { opacity: 1; } } /* 목록 카드의 ✕ 도 */

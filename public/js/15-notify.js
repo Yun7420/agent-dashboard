@@ -71,7 +71,9 @@ function notifyChanges(prevSessions, next) {
 
 // Esc: 열린 팝업 → 패널 순서로 닫기
 document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Escape' || document.querySelector('dialog[open]')) return;
+  if (e.key !== 'Escape') return;
+  if (tip.el) { tipHide(); e.stopPropagation(); return; } // 말풍선이 먼저(모달 안이면 모달은 그대로)
+  if (document.querySelector('dialog[open]')) return;
   if ($('#dir-menu').classList.contains('show')) { $('#dir-menu').classList.remove('show'); return; }
   if ($('#app-menu').classList.contains('show')) { $('#app-menu').classList.remove('show'); $('#app-more').focus(); return; }
   if ($('#limits-pop').classList.contains('show')) { $('#limits-pop').classList.remove('show'); return; }

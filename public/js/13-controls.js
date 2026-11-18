@@ -7,8 +7,13 @@ function render() {
   // 머리에는 승인 필요 수만(0 이면 숨김) — 작업 · 대기 · 종료 수는 목록이 이미 보여 준다
   $('#c-waiting').textContent = count('waiting');
   $('#appr-count').hidden = !count('waiting');
-  for (const st of ['waiting', 'working', 'idle', 'ended']) $(`#n-${st}`).textContent = st === 'working' ? count('working') + count('background') : count(st);
-  $('#status-chips [data-st="waiting"]').classList.toggle('hot', count('waiting') > 0); // 승인 필요 0 은 흐리게, 1 이상은 경고색
+  for (const st of ['waiting', 'working', 'idle', 'ended']) {
+    const n = st === 'working' ? count('working') + count('background') : count(st), b = $(`#status-chips [data-st="${st}"]`);
+    $(`#n-${st}`).textContent = n;
+    b.disabled = !n; // 0 이면 누를 수 없다(열 세션이 없음)
+    b.setAttribute('aria-label', `${b.title} ${n}`);
+  }
+  $('#status-chips [data-st="waiting"]').classList.toggle('hot', count('waiting') > 0); // 승인 필요 1 이상은 경고색
   renderKinds();
   renderList();
   renderGraph();
@@ -70,14 +75,43 @@ $('.list-tabs').addEventListener('keydown', (e) => {
   setListTab(pref.listTab === 'live' ? 'ended' : 'live');
   $(`#tab-${pref.listTab}`).focus();
 });
-// 상태 칩: 누르면 그 상태의 첫 세션(목록 순서)을 연다 — 종료는 목록을 「종료」 탭으로 바꾼 뒤. 없으면 알림만
+// 상태 칩: 누르면 그 상태의 첫 세션(목록 순서)을 연다 — 종료는 목록을 「종료」 탭으로 바꾼 뒤. 0 인 칩은 누를 수 없다(render)
 $('#status-chips').addEventListener('click', (e) => {
   const st = e.target.closest('[data-st]')?.dataset.st;
   if (!st) return;
   if (st === 'ended') setListTab('ended');
   const s = (st === 'ended' ? ordered(state.sessions.filter((x) => !pref.hidden.includes(x.key))) : visible()).find((x) => x.status === st || (st === 'working' && x.status === 'background'));
-  if (s) select(s.key); else toast(t('No sessions in this state'));
+  if (s) select(s.key);
 });
+// 더 볼 게 있는 곳(data-tip): 마우스 올림 · 누르기 · 키보드(Tab → Enter)로 같은 말풍선(#tip). 터치는 올릴 수 없어 누르기로도 열고,
+// 바깥 누름 · Esc(15-notify.js)로 닫는다. 표시(점선 밑줄 · ⓘ)는 00-base.css — 요소마다 따로 코드를 붙이지 않는다
+const tip = { el: null, pin: false };
+function tipShow(el, pin) {
+  const box = $('#tip');
+  (el.closest('dialog') ?? document.body).append(box); // 모달(맨 위 층) 안이면 그 안에 띄워야 보인다
+  box.textContent = el.dataset.tip;
+  box.classList.add('show');
+  const r = el.getBoundingClientRect(), w = box.offsetWidth, h = box.offsetHeight;
+  box.style.left = `${Math.max(8, Math.min(innerWidth - w - 8, r.left))}px`;
+  box.style.top = `${r.bottom + 6 + h > innerHeight ? r.top - h - 6 : r.bottom + 6}px`; // 아래가 모자라면 위로
+  Object.assign(tip, { el, pin });
+}
+const tipHide = () => { $('#tip').classList.remove('show'); Object.assign(tip, { el: null, pin: false }); };
+document.addEventListener('mouseover', (e) => {
+  const el = e.target.closest?.('[data-tip]');
+  if (el && el !== tip.el) tipShow(el, false); else if (!el && tip.el && !tip.pin) tipHide();
+});
+document.addEventListener('click', (e) => {
+  const el = e.target.closest?.('[data-tip]');
+  if (el && !(tip.pin && tip.el === el)) tipShow(el, true); else if (tip.el) tipHide();
+});
+// capture: 카드(Enter = 세션 열기) · 단축키(20-keys.js)보다 먼저 — 말풍선 자리에서 누른 Enter 는 말풍선 몫
+document.addEventListener('keydown', (e) => {
+  const el = e.target.closest?.('[data-tip]');
+  if (e.key !== 'Enter' || !el) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  if (tip.pin && tip.el === el) tipHide(); else tipShow(el, true);
+}, true);
 $('#appr-count').addEventListener('click', () => { const s = visible().find((x) => x.status === 'waiting'); if (s) select(s.key); }); // 승인 필요 → 첫 세션 열기
 $('#settings').addEventListener('click', () => openModal($('#settings-dlg'), $('#app-more')));
 $('#set-theme').addEventListener('change', (e) => {

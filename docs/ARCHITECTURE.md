@@ -198,7 +198,7 @@
 | `10-env.js` | 환경 점검 화면(`renderEnv`) · 없는 도구면 단추 끄기(`applyTools`) |
 | `11-usage.js` | 계정 사용 한도: 범례 Claude Code 항목 안 「5시간 68% 남음 · 주간 79% 남음」(`usageHtml`, 짧은 꼴 같이) · 남은 양 팝업(`limitsHtml` · `showLimits`) · 사용 한도 보기 스위치(`setUsage` · `toggleUsage`) |
 | `12-panel.js` | 패널 머리 ⋯ 메뉴 · 폭(`applyDrawerWidth`) · 패널 닫기(`closeDrawer`) · 기록 탭(`renderHistory`) · 폴더 열기 메뉴(`openDirMenu`) |
-| `13-controls.js` | 전체 다시 그리기(`render`) · 조직도 위 세 무리(왼쪽 위 상태 칩 · 왼쪽 아래 범례 `renderKinds` · 오른쪽 아래 확대 단추)가 보이는 칸에 맞게 짧은 꼴(`floatSync` · `fitShort`) · 화면 색(`applyTheme`) · 목록 탭(`setListTab`) |
+| `13-controls.js` | 전체 다시 그리기(`render`) · 조직도 위 세 무리(왼쪽 위 상태 칩 · 왼쪽 아래 범례 `renderKinds` · 오른쪽 아래 확대 단추)가 보이는 칸에 맞게 짧은 꼴(`floatSync` · `fitShort`) · 화면 색(`applyTheme`) · 목록 탭(`setListTab`) · 「더 볼 게 있는 곳」 말풍선(`data-tip` → `tipShow` · `tipHide`, 올림 · 누르기 · Enter · Esc) |
 | `14-collapse.js` | 가장자리 접기: 왼쪽 목록 접기 탭(`applyAsideFold`) · 오른쪽 패널 폭 손잡이 끌기(`dragVerdict`) |
 | `15-notify.js` | 알림 판단 · 설정(`notifyChanges` · `saveNotifyCfg`) |
 | `16-restore.js` | 재시동 배너(`renderRestore`) · 종료된 세션 카드의 「다시 열기」(`checkLaunched`) |

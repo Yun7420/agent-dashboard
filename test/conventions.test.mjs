@@ -255,3 +255,25 @@ test('테스트 짝: lib · 어댑터 파일마다 그 파일을 불러오는 �
   });
   sameAsAllowed(none, NO_TEST, '테스트 없는 파일');
 });
+
+// ---------- 더 볼 게 있는 곳 ----------
+// 숨은 설명은 data-tip 하나로 통일: 포커스가 가능해야(키보드 · 터치로도 열림) 하고, 표시(점선 · ⓘ · ▾)는 00-base.css 한 곳.
+// 마우스 올림으로만 여는 팝업(:hover 로 display)을 두지 않는다 — 터치 기기에선 볼 수 없다
+test('더 볼 게 있는 곳: data-tip 은 모두 tabindex="0"(또는 단추), 표시 규칙은 00-base 한 곳, :hover 로만 여는 팝업 없음', () => {
+  const tags = [];
+  for (const f of [...FRONT, 'public/index.html']) for (const m of read(f).matchAll(/<[a-z]+\b[^<>]*\bdata-tip=/g)) tags.push([f, m[0]]);
+  assert.ok(tags.length >= 8, `data-tip ${tags.length}곳`);
+  for (const [f, tag] of tags) assert.ok(/^<button\b/.test(tag) || /tabindex="0"/.test(tag), `${f}: ${tag.slice(0, 60)}`);
+  const base = read('public/css/00-base.css');
+  assert.match(base, /\[data-tip\] \{ text-decoration: underline dotted var\(--dim\) 1px;[^}]*cursor: help;/);
+  assert.match(base, /\.badge\[data-tip\]::after \{ content: 'ⓘ'/);
+  assert.match(base, /\.pops::after \{ content: '▾'/);
+  for (const f of STYLES) {
+    if (f.endsWith('00-base.css')) continue;
+    assert.doesNotMatch(read(f), /data-tip|\.pops/, `${f}: 표시 규칙은 00-base 에만`);
+    for (const m of read(f).matchAll(/([^{}]*:hover[^{}]*)\{([^}]*)\}/g)) assert.doesNotMatch(m[2], /display: (flex|block)|visibility: visible/, `${f}: ${m[1].trim()} — 마우스 올림으로만 여는 팝업`);
+  }
+  const tips = read('public/js/13-controls.js');
+  for (const ev of ["'mouseover'", "'click'", "'keydown'"]) assert.ok(tips.includes(`document.addEventListener(${ev}`), ev);
+  assert.match(read('public/js/15-notify.js'), /if \(tip\.el\) \{ tipHide\(\);/); // Esc 로 닫기
+});

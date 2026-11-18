@@ -36,7 +36,7 @@ button.k-use:hover:not(:disabled) { background: var(--surface-2); border-color: 
 .status-chips button { display: flex; align-items: center; gap: var(--sp-2); height: 32px; padding: 0 var(--sp-3); background: transparent; border-color: transparent; color: var(--dim); font-size: 13px; }
 .status-chips button:hover:not(:disabled) { background: var(--surface-2); color: var(--text); border-color: transparent; }
 .status-chips b { color: var(--text); font-variant-numeric: tabular-nums; }
-.status-chips [data-st="waiting"]:not(.hot), .status-chips [data-st="waiting"]:not(.hot) b { color: var(--faint); }
+.status-chips button:disabled { opacity: 1; cursor: default; } .status-chips button:disabled :is(.sl, b) { color: var(--faint); } /* 0 = 누를 수 없음 — 흐린 글자로(반투명 대신 범례와 같은 흐림) */
 .status-chips .hot, .status-chips .hot b { color: var(--waiting-text); font-weight: 600; }
 /* 짧은 꼴: 상태 칩은 점 + 숫자(글자는 화면 읽기 · title 로 남김), 범례는 표식 + 숫자 「C 68% · 79%」(전체 문구는 마우스 올림 팝업) */
 .status-chips.short button { padding: 0 var(--sp-2); }

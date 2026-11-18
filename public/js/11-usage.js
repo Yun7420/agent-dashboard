@@ -18,10 +18,10 @@ const switchHtml = (on, cls = '') => `<button type="button" class="switch ${cls}
 function usageHtml() {
   const u = state?.usage;
   if (!u?.enabled) return `<span class="sep">·</span>${switchHtml(false, 'k-use off')}`;
-  if (!u.fiveHour && !u.sevenDay) return `<span class="k-use" title="${t('Values arrive once a Claude session replies')}"><span class="sep">·</span><span class="dot-s pulse"></span>${t('Usage limits · updated on the next reply')}</span>`;
+  if (!u.fiveHour && !u.sevenDay) return `<span class="k-use" tabindex="0" data-tip="${t('Values arrive once a Claude session replies')}"><span class="sep">·</span><span class="dot-s pulse"></span>${t('Usage limits · updated on the next reply')}</span>`;
   const ws = [[t('5h'), u.fiveHour], [t('Weekly'), u.sevenDay]].filter(([, w]) => w);
   const item = ([label, w]) => { const l = leftOf(w); return `<span class="sep">·</span><span class="u"><span class="ul">${label} </span><b class="${leftLevel(l)}"><span class="ul">${t('{p}% left', { p: l })}</span><span class="us">${l}%</span></b></span>`; };
-  return `<button type="button" class="k-use" data-usage aria-label="${t('Claude account usage limits (5h · weekly)')}" aria-controls="limits-pop">${ws.map(item).join('')}</button>`;
+  return `<button type="button" class="k-use pops" data-usage aria-haspopup="dialog" aria-label="${t('Claude account usage limits (5h · weekly)')}" aria-controls="limits-pop">${ws.map(item).join('')}</button>`;
 }
 // 팝업: 창마다 「5시간: 68% 남음 · 4시간 27분 뒤 초기화」 + 남은 양 막대, 아래 흐린 「오후 2:12:50 기준」 · 켜진 스위치.
 // 처음 켤 때만(이 브라우저에서 한 번도 연결한 적 없으면) 팝업이 동의 줄 + [연결] 로 바뀐다 — settings.json 을 고치는 일이라 한 번은 알리고

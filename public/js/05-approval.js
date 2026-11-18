@@ -6,7 +6,7 @@ let paneSeq = 0;
 function renderApproveCard(tg) {
   const card = $('#approve-card');
   const html = !tg ? '' : `<div class="ac-head"><span class="ac-kind">${esc(tg.kind)}</span><span class="ac-tool">${esc(tg.tool)}</span>${
-    tg.outside ? `<span class="ac-tag">${t('Outside session folder')}</span>` : ''}${tg.source === 'screen' ? `<span class="ac-src" title="${t('Not found in the log, read from the terminal screen')}">${t('Guessed from screen')}</span>` : ''}</div>${
+    tg.outside ? `<span class="ac-tag">${t('Outside session folder')}</span>` : ''}${tg.source === 'screen' ? `<span class="ac-src" tabindex="0" data-tip="${t('Not found in the log, read from the terminal screen')}">${t('Guessed from screen')}</span>` : ''}</div>${
     tg.risks.length ? `<div class="ac-risk">⚠ ${tg.risks.map(esc).join(' · ')}</div>` : ''}${
     tg.main ? `<pre class="ac-main${tg.main.length > 300 || tg.main.split('\n').length > 6 ? ' fold closed' : ''}">${esc(tg.main)}</pre>` : ''}${
     tg.main.length > 300 || tg.main.split('\n').length > 6 ? `<button class="more" type="button" data-ac-more>${t('Show all')} ▾</button>` : ''}${
@@ -106,7 +106,7 @@ async function renderApproval(s) {
       const cls = o.picked ? 'primary' : risky ? 'danger' : '';
       return `<button data-choice="${o.n}" data-label="${esc(o.label)}" class="${cls}" title="${o.picked ? `${t('Current answer')} · ` : ''}${risky ? `${t('Allows a risky request')} · ` : ''}${t('Key')} ${o.n}">${o.picked ? '✓ ' : ''}${esc(o.n)}. ${esc(o.label)}</button>`;
     }).join('') +
-    `<button data-choice="esc" title="${t('Key')} Esc">${t('Reject')} (Esc)</button>` +
+    `<button data-choice="esc" title="${t('Reject — Esc twice')}" aria-label="${t('Reject — Esc twice')}">${t('Reject')}</button>` +
     (options.length ? '' : `<span style="color:var(--faint);align-self:center">${t('Prompt without numbers')} →</span><button data-choice="up">↑</button><button data-choice="down">↓</button><button data-choice="enter" class="primary">Enter (${t('pick the ❯ item')})</button>`);
   setHtml($('#approve-btns'), btnHtml);
   paneTimer = setTimeout(() => { const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 2000);

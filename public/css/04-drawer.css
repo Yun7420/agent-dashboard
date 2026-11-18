@@ -11,8 +11,8 @@
 .icon-btn.sm { width: 32px; height: 32px; border-radius: 8px; }
 .info-wrap { position: relative; display: inline-flex; }
 .info-pop, .menu-pop { display: none; position: absolute; top: 34px; z-index: var(--z-pop); background: var(--surface-3); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow); padding: 12px 14px; }
-.info-pop { left: -8px; width: 360px; }
-.info-wrap:hover .info-pop:not(#d-meta), .info-pop.show { display: flex; } /* 세션 정보는 ⋯ 메뉴에서 눌렀을 때만 */
+.info-pop { left: -8px; width: min(360px, calc(100vw - var(--aw) - 2 * var(--sp-2))); } /* 좁은 화면에서 목록 띠 오른쪽 안으로(390 에서 왼쪽이 잘렸다) */
+.info-pop.show { display: flex; } /* 세션 정보는 ⋯ 메뉴에서 눌렀을 때만(마우스 올림으로만 여는 팝업은 두지 않는다) */
 .menu-pop { right: 0; padding: 6px; }
 .menu-pop.show { display: block; }
 .menu-pop button { width: 100%; white-space: nowrap; font-size: 13px; }

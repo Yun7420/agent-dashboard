@@ -72,10 +72,10 @@
   </svg>
   <!-- 지도 앱처럼: 왼쪽 위 = 상태 칩(누르면 그 상태의 첫 세션), 왼쪽 아래 = 지금 떠 있는 에이전트 종류 범례 + 사용 한도(13-controls.js) -->
   <div class="status-chips" id="status-chips" role="group" aria-label="Sessions by status">
-    <button type="button" data-st="waiting" title="Needs approval"><span class="dot-s waiting"></span><span class="sl">Needs approval</span><b id="n-waiting">0</b></button>
-    <button type="button" data-st="working" title="Working"><span class="dot-s working"></span><span class="sl">Working</span><b id="n-working">0</b></button>
-    <button type="button" data-st="idle" title="Idle"><span class="dot-s idle"></span><span class="sl">Idle</span><b id="n-idle">0</b></button>
-    <button type="button" data-st="ended" title="Ended"><span class="dot-s ended"></span><span class="sl">Ended</span><b id="n-ended">0</b></button>
+    <button type="button" data-st="waiting" title="Open a session that needs approval"><span class="dot-s waiting"></span><span class="sl">Needs approval</span><b id="n-waiting">0</b></button>
+    <button type="button" data-st="working" title="Open a working session"><span class="dot-s working"></span><span class="sl">Working</span><b id="n-working">0</b></button>
+    <button type="button" data-st="idle" title="Open an idle session"><span class="dot-s idle"></span><span class="sl">Idle</span><b id="n-idle">0</b></button>
+    <button type="button" data-st="ended" title="Show ended sessions"><span class="dot-s ended"></span><span class="sl">Ended</span><b id="n-ended">0</b></button>
   </div>
   <div class="kinds" id="kinds" aria-label="Agent kinds"></div>
   <!-- 범례 Claude Code 항목에 마우스를 올리면: 창마다 남은 양 · 초기화 시각 + 「사용 한도 보기」 스위치(11-usage.js) -->
@@ -214,6 +214,7 @@
 </dialog>
 <div class="menu-pop" id="dir-menu"></div>
 <div id="toast" role="status"></div>
+<div id="tip" role="tooltip"></div>
 <div id="login-needed" role="alert" hidden><span id="login-how">Login needed</span> <button type="button" class="primary" id="login-reload">Reload</button></div>
 <div id="boot">
   <div class="boot-card">

@@ -28,7 +28,7 @@ async function loadDay(date) {
   $('#day-list').innerHTML = items.map((x) => `
     <div class="day-item">
       <div class="day-head"><button type="button" class="link" data-open="${esc(x.key)}">${esc(x.title)}</button><span>${esc(x.project ?? '')}</span><span>${hm(x.firstAt)}~${hm(x.lastAt)}</span>
-        <span class="grow"></span><span>${t('requests')} ${x.prompts} · ${t('commands')} ${x.commands}</span>${tokTotal(x) ? `<span class="day-tok" title="${esc(tokParts(x))}">${t('tokens')} ${fmtTok(tokTotal(x))} · ${t('excl. cache')} ${fmtTok(tokNoCache(x))}</span>` : ''}</div>
+        <span class="grow"></span><span>${t('requests')} ${x.prompts} · ${t('commands')} ${x.commands}</span>${tokTotal(x) ? `<span class="day-tok" tabindex="0" data-tip="${esc(tokParts(x))}">${t('tokens')} ${fmtTok(tokTotal(x))} · ${t('excl. cache')} ${fmtTok(tokNoCache(x))}</span>` : ''}</div>
       ${x.commits.length ? `<ul class="day-commits">${x.commits.map((c) => `<li><span>${hm(c.at)}</span> ${esc(c.message)}</li>`).join('')}</ul>` : ''}
       ${x.files.length ? `<div class="day-files">${x.files.slice(0, 12).map((f) => `<span title="${esc(f.file)}">${esc(shortPath(f.file))}${f.edits > 1 ? ` ×${f.edits}` : ''}</span>`).join('')}${x.files.length > 12 ? `<span>${t('+{n} more', { n: x.files.length - 12 })}</span>` : ''}</div>` : ''}
     </div>`).join('');

@@ -173,7 +173,7 @@ A session already running in a terminal has no official way to receive input fro
 - Card: name · status + one faint line (folder · time). Context use is shown by the water fill in the org chart nodes; the exact number is in ⓘ session info. Tags only when not the default (Codex · "View only" outside tmux)
 - **Collapse the list** with the ‹ tab at the middle of its right edge — a thin rail keeps status dots + initials (› to expand, click to open)
 - List tabs **Active N** · **Ended N** — the Ended tab shows sessions that ended in the last 24 hours (with "Reopen"); your tab is remembered. The folded strip shows active sessions only
-- Hover for ✕ — close the session (with confirmation) / hide an ended session
+- Hover for ✕ (always shown on touch and narrow screens) — close the session (with confirmation) / hide an ended session
 </details>
 
 <details open>
@@ -197,7 +197,7 @@ A session already running in a terminal has no official way to receive input fro
 - **Now** tab: last request + **current answer** + **file diffs** + **commands** (✓/✕, output, "show all" for long ones)
 - While working, **■ Stop** on the answer card stops the current task only (sends Esc); the session and conversation stay
 - **History** tab: past prompts and answers, search, "load more". Every request uses the same bubble with a faint label above it — "You" for yours, "↙ sender" for a message from another session (SendMessage); the Now tab and global search match. Long requests show 4 lines and "More"
-- **What I did today**: ⋯ at the top right → Today's work → per session: prompts, edited files, command count, **commit titles** and **tokens** (total · excluding cache; hover for input · output · cache read · cache write · subagents, plus a daily total) (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts). Each response is counted once, and tokens are never converted to money (pricing differs by plan)
+- **What I did today**: ⋯ at the top right → Today's work → per session: prompts, edited files, command count, **commit titles** and **tokens** (total · excluding cache; tap the dotted underline or hover for input · output · cache read · cache write · subagents, plus a daily total) (today · yesterday · any date), with **copy as Markdown** for a work log (Claude Code transcripts). Each response is counted once, and tokens are never converted to money (pricing differs by plan)
 - **Context**: shown only by the water fill in the org chart nodes (amber at 60%, red at 85%, short line on the right = 80%). For the exact number, open the panel ⋯ → ⓘ session info: "Context 30% · 300K / 1M tokens · Last auto-compact 11:26". When there is no data (e.g. Codex) the node is an empty box
 - **Search all history**: type straight into the **search bar** at the top center (or press `/`; 🔍 on narrow screens) and matches from prompts and answers across all sessions drop down below it → pick one with `↑`/`↓` and `Enter` (or click) to open that session's History tab with the same query. `Esc` once closes the list, twice clears the bar
 - **Keyboard shortcuts** (also under ⋯ → Help)
@@ -227,7 +227,7 @@ A session already running in a terminal has no official way to receive input fro
 
 - "Needs approval N" (hidden at 0, click to open the first waiting session) · search bar · + New task (run an agent) · ⋯
 - Three groups float over the org chart, like a map app: **status chips at top left** ("● Needs approval 0 · ● Working 2 · ● Idle 6 · ● Ended 2"; click one to open the first session in that state; Needs approval is dimmed at 0 and highlighted from 1), **the kinds legend with usage limits at bottom left**, and **+ · − · ⌖ at bottom right** (they follow the right panel's edge). Narrow screens (860 or less, phones) use the same places.
-- Account usage limits sit inside the **Claude Code** item of the bottom-left legend as "· 5h 68% left · Weekly 79% left" (amber at 40% left or less, red at 15% or less). When the visible area between the list and the panel runs short, the legend shrinks first to "C 68% · 79%" (hover for the full popup), and if that is still not enough the status chips keep only dots and numbers — nothing is hidden.
+- Account usage limits sit inside the **Claude Code** item of the bottom-left legend as "· 5h 68% left · Weekly 79% left" (amber at 40% left or less, red at 15% or less). When the visible area between the list and the panel runs short, the legend shrinks first to "C 68% · 79%" (▾ — tap or hover for the full popup), and if that is still not enough the status chips keep only dots and numbers — nothing is hidden.
 - The connection shows only when it drops
 - **Esc**: close popups → press again to collapse the panel
 - ⋯ → Notifications: notification settings (approval needed · task over 1 minute finished) — one on/off switch · sound · test notification. On macOS the server sends macOS notifications (even with the tab closed); elsewhere (Linux etc.) the same switch turns on browser notifications (while this tab is open). Only one route is used, so you never get two. The same session and reason alerts at most once a minute, and simultaneous alerts are merged into one. Settings live in `~/.agent-dashboard/notify.json` (readable only by you). macOS notifications may need notification permission for Script Editor (or Terminal)
