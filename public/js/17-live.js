@@ -4,6 +4,17 @@
 let liveES = null;
 // 연결 상태는 끊겼을 때만 머리에 경고로 보인다(잘 붙어 있으면 아무것도 안 보임)
 const connState = (cls, text) => { $('#conn').innerHTML = `<span class="dot-s ${cls}"></span>${text}`; $('#conn').title = text; $('#conn').hidden = cls === 'live'; };
+// 서버는 보통 바뀐 세션만 담은 patch 를 보낸다(lib/live-feed.mjs) — order 순서대로 지난 상태와 합친다. links · usage · restore 는 없으면 그대로.
+// 모르는 세션이 order 에 있으면(어긋남) null → 새로 연결해서 전체를 받는다
+function applyPatch(prev, d) {
+  if (!d.patch) return d;
+  if (!prev) return null;
+  const by = new Map(prev.sessions.map((s) => [s.key, s]));
+  for (const s of d.sessions) by.set(s.key, s);
+  if (d.order.some((k) => !by.has(k))) return null;
+  const { patch, order, ...rest } = d;
+  return { links: prev.links, usage: prev.usage, restore: prev.restore, ...rest, sessions: order.map((k) => by.get(k)) };
+}
 function connect() {
   liveES?.close();
   const es = (liveES = new EventSource(`/events?lang=${LANG}`)); // 로그인 쿠키가 같이 간다(주소에 비밀을 싣지 않음)
@@ -21,7 +32,8 @@ function connect() {
       });
   };
   es.onmessage = (e) => {
-    const next = JSON.parse(e.data);
+    const next = applyPatch(state, JSON.parse(e.data));
+    if (!next) { connect(); return; }
     // 선택한 세션에 새 프롬프트가 들어왔거나 답변이 끝났으면 기록을 다시 읽는다
     const a = state && selected ? state.sessions.find((s) => s.key === selected) : null;
     const b = selected ? next.sessions.find((s) => s.key === selected) : null;

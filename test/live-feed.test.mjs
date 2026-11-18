@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { createLiveFeed } from '../lib/live-feed.mjs';
+import { loadFront, browserStub } from './_helpers/vm.mjs';
 
 const fakeRes = () => {
   const r = { code: null, body: '', writes: [], headersSent: false };
@@ -133,4 +134,67 @@ test('changes: SSE 엔 표식만(처음 · 틱 · 영어 탭 모두), 본문은 
   const none = fakeRes();
   await feed.getChanges({}, none, new URL('http://x/api/changes?key=claude:zz'));
   assert.deepEqual(JSON.parse(none.body), { sig: '', edits: [], commands: [] });
+});
+
+// 점검 P3: 틱은 바뀐 세션만(patch). 화면(17-live.js 의 applyPatch)이 합친 상태가 새로 연 탭이 받는 전체와 늘 같아야 한다.
+// 전체를 다시 받는 길(처음 연결 · invalidate · 기간 바꾸기 · 머리 바뀜 · 못 보낸 틱 뒤)도 여기서 확인
+test('patch: 바뀐 세션만 보내고 화면이 합친 결과 = 전체 상태(추가 · 사라짐 · 순서 · links · usage, 한국어 · 영어 탭), 전체를 다시 받는 길', async () => {
+  const { run } = loadFront(['01-core.js', '17-live.js'], browserStub({ EventSource: class { close() {} }, window: { addEventListener() {} }, updateAgo() {} }));
+  const applyPatch = run('applyPatch');
+  const S = (key, status, extra = {}) => ({ key, status, title: key, changes: null, ...extra });
+  let st = { sessions: [S('a', 'idle'), S('b', 'idle'), S('c', 'working')], links: [], usage: { five: 10 }, restore: null };
+  let fail = false;
+  const feed = createLiveFeed({ buildState: async (hours) => ({ generatedAt: 'g', host: 'h', home: '/h', windowHours: hours, tools: [], ...structuredClone(st) }), afterBuild: () => { if (fail) throw new Error('x'); }, scanMs: 60_000 });
+  feed.stop();
+  await feed.start();
+  const ko = fakeRes(), en = fakeRes(), enReq = new EventEmitter();
+  enReq.url = '/events?lang=en'; enReq.headers = {};
+  await feed.openEvents(new EventEmitter(), ko);
+  await feed.openEvents(enReq, en);
+  const view = { ko: null, en: null }, seen = { ko: 0, en: 0 };
+  const sync = () => {
+    for (const [k, r] of [['ko', ko], ['en', en]]) {
+      for (; seen[k] < r.writes.length; seen[k]++) view[k] = JSON.parse(JSON.stringify(applyPatch(view[k], JSON.parse(r.writes[seen[k]].slice(6)))));
+    }
+  };
+  const fresh = async (req = new EventEmitter()) => { const r = fakeRes(); await feed.openEvents(req, r); req.emit('close'); return JSON.parse(r.writes[0].slice(6)); };
+  const same = async (why) => {
+    sync();
+    const want = await fresh(), wantEn = await fresh(Object.assign(new EventEmitter(), { url: '/events?lang=en', headers: {} }));
+    for (const [v, w] of [[view.ko, want], [view.en, wantEn]]) for (const f of ['sessions', 'links', 'usage', 'restore']) assert.deepEqual(v[f], w[f], `${why}: ${f}`);
+  };
+  const last = (r) => JSON.parse(r.writes.at(-1).slice(6));
+  await same('처음');
+  st.sessions[2] = S('c', 'idle', { changes: { edits: [], commands: [{ id: 'x', at: 't', command: 'ls', done: true, error: false }] } });
+  await feed.start();
+  assert.equal(last(ko).patch, true);
+  assert.deepEqual(last(ko).sessions.map((x) => x.key), ['c']); // 바뀐 세션 하나만
+  assert.equal('usage' in last(ko), false); // 안 바뀐 부분은 싣지 않는다
+  await same('세션 하나 바뀜');
+  st = { ...st, sessions: [S('d', 'waiting'), st.sessions[0], st.sessions[2]], links: [{ from: 'a', to: 'c' }], usage: { five: 11 } }; // 추가 · 사라짐(b) · 순서 · links · usage
+  await feed.start();
+  assert.deepEqual(last(ko).sessions.map((x) => x.key), ['d']);
+  await same('추가 · 사라짐 · 순서');
+  await feed.start();
+  const n = ko.writes.length;
+  await feed.start();
+  assert.equal(ko.writes.length, n); // 같으면 보내지 않음
+  feed.invalidate();
+  await feed.start();
+  assert.equal(last(ko).patch, undefined); // invalidate → 전체
+  assert.equal(last(ko).sessions.length, 3);
+  const ok = fakeRes();
+  await feed.windowRoute(post({ hours: 72 }), ok);
+  await feed.start();
+  assert.equal(last(ko).patch, undefined); // 기간 바꾸기 → 전체
+  await same('기간 바꾸기');
+  fail = true; st.sessions[0] = S('d', 'idle');
+  const err = console.error; console.error = () => {};
+  try { await feed.start(); } finally { console.error = err; }
+  fail = false;
+  await feed.start();
+  assert.equal(last(ko).patch, undefined); // 못 보낸 틱 뒤 → 전체
+  await same('못 보낸 틱 뒤');
+  assert.equal(applyPatch(null, { patch: true, order: ['a'], sessions: [] }), null); // 지난 상태가 없거나
+  assert.equal(applyPatch({ sessions: [] }, { patch: true, order: ['zz'], sessions: [] }), null); // 모르는 세션이면 → 새로 연결해 전체
 });
