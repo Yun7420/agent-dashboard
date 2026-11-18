@@ -17,8 +17,10 @@
   --faint: #949c98;
   --accent: #3f8c6b;
   --accent-2: #5aa585;
-  --accent-strong: #4a9677;
-  --accent-hover: #52a281;
+  /* 주 단추(에이전트 실행 · 보내기 …) 하나의 토큰: 진한 초록 + 흰빛 글자 4.96:1 — 두 판 같은 값(밝은 바탕 위 단추 테두리 4.7:1 · 어두운 바탕 3.3:1) */
+  --primary: #1f7a54;
+  --primary-hover: #1b704c;
+  --on-primary: #f6f8f7;
   --accent-text: #86c2a6;
   --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
   --on-accent: #0e1714;
@@ -78,8 +80,6 @@
   --faint: #5c635f;
   --accent: #2c7a57;
   --accent-2: #3f8f6a;
-  --accent-strong: #2c7a57;
-  --accent-hover: #256a4b;
   --accent-text: #23694a;
   --on-accent: #f7f6f1;
   --glow: color-mix(in srgb, var(--accent) 6%, transparent);
@@ -121,8 +121,8 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 :is(button, select, a, summary, [tabindex="0"]):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 button:active:not(:disabled) { filter: brightness(.92); }
 select:hover:not(:disabled) { border-color: color-mix(in srgb, var(--ink) 20%, transparent); }
-button.primary { background: var(--accent-strong); border-color: transparent; color: var(--on-accent); font-weight: 600; box-shadow: 0 2px 10px var(--glow); }
-button.primary:hover:not(:disabled) { background: var(--accent-hover); }
+button.primary { background: var(--primary); border-color: transparent; color: var(--on-primary); font-weight: 600; box-shadow: 0 2px 10px var(--glow); }
+button.primary:hover:not(:disabled) { background: var(--primary-hover); }
 button.primary:disabled { background: var(--surface-3); color: var(--faint); box-shadow: none; opacity: 1; }
 button.danger { background: transparent; border-color: color-mix(in srgb, var(--waiting) 35%, transparent); color: var(--waiting); }
 button.danger:hover:not(:disabled) { background: color-mix(in srgb, var(--waiting) 10%, transparent); border-color: var(--waiting); }
