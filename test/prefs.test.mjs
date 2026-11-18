@@ -49,3 +49,30 @@ test('저장 줄이기: 같은 세션을 한 시간 안에 다시 봐도 바뀐 
   assert.equal(prune(p, ['a'], 1000 + 30 * 60_000), false);
   assert.equal(prune(p, ['a'], 1000 + 61 * 60_000), true);
 });
+
+// G1: 저장값이 깨졌거나 손댄 모양이면 화면 전체가 빈 채 멈췄다(값 전체가 null · 글 · 숫자, order 가 글, hidden 이 객체 …).
+// 00-prefs.js 가 읽을 때 한 곳에서 거르고, 고쳤으면 바로 저장한다 — 틀린 키는 기본값(쓰는 곳의 ??=)으로
+test('이상한 저장값 표: 전체가 객체가 아니면 통째로 기본값, 틀린 키만 기본값 · 나머지는 그대로, 고쳤으면 저장', () => {
+  const open = (stored) => {
+    const saved = [];
+    const { run } = loadFront(['01-core.js'], browserStub({ localStorage: { getItem: () => stored, setItem: (_, v) => saved.push(v) } }));
+    return { p: plain(run('pref')), saved, run };
+  };
+  for (const whole of ['null', '"str"', '123', '[]', 'true', '{bad']) {
+    const { p } = open(whole);
+    assert.deepEqual([p.sort, p.order, p.hidden, p.seen], ['manual', [], [], {}], whole); // 통째로 기본값(01-core 의 ??=)
+  }
+  const bad = { order: 'x', hidden: {}, seen: [], expandSubs: null, drafts: 'str', drawerW: 'abc', sort: 7, listTab: null, theme: 7, lang: null, restoreDismissed: 5, seenProblems: 7, welcomed: 'no', asideFolded: 1, notify: 'yes', usageLinked: 'x' };
+  const { p, saved } = open(JSON.stringify(bad));
+  assert.deepEqual([p.order, p.hidden, p.seen, p.drafts], [[], [], {}, undefined]); // drafts 기본값은 09-attach 가 넣는다
+  for (const k of ['expandSubs', 'drawerW', 'listTab', 'theme', 'lang', 'restoreDismissed', 'seenProblems', 'welcomed', 'asideFolded', 'notify', 'usageLinked']) assert.equal(k in p, false, k);
+  assert.equal(p.sort, 'manual');
+  assert.ok(saved.length >= 1 && !JSON.parse(saved[0]).order); // 고친 모양을 바로 저장
+  const inner = open(JSON.stringify({ order: ['a', 1, null, 'b'], hidden: ['c', {}], seen: { a: 5, b: 'yesterday' }, drafts: { a: 'hi', b: 123 } })).p;
+  assert.deepEqual([inner.order, inner.hidden, inner.drafts], [['a', 'b'], ['c'], { a: 'hi' }]); // 목록 안의 틀린 것만 뺀다
+  assert.equal(inner.seen.b, undefined);
+  const good = { welcomed: true, sort: 'status', order: ['a'], hidden: [], seen: { a: 1 }, expandSubs: { a: true }, drafts: { a: 'x' }, drawerW: 500, listTab: 'ended', theme: 'warm', lang: 'en', asideFolded: false, notify: true, usageLinked: true, restoreDismissed: 's', seenProblems: '' };
+  const ok = open(JSON.stringify(good));
+  assert.deepEqual(ok.p, good); // 맞는 값은 하나도 안 바뀐다
+  assert.equal(ok.saved.length, 0); // 고친 게 없으면 저장도 안 한다
+});

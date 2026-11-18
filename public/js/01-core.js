@@ -63,10 +63,7 @@ function toast(msg, ms = 3500) {
 }
 // esc() 는 00-md.js (마크다운 변환과 함께 node 에서 시험하려고)
 const STATUS_KO = { working: t('Working'), background: t('Background task'), waiting: t('Needs approval'), idle: t('Idle'), ended: t('Ended') };
-const pref = (() => { try { return JSON.parse(localStorage.getItem('agent-deck') || '{}'); } catch { return {}; } })();
-// 없앤 기능의 저장값은 버린다(간추리기 B3 음성 입력) — 다음 저장 때 사라진다
-for (const k of ['micNoticeOk', 'showEnded']) delete pref[k];
-const savePref = () => { try { localStorage.setItem('agent-deck', JSON.stringify(pref)); } catch {} };
+// 브라우저 저장값 pref · savePref 는 00-prefs.js(읽을 때 모양 검사)
 
 let state = null;
 let prev = new Map();
