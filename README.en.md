@@ -289,7 +289,7 @@ agent-dashboard/
 ├─ public/             # UI (vanilla HTML/CSS/JS, no build)
 │  ├─ index.html       # structure (no token — login is a cookie)
 │  ├─ css/00-base.css ~ 12-narrow.css   # styles, one file per area, loaded in number order (narrow-screen @media in the last file)
-│  └─ js/00-md.js ~ 20-keys.js   # behavior, one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
+│  └─ js/00-dict-*.js ~ 20-keys.js # behavior — UI language (dictionary · t()) · one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
 └─ test/               # node --test, 58 files · _helpers (temp folders · starting servers · requests) · fake-bin (fake tmux · claude · ps · lsof · open · osascript)
 ```
 

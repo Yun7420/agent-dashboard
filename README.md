@@ -289,7 +289,7 @@ agent-dashboard/
 ├─ public/             # 화면 (바닐라 HTML/CSS/JS, 빌드 없음)
 │  ├─ index.html       # 뼈대(토큰 없음 — 로그인은 쿠키)
 │  ├─ css/00-base.css ~ 12-narrow.css   # 모양(구역별, 번호 순서대로 불러옴 — 좁은 창 @media 는 맨 뒤 파일)
-│  └─ js/00-md.js ~ 20-keys.js   # 동작 — 구역별(목록 · 조직도 · 기록 · 첨부 · 알림 · 복구 · 검색 · 오늘 한 일 · 단축키 …), 번호 순서대로 불러옴
+│  └─ js/00-dict-*.js ~ 20-keys.js # 동작 — 화면 언어(사전 · t()) · 구역별(목록 · 조직도 · 기록 · 첨부 · 알림 · 복구 · 검색 · 오늘 한 일 · 단축키 …), 번호 순서대로 불러옴
 └─ test/               # node --test 58개 파일 · _helpers(임시 폴더 · 서버 띄우기 · 요청) · fake-bin(가짜 tmux · claude · ps · lsof · open · osascript)
 ```
 

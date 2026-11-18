@@ -51,7 +51,7 @@ new MutationObserver(() => {
 // ---------- 대화 창 사용률 큰 그래프 ----------
 const big = { key: null, sig: '', cmpKey: '', cmp: null };
 const BIG_N = 160; // 세션이 바뀔 때 선이 부드럽게 옮겨 가도록(CSS transition: d) 늘 같은 개수의 점으로 다시 뽑는다
-const cpHm = (t) => new Date(t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+const cpHm = (t) => new Date(t).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', hour12: false });
 function resample(pts, win, x, y) {
   const t0 = pts[0][0], t1 = pts.at(-1)[0];
   const out = [];
@@ -74,17 +74,17 @@ function drawBig() {
   if (!state) return; // 첫 상태가 오기 전(크기 감시가 먼저 부를 때)
   const s = state.sessions.find((x) => x.key === selected);
   const box = $('#cp-chart');
-  $('#cp-who').textContent = s ? s.title || s.key : '세션을 고르세요';
+  $('#cp-who').textContent = s ? s.title || s.key : t('Pick a session');
   // 겹쳐 볼 세션 목록(지금 세션 빼고 끝나지 않은 Claude 세션만)
   const opts = state.sessions.filter((x) => x.key !== selected && x.tool === 'claude' && x.status !== 'ended');
   const sel = $('#cp-cmp');
-  const want = ['<option value="">없음</option>', ...opts.map((x) => `<option value="${esc(x.key)}">${esc(x.title || x.key)}</option>`)].join('');
+  const want = [`<option value="">${t('None')}</option>`, ...opts.map((x) => `<option value="${esc(x.key)}">${esc(x.title || x.key)}</option>`)].join('');
   if (sel.dataset.sig !== want) { sel.innerHTML = want; sel.dataset.sig = want; sel.value = opts.some((x) => x.key === big.cmpKey) ? big.cmpKey : ''; }
   const d = trend.key === s?.key ? trend.data : null;
   if (s && !d && big.key) return; // 다른 세션의 기록을 받는 중 — 앞 선을 두었다가 새 선으로 옮겨 간다
   const win = s?.context?.window;
   if (!s || !d?.supported || !win || d.points.length < 2) {
-    const note = !s ? '왼쪽에서 세션을 고르면 대화 창이 얼마나 찼는지 보여 줘요' : d && !d.supported ? '대화 창 추이는 Claude Code 기록 기준이에요' : d ? '응답이 두 번 넘게 쌓이면 그려요' : '불러오는 중…';
+    const note = t(!s ? 'Pick a session on the left to see how full its context window is' : d && !d.supported ? 'The context trend is based on Claude Code logs' : d ? 'Drawn after more than two replies' : 'Loading…');
     if (big.sig !== note) { box.innerHTML = `<div class="empty-note">${note}</div>`; $('#cp-now').innerHTML = ''; }
     Object.assign(big, { key: null, sig: note });
     return;
@@ -103,11 +103,11 @@ function drawBig() {
   const line = resample(P, win, x, y);
   const area = `M${line[0].split(',')[0]},${y(0)} L${line.join(' L')} L${line.at(-1).split(',')[0]},${y(0)} Z`;
   const grid = [0, 0.25, 0.5, 1].map((f) => `<line class="g" x1="${L}" x2="${W - R}" y1="${y(f)}" y2="${y(f)}"/><text class="gl" x="${L - 8}" y="${y(f) + 4}" text-anchor="end">${f * 100}%</text>`).join('');
-  const xl = cmpOn ? `<text class="gl" x="${L}" y="${H - 4}">첫 응답</text><text class="gl" x="${W - R}" y="${H - 4}" text-anchor="end">응답 순서로 맞춤 →</text>`
+  const xl = cmpOn ? `<text class="gl" x="${L}" y="${H - 4}">${t('First reply')}</text><text class="gl" x="${W - R}" y="${H - 4}" text-anchor="end">${t('Aligned by reply order')} →</text>`
     : [0, 0.5, 1].map((f) => `<text class="gl" x="${L + f * (W - L - R)}" y="${H - 4}" text-anchor="${['start', 'middle', 'end'][f * 2]}">${cpHm(t0 + f * (t1 - t0))}</text>`).join('');
   // 앞 점보다 절반 넘게 줄어든 곳 = 자동 요약(06-history.js 의 작은 그래프와 같은 기준). 표시는 점 아래, 시각 글자에 닿으면 위로
   const drops = pts.flatMap((p, i) => (i && p[1] < pts[i - 1][1] * 0.5 ? [i] : []));
-  const dropsSvg = drops.map((i) => { const px = x(P[i][0]), py = y(pts[i][1] / win), ly = py + 34 > H - B ? py - 32 : py + 10; return `<g class="drop fade" tabindex="0" role="button" aria-label="자동 요약됨 ${cpHm(pts[i][0])} — 눌러서 설명 보기" data-i="${i}"><line class="l80 dl" x1="${px}" x2="${px}" y1="${y(pts[i - 1][1] / win)}" y2="${py}"/><circle cx="${px}" cy="${py}" r="5"/><rect x="${px - 38}" y="${ly}" width="76" height="22" rx="11"/><text x="${px}" y="${ly + 15}" text-anchor="middle">자동 요약됨</text></g>`; }).join('');
+  const dropsSvg = drops.map((i) => { const px = x(P[i][0]), py = y(pts[i][1] / win), ly = py + 34 > H - B ? py - 32 : py + 10; return `<g class="drop fade" tabindex="0" role="button" aria-label="${t('Auto-compacted')} ${cpHm(pts[i][0])} — ${t('click for details')}" data-i="${i}"><line class="l80 dl" x1="${px}" x2="${px}" y1="${y(pts[i - 1][1] / win)}" y2="${py}"/><circle cx="${px}" cy="${py}" r="5"/><rect x="${px - 38}" y="${ly}" width="76" height="22" rx="11"/><text x="${px}" y="${ly + 15}" text-anchor="middle">${t('Auto-compacted')}</text></g>`; }).join('');
   let cmpPath = '';
   if (cmpOn) {
     const cw = state.sessions.find((x2) => x2.key === big.cmpKey)?.context?.window || win;
@@ -116,8 +116,8 @@ function drawBig() {
     cmpPath = `<path class="cmp" d="M${resample(cp, cw, cx, y).join(' L')}"/>`;
   }
   if (!box.querySelector('svg') || big.W !== W || big.H !== H) {
-    box.innerHTML = `<svg role="img" aria-label="대화 창 사용률 추이"><defs><linearGradient id="cp-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="stop-a"/><stop offset="1" class="stop-b"/></linearGradient></defs>
-      <g class="grid"></g><line class="l80" x1="${L}" x2="${W - R}" y1="${y(0.8)}" y2="${y(0.8)}"/><text class="l80t" x="${W - R}" y="${y(0.8) - 6}" text-anchor="end">80% · 여기쯤 차면 자동 요약</text>
+    box.innerHTML = `<svg role="img" aria-label="${t('Context window usage trend')}"><defs><linearGradient id="cp-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="stop-a"/><stop offset="1" class="stop-b"/></linearGradient></defs>
+      <g class="grid"></g><line class="l80" x1="${L}" x2="${W - R}" y1="${y(0.8)}" y2="${y(0.8)}"/><text class="l80t" x="${W - R}" y="${y(0.8) - 6}" text-anchor="end">80% · ${t('auto-compact around here')}</text>
       <path class="area"/><g class="cmpg"></g><path class="line"/><g class="xl"></g><g class="drops"></g>
       <line class="cross" y1="${T}" y2="${H - B}" visibility="hidden"/><circle class="hdot" r="4.5" visibility="hidden"/></svg>`;
     // 처음 그릴 땐 바닥에서 올라오게, 세션을 바꾸면 앞 선에서 새 선으로 옮겨 간다(CSS transition: d)
@@ -136,7 +136,7 @@ function drawBig() {
   Object.assign(big, { key: s.key, sig, pts, P, win, x, y, W, H, prevLine: `M${line.join(' L')}`, prevArea: area });
   const last = pts.at(-1)[1];
   const cs = cmpOn && state.sessions.find((x2) => x2.key === big.cmpKey);
-  $('#cp-now').innerHTML = `<span><b>${Math.round((last / win) * 100)}%</b>지금 · ${fmtTok(last)} / ${fmtTok(win)} 토큰</span><span><b>${pts.length}</b>응답</span><span><b>${drops.length}</b>자동 요약</span>${cmpOn ? `<span class="key"><i></i>${esc(s.title || '')}</span><span class="key"><i class="cmp"></i>${esc(cs?.title || '')}</span>` : ''}`;
+  $('#cp-now').innerHTML = `<span><b>${Math.round((last / win) * 100)}%</b>${t('now')} · ${fmtTok(last)} / ${fmtTok(win)} ${t('tokens')}</span><span><b>${pts.length}</b>${t('replies')}</span><span><b>${drops.length}</b>${t('auto-compacts')}</span>${cmpOn ? `<span class="key"><i></i>${esc(s.title || '')}</span><span class="key"><i class="cmp"></i>${esc(cs?.title || '')}</span>` : ''}`;
 }
 
 // 마우스 올림: 가장 가까운 응답의 시각 · % · 토큰 · 응답 번호
@@ -146,12 +146,12 @@ $('#cp-chart').addEventListener('pointermove', (e) => {
   const r = svg.getBoundingClientRect(), mx = e.clientX - r.left;
   let best = 0, bd = Infinity;
   big.P.forEach((p, i) => { const dd = Math.abs(big.x(p[0]) - mx); if (dd < bd) { bd = dd; best = i; } });
-  const [t, v] = big.pts[best], px = big.x(big.P[best][0]), py = big.y(v / big.win);
+  const [at, v] = big.pts[best], px = big.x(big.P[best][0]), py = big.y(v / big.win);
   const cross = svg.querySelector('.cross'), dot = svg.querySelector('.hdot');
   cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('visibility', 'visible');
   dot.setAttribute('cx', px); dot.setAttribute('cy', py); dot.setAttribute('visibility', 'visible');
   const tip = $('#cp-tip');
-  tip.innerHTML = `<b>${cpHm(t)}</b> · 응답 #${best + 1}<br><b>${Math.round((v / big.win) * 100)}%</b> <small>${fmtTok(v)} / ${fmtTok(big.win)} 토큰</small>`;
+  tip.innerHTML = `<b>${cpHm(at)}</b> · ${t('reply')} #${best + 1}<br><b>${Math.round((v / big.win) * 100)}%</b> <small>${fmtTok(v)} / ${fmtTok(big.win)} ${t('tokens')}</small>`;
   tip.hidden = false;
   const pr = $('#ctx-panel').getBoundingClientRect();
   tip.style.left = `${Math.min(r.left - pr.left + px + 12, pr.width - tip.offsetWidth - 8)}px`;
@@ -164,12 +164,12 @@ $('#cp-chart').addEventListener('pointerleave', () => {
 
 // 「자동 요약됨」을 누르면(또는 Enter) 무슨 일이었는지 설명
 function explainDrop(g) {
-  const i = Number(g.dataset.i), [t, v] = big.pts[i], before = big.pts[i - 1][1];
+  const i = Number(g.dataset.i), [at, v] = big.pts[i], before = big.pts[i - 1][1];
   const pop = $('#cp-pop');
-  pop.innerHTML = `<h4>${cpHm(t)} 자동 요약됨 · ${Math.round((before / big.win) * 100)}% → ${Math.round((v / big.win) * 100)}%</h4>
-    <p>대화 창은 Claude 가 한 번에 기억하는 대화의 양이에요. 거의 차면(80% 근처) Claude Code 가 앞쪽 대화를 짧은 요약으로 바꿔 자리를 비워요.</p>
-    <p>그 뒤로는 요약에 없는 앞쪽의 자세한 내용(정확한 파일 내용 · 세부 지시)을 Claude 가 잊었을 수 있어요. 중요한 조건은 다시 알려 주면 좋아요.</p>
-    <button type="button" class="ghost" id="cp-pop-close">닫기</button>`;
+  pop.innerHTML = `<h4>${cpHm(at)} ${t('Auto-compacted')} · ${Math.round((before / big.win) * 100)}% → ${Math.round((v / big.win) * 100)}%</h4>
+    <p>${t('The context window is how much conversation Claude remembers at once. When it is nearly full (around 80%), Claude Code replaces the earlier conversation with a short summary to make room.')}</p>
+    <p>${t('After that, Claude may have forgotten details from the earlier part that are not in the summary (exact file contents · detailed instructions). It helps to repeat important conditions.')}</p>
+    <button type="button" class="ghost" id="cp-pop-close">${t('Close')}</button>`;
   const pr = $('#ctx-panel').getBoundingClientRect(), gr = g.getBoundingClientRect();
   pop.style.left = `${Math.max(8, Math.min(gr.left - pr.left - 140, pr.width - 330))}px`;
   pop.style.bottom = `${pr.bottom - gr.top + 8}px`;

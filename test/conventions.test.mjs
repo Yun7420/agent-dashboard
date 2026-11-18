@@ -82,6 +82,16 @@ test('화면 모양: 색은 토큰만 — 00-base.css 밖의 css 에 #hex · rgb
   assert.deepEqual(bad, [], '00-base.css 의 토큰(var(--…))을 쓰고, 새 색이 필요하면 00-base.css 에 토큰을 더해 주세요');
 });
 
+// 화면 글자는 영어로 쓰고 한국어 판은 사전(00-dict-*.js)에만 — 한글을 직접 쓰면 영어 화면에 한국어가 섞인다(주석은 상관없음)
+test('화면 언어: 사전(00-dict-*.js) 밖의 화면 js · index.html 에 한글을 직접 쓰지 않는다(주석 제외)', () => {
+  const bad = [];
+  const strip = { js: (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, ''), html: (s) => s.replace(/<!--[\s\S]*?-->/g, '') };
+  for (const f of [...FRONT.filter((x) => !/\/00-dict-/.test(x)), 'public/index.html']) {
+    strip[f.endsWith('.html') ? 'html' : 'js'](read(f)).split('\n').forEach((l, i) => { if (/[\uAC00-\uD7A3\u3131-\u318E]/.test(l)) bad.push(`${f}: ${l.trim().slice(0, 60)}`); });
+  }
+  assert.deepEqual(bad, [], '글자는 영어로 쓰고 t(\'…\') + 00-dict-*.js 에 한국어를 넣어 주세요');
+});
+
 test('화면 번호 순서 검사기: 주석 · 글자 · 객체 키 · 지역 이름에 속지 않고, 진짜 부르기는 잡는다', async () => {
   const dir = tmpDir('ad-conv-');
   fs.writeFileSync(path.join(dir, '01-a.js'), [

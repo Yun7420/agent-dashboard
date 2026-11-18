@@ -26,15 +26,15 @@ async function runSearch() {
   const q = $('#gs-q').value.trim();
   const seq = ++gs.seq;
   if (q.length < 2) { $('#gs-meta').textContent = ''; $('#gs-list').innerHTML = ''; return; }
-  $('#gs-meta').textContent = '찾는 중…';
+  $('#gs-meta').textContent = t('Searching…');
   let results;
   try { results = await apiJson(`/api/search?q=${encodeURIComponent(q)}`); }
-  catch (e) { if (seq === gs.seq) { $('#gs-meta').textContent = `찾지 못했어요 — ${e.message}`; $('#gs-list').innerHTML = ''; } return; } // 「찾은 기록이 없어요」와 구분
+  catch (e) { if (seq === gs.seq) { $('#gs-meta').textContent = `${t('Search failed')} — ${e.message}`; $('#gs-list').innerHTML = ''; } return; } // 「찾은 기록이 없어요」와 구분
   if (seq !== gs.seq) return; // 더 최근 검색이 있으면 버린다
-  $('#gs-meta').textContent = results.length ? `${results.length}개${results.length === 100 ? ' (최신 100개까지)' : ''}` : '찾은 기록이 없어요';
+  $('#gs-meta').textContent = results.length ? `${t('{n} found', { n: results.length })}${results.length === 100 ? ` (${t('latest 100 only')})` : ''}` : t('Nothing found');
   $('#gs-list').innerHTML = results.map((r) => `
     <button type="button" class="gs-item" data-key="${esc(r.key)}">
-      <span class="gs-head"><b>${esc(r.title)}</b><span>${esc(r.project ?? '')}</span><span class="${r.from ? 'gs-peer' : ''}">${r.where === 'reply' ? '답변' : r.from ? `↙ ${esc(r.from.name)}` : '요청'}</span><span>${new Date(r.at).toLocaleString('ko-KR')}</span></span>
+      <span class="gs-head"><b>${esc(r.title)}</b><span>${esc(r.project ?? '')}</span><span class="${r.from ? 'gs-peer' : ''}">${r.where === 'reply' ? t('Reply') : r.from ? `↙ ${esc(r.from.name)}` : t('Request')}</span><span>${new Date(r.at).toLocaleString(LOCALE)}</span></span>
       <span class="gs-snip">${mark(r.snippet, q)}</span>
     </button>`).join('');
 }

@@ -6,16 +6,16 @@ const connState = (cls, text) => { $('#conn').innerHTML = `<span class="dot-s ${
 function connect() {
   liveES?.close();
   const es = (liveES = new EventSource('/events')); // 로그인 쿠키가 같이 간다(주소에 비밀을 싣지 않음)
-  es.onopen = () => connState('live', '실시간');
+  es.onopen = () => connState('live', t('Live'));
   es.onerror = () => {
-    if (loginShown) { es.close(); connState('waiting', '로그인 필요'); return; }
-    connState('waiting', '재연결 중…');
+    if (loginShown) { es.close(); connState('waiting', t('Login needed')); return; }
+    connState('waiting', t('Reconnecting…'));
     if (sseOnError(es.readyState, EventSource.CLOSED) !== 'probe') return;
     fetch('/api/perf', { headers: REQ_HEADER })
       .then(async (r) => [r.status, r.status === 403 ? await r.text().catch(() => '') : ''], () => [0, '']) // 서버가 아직 안 켜졌으면 0
       .then(([status, text]) => {
         if (es !== liveES) return; // 그사이 새로 연결했으면 그대로
-        if (probeVerdict(status) === 'gone') { loginNeeded(text); connState('waiting', '로그인 필요'); }
+        if (probeVerdict(status) === 'gone') { loginNeeded(text); connState('waiting', t('Login needed')); }
         else setTimeout(() => es === liveES && connect(), 3000);
       });
   };
@@ -34,7 +34,7 @@ function connect() {
     if (prunePrefs(pref, next.sessions.map((s) => s.key), Date.now())) savePref(); // 오래 못 본 세션 열쇠 정리(01-core.js)
     renderRestore();
     finishBoot();
-    $('#updated').textContent = `갱신 ${new Date(next.generatedAt).toLocaleTimeString('ko-KR', { hour12: false })}`;
+    $('#updated').textContent = `${t('Updated')} ${new Date(next.generatedAt).toLocaleTimeString(LOCALE, { hour12: false })}`;
     render();
     if (pendingSelect && state.sessions.some((s) => s.key === pendingSelect)) { const k = pendingSelect; pendingSelect = null; select(k); }
     else if (newPrompt) select(selected);

@@ -50,7 +50,7 @@ function pruneDrafts(sessions) {
 // ---------- 첨부 ----------
 function renderAttachments() {
   updateSendState();
-  $('#attach-list').innerHTML = curFiles().map((a) => `<span class="att ${a.uploading ? 'up' : ''}" title="${esc(a.path || a.name)}">${a.url ? `<img src="${a.url}" alt="">` : `<span class="ic">${esc((a.name.split('.').pop() || 'FILE').slice(0, 4).toUpperCase())}</span>`}<span class="nm">${esc(a.name)}</span><button type="button" data-rm="${a.id}" aria-label="빼기">✕</button></span>`).join('');
+  $('#attach-list').innerHTML = curFiles().map((a) => `<span class="att ${a.uploading ? 'up' : ''}" title="${esc(a.path || a.name)}">${a.url ? `<img src="${a.url}" alt="">` : `<span class="ic">${esc((a.name.split('.').pop() || 'FILE').slice(0, 4).toUpperCase())}</span>`}<span class="nm">${esc(a.name)}</span><button type="button" data-rm="${a.id}" aria-label="${t('Remove')}">✕</button></span>`).join('');
 }
 // 첨부는 올리기 시작한 세션의 것 — 올리는 사이 다른 세션으로 바꿔도 그 세션에 붙지 않는다
 async function addFiles(files) {
@@ -62,7 +62,7 @@ async function addFiles(files) {
     renderAttachments();
     try {
       const res = await apiFetch(`/api/upload?name=${encodeURIComponent(a.name)}`, { method: 'POST', body: f });
-      if (!res.ok) throw new Error((await res.text()) || '업로드 실패');
+      if (!res.ok) throw new Error((await res.text()) || t('Upload failed'));
       a.path = (await res.json()).path;
       a.uploading = false;
     } catch (err) {
@@ -105,11 +105,11 @@ async function sendMsg() {
   if (rec) rec.stop();
   const key = draftKey; // 보내는 동안 세션을 바꿔도 이 세션의 글 · 첨부만
   const list = curFiles();
-  if (list.some((a) => a.uploading)) { toast('파일을 올리는 중이에요. 잠시 뒤 보내 주세요'); return; }
+  if (list.some((a) => a.uploading)) { toast(t('Files are still uploading. Send again in a moment')); return; }
   const files = list.map((a) => a.path);
   // 첨부는 메시지 뒤에 경로로 붙인다 — Claude 가 경로를 보고 파일(이미지 포함)을 직접 연다
   const typed = $('#msg').value.trim();
-  const text = [typed || (files.length ? '첨부한 파일을 확인해 주세요.' : ''), ...files.map((p) => `첨부: ${p}`)].filter(Boolean).join('\n');
+  const text = [typed || (files.length ? t('Please check the attached files.') : ''), ...files.map((p) => `${t('Attached')}: ${p}`)].filter(Boolean).join('\n');
   if (!text || !key || key !== selected) return;
   $('#send').disabled = true;
   try {
@@ -135,7 +135,7 @@ $('#msg').addEventListener('keydown', (e) => {
 $('#d-model').addEventListener('change', async (e) => {
   const model = e.target.value;
   if (!selected || !model) return;
-  try { await api('/api/cmd/model', { key: selected, model }); toast(`이 세션을 ${model} 로 바꿨어요. 다음 답변부터 적용돼요 (기본 모델은 그대로)`); }
+  try { await api('/api/cmd/model', { key: selected, model }); toast(t('Switched this session to {m}. It applies from the next reply (the default model is unchanged)', { m: model })); }
   catch (err) { toast(err.message); }
 });
 
@@ -163,7 +163,7 @@ if (Recognition) {
     if (rec) { rec.stop(); return; }
     if (!(await micNotice()) || rec) return;
     rec = new Recognition();
-    rec.lang = 'ko-KR';
+    rec.lang = LOCALE;
     rec.interimResults = true;
     rec.continuous = true;
     const base = $('#msg').value ? $('#msg').value.replace(/\s*$/, ' ') : '';
@@ -177,11 +177,11 @@ if (Recognition) {
       $('#msg').value = base + done + interim;
       updateSendState(); // 음성으로 채운 글도 보내기 버튼에 반영
     };
-    rec.onerror = (e) => toast(e.error === 'not-allowed' ? '마이크 권한을 허용해 주세요' : `음성 인식 오류: ${e.error}`);
+    rec.onerror = (e) => toast(e.error === 'not-allowed' ? t('Please allow microphone access') : `${t('Speech recognition error')}: ${e.error}`);
     rec.onend = () => { rec = null; $('#mic').classList.remove('rec'); $('#mic').innerHTML = MIC_ICON; $('#msg').focus(); };
     rec.start();
     $('#mic').classList.add('rec');
     $('#mic').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
-    toast('듣는 중… 다 말하면 ■ 버튼을 누르세요');
+    toast(t('Listening… press the ■ button when you are done'));
   });
 }

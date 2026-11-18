@@ -213,6 +213,7 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 | 화면 불러오기: `index.html` 의 `<script>` 가 `public/js` 전부를 번호 순서대로 | 없음 |
 | 화면 모양 불러오기: `<link>` 가 `public/css` 전부를 번호 순서대로, 번호 없는 css · 옛 `style.css` 없음 | 없음 |
 | 화면 모양: `@media` 는 마지막 번호 css 에만 | 없음 |
+| 화면 언어: 사전(`00-dict-*.js`) 밖의 화면 js · `index.html` 에 한글을 직접 쓰지 않음(주석 제외) — 글자는 영어로 쓰고 `t('…')` + 사전에 한국어. 사전과 쓰는 글자의 짝은 `test/i18n.test.mjs` | 없음 |
 | 화면 모양: 색은 `00-base.css` 토큰만 — 다른 css 에 `#hex` · `rgb()` · `rgba()` 없음(투명도는 `color-mix`) | 없음 |
 | 파일 크기: 서버 쪽 300 · 화면 js · css 200줄, 넘은 파일은 늘지 않음 | 1개(위 ①) |
 | 서버 입구: `createServer` · `listen` 은 `server.mjs` 에만 | 없음 |

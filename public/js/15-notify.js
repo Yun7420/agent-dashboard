@@ -4,21 +4,21 @@ const workStarted = new Map(); // key → 작업 시작 시각
 // 종 단추 → 알림 설정 메뉴: 브라우저 알림(이 탭) · macOS 알림(서버가 띄움, 탭을 닫아도) · 소리
 // macOS 알림이 켜져 있으면 같은 일을 서버가 알리므로 브라우저 알림은 띄우지 않는다(두 번 뜨지 않게, 탭이 여러 개여도 한 번)
 let notifyCfg = null; // 서버 설정 { mac, sound, sounds, supported, demo }
-const SOUND_KO = { none: '없음' };
+const SOUND_KO = { none: t('None') };
 const browserOn = () => Boolean(pref.notify) && 'Notification' in window && Notification.permission === 'granted';
 const macOn = () => Boolean(notifyCfg?.mac && (notifyCfg.supported || notifyCfg.demo));
 function renderNotifyBtn() {
   $('#notify').classList.toggle('on', browserOn() || macOn());
-  $('#np-browser').textContent = browserOn() ? '끄기' : '켜기';
+  $('#np-browser').textContent = browserOn() ? t('Turn off') : t('Turn on');
   if (!notifyCfg) return;
   $('#np-mac').checked = notifyCfg.mac;
   $('#np-mac').disabled = !notifyCfg.supported && !notifyCfg.demo;
   const opts = notifyCfg.sounds.map((x) => `<option value="${esc(x)}">${esc(SOUND_KO[x] ?? x)}</option>`).join('');
   if ($('#np-sound').innerHTML !== opts) $('#np-sound').innerHTML = opts;
   $('#np-sound').value = notifyCfg.sound;
-  $('#np-note').textContent = notifyCfg.demo ? '데모 모드라 실제 알림은 보내지 않아요.'
-    : !notifyCfg.supported ? 'macOS 가 아니라서 macOS 알림은 쓸 수 없어요.'
-    : macOn() && browserOn() ? 'macOS 알림이 켜져 있어 브라우저 알림은 생략해요(두 번 뜨지 않게).' : '';
+  $('#np-note').textContent = notifyCfg.demo ? t('Demo mode, so no real notifications are sent.')
+    : !notifyCfg.supported ? t('Not macOS, so macOS notifications are unavailable.')
+    : macOn() && browserOn() ? t('macOS notifications are on, so browser ones are skipped (no doubles).') : '';
 }
 async function loadNotifyCfg() {
   try { notifyCfg = JSON.parse(await api('/api/notify')); } catch { notifyCfg = null; }
@@ -34,33 +34,33 @@ $('#notify').addEventListener('click', (e) => {
 });
 document.addEventListener('click', (e) => { if (!e.target.closest('#notify-menu')) $('#notify-menu').classList.remove('show'); });
 $('#np-browser').addEventListener('click', async () => {
-  if (!('Notification' in window)) { toast('이 브라우저는 알림을 지원하지 않아요'); return; }
-  if (browserOn()) { pref.notify = false; savePref(); renderNotifyBtn(); toast('브라우저 알림을 껐어요'); return; }
+  if (!('Notification' in window)) { toast(t('This browser does not support notifications')); return; }
+  if (browserOn()) { pref.notify = false; savePref(); renderNotifyBtn(); toast(t('Browser notifications off')); return; }
   const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
   pref.notify = perm === 'granted';
   savePref(); renderNotifyBtn();
-  toast(pref.notify ? '브라우저 알림을 켰어요 — 승인이 필요하거나 1분 넘게 걸린 작업이 끝나면 알려 줘요' : '브라우저에서 알림이 막혀 있어요');
+  toast(pref.notify ? t('Browser notifications on — you get told when approval is needed or a task over 1 min finishes') : t('Notifications are blocked in this browser'));
 });
 $('#np-mac').addEventListener('change', (e) => saveNotifyCfg({ mac: e.target.checked }));
 $('#np-sound').addEventListener('change', (e) => saveNotifyCfg({ sound: e.target.value }));
 $('#np-test').addEventListener('click', async () => {
   try {
     const r = JSON.parse(await api('/api/notify/test', {}));
-    toast(r.sent ? '시험 알림을 보냈어요 — 화면 오른쪽 위를 보세요' : r.supported ? '알림을 보내지 못했어요. 알림 권한을 확인해 주세요' : '이 환경(데모 · macOS 아님)에선 실제 알림을 보내지 않아요');
+    toast(t(r.sent ? 'Test notification sent — look at the top right of the screen' : r.supported ? 'Could not send. Check the notification permission' : 'No real notifications here (demo · not macOS)'));
   } catch (err) { toast(err.message); }
 });
 loadNotifyCfg();
 function notifyChanges(prevSessions, next) {
   const waiting = next.filter((s) => s.status === 'waiting').length;
-  document.title = waiting ? `(${waiting}) 승인 필요 · Agent Dashboard` : 'Agent Dashboard';
+  document.title = waiting ? `(${waiting}) ${t('Needs approval')} · Agent Dashboard` : 'Agent Dashboard';
   const before = new Map((prevSessions || []).map((s) => [s.key, s]));
   for (const s of next) {
     const p = before.get(s.key);
     if (s.status === 'working' && (!p || p.status !== 'working')) workStarted.set(s.key, Date.now());
     if (!p || !browserOn() || macOn()) continue; // macOS 알림이 켜져 있으면 서버가 알린다
     let msg = null;
-    if (s.status === 'waiting' && p.status !== 'waiting') msg = `승인이 필요해요${s.waitingFor ? ` · ${s.waitingFor}` : ''}`;
-    else if (p.status === 'working' && s.status === 'idle' && Date.now() - (workStarted.get(s.key) ?? Date.now()) > LONG_TASK_MS) msg = '작업이 끝났어요';
+    if (s.status === 'waiting' && p.status !== 'waiting') msg = `${t('Approval needed')}${s.waitingFor ? ` · ${s.waitingFor}` : ''}`;
+    else if (p.status === 'working' && s.status === 'idle' && Date.now() - (workStarted.get(s.key) ?? Date.now()) > LONG_TASK_MS) msg = t('Task finished');
     if (!msg) continue;
     const n = new Notification(s.title, { body: msg, tag: s.key, silent: false });
     n.onclick = () => { window.focus(); select(s.key); n.close(); };

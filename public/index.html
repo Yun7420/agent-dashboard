@@ -25,52 +25,54 @@
     <h1>Agent <span>Dashboard</span></h1>
   </div>
   <div class="stats">
-    <span class="stat"><span class="dot-s waiting"></span>승인 필요 <em id="c-waiting">0</em></span>
-    <span class="stat"><span class="dot-s working"></span>작업 중 <em id="c-working">0</em></span>
-    <span class="stat"><span class="dot-s idle"></span>대기 <em id="c-idle">0</em></span>
-    <span class="stat"><span class="dot-s ended"></span>종료 <em id="c-ended">0</em></span>
+    <span class="stat"><span class="dot-s waiting"></span>Approval <em id="c-waiting">0</em></span>
+    <span class="stat"><span class="dot-s working"></span>Working <em id="c-working">0</em></span>
+    <span class="stat"><span class="dot-s idle"></span>Idle <em id="c-idle">0</em></span>
+    <span class="stat"><span class="dot-s ended"></span>Ended <em id="c-ended">0</em></span>
   </div>
   <span class="spacer"></span>
   <span class="info-wrap">
-    <button id="usage" class="usage-pill" title="Claude 계정 사용 한도"></button>
+    <button id="usage" class="usage-pill" title="Claude account usage limits"></button>
     <div class="menu-pop" id="limits-pop">
-      <div class="lp-head"><b>계정 한도 추이</b><span class="lp-range"><button type="button" class="ghost on" data-range="24h">24시간</button><button type="button" class="ghost" data-range="7d">7일</button></span></div>
+      <div class="lp-head"><b>Limit trend</b><span class="lp-range"><button type="button" class="ghost on" data-range="24h">24h</button><button type="button" class="ghost" data-range="7d">7d</button></span></div>
       <div id="limits-chart"></div>
-      <div class="lp-foot"><span class="lp-key"><i class="k5"></i>5시간 <i class="k7"></i>주간 <i class="kr"></i>리셋</span><button type="button" class="ghost" id="limits-setup">설정…</button></div>
+      <div class="lp-foot"><span class="lp-key"><i class="k5"></i>5h <i class="k7"></i>Weekly <i class="kr"></i>Reset</span><button type="button" class="ghost" id="limits-setup">Setup…</button></div>
     </div>
   </span>
-  <button id="day-btn" class="ghost icon-btn" title="오늘 한 일" aria-label="오늘 한 일"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16M9 16l2 2 4-4"/></svg></button>
-  <button id="search-btn" class="ghost icon-btn" title="전체 기록 검색 ( / )" aria-label="전체 기록 검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+  <button id="day-btn" class="ghost icon-btn" title="Today's work" aria-label="Today's work"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16M9 16l2 2 4-4"/></svg></button>
+  <button id="search-btn" class="ghost icon-btn" title="Search all logs ( / )" aria-label="Search all logs"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
   <span class="info-wrap">
-    <button id="notify" class="ghost icon-btn" title="알림 설정 — 승인이 필요하거나 오래 걸린 작업이 끝나면 알려 줘요" aria-label="알림"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+    <button id="notify" class="ghost icon-btn" title="Notifications — tells you when approval is needed or a long task finishes" aria-label="Notifications"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
     <div class="menu-pop" id="notify-menu">
-      <div class="np-title">알림 <span>승인 필요 · 1분 넘게 걸린 작업 완료</span></div>
-      <div class="np-row"><span>브라우저 알림<small>이 탭이 열려 있을 때</small></span><button type="button" class="ghost" id="np-browser">켜기</button></div>
-      <div class="np-row"><span>macOS 알림<small>탭을 닫아도</small></span><label class="switch"><input type="checkbox" id="np-mac"><span class="track"></span></label></div>
-      <div class="np-row"><span>소리<small>macOS 알림</small></span><select id="np-sound"></select></div>
-      <button type="button" class="ghost" id="np-test">시험 알림 보내기</button>
+      <div class="np-title">Notifications <span>Needs approval · tasks over 1 min finished</span></div>
+      <div class="np-row"><span>Browser<small>While this tab is open</small></span><button type="button" class="ghost" id="np-browser">Turn on</button></div>
+      <div class="np-row"><span>macOS<small>Even with the tab closed</small></span><label class="switch"><input type="checkbox" id="np-mac"><span class="track"></span></label></div>
+      <div class="np-row"><span>Sound<small>macOS</small></span><select id="np-sound"></select></div>
+      <button type="button" class="ghost" id="np-test">Send a test notification</button>
       <p class="np-hint" id="np-note"></p>
-      <p class="np-hint">macOS 알림은 시스템 설정 › 알림에서 '스크립트 편집기'(또는 터미널) 알림 권한이 필요할 수 있어요.</p>
+      <p class="np-hint">macOS notifications may need permission for 'Script Editor' (or Terminal) in System Settings › Notifications.</p>
     </div>
   </span>
   <span class="info-wrap">
-    <button id="settings" class="ghost icon-btn" title="화면 설정" aria-label="화면 설정"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <button id="settings" class="ghost icon-btn" title="Display" aria-label="Display"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     <div class="menu-pop" id="settings-menu">
-      <div class="np-title">화면 설정</div>
-      <div class="np-row"><label for="set-theme">화면 색<small>시스템 = macOS 의 밝게 · 어둡게를 따라가요</small></label><select id="set-theme"><option value="dark">어두운 초록</option><option value="light">밝은 판</option><option value="system">시스템 따라가기</option></select></div>
+      <div class="np-title">Display</div>
+      <div class="np-row"><label for="set-theme">Theme<small>System = follows macOS light · dark</small></label><select id="set-theme"><option value="dark">Dark green</option><option value="light">Light</option><option value="system">Follow system</option></select></div>
+      <!-- 언어 이름은 그 언어로(한국어 = 숫자 문자 참조 — 화면 파일에 한글을 직접 쓰지 않는 규칙) -->
+      <div class="np-row"><label for="set-lang">Language<small>At first it follows the browser language</small></label><select id="set-lang"><option value="ko">&#xD55C;&#xAD6D;&#xC5B4;</option><option value="en">English</option></select></div>
     </div>
   </span>
-  <button id="help" class="ghost icon-btn" title="환경 점검 · 사용 안내" aria-label="도움말"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
-  <button id="new-session" class="primary" title="새 세션" aria-label="새 세션">+<span> 새 세션</span></button>
-  <span id="conn" role="status"><span class="dot-s"></span>연결 중…</span>
+  <button id="help" class="ghost icon-btn" title="Environment check · guide" aria-label="Help"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+  <button id="new-session" class="primary" title="New session" aria-label="New session">+<span> New session</span></button>
+  <span id="conn" role="status"><span class="dot-s"></span>Connecting…</span>
 </header>
 <aside>
   <div class="sort-bar">
-    <button type="button" class="ghost icon-btn sm" id="aside-fold" title="목록 접기" aria-label="목록 접기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="m15 10-2 2 2 2"/></svg></button>
+    <button type="button" class="ghost icon-btn sm" id="aside-fold" title="Fold list" aria-label="Fold list"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="m15 10-2 2 2 2"/></svg></button>
     <select id="sort">
-      <option value="manual">직접 정렬 (드래그)</option>
-      <option value="status">상태별 · 최근 활동순</option>
-      <option value="name">이름순</option>
+      <option value="manual">Manual order (drag)</option>
+      <option value="status">By status · recent first</option>
+      <option value="name">By name</option>
     </select>
   </div>
   <div id="restore" hidden></div>
@@ -83,77 +85,77 @@
     </defs>
     <g id="viewport"></g>
   </svg>
-  <div class="hint">드래그로 이동 · 휠로 확대 · 노드 클릭 시 프롬프트 기록 · <span class="peer-t">파란 화살표</span> = 세션끼리 보낸 메시지</div>
+  <div class="hint">Drag to move · wheel to zoom · click a node for its prompts · <span class="peer-t">blue arrow</span> = messages between sessions</div>
   <svg class="ecg" viewBox="0 0 360 60" aria-hidden="true"><path d="M0 40 H120 l8 -4 l6 4 h18 l6 -34 l7 48 l6 -14 h22 q14 -14 28 0 H360"/></svg>
-  <div class="empty" id="empty" hidden>떠 있는 세션이 없어요</div>
-  <div class="center-tabs" role="tablist" aria-label="가운데 보기">
-    <button type="button" class="tab" data-view="org" role="tab" aria-selected="false">구조</button>
-    <button type="button" class="tab on" data-view="ctx" role="tab" aria-selected="true">대화 창</button>
+  <div class="empty" id="empty" hidden>No sessions running</div>
+  <div class="center-tabs" role="tablist" aria-label="Center view">
+    <button type="button" class="tab" data-view="org" role="tab" aria-selected="false">Structure</button>
+    <button type="button" class="tab on" data-view="ctx" role="tab" aria-selected="true">Context</button>
   </div>
-  <div class="zoom-btns" role="group" aria-label="조직도 확대">
-    <button type="button" class="ghost icon-btn" id="zoom-in" title="확대" aria-label="확대">+</button>
-    <button type="button" class="ghost icon-btn" id="zoom-out" title="축소" aria-label="축소">−</button>
-    <button type="button" class="ghost icon-btn" id="zoom-fit" title="화면에 맞춤(더블클릭과 같아요)" aria-label="화면에 맞춤"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  <div class="zoom-btns" role="group" aria-label="Org chart zoom">
+    <button type="button" class="ghost icon-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+    <button type="button" class="ghost icon-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
+    <button type="button" class="ghost icon-btn" id="zoom-fit" title="Fit to screen (same as double-click)" aria-label="Fit to screen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
   </div>
   <section id="ctx-panel" aria-labelledby="ctx-title">
     <div class="cp-head">
-      <h3 id="ctx-title">대화 창 사용률 <span>— Claude 가 기억하는 대화 양</span></h3>
+      <h3 id="ctx-title">Context window usage <span>— what Claude remembers</span></h3>
       <span class="grow"></span>
-      <span class="pill"><span class="dot-s live"></span><span id="cp-who">세션을 고르세요</span></span>
+      <span class="pill"><span class="dot-s live"></span><span id="cp-who">Pick a session</span></span>
     </div>
-    <div class="cp-row"><div class="cp-now" id="cp-now"></div><label class="cp-cmp">겹쳐 보기 <select id="cp-cmp"><option value="">없음</option></select></label></div>
-    <div class="cp-chart" id="cp-chart"><div class="empty-note">왼쪽에서 세션을 고르면 대화 창이 얼마나 찼는지 보여 줘요</div></div>
+    <div class="cp-row"><div class="cp-now" id="cp-now"></div><label class="cp-cmp">Compare <select id="cp-cmp"><option value="">None</option></select></label></div>
+    <div class="cp-chart" id="cp-chart"><div class="empty-note">Pick a session on the left to see how full its context window is</div></div>
     <div class="cp-tip" id="cp-tip" hidden></div>
-    <div class="cp-pop menu-pop" id="cp-pop" role="dialog" aria-label="자동 요약 설명"></div>
+    <div class="cp-pop menu-pop" id="cp-pop" role="dialog" aria-label="About auto-compact"></div>
   </section>
   <section id="drawer">
-    <div class="resize" id="resize" title="끌어서 폭 조절 · 더블클릭하면 기본 폭"></div>
+    <div class="resize" id="resize" title="Drag to resize · double-click for default width"></div>
     <div class="head">
       <div class="head-top">
         <span class="dot-s" id="d-dot"></span>
         <h2 id="d-title"></h2>
         <span class="info-wrap">
-          <button type="button" class="ghost icon-btn sm" id="d-info-btn" aria-label="세션 정보"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></button>
+          <button type="button" class="ghost icon-btn sm" id="d-info-btn" aria-label="Session info"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></button>
           <div class="info-pop" id="d-meta"></div>
         </span>
-        <div class="tabs" role="tablist" aria-label="세션 패널 보기">
-          <button type="button" class="tab on" data-tab="now" id="tab-now" role="tab" aria-selected="true" aria-controls="now-view">지금</button>
-          <button type="button" class="tab" data-tab="log" id="tab-log" role="tab" aria-selected="false" aria-controls="log-view" tabindex="-1">기록 <span id="log-count"></span></button>
+        <div class="tabs" role="tablist" aria-label="Session panel views">
+          <button type="button" class="tab on" data-tab="now" id="tab-now" role="tab" aria-selected="true" aria-controls="now-view">Now</button>
+          <button type="button" class="tab" data-tab="log" id="tab-log" role="tab" aria-selected="false" aria-controls="log-view" tabindex="-1">Log <span id="log-count"></span></button>
         </div>
         <span class="grow"></span>
-        <select id="d-model" title="모델 바꾸기 (tmux 세션만)">
-          <option value="" disabled>모델</option>
+        <select id="d-model" title="Change model (tmux sessions only)">
+          <option value="" disabled>Model</option>
           <option value="opus">Opus</option>
           <option value="sonnet">Sonnet</option>
           <option value="haiku">Haiku</option>
         </select>
-        <button type="button" class="ghost icon-btn sm" id="wide" title="넓게 보기 / 기본 폭" aria-label="패널 넓게 보기 / 기본 폭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+        <button type="button" class="ghost icon-btn sm" id="wide" title="Wide / default width" aria-label="Widen panel / default width"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
         <span class="info-wrap">
-          <button type="button" class="ghost icon-btn sm" id="more-btn" aria-label="더 보기"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <button type="button" class="ghost icon-btn sm" id="more-btn" aria-label="More"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
           <div class="menu-pop" id="more-menu">
-            <button type="button" class="danger" id="end-session">세션 종료</button>
+            <button type="button" class="danger" id="end-session">End session</button>
           </div>
         </span>
-        <button class="ghost icon-btn sm" id="close" title="패널 접기 (세션은 그대로)" aria-label="패널 접기"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button class="ghost icon-btn sm" id="close" title="Fold panel (session keeps running)" aria-label="Fold panel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
       </div>
       <div class="ctx-line" id="d-ctx"></div>
     </div>
     <div id="now-view" role="tabpanel" aria-labelledby="tab-now">
       <div class="now-prompt" id="now-prompt"></div>
       <div class="now-card">
-        <div class="now-head"><span class="who-now">CLAUDE</span><span id="now-state"></span><span id="now-time" class="now-time"></span><button type="button" class="stop-btn" id="stop" title="지금 하던 작업 멈추기 (세션은 그대로)" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>멈추기</button></div>
+        <div class="now-head"><span class="who-now">CLAUDE</span><span id="now-state"></span><span id="now-time" class="now-time"></span><button type="button" class="stop-btn" id="stop" title="Stop the current task (session keeps running)" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>Stop</button></div>
         <div class="now-reply md" id="now-reply"></div>
         <div id="now-changes"></div>
       </div>
       <div id="now-trend"></div>
     </div>
     <div id="log-view" role="tabpanel" aria-labelledby="tab-log" hidden>
-      <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="d-search" placeholder="프롬프트 검색" /></div>
+      <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="d-search" placeholder="Search prompts" /></div>
       <div id="log-list"></div>
     </div>
-    <div id="busy" hidden><span class="spinner"></span><span id="busy-text">작업 중</span><span id="busy-time" class="mono"></span></div>
+    <div id="busy" hidden><span class="spinner"></span><span id="busy-text">Working</span><span id="busy-time" class="mono"></span></div>
     <div id="approval" hidden>
-      <h3>⚠ 승인 요청 — 무엇을 허락하는지 확인하고 누르세요</h3>
+      <h3>⚠ Approval request — check what you allow before you press</h3>
       <div id="approve-card" hidden></div>
       <pre id="pane"></pre>
       <div class="btns" id="approve-btns"></div>
@@ -161,14 +163,14 @@
     <form id="composer">
       <div class="box">
         <div id="attach-list"></div>
-        <textarea id="msg" placeholder="세션에 메시지 보내기 · 파일은 끌어다 놓거나 붙여넣기"></textarea>
+        <textarea id="msg" placeholder="Message the session · drop or paste files"></textarea>
         <input type="file" id="file-input" multiple hidden />
         <div class="bar">
-          <span class="kbd-hint">Enter 보내기 · Shift+Enter 줄바꿈</span>
+          <span class="kbd-hint">Enter send · Shift+Enter new line</span>
           <div class="actions">
-        <button type="button" id="attach" class="icon-btn" title="파일·이미지 첨부" aria-label="첨부"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg></button>
-        <button type="button" id="mic" class="icon-btn" title="음성 입력 (누르고 말하기 · 다시 누르면 멈춤)" aria-label="음성 입력" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg></button>
-        <button class="primary icon-btn" id="send" title="보내기 (Enter)" aria-label="보내기"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></button>
+        <button type="button" id="attach" class="icon-btn" title="Attach files · images" aria-label="Attach"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg></button>
+        <button type="button" id="mic" class="icon-btn" title="Voice input (press and talk · press again to stop)" aria-label="Voice input" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg></button>
+        <button class="primary icon-btn" id="send" title="Send (Enter)" aria-label="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></button>
           </div>
         </div>
       </div>
@@ -178,124 +180,128 @@
 </main>
 <dialog id="spawn-dlg">
   <form method="dialog" id="spawn-form">
-    <h3>새 Claude 세션 (tmux)</h3>
-    <label>작업 폴더</label>
+    <h3>New Claude session (tmux)</h3>
+    <label>Working folder</label>
     <input id="sp-cwd" list="cwd-list" placeholder="~/Documents/..." required />
     <datalist id="cwd-list"></datalist>
-    <label>세션 이름 (선택)</label>
-    <input id="sp-name" placeholder="예: Frontend Manager" />
-    <label>모델</label>
+    <label>Session name (optional)</label>
+    <input id="sp-name" placeholder="e.g. Frontend Manager" />
+    <label>Model</label>
     <select id="sp-model" style="width:100%">
-      <option value="">기본 설정 따르기</option>
-      <option value="opus">Opus — 가장 똑똑함 · 복잡한 설계·리뷰</option>
-      <option value="sonnet">Sonnet — 균형 · 일반 개발</option>
-      <option value="haiku">Haiku — 가장 빠르고 저렴 · 단순 반복 작업</option>
+      <option value="">Use default</option>
+      <option value="opus">Opus — smartest · complex design · review</option>
+      <option value="sonnet">Sonnet — balanced · everyday coding</option>
+      <option value="haiku">Haiku — fastest and cheapest · simple repetitive work</option>
     </select>
-    <label>첫 프롬프트 (선택)</label>
+    <label>First prompt (optional)</label>
     <textarea id="sp-prompt" rows="3"></textarea>
-    <div class="note">tmux 안에서 열려서 대시보드로 채팅·승인할 수 있어요. 터미널에서 보려면 <code>tmux attach -t dash-…</code></div>
-    <div class="row"><button value="cancel" formnovalidate>취소</button><button class="primary" value="ok">열기</button></div>
+    <div class="note">Opens inside tmux, so you can chat · approve from the dashboard. To watch it in a terminal: <code>tmux attach -t dash-…</code></div>
+    <div class="row"><button value="cancel" formnovalidate>Cancel</button><button class="primary" value="ok">Open</button></div>
   </form>
 </dialog>
 <dialog id="day-dlg">
   <form method="dialog">
-    <h3>오늘 한 일</h3>
+    <h3>Today's work</h3>
     <div class="day-bar">
-      <button type="button" data-day="0" class="on">오늘</button><button type="button" data-day="-1">어제</button>
+      <button type="button" data-day="0" class="on">Today</button><button type="button" data-day="-1">Yesterday</button>
       <input type="date" id="day-date">
       <span class="grow"></span>
-      <button type="button" id="day-copy" title="업무 일지에 붙여 넣기 좋은 마크다운으로 복사">마크다운 복사</button>
+      <button type="button" id="day-copy" title="Copy as Markdown, handy for a work log">Copy Markdown</button>
     </div>
     <div id="day-total"></div>
     <div id="day-list"></div>
-    <div class="row"><button value="cancel">닫기</button></div>
+    <div class="row"><button value="cancel">Close</button></div>
   </form>
 </dialog>
 <dialog id="search-dlg">
   <form method="dialog">
-    <h3>전체 기록 검색</h3>
-    <input id="gs-q" type="search" maxlength="200" placeholder="모든 세션의 요청 · 답변에서 찾기 (2글자 이상)" autocomplete="off">
+    <h3>Search all logs</h3>
+    <input id="gs-q" type="search" maxlength="200" placeholder="Find in every session's requests · replies (2+ characters)" autocomplete="off">
     <div id="gs-meta"></div>
     <div id="gs-list"></div>
-    <div class="row"><button value="cancel">닫기</button></div>
+    <div class="row"><button value="cancel">Close</button></div>
   </form>
 </dialog>
 <dialog id="close-dlg">
   <form method="dialog">
-    <h3 id="cl-title">세션 닫기</h3>
+    <h3 id="cl-title">Close session</h3>
     <div id="cl-body" style="color:var(--dim);font-size:12px;line-height:1.7"></div>
-    <div class="row"><button value="cancel">취소</button><button class="danger" id="cl-ok" value="ok">닫기</button></div>
+    <div class="row"><button value="cancel">Cancel</button><button class="danger" id="cl-ok" value="ok">Close</button></div>
   </form>
 </dialog>
 <dialog id="usage-dlg">
   <form method="dialog">
-    <h3><span class="badge tool claude" style="vertical-align:2px">Claude</span> 계정 사용 한도 보기</h3>
+    <h3><span class="badge tool claude" style="vertical-align:2px">Claude</span> account usage limits</h3>
     <div id="usage-body" style="color:var(--dim);font-size:13px;line-height:1.75"></div>
-    <div class="row"><button value="cancel">닫기</button><button class="primary" id="usage-act" value="act"></button></div>
+    <div class="row"><button value="cancel">Close</button><button class="primary" id="usage-act" value="act"></button></div>
   </form>
 </dialog>
 <dialog id="mic-dlg">
   <form method="dialog">
-    <h3>음성 입력</h3>
-    <div style="color:var(--dim);font-size:13px;line-height:1.7">크롬 음성 인식은 소리를 구글 서버로 보내 글자로 바꿔요. 말한 내용이 이 컴퓨터 밖으로 나가니, 비밀번호나 회사 정보는 말하지 마세요.</div>
-    <label class="check"><input type="checkbox" id="mic-dont" checked> 다시 보지 않기</label>
-    <div class="row"><button value="cancel">취소</button><button class="primary" value="ok">듣기 시작</button></div>
+    <h3>Voice input</h3>
+    <div style="color:var(--dim);font-size:13px;line-height:1.7">Chrome speech recognition sends audio to Google servers to turn it into text. What you say leaves this computer, so don't say passwords or work secrets.</div>
+    <label class="check"><input type="checkbox" id="mic-dont" checked> Don't show again</label>
+    <div class="row"><button value="cancel">Cancel</button><button class="primary" value="ok">Start listening</button></div>
   </form>
 </dialog>
 <div class="menu-pop" id="dir-menu"></div>
 <div id="toast" role="status"></div>
-<div id="login-needed" role="alert" hidden><span id="login-how">로그인이 필요해요 — 터미널에서 「node bin/agent-dashboard.mjs open」 을 실행하면 이 브라우저에 다시 열려요</span> <button type="button" class="primary" id="login-reload">새로고침</button></div>
+<div id="login-needed" role="alert" hidden><span id="login-how">Login needed — run "node bin/agent-dashboard.mjs open" in a terminal to reopen it in this browser</span> <button type="button" class="primary" id="login-reload">Reload</button></div>
 <div id="boot">
   <div class="boot-card">
     <div class="spinner big"></div>
-    <h2>이 컴퓨터의 AI 세션을 연동하고 있어요</h2>
-    <p>내 맥에 있는 Claude Code · Codex 세션 기록과 실행 중인 프로세스를 <b>읽기만</b> 해요.<br>모든 처리는 이 컴퓨터 안에서만 이뤄지고, 외부로 보내는 데이터는 없어요.</p>
+    <h2>Connecting the AI sessions on this computer</h2>
+    <p data-th="boot.intro">Agent Dashboard <b>only reads</b> the Claude Code · Codex session logs and running processes on this Mac.<br>Everything stays on this computer; nothing is sent out.</p>
     <ul class="boot-steps">
-      <li id="bs-1">세션 기록 폴더 읽는 중</li>
-      <li id="bs-2">실행 중인 세션 확인 중</li>
-      <li id="bs-3">환경 점검 중</li>
+      <li id="bs-1">Reading session log folders</li>
+      <li id="bs-2">Checking running sessions</li>
+      <li id="bs-3">Checking environment</li>
     </ul>
   </div>
 </div>
 <dialog id="welcome">
   <form method="dialog">
-    <h3>Agent Dashboard 시작하기</h3>
+    <h3>Getting started with Agent Dashboard</h3>
     <div class="env-host" id="env-host"></div>
-    <div class="env-list" id="env-list"><div class="env-row"><span class="spinner"></span>환경 점검 중…</div></div>
+    <div class="env-list" id="env-list"><div class="env-row"><span class="spinner"></span>Checking environment…</div></div>
     <div class="notice">
-      <h4>알아 두세요</h4>
+      <h4>Good to know</h4>
       <ul>
-        <li><b>내 컴퓨터 전용</b>이에요. 127.0.0.1 에서만 열리고, 프롬프트·코드 경로가 그대로 보이니 다른 사람과 주소를 공유하지 마세요.</li>
-        <li>여기서 <b>채팅·승인·종료</b>는 <b>tmux 로 띄운 세션</b>만 돼요. 일반 터미널·에디터(Cursor 등)에서 띄운 세션은 보기만 돼요. <b>+ 새 세션</b>으로 열면 자동으로 tmux 안에서 열려요.</li>
-        <li><b>승인 버튼</b>은 실제 권한을 허락하는 거예요. 패널에 보이는 터미널 화면(명령·파일)을 확인하고 누르세요.</li>
-        <li>세션 기본 권한 모드가 <b>auto</b> 면 대부분 자동 허용돼서 승인 창이 거의 안 떠요.</li>
-        <li><b>단축키</b>: <kbd>j</kbd>/<kbd>k</kbd> 다음 · 이전 세션, <kbd>g</kbd> 또는 <kbd>Enter</kbd> 패널 열기, <kbd>/</kbd> 전체 검색, 승인 창에서 <kbd>1</kbd>~<kbd>9</kbd> 선택지 · <kbd>Esc</kbd> 거절(위험 표시가 있으면 같은 숫자를 2초 안에 한 번 더), 그 밖엔 <kbd>Esc</kbd> 패널 닫기. 글을 쓰는 중엔 동작하지 않아요.</li>
+        <li data-th="help.local"><b>This computer only.</b> It opens on 127.0.0.1 alone, and prompts and code paths are shown as they are, so don't share the address with anyone.</li>
+        <li data-th="help.tmux"><b>Chat · approve · end</b> work only for <b>sessions started in tmux</b>. Sessions from a plain terminal or editor (Cursor etc.) are view-only. <b>+ New session</b> opens one inside tmux for you.</li>
+        <li data-th="help.approve"><b>Approve buttons</b> grant real permissions. Check the terminal screen (command · file) in the panel before you press.</li>
+        <li data-th="help.auto">If a session's default permission mode is <b>auto</b>, most actions are allowed automatically and approval prompts rarely appear.</li>
+        <li data-th="help.keys"><b>Shortcuts</b>: <kbd>j</kbd>/<kbd>k</kbd> next · previous session, <kbd>g</kbd> or <kbd>Enter</kbd> open panel, <kbd>/</kbd> search everything, in an approval prompt <kbd>1</kbd>~<kbd>9</kbd> choose · <kbd>Esc</kbd> reject (if marked risky, press the same number again within 2 seconds), otherwise <kbd>Esc</kbd> closes the panel. They don't work while you are typing.</li>
       </ul>
     </div>
     <div class="notice key">
-      <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M14.5 8.5l2 2"/></svg>보안 열쇠 <code>~/.agent-dashboard/token</code></h4>
+      <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M14.5 8.5l2 2"/></svg>Security key <code>~/.agent-dashboard/token</code></h4>
       <div id="token-status" class="token-status"></div>
       <ul>
-        <li><b>무엇인가요?</b> 이 대시보드 전용 비밀번호예요. 화면에는 넣지 않고, 이 열쇠로 만든 <b>로그인 링크</b>로 들어온 브라우저만 기록을 보고 명령(메시지 · 승인 · 종료 · 새 세션)을 보낼 수 있어요.</li>
-        <li><b>로그인은요?</b> 켤 때 터미널에 보이는 링크(10분)나 <code>agent-dashboard open</code>(저장소에서는 <code>node bin/agent-dashboard.mjs open</code>)으로 열면, 그 브라우저는 30일 동안 로그인돼요. 다른 브라우저 · 30일이 지나면 다시 열면 돼요.</li>
-        <li><b>왜 필요한가요?</b> 아무 웹사이트나 · 이 Mac 의 다른 계정 · 프로그램도 대시보드 주소로 요청을 보낼 수 있어요. 로그인 없이는 내 Claude 세션에 명령을 넣지 못하게 막아요.</li>
-        <li><b>어떻게 생기나요?</b> 처음 켤 때 이 컴퓨터에서 <b>자동으로</b> 만들어져요. 홈 폴더의 <code>~/.agent-dashboard/token</code> 에 본인만 읽을 수 있게(600) 두고, 저장소 · 패키지 폴더 밖이라 깃에 올라갈 일이 없어요. 할 일은 없어요.</li>
-        <li><b>주의할 점</b> 다른 사람에게 보내지 마세요. 혹시 새어 나갔다면 그 파일을 지우고 대시보드를 다시 켜면 새 열쇠로 바뀌고 모든 로그인이 끊겨요(로그인 링크로 다시 열기).</li>
+        <li data-th="help.key-what"><b>What is it?</b> A password just for this dashboard. It is never put in the page; only a browser that came in through a <b>login link</b> made from this key can read logs and send commands (message · approve · end · new session).</li>
+        <li data-th="help.key-login"><b>How do I log in?</b> Open the link printed in the terminal at start (10 min) or run <code>agent-dashboard open</code> (in the repo: <code>node bin/agent-dashboard.mjs open</code>); that browser stays logged in for 30 days. For another browser or after 30 days, open it again.</li>
+        <li data-th="help.key-why"><b>Why is it needed?</b> Any website, other accounts or programs on this Mac can send requests to the dashboard address. Without a login they can't push commands into your Claude sessions.</li>
+        <li data-th="help.key-how"><b>Where does it come from?</b> It is made <b>automatically</b> on this computer the first time you start. It sits in <code>~/.agent-dashboard/token</code> in your home folder, readable only by you (600), outside the repo and package folders, so it never ends up in git. Nothing to do.</li>
+        <li data-th="help.key-care"><b>Careful</b> Don't send it to anyone. If it leaked, delete that file and restart the dashboard: you get a new key and every login is signed out (open again with a login link).</li>
       </ul>
     </div>
     <div class="row">
-      <span class="note" style="margin:0 auto 0 0">이 안내는 오른쪽 위 <b>?</b> 버튼으로 언제든 다시 볼 수 있어요</span>
-      <button value="recheck" formnovalidate>다시 점검</button>
-      <button class="primary" value="ok" autofocus>시작하기</button>
+      <span class="note" style="margin:0 auto 0 0" data-th="help.again">You can open this guide again any time with the <b>?</b> button at the top right</span>
+      <button value="recheck" formnovalidate>Check again</button>
+      <button class="primary" value="ok" autofocus>Start</button>
     </div>
   </form>
 </dialog>
 <footer>
-  <div class="h"><span class="ttl"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>활동</span><span class="h-right"><span id="updated"></span><button type="button" class="fold-btn" id="fold-ic">접기 ▾</button></span></div>
+  <div class="h"><span class="ttl"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Activity</span><span class="h-right"><span id="updated"></span><button type="button" class="fold-btn" id="fold-ic">Fold ▾</button></span></div>
   <div id="events"></div>
 </footer>
 
 <!-- 화면 동작: 순서대로 불러온다(앞 파일의 함수·변수를 뒤 파일이 쓴다) -->
+<script src="/js/00-dict-page.js"></script>
+<script src="/js/00-dict-ui.js"></script>
+<script src="/js/00-dict-ui2.js"></script>
+<script src="/js/00-i18n.js"></script>
 <script src="/js/00-md.js"></script>
 <script src="/js/01-core.js"></script>
 <script src="/js/02-activity.js"></script>

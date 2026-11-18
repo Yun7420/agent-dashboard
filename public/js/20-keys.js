@@ -58,7 +58,7 @@ function approveKey(key) {
     if (!r.fire) {
       btn.classList.add('kb-arm');
       setTimeout(() => btn.classList.remove('kb-arm'), ARM_MS);
-      toast(`위험 표시가 있는 요청이에요 — 2초 안에 ${key} 키를 한 번 더 누르면 보내요`);
+      toast(t('This request is marked risky — press {k} again within 2 seconds to send', { k: key }));
       return true;
     }
   }

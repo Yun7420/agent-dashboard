@@ -32,7 +32,7 @@
 
 ```
  ┌─────────────── 브라우저 (public/) ───────────────┐
- │ index.html + css/00~11 + js/00-md.js ~ 20-keys.js │
+ │ index.html + css/00~11 + js/00-dict ~ 20-keys.js  │
  └───────┬──────────────────────────────▲───────────┘
          │ ① fetch /api/… (쿠키 + 머리글) │ ② SSE /events (2초마다 바뀐 상태)
          ▼                              │
@@ -181,6 +181,8 @@
 
 | 파일 | 하는 일 |
 |---|---|
+| `00-dict-page.js` · `00-dict-ui.js` · `00-dict-ui2.js` | 한국어 사전(영어 원문 → 한국어): index.html 고정 글자 · 화면 js 글자 |
+| `00-i18n.js` | 화면 언어(`LANG`: agent-deck 의 lang → 브라우저 언어 ko 면 한국어, 그 밖 영어) · `t('원문', {값})` · index.html 글자 바꿔 끼우기 · `<html lang>` |
 | `00-md.js` | 답변 마크다운 일부만 그리기(`md`) · 글자 안전하게 바꾸기(`esc`) |
 | `01-core.js` | 공통: 서버 요청 한 길(`apiFetch` · `api` · `apiJson`, 요청 머리글 `REQ_HEADER`, 403 이면 `loginNeeded` — 연동 카드 또는 위쪽 고정 안내) · 바뀐 곳만 그리기(`setHtml`) · 토스트(`toast`) · 설정 저장(`savePref`) · 오래된 설정 정리(`prunePrefs`) · 여러 파일이 같이 쓰는 화면 상태(`view` · `drawerTab` · `openFiles` · `sentAt` · `canSend` · `envData` …) · 도우미(`fmtTok` · `ctxLevel` · `modelName` · `initials`) |
 | `02-activity.js` | 아래 활동 로그(`logEvents` · `logLinks`) |

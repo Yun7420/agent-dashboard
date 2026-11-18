@@ -7,9 +7,9 @@ function renderRestore() {
   if (box.dataset.src === sig && !box.hidden) return;
   box.dataset.src = sig;
   box.hidden = false;
-  box.innerHTML = `<div class="r-title">재시동 전에 떠 있던 세션 ${items.length}개</div>
+  box.innerHTML = `<div class="r-title">${t('{n} sessions were open before the restart', { n: items.length })}</div>
     <div class="r-list">${items.map((i) => `· ${esc(i.title)}`).join('<br>')}</div>
-    <div class="row"><button type="button" class="primary" id="restore-go">모두 다시 열기</button><button type="button" id="restore-skip">닫기</button></div>`;
+    <div class="row"><button type="button" class="primary" id="restore-go">${t('Reopen all')}</button><button type="button" id="restore-skip">${t('Close')}</button></div>`;
 }
 document.addEventListener('click', async (e) => {
   if (e.target.id === 'restore-skip') { pref.restoreDismissed = $('#restore').dataset.src; savePref(); $('#restore').hidden = true; return; }
@@ -25,8 +25,8 @@ async function checkLaunched(id) {
   let d;
   try { d = JSON.parse(await api('/api/recent')); } catch { return; }
   const l = d.launched.find((x) => x.id === id);
-  if (l?.state === 'trust') toast(`「${l.title}」 세션은 폴더 신뢰 확인이 필요해요. 목록에서 그 세션을 열거나 tmux attach -t ${l.tmuxSession} 로 들어가 직접 골라 주세요`);
-  else if (l?.state === 'gone') toast(`「${l.title}」 세션이 바로 꺼졌어요. 폴더가 옮겨졌거나 기록이 없을 수 있어요`);
+  if (l?.state === 'trust') toast(t('“{s}” needs a folder trust check. Open that session from the list or go in with tmux attach -t {tm} and choose yourself', { s: l.title, tm: l.tmuxSession }));
+  else if (l?.state === 'gone') toast(t('“{s}” exited right away. The folder may have moved or the log may be missing', { s: l.title }));
 }
 // 카드를 여는 클릭(12-panel.js)보다 먼저 받아 카드는 열지 않는다
 document.addEventListener('click', async (e) => {

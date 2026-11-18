@@ -5,7 +5,7 @@ function buildTree() {
   for (const tool of state.tools) {
     const ss = visible().filter((s) => s.tool === tool.id);
     if (!ss.length) continue;
-    const t = { kind: 'group', label: tool.label, sub: 'AGENT CLI', children: [], status: ss.some((s) => s.status === 'working') ? 'working' : ss.some((s) => s.status === 'background') ? 'background' : 'idle' };
+    const grp = { kind: 'group', label: tool.label, sub: 'AGENT CLI', children: [], status: ss.some((s) => s.status === 'working') ? 'working' : ss.some((s) => s.status === 'background') ? 'background' : 'idle' };
     const byProject = new Map();
     for (const s of ss) {
       if (!byProject.has(s.project)) byProject.set(s.project, []);
@@ -19,9 +19,9 @@ function buildTree() {
           children: subNodes(s),
         });
       }
-      t.children.push(p);
+      grp.children.push(p);
     }
-    root.children.push(t);
+    root.children.push(grp);
   }
   return root;
 }
@@ -34,7 +34,7 @@ function subNodes(s) {
   const node = (a) => ({ kind: 'sub', label: a.type, sub: a.description, status: a.done ? 'idle' : s.status === 'ended' ? 'ended' : 'working', children: [] });
   if (pref.expandSubs[s.key]) {
     // 펼친 뒤엔 개수와 상관없이 항상 "접기" 칸을 둔다(5개 이하일 때 다시 접을 방법이 없던 문제)
-    return [...all.map(node), { kind: 'sub', more: true, toggle: s.key, label: '접기', sub: `서브에이전트 ${all.length}개`, status: 'ended', children: [] }];
+    return [...all.map(node), { kind: 'sub', more: true, toggle: s.key, label: t('Fold'), sub: t('{n} subagents', { n: all.length }), status: 'ended', children: [] }];
   }
   const running = all.filter((a) => !a.done);
   const recent = all.filter((a) => a.done && Date.now() - a.mtimeMs < SUB_RECENT_MS).slice(0, 5);
@@ -42,7 +42,7 @@ function subNodes(s) {
   return [
     ...running.map(node),
     ...recent.map(node),
-    ...(hidden > 0 ? [{ kind: 'sub', more: true, toggle: s.key, label: `완료 ${hidden}개`, sub: '눌러서 펼치기', status: 'ended', children: [] }] : []),
+    ...(hidden > 0 ? [{ kind: 'sub', more: true, toggle: s.key, label: t('{n} done', { n: hidden }), sub: t('Click to expand'), status: 'ended', children: [] }] : []),
   ];
 }
 
@@ -138,7 +138,7 @@ function drawLinks(tree) {
     const recent = Date.now() - Date.parse(l.lastAt) < 3 * 60_000;
     const w = Math.min(2.8, 1.1 + Math.log2(l.count) * 0.4);
     const mx = (x1 + x2) / 2, my = y1 - h * 0.75;
-    const tip = `${names.get(l.from) ?? '?'} → ${names.get(l.to) ?? '?'} · ${l.count}회\n마지막 (${new Date(l.lastAt).toLocaleString('ko-KR')}): ${l.lastText}`;
+    const tip = `${names.get(l.from) ?? '?'} → ${names.get(l.to) ?? '?'} · ${t('{n} times', { n: l.count })}\n${t('Last')} (${new Date(l.lastAt).toLocaleString(LOCALE)}): ${l.lastText}`;
     out += `<g><title>${esc(tip)}</title>
       <path class="link ${recent ? 'recent' : ''}" d="${d}" stroke-width="${w}" marker-end="url(#arrow)"/>
       <path class="link-hit" d="${d}"/>

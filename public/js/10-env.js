@@ -16,7 +16,7 @@ async function loadEnv(refresh = false) {
 }
 // 없는 도구에 맞춰 화면을 바꾼다: tmux 가 없으면 tmux 가 필요한 단추를 끄고 이유를 title 로(보내기 · 승인은 tmux 세션이 없어 이미 꺼짐),
 // Claude Code 기록 폴더가 없으면 빈 목록 대신 안내(04-list.js)
-const NO_TMUX = 'tmux 가 필요해요 — brew install tmux 뒤 다시 켜 주세요. 지금은 보기만 할 수 있어요';
+const NO_TMUX = t('tmux is needed — run brew install tmux and restart. For now you can only view');
 const TMUX_BUTTONS = ['#new-session', '#end-session'];
 function applyTools() {
   const noTmux = envData?.tools?.tmux === false;
@@ -31,20 +31,20 @@ function applyTools() {
   if (state) renderList();
 }
 function renderEnv() {
-  if (!envData) { $('#env-list').innerHTML = `<div class="env-row"><span class="lv error">✕</span><span class="nm">점검 실패</span><span class="dt">${esc(envError || '서버에 연결하지 못했어요')}</span></div>`; return; }
-  $('#env-host').textContent = `${envData.host.replace(/\.local$/, '')} · ${new Date(envData.checkedAt).toLocaleString('ko-KR')} 점검`;
+  if (!envData) { $('#env-list').innerHTML = `<div class="env-row"><span class="lv error">✕</span><span class="nm">${t('Check failed')}</span><span class="dt">${esc(envError || t('Could not reach the server'))}</span></div>`; return; }
+  $('#env-host').textContent = `${envData.host.replace(/\.local$/, '')} · ${new Date(envData.checkedAt).toLocaleString(LOCALE)} ${t('checked')}`;
   const tk = envData.token;
   if (tk) $('#token-status').innerHTML = (tk.createdNow
-    ? `<span class="new">✓ 이 컴퓨터용 열쇠를 방금 만들었어요</span> · <code>${esc(tk.path)}</code>`
-    : `✓ 이 컴퓨터용 열쇠가 준비돼 있어요 (${new Date(tk.createdAt).toLocaleDateString('ko-KR')} 생성) · <code>${esc(tk.path)}</code>`)
-    + (tk.openCmd ? `<br>✓ 이 브라우저는 로그인돼 있어요(${tk.loginDays}일) — 다른 브라우저 · 만료 땐 터미널에서 <code>${esc(tk.openCmd)}</code>` : '');
+    ? `<span class="new">✓ ${t('Just made the key for this computer')}</span> · <code>${esc(tk.path)}</code>`
+    : `✓ ${t('The key for this computer is ready (made {d})', { d: new Date(tk.createdAt).toLocaleDateString(LOCALE) })} · <code>${esc(tk.path)}</code>`)
+    + (tk.openCmd ? `<br>✓ ${t('This browser is logged in ({n} days) — for another browser or after expiry, in a terminal:', { n: tk.loginDays })} <code>${esc(tk.openCmd)}</code>` : '');
   $('#env-list').innerHTML = envData.items.map((it) => `<div class="env-row"><span class="lv ${esc(it.level)}">${LV_ICON[it.level]}</span><span class="nm">${esc(it.name)}</span><span class="dt">${esc(it.detail)}</span></div>`).join('');
 }
 function openWelcome() { renderEnv(); $('#welcome').showModal(); }
 $('#help').addEventListener('click', openWelcome);
 $('#welcome').addEventListener('close', async () => {
   pref.welcomed = true; savePref();
-  if ($('#welcome').returnValue === 'recheck') { $('#env-list').innerHTML = '<div class="env-row"><span class="spinner"></span>환경 점검 중…</div>'; $('#welcome').showModal(); await loadEnv(true); }
+  if ($('#welcome').returnValue === 'recheck') { $('#env-list').innerHTML = `<div class="env-row"><span class="spinner"></span>${t('Checking environment…')}</div>`; $('#welcome').showModal(); await loadEnv(true); }
 });
 let booted = false;
 async function finishBoot() {

@@ -44,12 +44,12 @@ function renderNow(s) {
   if (working && s.lastText && !reply.includes(s.lastText.slice(0, 200))) reply = reply ? `${reply}\n\n${s.lastText}` : s.lastText;
   const el = $('#now-reply');
   el.classList.toggle('empty', !reply);
-  const html = reply ? mdOnce(reply) : working ? '<span class="spinner"></span>답변을 만들고 있어요…' : '아직 답변이 없어요';
+  const html = reply ? mdOnce(reply) : working ? `<span class="spinner"></span>${t('Writing a reply…')}` : t('No reply yet');
   setHtml(el, html); // 1초마다 다시 그려도 스크롤·선택이 튀지 않게
   const stateHtml = working
-    ? `<span class="spinner" style="width:12px;height:12px"></span><span style="color:var(--working-text)">${sentAt && s.status === 'idle' ? '전달됐어요 · 응답 기다리는 중' : `작업 중${s.lastTool ? ' · ' + esc(s.lastTool) : ''}`}</span>`
-    : s.status === 'waiting' ? `<span class="dot-s waiting"></span><span style="color:var(--waiting)">승인 필요</span>`
-    : s.status === 'background' ? `<span class="dot-s background pulse"></span><span style="color:var(--working-text)">백그라운드 작업 중</span>`
+    ? `<span class="spinner" style="width:12px;height:12px"></span><span style="color:var(--working-text)">${sentAt && s.status === 'idle' ? t('Delivered · waiting for a reply') : `${t('Working')}${s.lastTool ? ' · ' + esc(s.lastTool) : ''}`}</span>`
+    : s.status === 'waiting' ? `<span class="dot-s waiting"></span><span style="color:var(--waiting)">${t('Needs approval')}</span>`
+    : s.status === 'background' ? `<span class="dot-s background pulse"></span><span style="color:var(--working-text)">${t('Running in background')}</span>`
     : `<span class="dot-s ${esc(s.status)}"></span>${STATUS_KO[s.status] ?? esc(s.status)}`;
   if ($('#now-state').innerHTML !== stateHtml) $('#now-state').innerHTML = stateHtml;
   const from = working ? (sentAt && s.status === 'idle' ? sentAt : Date.parse(s.lastPromptAt || s.lastAt)) : Date.parse(s.lastAt);
@@ -102,17 +102,17 @@ function renderChanges(s) {
       const lines = e.old == null ? e.new.split('\n').map((l) => ['a', l]) : lineDiff(e.old, e.new);
       a += lines.filter((l) => l[0] === 'a').length;
       r += lines.filter((l) => l[0] === 'r').length;
-      body += `<div class="hk">${esc(e.tool === 'Write' ? '새로 쓰기' : `수정 ${k + 1}`)} · ${new Date(e.at).toLocaleTimeString('ko-KR', { hour12: false })}</div>`;
+      body += `<div class="hk">${esc(e.tool === 'Write' ? t('New file') : t('Edit {n}', { n: k + 1 }))} · ${new Date(e.at).toLocaleTimeString(LOCALE, { hour12: false })}</div>`;
       body += lines.map(([t, l]) => `<div class="l ${t}">${t === 'a' ? '+' : t === 'r' ? '-' : ' '} ${esc(l)}</div>`).join('');
     });
     total.a += a; total.r += r;
     const short = tilde(file);
     const name = short.split('/').pop();
     const dir = short.slice(0, -name.length);
-    return `<details class="chg-file" data-f="${esc(file)}" ${openFiles.has(file) ? 'open' : ''}><summary title="${esc(file)}"><span class="fn">${esc(name)}</span><span class="dir">${esc(dir)}</span><span class="tl">${list.length}회</span><span class="n"><span class="add">+${a}</span> <span class="del">−${r}</span></span></summary><div class="diff">${body}</div></details>`;
+    return `<details class="chg-file" data-f="${esc(file)}" ${openFiles.has(file) ? 'open' : ''}><summary title="${esc(file)}"><span class="fn">${esc(name)}</span><span class="dir">${esc(dir)}</span><span class="tl">${t('{n}×', { n: list.length })}</span><span class="n"><span class="add">+${a}</span> <span class="del">−${r}</span></span></summary><div class="diff">${body}</div></details>`;
   });
   let html = '';
-  if (files.length) html += `<div class="chg-h">변경한 파일 ${files.length}개<span class="sum"><span class="add">+${total.a}</span> <span class="del">−${total.r}</span></span></div>${files.join('')}`;
+  if (files.length) html += `<div class="chg-h">${t('{n} files changed', { n: files.length })}<span class="sum"><span class="add">+${total.a}</span> <span class="del">−${total.r}</span></span></div>${files.join('')}`;
   if (ch.commands.length) {
     const open = closedCmds ? '' : 'open';
     const items = ch.commands.slice().reverse().map((c, idx) => {
@@ -122,13 +122,13 @@ function renderChanges(s) {
       const long = c.command.split('\n').length > 4 || c.command.length > 280;
       const full = fullCmds.has(c.id);
       return `<div class="cmd ${c.error ? 'is-err' : ''}" data-cid="${esc(c.id || '')}">
-        <div class="cmd-h">${icon}<span class="cmd-t" title="${esc(title)}">${esc(title)}</span><span class="cmd-time">${new Date(c.at).toLocaleTimeString('ko-KR', { hour12: false })}</span></div>
-        <code class="${long ? 'clamp' : ''} ${full ? 'full' : ''}">${esc(c.command)}</code>${long ? `<button type="button" class="more cmd-more">${full ? '접기' : '전체 보기'}</button>` : ''}
+        <div class="cmd-h">${icon}<span class="cmd-t" title="${esc(title)}">${esc(title)}</span><span class="cmd-time">${new Date(c.at).toLocaleTimeString(LOCALE, { hour12: false })}</span></div>
+        <code class="${long ? 'clamp' : ''} ${full ? 'full' : ''}">${esc(c.command)}</code>${long ? `<button type="button" class="more cmd-more">${full ? t('Fold') : t('Show all')}</button>` : ''}
         ${c.output ? `<pre class="cmd-out ${c.error ? 'err' : ''}">${esc(c.output)}</pre>` : ''}
       </div>`;
     }).join('');
     const errs = ch.commands.filter((c) => c.error).length;
-    html += `<details class="chg-cmds" data-f="__cmds" ${open}><summary>실행한 명령 ${ch.commands.length}개${errs ? ` · <span class="del">실패 ${errs}</span>` : ''}</summary>${items}</details>`;
+    html += `<details class="chg-cmds" data-f="__cmds" ${open}><summary>${t('{n} commands run', { n: ch.commands.length })}${errs ? ` · <span class="del">${t('{n} failed', { n: errs })}</span>` : ''}</summary>${items}</details>`;
   }
   setHtml(box, html);
 }
@@ -137,7 +137,7 @@ $('#now-changes').addEventListener('click', (e) => {
   if (!b) return;
   const code = b.previousElementSibling;
   const full = code.classList.toggle('full');
-  b.textContent = full ? '접기' : '전체 보기';
+  b.textContent = full ? t('Fold') : t('Show all');
   const id = b.closest('.cmd')?.dataset.cid;
   if (id) (full ? fullCmds.add(id) : fullCmds.delete(id));
   $('#now-changes').dataset.sig = ''; // 다음 갱신 때 펼침 상태를 반영해 다시 그리게
@@ -157,8 +157,8 @@ function renderBusy(s) {
   box.hidden = false;
   if (s.status === 'working') sentAt = null;
   $('#busy-text').textContent = pending
-    ? '전달됐어요 · 응답 기다리는 중…'
-    : `작업 중${s.lastTool ? ` · ${s.lastTool}` : ''}${s.subagents?.some((a) => !a.done) ? ' · 서브에이전트 실행 중' : ''}`;
+    ? t('Delivered · waiting for a reply…')
+    : `${t('Working')}${s.lastTool ? ` · ${s.lastTool}` : ''}${s.subagents?.some((a) => !a.done) ? ` · ${t('subagent running')}` : ''}`;
   const from = pending ? sentAt : Date.parse(s.lastPromptAt || s.lastAt);
   const sec = Math.max(0, Math.floor((Date.now() - from) / 1000));
   $('#busy-time').textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;

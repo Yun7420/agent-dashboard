@@ -3,23 +3,23 @@
 let paneTimer = null;
 let paneSeq = 0;
 // 「허락할 내용」 카드: 무엇을(종류) · 어디에(명령 전문 · 파일 경로) · 왜 조심(위험 이유). 내용은 모두 esc 로 글자 처리
-function renderApproveCard(t) {
+function renderApproveCard(tg) {
   const card = $('#approve-card');
-  const html = !t ? '' : `<div class="ac-head"><span class="ac-kind">${esc(t.kind)}</span><span class="ac-tool">${esc(t.tool)}</span>${
-    t.outside ? '<span class="ac-tag">세션 폴더 밖</span>' : ''}${t.source === 'screen' ? '<span class="ac-src" title="기록에서 못 찾아 터미널 화면에서 읽었어요">화면에서 추정</span>' : ''}</div>${
-    t.risks.length ? `<div class="ac-risk">⚠ ${t.risks.map(esc).join(' · ')}</div>` : ''}${
-    t.main ? `<pre class="ac-main${t.main.length > 300 || t.main.split('\n').length > 6 ? ' fold closed' : ''}">${esc(t.main)}</pre>` : ''}${
-    t.main.length > 300 || t.main.split('\n').length > 6 ? '<button class="more" type="button" data-ac-more>전체 보기 ▾</button>' : ''}${
-    t.desc ? `<div class="ac-desc">${esc(t.desc)}</div>` : ''}`;
+  const html = !tg ? '' : `<div class="ac-head"><span class="ac-kind">${esc(tg.kind)}</span><span class="ac-tool">${esc(tg.tool)}</span>${
+    tg.outside ? `<span class="ac-tag">${t('Outside session folder')}</span>` : ''}${tg.source === 'screen' ? `<span class="ac-src" title="${t('Not found in the log, read from the terminal screen')}">${t('Guessed from screen')}</span>` : ''}</div>${
+    tg.risks.length ? `<div class="ac-risk">⚠ ${tg.risks.map(esc).join(' · ')}</div>` : ''}${
+    tg.main ? `<pre class="ac-main${tg.main.length > 300 || tg.main.split('\n').length > 6 ? ' fold closed' : ''}">${esc(tg.main)}</pre>` : ''}${
+    tg.main.length > 300 || tg.main.split('\n').length > 6 ? `<button class="more" type="button" data-ac-more>${t('Show all')} ▾</button>` : ''}${
+    tg.desc ? `<div class="ac-desc">${esc(tg.desc)}</div>` : ''}`;
   if (!setHtml(card, html)) return; // 2초마다 다시 그려도 펼친 상태가 접히지 않게
-  card.hidden = !t;
-  card.classList.toggle('risky', Boolean(t?.risks.length));
+  card.hidden = !tg;
+  card.classList.toggle('risky', Boolean(tg?.risks.length));
 }
 $('#approve-card').addEventListener('click', (e) => {
   const b = e.target.closest('[data-ac-more]');
   if (!b) return;
   const closed = $('#approve-card .ac-main').classList.toggle('closed');
-  b.textContent = closed ? '전체 보기 ▾' : '접기 ▴';
+  b.textContent = closed ? `${t('Show all')} ▾` : `${t('Fold')} ▴`;
 });
 // 순수 판정(test/approval-ui.test.mjs): 터미널 화면 글자 → 단추로 만들 번호 선택지 · 여러 질문 창의 이전/다음.
 // 서버의 lib/dialog.mjs dialogOptions 와 같은 규칙(같은 화면 예시로 시험 — 서버는 승인 직전에 화면을 다시 읽어 번호 · 글자를 맞춰 본다):
@@ -48,7 +48,7 @@ function approvalChoices(text, focus = '') {
   const options = (a < 0 ? [] : entries.slice(a, b + 1)).map(({ n, raw }) => {
     const picked = /✔\s*$/.test(raw);
     const label = raw.replace(/\s*✔\s*$/, '');
-    return { n, label, picked, danger: !picked && /^no\b|아니/i.test(label) };
+    return { n, label, picked, danger: !picked && /^no\b|\uC544\uB2C8/i.test(label) };
   });
   // 질문이 여러 개인 선택창: 맨 위 "←  ☒ 질문1  ☐ 질문2 … ✔ Submit  →" 줄이 보이면 이전/다음 질문으로 오갈 수 있게
   const tabLine = lines.find((l) => TAB_LINE.test(l));
@@ -76,7 +76,7 @@ async function renderApproval(s) {
     text = await res.text();
     focus = decodeURIComponent(res.headers.get('X-Focus-Tab') || '');
     if (!res.ok) throw new Error(text || res.statusText);
-  } catch (e) { text = `(화면을 못 읽었어요: ${e.message})`; }
+  } catch (e) { text = `(${t('Could not read the screen')}: ${e.message})`; }
   if (selected !== s.key || seq !== paneSeq) return; // 그사이 더 새로운 요청이 나갔으면 이 응답은 버린다
   const pane = $('#pane');
   if (pane.textContent !== text) {
@@ -89,16 +89,16 @@ async function renderApproval(s) {
   let nav = '';
   if (tabs) {
     const { steps, cur, canPrev, canNext } = tabs;
-    nav = `<div class="q-nav"><button type="button" data-choice="left" ${canPrev ? '' : 'disabled'}>← 이전 질문</button><span class="q-steps">${steps.map((st, i) => `<span class="${st.done ? 'done' : ''} ${i === cur ? 'cur' : ''}">${st.done ? '✓' : '○'} ${esc(st.label)}</span>`).join('')}</span><button type="button" data-choice="right" ${canNext ? '' : 'disabled'} title="${canNext ? '' : '지금 질문에 먼저 답해 주세요'}">다음 질문 →</button></div>`;
+    nav = `<div class="q-nav"><button type="button" data-choice="left" ${canPrev ? '' : 'disabled'}>← ${t('Previous question')}</button><span class="q-steps">${steps.map((st, i) => `<span class="${st.done ? 'done' : ''} ${i === cur ? 'cur' : ''}">${st.done ? '✓' : '○'} ${esc(st.label)}</span>`).join('')}</span><button type="button" data-choice="right" ${canNext ? '' : 'disabled'} title="${canNext ? '' : t('Answer this question first')}">${t('Next question')} →</button></div>`;
   }
   const btnHtml = nav +
     // 보라색은 실제로 고른 답(✔)에만 — 고르기 전엔 모든 선택지가 같은 모양
     options.map((o) => {
       const cls = o.picked ? 'primary' : o.danger ? 'danger' : '';
-      return `<button data-choice="${o.n}" data-label="${esc(o.label)}" class="${cls}" title="${o.picked ? '지금 고른 답 · ' : ''}키 ${o.n}">${o.picked ? '✓ ' : ''}${esc(o.n)}. ${esc(o.label)}</button>`;
+      return `<button data-choice="${o.n}" data-label="${esc(o.label)}" class="${cls}" title="${o.picked ? `${t('Current answer')} · ` : ''}${t('Key')} ${o.n}">${o.picked ? '✓ ' : ''}${esc(o.n)}. ${esc(o.label)}</button>`;
     }).join('') +
-    `<button data-choice="esc" class="danger" title="키 Esc">거절 (Esc)</button>` +
-    (options.length ? '' : `<span style="color:var(--faint);align-self:center">번호 없는 선택창 →</span><button data-choice="up">↑</button><button data-choice="down">↓</button><button data-choice="enter" class="primary">Enter (❯ 표시된 항목 선택)</button>`);
+    `<button data-choice="esc" class="danger" title="${t('Key')} Esc">${t('Reject')} (Esc)</button>` +
+    (options.length ? '' : `<span style="color:var(--faint);align-self:center">${t('Prompt without numbers')} →</span><button data-choice="up">↑</button><button data-choice="down">↓</button><button data-choice="enter" class="primary">Enter (${t('pick the ❯ item')})</button>`);
   setHtml($('#approve-btns'), btnHtml);
   paneTimer = setTimeout(() => { const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 2000);
 }
@@ -109,6 +109,6 @@ $('#approve-btns').addEventListener('click', async (e) => {
   // 성공 · 실패 모두 단추를 새로 그린다 — 실패 때 그대로 두면 다음 갱신에서 같은 HTML 이라 다시 그리지 않아 단추가 잠긴 채 남았다(1~9 키도)
   const redraw = (ms) => setTimeout(() => { forget($('#approve-btns')); const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, ms);
   // 번호 단추는 화면에 보인 글자도 보낸다 — 서버가 보내기 직전 화면을 다시 읽어 같은 번호 · 같은 글자일 때만 누른다(다르면 409)
-  try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice, label: b.dataset.label }); if (b.dataset.choice === 'esc') toast('거절했어요'); redraw(350); }
+  try { await api('/api/cmd/approve', { key: selected, choice: b.dataset.choice, label: b.dataset.label }); if (b.dataset.choice === 'esc') toast(t('Rejected')); redraw(350); }
   catch (err) { toast(err.message); redraw(0); }
 });

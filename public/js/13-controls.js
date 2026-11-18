@@ -42,3 +42,9 @@ $('#set-theme').addEventListener('change', (e) => {
   pref.theme = e.target.value === 'dark' ? undefined : e.target.value;
   savePref(); applyTheme();
 });
+// 화면 언어(설정 메뉴): 고르면 agent-deck 의 lang 에 남기고 새로고침 — 글자를 한 번에 다 바꾸는 가장 단순한 길(00-i18n.js 가 읽는다)
+$('#set-lang').value = LANG;
+$('#set-lang').addEventListener('change', (e) => {
+  pref.lang = e.target.value;
+  savePref(); location.reload();
+});

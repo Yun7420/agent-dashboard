@@ -10,7 +10,7 @@ function applyDrawerWidth() {
   const max = Math.max(380, $('main').clientWidth - 40);
   const w = Math.min(max, Math.max(380, pref.drawerW || DRAWER_DEFAULT));
   $('#drawer').style.width = window.innerWidth <= 860 ? '' : `${w}px`;
-  $('#wide').title = w > DRAWER_DEFAULT + 40 ? '기본 폭으로' : '넓게 보기';
+  $('#wide').title = w > DRAWER_DEFAULT + 40 ? t('Default width') : t('Wide');
 }
 $('#wide').addEventListener('click', () => {
   const wide = (pref.drawerW || DRAWER_DEFAULT) > DRAWER_DEFAULT + 40;
@@ -32,7 +32,7 @@ applyDrawerWidth();
 $('#stop').addEventListener('click', async () => {
   if (!selected) return;
   $('#stop').disabled = true;
-  try { await api('/api/cmd/stop', { key: selected }); toast('멈췄어요. 세션과 대화는 그대로예요'); sentAt = null; }
+  try { await api('/api/cmd/stop', { key: selected }); toast(t('Stopped. The session and conversation are kept')); sentAt = null; }
   catch (err) { toast(err.message); }
   finally { setTimeout(() => ($('#stop').disabled = false), 1500); }
 });
@@ -47,21 +47,21 @@ function askClose(key) {
     pref.hidden = [...new Set([...pref.hidden, key])];
     savePref();
     renderList(); renderGraph();
-    toast('목록에서 숨겼어요 (기록은 그대로예요)');
+    toast(t('Hidden from the list (the log is kept)'));
     return;
   }
   if (!s.tmux) {
-    toast(s.ide ? '에디터에서 띄운 세션이에요. Cursor 에서 탭을 닫아 주세요' : 'tmux 밖 세션이에요. 그 터미널에서 /exit 로 닫아 주세요');
+    toast(s.ide ? t('This session runs in an editor. Close its tab in Cursor') : t('This session is outside tmux. Close it with /exit in that terminal'));
     return;
   }
   closing = key;
-  $('#cl-title').textContent = `「${s.title}」 닫기`;
+  $('#cl-title').textContent = t('Close “{s}”', { s: s.title });
   $('#cl-body').innerHTML = [
-    s.status === 'working' ? '<b style="color:var(--waiting)">⚠ 지금 작업 중이에요. 닫으면 하던 일이 중간에 멈춰요.</b>' : '',
-    s.status === 'waiting' ? '<b style="color:var(--waiting)">선택 창이 떠 있어요. 먼저 승인/거절한 뒤 닫을 수 있어요.</b>' : '',
-    '세션에 <code>/exit</code> 를 보내 정상 종료해요. 돌고 있는 루프·백그라운드 작업도 같이 멈춰요.',
-    '대화 기록은 남아서 나중에 <code>claude --resume ' + esc(s.id) + '</code> 로 다시 열 수 있어요.',
-    '루프가 있으면 Claude 가 확인 창을 띄워요 → 승인 패널에서 고르세요.',
+    s.status === 'working' ? `<b style="color:var(--waiting)">⚠ ${t('It is working now. Closing stops the task midway.')}</b>` : '',
+    s.status === 'waiting' ? `<b style="color:var(--waiting)">${t('A prompt is open. Approve or reject it before closing.')}</b>` : '',
+    t('Sends <code>/exit</code> to the session to end it normally. Running loops · background tasks stop too.'),
+    t('The conversation log stays, so you can reopen it later with {cmd}.', { cmd: `<code>claude --resume ${esc(s.id)}</code>` }),
+    t('If a loop is running, Claude shows a confirm prompt → choose in the approval panel.'),
   ].filter(Boolean).join('<br>');
   $('#cl-ok').disabled = s.status === 'waiting';
   $('#close-dlg').showModal();
@@ -70,7 +70,7 @@ $('#close-dlg').addEventListener('close', async () => {
   if ($('#close-dlg').returnValue !== 'ok' || !closing) return;
   const key = closing;
   closing = null;
-  try { await api('/api/cmd/close', { key }); toast('종료 명령을 보냈어요'); }
+  try { await api('/api/cmd/close', { key }); toast(t('End command sent')); }
   catch (err) { toast(err.message); }
 });
 
@@ -87,7 +87,7 @@ $('#spawn-form').addEventListener('submit', async (e) => {
     const r = JSON.parse(await api('/api/cmd/spawn', { cwd: $('#sp-cwd').value, name: $('#sp-name').value, model: $('#sp-model').value, prompt: $('#sp-prompt').value }));
     $('#spawn-dlg').close();
     $('#sp-name').value = ''; $('#sp-prompt').value = '';
-    toast('새 세션을 열었어요. 몇 초 뒤 목록에 나타나요');
+    toast(t('New session opened. It shows up in the list in a few seconds'));
     pendingSelect = r.key;
   } catch (err) { toast(err.message); }
 });
@@ -102,8 +102,8 @@ function restoreFirstPrompts(list, sessions) {
     const name = f.title || f.key.split(':')[1].slice(0, 8);
     if (sessions.some((s) => s.key === f.key)) {
       putDraft(f.key, f.text);
-      logLine('x', `[${name}] 첫 메시지를 넣지 못해 입력 칸에 돌려놨어요 — 확인하고 보내 주세요`);
-    } else logLine('x', `[${name}] 세션이 닫혀 첫 메시지를 보내지 못했어요 — 보내려던 글: ${f.text.slice(0, 300)}`);
+      logLine('x', `[${name}] ${t('Could not deliver the first message, so it is back in the input — check and send it')}`);
+    } else logLine('x', `[${name}] ${t('The session closed before the first message was sent — the text was')}: ${f.text.slice(0, 300)}`);
     api('/api/cmd/first-prompt-ack', { key: f.key }).catch(() => fpSeen.delete(f.key));
   }
 }
@@ -112,34 +112,34 @@ function restoreFirstPrompts(list, sessions) {
 const LONG = (s) => s.length > 400 || s.split('\n').length > 7;
 function foldable(cls, text) {
   if (!LONG(text)) return `<div class="${cls} md">${md(text)}</div>`;
-  return `<div class="${cls} md fold closed">${md(text)}</div><button class="more" type="button">더 보기 ▾</button>`;
+  return `<div class="${cls} md fold closed">${md(text)}</div><button class="more" type="button">${t('More')} ▾</button>`;
 }
 $('#log-list').addEventListener('click', (e) => {
   const b = e.target.closest('.more:not(#hist-more)'); // "이전 기록 더 보기"도 같은 모양(.more)이라 빼고
   if (!b) return;
   const box = b.previousElementSibling;
   const open = box.classList.toggle('closed');
-  b.textContent = open ? '더 보기 ▾' : '접기 ▴';
+  b.textContent = open ? `${t('More')} ▾` : `${t('Fold')} ▴`;
 });
 
 // 기록 탭: 서버에서 받은 묶음(hist)만 그린다. "더 보기"는 다음 묶음을 받아 뒤에 붙인다
 function renderHistory() {
   if (drawerTab !== 'log') return; // 지금 탭에선 그리지 않는다 — 기록 탭을 열 때 그린다
-  if (hist.key !== selected) { $('#log-list').innerHTML = '<div class="commit"><span class="m">기록 읽는 중…</span></div>'; return; }
-  if (hist.error && !hist.items.length) { $('#log-list').innerHTML = `<div class="commit"><span class="m">기록을 읽지 못했어요 — ${esc(hist.error)}</span></div>`; return; }
+  if (hist.key !== selected) { $('#log-list').innerHTML = `<div class="commit"><span class="m">${t('Reading log…')}</span></div>`; return; }
+  if (hist.error && !hist.items.length) { $('#log-list').innerHTML = `<div class="commit"><span class="m">${t('Could not read the log')} — ${esc(hist.error)}</span></div>`; return; }
   const left = hist.total - hist.items.length;
-  const more = hist.next != null ? `<div class="commit" style="text-align:center"><button class="more" type="button" id="hist-more">이전 기록 ${Math.min(80, left)}개 더 보기 (${left}개 남음)</button></div>` : '';
+  const more = hist.next != null ? `<div class="commit" style="text-align:center"><button class="more" type="button" id="hist-more">${t('Show {n} earlier ({left} left)', { n: Math.min(80, left), left })}</button></div>` : '';
   $('#log-list').innerHTML = hist.items.map((h) => `
     <div class="commit">
-      <div class="m"><span class="sha">#${h.n}</span><span>${new Date(h.at).toLocaleString('ko-KR')}</span><span class="tools">도구 ${h.tools}회</span></div>
+      <div class="m"><span class="sha">#${h.n}</span><span>${new Date(h.at).toLocaleString(LOCALE)}</span><span class="tools">${t('tools {n}×', { n: h.tools })}</span></div>
       ${h.from ? `<div class="who peer">↙ ${esc(h.from.name)}</div>${foldable('p peer', h.prompt)}` : foldable('p', h.prompt)}
       ${h.reply ? `<div class="who">CLAUDE</div>${foldable('r', h.reply)}` : ''}
-    </div>`).join('') + more || '<div class="commit"><span class="m">프롬프트 없음</span></div>';
+    </div>`).join('') + more || `<div class="commit"><span class="m">${t('No prompts')}</span></div>`;
 }
 $('#log-list').addEventListener('click', async (e) => {
   if (e.target.id !== 'hist-more' || !selected) return;
   e.target.disabled = true;
-  e.target.textContent = '읽는 중…';
+  e.target.textContent = t('Reading…');
   if (await loadHistory(selected, true)) renderHistory();
 });
 // 기록 탭 검색: 서버에서 거른다(입력이 멎은 뒤 한 번)
@@ -165,7 +165,7 @@ function openDirMenu(dir, x, y) {
   const m = $('#dir-menu');
   const apps = envData?.editors?.length ? envData.editors : [{ id: 'finder', label: 'Finder' }];
   m.innerHTML = `<div class="dm-path" title="${esc(dir)}">${esc(tilde(dir))}</div>` +
-    apps.map((a) => `<button type="button" data-open-app="${esc(a.id)}">${a.id === 'finder' ? `${esc(a.label)}에서 보기` : `${esc(a.label)}로 열기`}</button>`).join('');
+    apps.map((a) => `<button type="button" data-open-app="${esc(a.id)}">${t(a.id === 'finder' ? 'Show in {app}' : 'Open in {app}', { app: esc(a.label) })}</button>`).join('');
   m.dataset.dir = dir;
   m.classList.add('show');
   const r = m.getBoundingClientRect();

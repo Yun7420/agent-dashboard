@@ -6,7 +6,7 @@ const $ = (s) => document.querySelector(s);
 
 // 서버 요청은 모두 이 길로: 403 = 로그인이 필요함(처음 · 30일 지남 · 토큰 파일을 지우고 다시 켬) → 고정 안내를 한 번 띄우고 오류로 끝낸다.
 // 안내 문구는 서버가 403 에 담아 준 것(켠 방법에 맞는 open 명령)을 그대로. 예전엔 직접 fetch 하던 곳이 403 을 「없음」으로 바꿔 빈 결과를 믿었다
-const LOGIN_MSG = '로그인이 필요해요 — 위 안내대로 로그인 링크를 다시 열어 주세요';
+const LOGIN_MSG = t('Login needed — open the login link again as shown above');
 let loginShown = false;
 function loginNeeded(text) {
   if (loginShown) return;
@@ -15,7 +15,7 @@ function loginNeeded(text) {
   const boot = $('#boot');
   if (boot && !boot.classList.contains('gone')) {
     boot.classList.add('login');
-    boot.querySelector('h2').textContent = '로그인이 필요해요';
+    boot.querySelector('h2').textContent = t('Login needed');
     if (text) boot.querySelector('p').textContent = text;
     return;
   }
@@ -59,7 +59,7 @@ function toast(msg) {
   toast.t = setTimeout(() => (el.style.display = 'none'), 3500);
 }
 // esc() 는 00-md.js (마크다운 변환과 함께 node 에서 시험하려고)
-const STATUS_KO = { working: '작업 중', background: '백그라운드 작업', waiting: '승인 필요', idle: '대기', ended: '종료' };
+const STATUS_KO = { working: t('Working'), background: t('Background task'), waiting: t('Needs approval'), idle: t('Idle'), ended: t('Ended') };
 const pref = (() => { try { return JSON.parse(localStorage.getItem('agent-deck') || '{}'); } catch { return {}; } })();
 const savePref = () => { try { localStorage.setItem('agent-deck', JSON.stringify(pref)); } catch {} };
 
@@ -102,10 +102,10 @@ function tilde(p, home = state?.home) {
 function ago(iso) {
   if (!iso) return '';
   const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
-  if (s < 60) return `${Math.floor(s)}초 전`;
-  if (s < 3600) return `${Math.floor(s / 60)}분 전`;
-  if (s < 86400) return `${Math.floor(s / 3600)}시간 전`;
-  return `${Math.floor(s / 86400)}일 전`;
+  if (s < 60) return t('{n}s ago', { n: Math.floor(s) });
+  if (s < 3600) return t('{n}m ago', { n: Math.floor(s / 60) });
+  if (s < 86400) return t('{n}h ago', { n: Math.floor(s / 3600) });
+  return t('{n}d ago', { n: Math.floor(s / 86400) });
 }
 // 토큰 수 읽기 쉽게: 625843 → 626K, 1000000 → 1M
 function fmtTok(n) {
