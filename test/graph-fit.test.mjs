@@ -63,3 +63,15 @@ test('휠: delta 에 비례해 마우스 위치 기준 확대 · 축소, 휠로�
   wheel({ deltaY: -100 });
   assert.ok(run('view.k') > 0.4);
 });
+
+// 서브에이전트 칸(subNodes, 간추리기 B6): 진행 중은 전부, 끝난 건 막 끝났어도 「완료 N개」 한 칸 — 펼치면 전부 + 접기
+test('서브에이전트: 진행 중 전부 + 끝난 건 「완료 N개」 하나(10분 · 5개 규칙 없음), 펼치면 전부', () => {
+  const { run } = loadFront(['00-md.js', '01-core.js', '03-graph.js'], { window: { addEventListener() {} }, document: { querySelector: () => ({ addEventListener() {}, getBoundingClientRect: () => ({}), classList: { contains: () => false } }), addEventListener() {} }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {} });
+  const now = Date.now();
+  const subs = [{ type: 'run', done: false }, { type: 'run2', done: false }, ...Array.from({ length: 3 }, (_, i) => ({ type: `d${i}`, done: true, mtimeMs: now - 1000 }))];
+  const s = { key: 'k', status: 'working', subagents: subs };
+  const nodes = run(`subNodes(${JSON.stringify(s)})`);
+  assert.deepEqual([...nodes].map((n) => n.label), ['run', 'run2', '완료 3개']);
+  run("pref.expandSubs.k = true");
+  assert.equal(run(`subNodes(${JSON.stringify(s)})`).length, 6);
+});

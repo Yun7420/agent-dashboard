@@ -184,7 +184,7 @@ A session already running in a terminal has no official way to receive input fro
 - Dashed line = working in the same folder, yellow = working, **purple arrow = messages between sessions**
 - **Status text color** under each session box: idle = purple · working = yellow · background = light yellow · **needs approval = pink (bold)**
 - **Click a project box** to open that folder in **VS Code · Cursor, or reveal it in Finder** (only installed apps are shown; only folders of listed sessions can be opened)
-- Subagents: all running ones, up to 5 finished in the last 10 minutes, the rest folded into **"N done"** (click to expand)
+- Subagents: all running ones, finished ones folded into one **"N done"** box (click to expand)
 </details>
 
 <details open>

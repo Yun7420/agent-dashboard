@@ -26,8 +26,7 @@ function buildTree() {
   return root;
 }
 
-// 서브에이전트: 실행 중은 전부, 최근 10분 안에 끝난 건 5개까지, 나머지는 "완료 N개" 한 칸으로 접는다 (눌러서 펼치기)
-const SUB_RECENT_MS = 10 * 60_000;
+// 서브에이전트: 진행 중은 전부, 끝난 건 「완료 N개」 한 칸으로 접는다(눌러서 펼치기 — 간추리기 B6, 예전 10분 · 5개 규칙 없앰)
 pref.expandSubs ??= {};
 function subNodes(s) {
   const all = s.subagents || [];
@@ -36,14 +35,8 @@ function subNodes(s) {
     // 펼친 뒤엔 개수와 상관없이 항상 "접기" 칸을 둔다(5개 이하일 때 다시 접을 방법이 없던 문제)
     return [...all.map(node), { kind: 'sub', more: true, toggle: s.key, label: t('Fold'), sub: t('{n} subagents', { n: all.length }), status: 'ended', children: [] }];
   }
-  const running = all.filter((a) => !a.done);
-  const recent = all.filter((a) => a.done && Date.now() - a.mtimeMs < SUB_RECENT_MS).slice(0, 5);
-  const hidden = all.length - running.length - recent.length;
-  return [
-    ...running.map(node),
-    ...recent.map(node),
-    ...(hidden > 0 ? [{ kind: 'sub', more: true, toggle: s.key, label: t('{n} done', { n: hidden }), sub: t('Click to expand'), status: 'ended', children: [] }] : []),
-  ];
+  const running = all.filter((a) => !a.done), done = all.length - running.length;
+  return [...running.map(node), ...(done ? [{ kind: 'sub', more: true, toggle: s.key, label: t('{n} done', { n: done }), sub: t('Click to expand'), status: 'ended', children: [] }] : [])];
 }
 
 const NODE_W = 152, NODE_H = 54, GAP_X = 20, SUB_W = 136, SUB_H = 44; // 세션 6개 한 줄(약 1010px)이 1440 가운데 칸에 12px 글자 그대로 들어가게
