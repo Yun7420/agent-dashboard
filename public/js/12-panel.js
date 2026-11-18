@@ -1,6 +1,8 @@
-// 패널 머리: 정보 · 메뉴 · 폭
+// 패널 머리: ⋯ 메뉴(세션 정보 · 넓게 · 세션 종료) · 폭 손잡이
+// 메뉴 항목을 누르면 메뉴는 닫는다(항목 단추가 stopPropagation 해도 닫히게 잡기 단계에서)
+$('#more-btn').addEventListener('click', (e) => { e.stopPropagation(); $('#d-meta').classList.remove('show'); $('#more-menu').classList.toggle('show'); });
+$('#more-menu').addEventListener('click', () => $('#more-menu').classList.remove('show'), true);
 $('#d-info-btn').addEventListener('click', (e) => { e.stopPropagation(); $('#d-meta').classList.toggle('show'); });
-$('#more-btn').addEventListener('click', (e) => { e.stopPropagation(); $('#more-menu').classList.toggle('show'); });
 document.addEventListener('click', (e) => {
   if (!e.target.closest('#d-meta')) $('#d-meta').classList.remove('show');
   if (!e.target.closest('#more-menu')) $('#more-menu').classList.remove('show');
@@ -10,21 +12,13 @@ function applyDrawerWidth() {
   const max = Math.max(380, $('main').clientWidth - 40);
   const w = Math.min(max, Math.max(380, pref.drawerW || DRAWER_DEFAULT));
   $('#drawer').style.width = window.innerWidth <= 860 ? '' : `${w}px`;
-  $('#wide').title = w > DRAWER_DEFAULT + 40 ? t('Default width') : t('Wide');
+  $('#wide-t').textContent = w > DRAWER_DEFAULT + 40 ? t('Default width') : t('Wide');
 }
 $('#wide').addEventListener('click', () => {
   const wide = (pref.drawerW || DRAWER_DEFAULT) > DRAWER_DEFAULT + 40;
   pref.drawerW = wide ? DRAWER_DEFAULT : Math.round($('main').clientWidth * 0.66);
   savePref(); applyDrawerWidth(); view.init = false; renderGraph();
 });
-(() => {
-  const handle = $('#resize');
-  let start = null;
-  handle.addEventListener('pointerdown', (e) => { start = { x: e.clientX, w: $('#drawer').getBoundingClientRect().width }; handle.classList.add('on'); $('#drawer').classList.add('dragging'); handle.setPointerCapture(e.pointerId); });
-  handle.addEventListener('pointermove', (e) => { if (!start) return; pref.drawerW = Math.round(start.w + (start.x - e.clientX)); applyDrawerWidth(); });
-  handle.addEventListener('pointerup', () => { if (!start) return; start = null; handle.classList.remove('on'); $('#drawer').classList.remove('dragging'); savePref(); view.init = false; renderGraph(); });
-  handle.addEventListener('dblclick', () => { pref.drawerW = DRAWER_DEFAULT; savePref(); applyDrawerWidth(); view.init = false; renderGraph(); });
-})();
 window.addEventListener('resize', applyDrawerWidth);
 applyDrawerWidth();
 
@@ -148,7 +142,9 @@ $('#d-search').addEventListener('input', () => {
   clearTimeout(histSearchTimer);
   histSearchTimer = setTimeout(async () => { if (selected && (await loadHistory(selected))) renderHistory(); }, 200);
 });
-$('#close').addEventListener('click', () => { clearTimeout(paneTimer); $('#drawer').classList.remove('open'); selected = null; view.init = false; renderList(); renderGraph(); });
+// 패널 접기: 손잡이 · Esc · 조직도 빈 곳 누르기. 앞 번호 파일(03-graph)은 #drawer 에 'fold' 이벤트를 보내 부른다(함수를 거꾸로 부르지 않게)
+function closeDrawer() { clearTimeout(paneTimer); $('#drawer').classList.remove('open'); selected = null; view.init = false; renderList(); renderGraph(); }
+$('#drawer').addEventListener('fold', closeDrawer);
 document.addEventListener('click', (e) => {
   const tg = e.target.closest('[data-toggle]');
   if (tg) { const k = tg.dataset.toggle; pref.expandSubs[k] = !pref.expandSubs[k]; savePref(); renderGraph(); return; }

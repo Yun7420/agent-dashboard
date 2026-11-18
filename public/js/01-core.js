@@ -67,7 +67,6 @@ let state = null;
 let prev = new Map();
 let selected = null;
 let promptLog = []; // 기록 첫 묶음(최신이 위, 검색과 상관없이) — 지금 탭의 마지막 요청용
-let historyTotal = 0; // 기록 전체 개수(기록 탭 숫자)
 let lastSelected = null;
 let kbKey = null; // 키보드(j/k)로 고른 세션 — 패널이 닫혀 있을 때 목록에 테두리로 표시(20-keys.js)
 // 여러 파일이 같이 쓰는 화면 상태는 여기(맨 앞)에 둔다. let · const 는 선언한 줄이 실행되기 전에 쓰면 ReferenceError 라,

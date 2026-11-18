@@ -111,18 +111,15 @@
     <div class="cp-pop menu-pop" id="cp-pop" role="dialog" aria-label="About auto-compact"></div>
   </section>
   <section id="drawer">
-    <div class="resize" id="resize" title="Drag to resize · double-click for default width"></div>
+    <!-- 폭 손잡이: 왼쪽 가장자리 가운데 세로 알약 — 끌면 폭, 최소보다 더 끌면 접힘, 두 번 누르면 기본 폭, ← → 폭 · Enter 접기 -->
+    <button type="button" class="drawer-handle" id="resize" title="Drag to resize · double-click for default width" aria-label="Panel width (← → resize · Enter fold)"></button>
     <div class="head">
       <div class="head-top">
         <span class="dot-s" id="d-dot"></span>
         <h2 id="d-title"></h2>
-        <span class="info-wrap">
-          <button type="button" class="ghost icon-btn sm" id="d-info-btn" aria-label="Session info"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></button>
-          <div class="info-pop" id="d-meta"></div>
-        </span>
         <div class="tabs" role="tablist" aria-label="Session panel views">
           <button type="button" class="tab on" data-tab="now" id="tab-now" role="tab" aria-selected="true" aria-controls="now-view">Now</button>
-          <button type="button" class="tab" data-tab="log" id="tab-log" role="tab" aria-selected="false" aria-controls="log-view" tabindex="-1">Log <span id="log-count"></span></button>
+          <button type="button" class="tab" data-tab="log" id="tab-log" role="tab" aria-selected="false" aria-controls="log-view" tabindex="-1">Log</button>
         </div>
         <span class="grow"></span>
         <select id="d-model" title="Change model (tmux sessions only)">
@@ -131,14 +128,15 @@
           <option value="sonnet">Sonnet</option>
           <option value="haiku">Haiku</option>
         </select>
-        <button type="button" class="ghost icon-btn sm" id="wide" title="Wide / default width" aria-label="Widen panel / default width"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
         <span class="info-wrap">
-          <button type="button" class="ghost icon-btn sm" id="more-btn" aria-label="More"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
-          <div class="menu-pop" id="more-menu">
-            <button type="button" class="danger" id="end-session">End session</button>
+          <button type="button" class="ghost icon-btn sm" id="more-btn" title="More" aria-label="More" aria-haspopup="menu"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <div class="menu-pop" id="more-menu" role="menu">
+            <button type="button" class="mi" id="d-info-btn" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span>Session info</span></button>
+            <button type="button" class="mi" id="wide" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg><span id="wide-t">Wide</span></button>
+            <button type="button" class="mi danger" id="end-session" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg><span>End session</span></button>
           </div>
+          <div class="info-pop" id="d-meta"></div>
         </span>
-        <button class="ghost icon-btn sm" id="close" title="Fold panel (session keeps running)" aria-label="Fold panel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
       </div>
       <div class="ctx-line" id="d-ctx"></div>
     </div>
@@ -165,10 +163,9 @@
     <form id="composer">
       <div class="box">
         <div id="attach-list"></div>
-        <textarea id="msg" placeholder="Message the session · drop or paste files"></textarea>
+        <textarea id="msg" placeholder="Send a message" aria-label="Message · drop or paste files"></textarea>
         <input type="file" id="file-input" multiple hidden />
         <div class="bar">
-          <span class="kbd-hint">Enter send · Shift+Enter new line</span>
           <div class="actions">
         <button type="button" id="attach" class="icon-btn" title="Attach files · images" aria-label="Attach"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg></button>
         <button type="button" id="mic" class="icon-btn" title="Voice input (press and talk · press again to stop)" aria-label="Voice input" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg></button>
@@ -274,7 +271,7 @@
         <li data-th="help.approve"><b>Approve buttons</b> grant real permissions. Check the terminal screen (command · file) in the panel before you press.</li>
         <li data-th="help.auto">If a session's default permission mode is <b>auto</b>, most actions are allowed automatically and approval prompts rarely appear.</li>
         <li data-th="help.graph"><b>Structure tab</b>: drag to move · wheel or the + − buttons to zoom · double-click to fit · click a node for its prompts. A <span class="peer-t">blue arrow</span> means messages between sessions.</li>
-        <li data-th="help.keys"><b>Shortcuts</b>: <kbd>j</kbd>/<kbd>k</kbd> next · previous session, <kbd>g</kbd> or <kbd>Enter</kbd> open panel, <kbd>/</kbd> search everything, in an approval prompt <kbd>1</kbd>~<kbd>9</kbd> choose · <kbd>Esc</kbd> reject (if marked risky, press the same number again within 2 seconds), otherwise <kbd>Esc</kbd> closes the panel. They don't work while you are typing.</li>
+        <li data-th="help.keys"><b>Shortcuts</b>: <kbd>j</kbd>/<kbd>k</kbd> next · previous session, <kbd>g</kbd> or <kbd>Enter</kbd> open panel, <kbd>/</kbd> search everything, in the message box <kbd>Enter</kbd> send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line, in an approval prompt <kbd>1</kbd>~<kbd>9</kbd> choose · <kbd>Esc</kbd> reject (if marked risky, press the same number again within 2 seconds), otherwise <kbd>Esc</kbd> closes the panel. They don't work while you are typing.</li>
       </ul>
     </div>
     <div class="notice key">

@@ -52,6 +52,7 @@ const KO_UI2 = {
   "Open in {app}": "{app}로 열기",
   "Unfold list": "목록 펼치기",
   "View only": "보기만",
+  "Handled when the current task finishes": "끝나면 이어서 처리해요",
   "Started outside tmux — chat · approve are off": "tmux 밖에서 띄워 채팅 · 승인은 안 돼요",
   "Fold list": "목록 접기",
   "Unfold": "펼치기",

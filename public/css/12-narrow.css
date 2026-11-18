@@ -17,6 +17,7 @@
   .brand h1 span { display: none; }
   #conn { font-size: 0; gap: 0; }
   #drawer { top: 0; right: 0; bottom: 0; width: 100%; border-radius: 0; border: none; }
+  .drawer-handle { display: none; } /* 패널이 화면을 덮으니 폭 손잡이는 필요 없다 */
   /* 가운데 탭 · 큰 그래프는 넓은 화면에서만 — 좁으면 조직도만, 대화 창 추이는 지금 탭 아래 작은 그래프로 */
   #ctx-panel, .center-tabs, .zoom-btns { display: none !important; }
   body.cv-ctx #graph { visibility: visible; }
@@ -37,7 +38,7 @@
   header .icon-btn { width: 30px; }
   body, body.aside-folded { grid-template-columns: 56px 1fr; }
   /* 패널 머리: 이름 · 탭 · ⋯ · 닫기만 남겨 오른쪽 단추가 잘리지 않게 */
-  #d-model, #wide, #d-info-btn { display: none; }
+  #d-model { display: none; }
   #drawer .head-top h2 { max-width: none; flex: 1 1 auto; }
   #drawer .head-top .grow { display: none; }
 }

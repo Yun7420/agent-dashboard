@@ -15,8 +15,8 @@ async function loadHistory(key, more = false) {
   const [r, base] = await Promise.all([fetchHistory(key, { offset, limit, q }), !more && q ? fetchHistory(key, { limit: 1 }) : null]);
   if (seq !== hist.seq || selected !== key) return false; // 그사이 다른 세션 · 검색어로 바뀌었으면 늦게 온 응답은 버린다
   Object.assign(hist, { key, q, items: more ? hist.items.concat(r.items) : r.items, total: r.total, next: r.nextOffset, error: r.error ?? null });
-  const b = q ? base : more ? null : r; // 지금 탭 · 탭 숫자는 검색과 상관없는 전체 기준
-  if (b) { promptLog = b.items; historyTotal = b.total; }
+  const b = q ? base : more ? null : r; // 지금 탭은 검색과 상관없는 전체 기준
+  if (b) promptLog = b.items;
   return true;
 }
 
@@ -61,7 +61,7 @@ async function select(key) {
   const s = state.sessions.find((x) => x.key === key);
   if (!s) return;
   if (!$('#drawer').classList.contains('open')) { $('#drawer').classList.add('open'); view.init = false; renderGraph(); }
-  if (key !== lastSelected) { useDraft(key); setTab('now'); promptLog = []; historyTotal = 0; hist.key = null; hist.items = []; lastSelected = key; delete $('#pane').dataset.seen; openFiles.clear(); fullCmds.clear(); closedCmds = false; }
+  if (key !== lastSelected) { useDraft(key); setTab('now'); promptLog = []; hist.key = null; hist.items = []; lastSelected = key; delete $('#pane').dataset.seen; openFiles.clear(); fullCmds.clear(); closedCmds = false; }
   renderDrawerHead(s);
   if (drawerTab === 'log') $('#log-list').innerHTML = `<div class="commit"><span class="m">${t('Reading log…')}</span></div>`;
   if (s.orphan) { Object.assign(hist, { key, q: '', items: [], total: 0, next: null }); $('#log-list').innerHTML = `<div class="commit"><span class="m">${t('This session has no log file yet')}</span></div>`; return; }
@@ -78,7 +78,7 @@ function renderDrawerHead(s) {
   $('#d-ctx').innerHTML = s.context ? `<i class="${ctxLevel(s.context.percent)}" style="width:${s.context.percent}%"></i>` : '';
   $('#d-ctx').title = s.context ? `${t('Context')} ${s.context.percent}% · ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)}` : '';
   $('#d-meta').innerHTML = `<span class="badge tool ${esc(s.tool)}">${esc(s.toolLabel)}</span>${s.model ? `<span class="badge badge-model" title="${esc(s.model)}">${esc(modelName(s.model))}</span>` : ''}${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span style="display:inline-flex;align-items:center;gap:6px"><span class="dot-s ${esc(s.status)}"></span>${STATUS_KO[s.status]}${s.waitingFor ? ' · ' + esc(s.waitingFor) : ''}</span><span class="path">${esc(s.cwd || '')}</span><span class="mono">${t('Session')} ${esc(s.id.slice(0, 8))}</span>${s.pid ? `<span>PID ${s.pid}</span><span>${t('Up')} ${esc(s.uptime ?? '')}</span>` : ''}${s.ide ? `<span>${t('Editor extension')}</span>` : ''}<span>${t('Log')} ${s.sizeMB ?? 0}MB</span>${s.turnClipped ? `<span title="${t('The last request is more than 8MB before the end of the log, so only the last 8MB of this turn was read')}">${t('Start of this turn skipped')}</span>` : ''}${s.context ? `<span class="ctx-chip" title="${s.context.estimated ? t('Window size estimated from the model setting. ') : ''}${t('When full, Claude auto-summarizes (compacts) the earlier part')}"><span class="mini"><span class="ctx-bar ${ctxLevel(s.context.percent)}" style="display:block;width:${s.context.percent}%"></span></span>${t('Context')} ${s.context.percent}% · ${fmtTok(s.context.used)} / ${fmtTok(s.context.window)} · ${t('left')} ${fmtTok(Math.max(0, s.context.window - s.context.used))}</span>` : ''}`;
-  $('#more-btn').hidden = s.status === 'ended';
+  $('#end-session').hidden = s.status === 'ended';
   const fam = (s.model || '').match(/opus|sonnet|haiku/)?.[0] ?? '';
   $('#d-model').value = fam;
   $('#d-model').disabled = !s.tmux || s.status === 'ended' || s.status === 'waiting';
@@ -96,8 +96,7 @@ function renderComposer(s) {
     ? t('This session was started from an editor extension, so you can\'t send from here.')
     : t('This session was started outside tmux, so you can\'t send from here. End it in the terminal and reopen it with {cmd}.', { cmd: `<code>tmux new -s ${esc(s.title.replace(/[^\p{L}\p{N}_-]+/gu, '-'))} claude --resume ${esc(s.id)}</code>` });
   else if (s.status === 'waiting') why = t('Waiting for approval. Approve or reject above first.');
-  else if (s.status === 'working') why = t('Working. If you send now, it is handled after the current task.');
-  else if (s.status === 'background') why = t('A command (test · build etc.) is running in the background. Sending now is handled right away.');
+  else if (s.status === 'working') why = t('Handled when the current task finishes');
   const can = s.tmux && s.status !== 'ended' && s.status !== 'waiting';
   $('#msg').disabled = !can;
   canSend = Boolean(can);

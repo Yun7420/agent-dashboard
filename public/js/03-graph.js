@@ -181,7 +181,7 @@ function applyView() { $('#viewport').setAttribute('transform', `translate(${vie
   svg.addEventListener('pointerup', (e) => {
     if (!drag || e.target.closest('.node')) return;
     const moved = Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 4;
-    if (!moved && $('#drawer').classList.contains('open')) $('#close').click();
+    if (!moved && $('#drawer').classList.contains('open')) $('#drawer').dispatchEvent(new Event('fold'));
   });
   window.addEventListener('pointermove', (e) => { if (!drag) return; view.x = e.clientX - drag.x; view.y = e.clientY - drag.y; applyView(); });
   window.addEventListener('pointerup', () => { drag = null; svg.classList.remove('drag'); });

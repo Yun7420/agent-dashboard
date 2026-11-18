@@ -11,20 +11,31 @@
 .info-wrap { position: relative; display: inline-flex; }
 .info-pop, .menu-pop { display: none; position: absolute; top: 34px; z-index: var(--z-pop); background: var(--surface-3); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow); padding: 12px 14px; }
 .info-pop { left: -8px; width: 360px; }
-.info-wrap:hover .info-pop, .info-pop.show { display: flex; }
+.info-wrap:hover .info-pop:not(#d-meta), .info-pop.show { display: flex; } /* 세션 정보는 ⋯ 메뉴에서 눌렀을 때만 */
 .menu-pop { right: 0; padding: 6px; }
 .menu-pop.show { display: block; }
 .menu-pop button { width: 100%; white-space: nowrap; font-size: 13px; }
 .ctx-line { height: 2px; margin: 0 -12px 0 -16px; background: color-mix(in srgb, var(--ink) 5%, transparent); }
 .ctx-line i { display: block; height: 100%; background: var(--ok); transition: width .3s; }
 .ctx-line i.mid { background: var(--working); } .ctx-line i.high { background: var(--waiting); }
-.resize { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; z-index: var(--z-tip); }
-.resize:hover, .resize.on { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 50%, transparent), transparent); }
+/* 폭 손잡이: 왼쪽 가장자리 가운데 세로 알약(끌면 폭 · 더 끌면 접힘 표시는 경고색) */
+.drawer-handle { position: absolute; left: 2px; top: 50%; z-index: var(--z-tip); width: 8px; height: 48px; padding: 0; border: none; border-radius: 999px; background: color-mix(in srgb, var(--ink) 14%, transparent); cursor: ew-resize; transform: translateY(-50%); transition: background .15s, height .15s; }
+.drawer-handle::before { content: ''; position: absolute; inset: -12px -10px; } /* 누를 자리는 넉넉하게 */
+.drawer-handle:hover:not(:disabled), .drawer-handle.on { background: var(--accent); height: 64px; }
+.drawer-handle.fold { background: var(--waiting); }
+.drawer-handle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #drawer.dragging { transition: none; user-select: none; }
-#drawer .head-top button { font-size: 12px; padding: 4px 10px; }
+#drawer .head-top .tab { font-size: 13px; padding: 0 var(--sp-3); }
+#more-menu { width: 200px; padding: var(--sp-1); }
+#more-menu.show { display: flex; flex-direction: column; }
+#more-menu .mi { display: flex; align-items: center; gap: var(--sp-3); height: 36px; padding: 0 var(--sp-3); background: transparent; border-color: transparent; color: var(--text); text-align: left; }
+#more-menu .mi:hover { background: var(--surface-2); }
+#more-menu .mi svg { color: var(--dim); flex: none; }
+#more-menu .mi.danger, #more-menu .mi.danger svg { color: var(--waiting-text); }
+#more-menu .mi[hidden] { display: none; }
 #d-model { font-size: 13px; height: 32px; padding: 0 26px 0 10px; }
 .badge-model { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent-text); }
-#drawer .info-pop { flex-wrap: wrap; align-items: center; gap: 8px 10px; color: var(--faint); font-size: 12px; }
+#drawer .info-pop { left: auto; right: 0; flex-wrap: wrap; align-items: center; gap: 8px 10px; color: var(--faint); font-size: 12px; }
 #drawer .info-pop .path { font-family: var(--mono); font-size: 11px; color: var(--dim); word-break: break-all; }
 /* 대화 창 추이(지금 탭 아래): 응답마다 사용률 선, 점선 = 80%, 노란 점 = 자동 요약으로 떨어진 곳 */
 #now-trend { flex: none; min-width: 0; }
@@ -49,7 +60,6 @@
 .tab { white-space: nowrap; flex: none; border: none; background: transparent; color: var(--dim); height: 26px; padding: 0 12px; border-radius: 8px; font-size: 13px; font-weight: 600; }
 .tab.on { background: var(--surface-3); color: var(--text); box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 6%, transparent) inset; }
 .tab:hover:not(.on) { color: var(--text); background: transparent !important; }
-#log-count { color: var(--faint); font-weight: 500; margin-left: 2px; }
 #now-view { flex: 1; min-height: 0; overflow: hidden; padding: 14px 16px 8px; display: flex; flex-direction: column; gap: 10px; }
 #now-view[hidden] { display: none; }
 .now-prompt { flex: none; align-self: flex-end; max-width: 88%; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); border-radius: 12px 12px 4px 12px; padding: 8px 12px; font-size: 13px; color: var(--accent-text); white-space: pre-wrap; word-break: break-word; max-height: 7.5em; overflow: auto; }

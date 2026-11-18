@@ -78,5 +78,5 @@ document.addEventListener('keydown', (e) => {
   if ($('#limits-pop').classList.contains('show')) { $('#limits-pop').classList.remove('show'); return; }
   if ($('#more-menu').classList.contains('show') || $('#d-meta').classList.contains('show')) { $('#more-menu').classList.remove('show'); $('#d-meta').classList.remove('show'); return; }
   if (document.activeElement === $('#msg') && $('#msg').value) return; // 입력 중인 글이 있으면 패널을 닫지 않는다
-  if ($('#drawer').classList.contains('open')) $('#close').click();
+  if ($('#drawer').classList.contains('open')) closeDrawer();
 });

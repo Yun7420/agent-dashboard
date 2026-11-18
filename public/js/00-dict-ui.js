@@ -83,8 +83,6 @@ const KO_UI = {
   "This session was started from an editor extension, so you can't send from here.": "에디터 확장에서 띄운 세션이라 여기서 보낼 수 없어요.",
   "This session was started outside tmux, so you can't send from here. End it in the terminal and reopen it with {cmd}.": "tmux 밖에서 띄운 세션이라 여기서 보낼 수 없어요. 터미널에서 이 세션을 끝낸 뒤 {cmd} 로 다시 열면 돼요.",
   "Waiting for approval. Approve or reject above first.": "승인을 기다리는 중이에요. 위에서 먼저 승인/거절하세요.",
-  "Working. If you send now, it is handled after the current task.": "작업 중이에요. 보내면 지금 일을 마친 뒤 이어서 처리해요.",
-  "A command (test · build etc.) is running in the background. Sending now is handled right away.": "백그라운드에서 명령(테스트·빌드 등)이 돌고 있어요. 지금 보내도 바로 처리해요.",
   "None": "없음",
   "Pick a session on the left to see how full its context window is": "왼쪽에서 세션을 고르면 대화 창이 얼마나 찼는지 보여 줘요",
   "Drawn after more than two replies": "응답이 두 번 넘게 쌓이면 그려요",
