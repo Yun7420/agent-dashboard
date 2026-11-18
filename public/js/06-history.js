@@ -125,19 +125,20 @@ function renderDrawerHead(s) {
   renderApproval(s);
 }
 
+// 입력 칸 밑 안내 줄은 두지 않는다(상태는 답변 카드 · 승인 카드가 이미 보여 준다). 보낼 수 없을 때만 그 까닭을 placeholder 한 문장으로.
+// 작업 중에는 그대로 보낼 수 있다(Claude Code 가 줄을 세워 끝나면 처리)
+function composerHint(s) {
+  if (s.status === 'ended') return t('This session has ended.');
+  if (!s.tmux) return s.ide ? t('Started from an editor extension · view only') : t('Started outside tmux · view only');
+  if (s.status === 'waiting') return t('Answer the approval request above first');
+  return t('Send a message');
+}
 function renderComposer(s) {
-  let why = '';
-  if (s.status === 'ended') why = t('This session has ended.');
-  else if (!s.tmux) why = s.ide
-    ? t('This session was started from an editor extension, so you can\'t send from here.')
-    : t('This session was started outside tmux, so you can\'t send from here. End it in the terminal and reopen it with {cmd}.', { cmd: `<code>tmux new -s ${esc(s.title.replace(/[^\p{L}\p{N}_-]+/gu, '-'))} claude --resume ${esc(s.id)}</code>` });
-  else if (s.status === 'waiting') why = t('Waiting for approval. Approve or reject above first.');
-  else if (s.status === 'working') why = t('Handled when the current task finishes');
   const can = s.tmux && s.status !== 'ended' && s.status !== 'waiting';
   $('#msg').disabled = !can;
+  $('#msg').placeholder = composerHint(s);
   canSend = Boolean(can);
   updateSendState();
   $('#mic').disabled = !can;
   $('#attach').disabled = !can;
-  $('#why').innerHTML = why;
 }

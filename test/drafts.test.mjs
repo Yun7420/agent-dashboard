@@ -161,3 +161,18 @@ test('음성 입력 안내(점검 H2): 처음엔 창을 띄우고, 취소면 듣
   assert.equal(await run('micNotice')(), true);
   assert.equal(shown, 3);
 });
+
+// 입력 칸 밑 안내 줄 대신 placeholder 한 문장(public/js/06-history.js 의 renderComposer): 승인 대기 중엔 보내기를 막고 까닭을 칸 안에,
+// 작업 중엔 그대로 보낼 수 있다(Claude Code 가 줄을 세워 처리)
+test('입력 칸: 승인 대기면 칸 · 보내기 비활성 + 「먼저 위 승인 요청에 답해 주세요」 · 작업 중이면 보낼 수 있고 기본 안내 · 끝남 · 보기만도 칸 안에', () => {
+  const els = {};
+  const el = (sel) => (els[sel] ??= { sel, value: '', placeholder: '', innerHTML: '', disabled: false, dataset: {}, style: {}, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {} });
+  const { run } = loadFront(['00-md.js', '01-core.js', '06-history.js', '09-attach.js'], { window: {}, document: { querySelector: el, hidden: true }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, setTimeout: (fn) => fn(), clearTimeout() {} });
+  const show = (s) => { run('renderComposer')({ key: 'a', title: 'A', id: 'x', ...s }); return [els['#msg'].disabled, els['#send'].disabled, els['#msg'].placeholder]; };
+  els['#msg'] = el('#msg'); els['#msg'].value = '보낼 글';
+  assert.deepEqual(show({ tmux: true, status: 'waiting' }), [true, true, '먼저 위 승인 요청에 답해 주세요']);
+  assert.deepEqual(show({ tmux: true, status: 'working' }), [false, false, '메시지 보내기']);
+  assert.deepEqual(show({ tmux: true, status: 'ended' }), [true, true, '종료된 세션이에요.']);
+  assert.deepEqual(show({ tmux: false, status: 'idle' }), [true, true, 'tmux 밖에서 시작한 세션이라 보기만 돼요']);
+  assert.equal(els['#why'], undefined); // 안내 줄은 더 이상 없다
+});
