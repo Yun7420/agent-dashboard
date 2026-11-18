@@ -44,19 +44,19 @@ adapters/             도구별 차이(claude.mjs · codex.mjs). 새 에이전�
 lib/                  구역별 일(모듈은 createXxx(deps) 로 필요한 것만 받는다)
   state · procs        상태 조립(세션 · 메시지 · 한도) · ps/lsof/tmux 목록
   dialog-watch · peer-links   선택창 감시(두 틱에 한 번 · 엇갈림 기록) · 세션 사이 메시지 잇기
-  live-feed · notify-api · housekeeping   2초 틱 · SSE(latest · 보는 기간) · 알림 설정 · 켤 때 정리
+  live-feed · notify-api · housekeeping   2초 틱 · SSE(latest · 바뀐 세션만 보내기 · /api/changes) · 알림 설정 · 켤 때 정리
   history-core · git-commits   기록 읽기 공용(새로 붙은 줄만 · 마지막 턴 찾기 · 턴 묶기 — 어댑터는 줄 해석만) · 커밋 제목 읽기
   auth · login-open    로그인 쿠키 · 로그인 링크(open 은 서버가 진짜인지 확인 뒤)
   command-risk · node-check   승인 카드 위험 판정(낱말 단위) · 켤 때 Node 버전 확인
   launch               켠 방법(npx · 설치 명령 · bin · npm start)에 맞는 안내 문구
-  history-api · usage-bridge   기록 탭 · 검색 · 오늘 한 일 · 대화 창 추이 / 사용 한도(상태줄 다리) · 기본 모델 지키기
+  history-api · usage-bridge   기록 탭 · 검색 · 오늘 한 일 / 사용 한도(상태줄 다리) · 기본 모델 지키기
   commands             명령(채팅 · 승인 · 멈춤 · 닫기 · 모델 · 복구 · 새 세션)
   env · open-dir       환경 점검 · 폴더를 에디터로 열기
   body · uploads       요청 본문 · 첨부 저장/정리
   claude-settings · bridge   ~/.claude/settings.json 원자적 쓰기(상태줄 · 기본 모델) · 상태줄 다리 복사본
   token                토큰 파일(~/.agent-dashboard/token)
   recent · restore · restore-cli · runner   복구 단추 · 재시동 복구 · 실행기(run)
-  notify · limits · usage · status   알림 · 한도 추이 · 토큰 사용량 · 상태줄 파일 정리
+  notify · limits · usage · status   알림 · 옛 한도 기록 정리 · 토큰 사용량 · 상태줄 파일 정리
   respond · validate · paging · paths · perms · filecache · lru · serial · lock   응답 모양 · 입력 검사 · 나눠 보내기 · 경로 · 파일 권한 정리 · 캐시 · 차례 · 잠금
   tmux · dialog · approval · spawn · demo · util   tmux 조작 · 선택창 감지 · 승인 카드 · 새 세션 인자 · 데모 · 기록 읽기
 bin/                  agent-dashboard.mjs(실행 명령 하나: start · run · restore · open — 실행 방법은 이것과 `npm start` 만) · statusline.mjs(상태줄 다리 원본)
