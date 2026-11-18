@@ -62,6 +62,18 @@ test('캐시: 같은 구성(sig)이면 6초 안에 ps 를 다시 부르지 않�
   assert.deepEqual([count('ps'), paneCalls], [n + 3, 2]);
 });
 
+test('켜진 시각: 다시 읽어도 같은 PID 는 처음 값 그대로(startedAt 이 흔들려 전체를 다시 보내지 않게), PID 가 다른 때 켜졌으면 새 값', async () => {
+  fs.writeFileSync(path.join(dir, 'ps.txt'), `501 1 01:00 claude --resume ${ID}\n`);
+  const p = createProcesses({ adapters: [claude], tmux: { listPanes: async () => [] } });
+  const first = (await p.processes('a')).procs[0].startMs;
+  await new Promise((r) => setTimeout(r, 20));
+  p.invalidate();
+  assert.equal((await p.processes('a')).procs[0].startMs, first);
+  fs.writeFileSync(path.join(dir, 'ps.txt'), `501 1 00:01 claude --resume ${ID}\n`); // 같은 번호로 다시 켜짐
+  p.invalidate();
+  assert.ok((await p.processes('a')).procs[0].startMs - first > 50_000);
+});
+
 test('ps 가 없거나 실패하면 빈 목록(서버는 계속)', async () => {
   const old = process.env.PATH;
   process.env.PATH = dir; // ps 도 없는 PATH
