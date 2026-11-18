@@ -100,18 +100,12 @@
 
 ### 사용자 결정
 
-- [ ] **저장소 공개 상태 · `private: true` 해제**
-  - 지금: 저장소는 공개, `package.json` 의 `private` 은 `true`(그래서 `npm publish` 가 막혀 있음)
-  - 남은 일: 배포할 때만 `false` 로. 그전에 「공개 전 기록 재검사」가 끝나야 해요
-  - 결정: **사용자**
-- [ ] **패키지 이름**
-  - 지금: `agent-dashboard` 는 npm 에 이미 있어서 **그대로는 못 써요**(위 표). README 에서는 `npx agent-dashboard` 안내를 빼고 「패키지 이름은 출시 때 정함」으로 적었어요(그대로 따라 치면 남의 패키지가 실행돼서, 2026-11-17 보안 점검 E2). 출시 때 README · 도움말에 정한 이름을 넣어요
-  - 남은 일: 고르기 — `@yun7420/agent-dashboard`(실행은 `npx @yun7420/agent-dashboard`, 명령 이름 `agent-dashboard` 는 그대로) 또는 비어 있는 다른 이름. 이름을 미리 올려 두는 것(선점)도 배포라서 하지 않았어요
-  - 결정: **사용자**
-- [ ] **버전 정책**
-  - 지금: `0.1.0`, 태그 · 변경 기록(CHANGELOG) 없음
-  - 남은 일: 첫 배포 버전(0.1.0 그대로?), 올리는 규칙(기능 = 0.x.0, 고침 = 0.0.x 등), GitHub 릴리스와 맞출지
-  - 결정: **사용자**
+- [x] **저장소 공개 상태 · `private: true` 해제**
+  - 결정(2026-11-19 사용자): `private` 을 지우고 `publishConfig.access: public`. 실제로 올리는 것은 아래 「실제 배포」
+- [x] **패키지 이름**
+  - 결정(2026-11-19 사용자): `@yun7420/agent-dashboard` — 실행은 `npx @yun7420/agent-dashboard`, 설치 뒤 명령 이름 `agent-dashboard` 는 그대로. `agent-dashboard`(@ 없는 이름)는 남의 패키지라 README · 도움말의 npx 안내는 모두 이 이름이어야 해요(`test/launch.test.mjs`, 2026-11-17 보안 점검 E2)
+- [x] **버전 정책**
+  - 결정(2026-11-19 사용자): 첫 배포 `0.1.0`, `v*` 태그를 push 하면 Actions(`publish.yml`)가 올려요 — 절차는 [CONVENTIONS](CONVENTIONS.md) 「출시 절차」
 - [ ] **Node 지원 범위 · 최신 Node**
   - 지금: `engines` `>=18`, CI 는 18 · 20 · 22 · 24. 이 Mac 에서는 18.20.4 · 23.9.0 으로 시험
   - 참고: Node 18(2025-04) · 20(2026-04)은 공식 지원이 끝났어요. 24 가 지금 LTS(오래 지원하는 버전)예요
@@ -126,7 +120,7 @@
   - 남은 일: 「모든 외부 기여자 승인」 · 「SHA 고정 강제」로 조일지
   - 결정: **사용자**
 - [ ] **실제 배포(`npm publish`)**
-  - 남은 일: 위 항목이 모두 끝난 뒤. npm 계정 2단계 인증 확인, `npm publish --dry-run` 으로 마지막 확인
+  - 남은 일: 위 항목이 모두 끝난 뒤. npm 계정 2단계 인증 확인, npm 패키지 설정에 Trusted Publisher(이 저장소 · `publish.yml` · 환경 `npm`) 등록, 저장소에 환경 `npm`(승인 필요) 만들기, 그다음 태그 push
   - 결정: **사용자**
 
 ### 그 밖

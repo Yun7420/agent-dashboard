@@ -1,0 +1,43 @@
+# npm 출시: v* 태그를 push 하면 npm test 를 돌린 뒤 @yun7420/agent-dashboard 를 npm 에 올린다(docs/CONVENTIONS.md 「출시 절차」).
+# 인증은 npm Trusted Publisher(OIDC) — 저장소에 npm 토큰 시크릿을 두지 않는다. npm 쪽 패키지 설정에 이 저장소 · publish.yml · 환경 npm 이 등록돼 있어야 한다.
+# 환경 npm 에 「승인 필요」를 걸어 두면 올리기 직전 사용자가 Actions 화면에서 승인한다.
+name: publish
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write # OIDC 로 npm 에 로그인 · 출처 증명(provenance) 서명
+
+# 같은 태그를 두 번 올리지 않게 — 앞 실행을 취소하지 않고 차례로
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      # 태그(v0.1.0)와 package.json version(0.1.0)이 다르면 엉뚱한 버전이 올라가니 여기서 멈춘다
+      - name: 태그와 버전 확인
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="v$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$VERSION" ]; then echo "::error::태그 $TAG 와 package.json $VERSION 이 달라요"; exit 1; fi
+      # Trusted Publisher(OIDC)는 npm 11.5.1 이상에서만 된다 — 낮으면 토큰을 찾다 엉뚱한 오류가 나니 먼저 알린다
+      - name: npm 버전 확인
+        run: node -e "const [a,b,c]=process.argv[1].split('.').map(Number); if (a*1e6+b*1e3+c < 11005001) { console.error('::error::npm '+process.argv[1]+' — Trusted Publisher 는 11.5.1 이상'); process.exit(1); }" "$(npm --version)"
+      - run: npm test
+      - run: npm publish --provenance --access public

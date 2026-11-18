@@ -41,10 +41,10 @@ test('포트 충돌: npx 로 켜면 npx 예시, 실행기(run)면 run 까지 —
   await withBusyPort(async (env) => {
     const a = run([path.join(ROOT, 'bin', 'agent-dashboard.mjs')], { ...env, npm_command: 'exec' });
     assert.equal(a.status, 1);
-    assert.match(a.stderr, /4692 포트를 이미 쓰고 있어요 — PORT=4693 npx agent-dashboard 처럼/);
+    assert.match(a.stderr, /4692 포트를 이미 쓰고 있어요 — PORT=4693 npx @yun7420\/agent-dashboard 처럼/);
     const b = run([path.join(ROOT, 'bin', 'agent-dashboard.mjs'), 'run'], { ...env, npm_command: 'exec' });
     assert.equal(b.status, 1);
-    assert.match(b.stdout, /PORT=4693 npx agent-dashboard run 처럼/);
+    assert.match(b.stdout, /PORT=4693 npx @yun7420\/agent-dashboard run 처럼/);
     assert.match(b.stdout, /서버를 열지 못해 멈춰요/);
   });
 });
@@ -57,13 +57,16 @@ test('포트 충돌: 저장소에서 node server.mjs(npm start)는 예전처럼 
   });
 });
 
-// npm 의 agent-dashboard 는 남의 패키지라, 출시 전 README · 도움말이 그 이름으로 npx 를 안내하면 남의 코드를 실행하게 된다(2026-11-17 점검 E2)
-test('출시 전(private): README · 도움말에 npx 실행 안내가 없다 — 패키지 이름은 출시 때 정함', () => {
-  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
-  if (!pkg.private) return; // 출시하면 정한 이름으로 안내한다
-  const help = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'agent-dashboard.mjs'), '--help'], { encoding: 'utf8' }).stdout;
+// npm 의 agent-dashboard(@ 없는 이름)는 남의 패키지라, README · 도움말이 그 이름으로 npx 를 안내하면 남의 코드를 실행하게 된다(2026-11-17 점검 E2).
+// 출시 이름은 package.json 의 name 하나 — npx 안내는 모두 그 이름이어야 한다
+test('npx 안내는 package.json 의 이름(@yun7420/agent-dashboard)으로만 — README 두 언어 · npx 로 켠 도움말', () => {
+  const { name } = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  assert.equal(name, '@yun7420/agent-dashboard');
+  const help = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'agent-dashboard.mjs'), '--help'], { encoding: 'utf8', env: { ...process.env, npm_command: 'exec', LANG: 'ko_KR.UTF-8' } }).stdout;
   for (const [what, text] of [['README.md', fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8')], ['README.en.md', fs.readFileSync(path.join(ROOT, 'README.en.md'), 'utf8')], ['도움말', help]]) {
-    assert.doesNotMatch(text, /npx\s+(@[\w.-]+\/)?agent-dashboard\b/, what);
+    const npx = [...text.matchAll(/npx\s+([@\w./-]*agent-dashboard[\w./-]*)/g)].map((m) => m[1]);
+    assert.ok(npx.length > 0, `${what}: npx 안내가 있다`);
+    for (const pkg of npx) assert.equal(pkg, name, `${what}: npx ${pkg}`);
   }
   assert.match(help, /사용법/);
 });

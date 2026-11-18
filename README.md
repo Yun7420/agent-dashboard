@@ -73,6 +73,20 @@ Agent Dashboard는 이걸 한 화면에 모읍니다.
 
 ### 실행
 
+**npm 으로** (저장소 없이)
+
+```bash
+npx @yun7420/agent-dashboard          # 받아서 바로 켜기 → 터미널에 나온 「로그인 링크(10분)」를 브라우저로 열기
+npx @yun7420/agent-dashboard open     # 링크가 지났거나 다른 브라우저 · 7일이 지났을 때: 로그인 링크를 브라우저로 열어 줘요
+
+npm i -g @yun7420/agent-dashboard     # 또는 설치해 두고 짧은 명령으로
+agent-dashboard                       # 켜기 (open · run · restore · --help 도 같은 명령)
+```
+
+npm 의 `agent-dashboard`(@ 없는 이름)는 이 프로젝트와 상관없는 다른 패키지예요. 꼭 `@yun7420/agent-dashboard` 로 받으세요.
+
+**저장소에서**
+
 ```bash
 git clone https://github.com/Yun7420/agent-dashboard.git
 cd agent-dashboard
@@ -82,7 +96,7 @@ node bin/agent-dashboard.mjs open   # 링크가 지났거나 다른 브라우저
 
 화면 주소는 `http://localhost:4545` 이지만, 처음 한 번은 **로그인 링크**로 들어와야 해요. 그 브라우저는 7일 동안 로그인돼요(아래 「보안」).
 
-같은 일을 `node bin/agent-dashboard.mjs` 로도 할 수 있어요(`--help` 로 도움말). 나중에 npm 으로 내놓을 때 쓸 실행 명령이에요.
+같은 일을 `node bin/agent-dashboard.mjs` 로도 할 수 있어요(`--help` 로 도움말). npm 으로 설치했을 때의 `agent-dashboard` 명령과 같아요.
 
 처음 켜면 **환경 점검표**와 사용 안내가 떠요. 빠진 게 있으면 해결 방법이 같이 나와요(다시 보기: 오른쪽 위 **⋯ → 도움말**).
 
@@ -100,7 +114,7 @@ tmux respawn-pane -k -t dashboard     # 코드를 고친 뒤 다시 켜기 (Ctrl
 ```
 
 - `run` 은 1분 안에 5번 넘게 꺼지면 다시 켜는 간격을 30초로 늘리고, 포트가 이미 쓰이고 있으면 다시 켜지 않고 끝나요. Ctrl+C(SIGINT) · SIGTERM 을 받으면 서버도 함께 끝내요.
-- 나중에 npm 으로 내놓아 저장소 없이 쓸 수 있게 할 예정이에요. **패키지 이름은 출시 때 정해요**(아직 npm 에 올리지 않았어요). npm 에 이미 있는 비슷한 이름의 패키지는 이 프로젝트와 상관없으니 `npx` 로 받지 마세요.
+- 저장소 없이: `tmux new -d -s dashboard npx @yun7420/agent-dashboard run` (설치했으면 `agent-dashboard run`).
 
 ### 맥을 껐다 켠 뒤: 세션 한 번에 복구
 
@@ -139,10 +153,10 @@ node bin/agent-dashboard.mjs restore   # 재시동 전 세션들을 tmux 로 다
 
 ### 끄기 · 지우기
 
-1. **서버 끄기** — `npm start` 로 켰다면 그 터미널에서 Ctrl+C. 실행기(`run`)로 켰다면 그 창에서 Ctrl+C(서버도 함께 꺼져요). tmux `dashboard` 세션째 끄려면 `tmux kill-session -t dashboard`.
+1. **서버 끄기** — `npm start` · `npx` 로 켰다면 그 터미널에서 Ctrl+C. 실행기(`run`)로 켰다면 그 창에서 Ctrl+C(서버도 함께 꺼져요). tmux `dashboard` 세션째 끄려면 `tmux kill-session -t dashboard`.
 2. **사용 한도 보기 끄기** — 켜 두었다면 **지우기 전에 먼저** 꺼요: 범례 Claude Code 항목의 한도에 마우스 올림 → 팝업 아래 **사용 한도 보기** 스위치를 끄기. `~/.claude/settings.json` 의 상태줄 등록을 켜기 전으로 되돌려요.
 3. **데이터 폴더 지우기** — `rm -rf ~/.agent-dashboard`
-4. 저장소로 받았다면 그 폴더를 지우면 끝이에요.
+4. 저장소로 받았다면 그 폴더를 지우면 끝이에요. 설치했다면 `npm uninstall -g @yun7420/agent-dashboard`.
 
 > ⚠️ 사용 한도 보기를 켠 채 3번부터 하면 `~/.claude/settings.json` 에 상태줄 등록(`~/.agent-dashboard/bin/statusline.mjs` 를 부르는 명령)이 남아요. 그 파일이 없어져서 Claude 세션의 상태줄이 비거나 오류가 나요. 그때는 대시보드를 다시 켜서 2번을 하거나, settings.json 의 `statusLine` 을 직접 지워 주세요.
 
@@ -252,7 +266,7 @@ node bin/agent-dashboard.mjs restore   # 재시동 전 세션들을 tmux 로 다
 
 - **`127.0.0.1` 전용** — 주소(Host)가 localhost 가 아니면 거절해요(DNS 리바인딩 차단). 프롬프트·코드 경로가 그대로 보이니 다른 사람과 주소를 공유하지 마세요.
 - **`~/.agent-dashboard/token`** — 이 대시보드 전용 비밀 열쇠예요. 처음 실행할 때 컴퓨터마다 자동으로 만들어지고(본인만 읽기 가능, 600), **화면에는 넣지 않아요**(화면 파일은 누구나 받을 수 있어서 — 같은 Mac 의 다른 계정 포함).
-  - **로그인**: 이 열쇠로 만든 **로그인 링크**(10분 안에 한 번만 — 두 번째는 「이미 쓴 링크예요」)로 들어온 브라우저에만 쿠키를 줘요. 켤 때 터미널에 링크가 나오고, 나중엔 `node bin/agent-dashboard.mjs open`(설치했으면 `agent-dashboard open`)이 링크를 브라우저로 열어 줘요. 링크는 들어오자마자 `/` 로 바뀌어 주소창 · 방문 기록에 남지 않아요.
+  - **로그인**: 이 열쇠로 만든 **로그인 링크**(10분 안에 한 번만 — 두 번째는 「이미 쓴 링크예요」)로 들어온 브라우저에만 쿠키를 줘요. 켤 때 터미널에 링크가 나오고, 나중엔 `node bin/agent-dashboard.mjs open`(npx 로 켰으면 `npx @yun7420/agent-dashboard open`, 설치했으면 `agent-dashboard open`)이 링크를 브라우저로 열어 줘요. 링크는 들어오자마자 `/` 로 바뀌어 주소창 · 방문 기록에 남지 않아요.
   - 쿠키는 화면 스크립트도 못 읽고(HttpOnly), 다른 사이트에서 오는 요청엔 붙지 않고(SameSite=Strict), 7일이 지나면 끝나요. 값은 열쇠가 아니라 열쇠로 만든 서명이에요.
   - 기록을 보거나 메시지 · 승인 · 종료 같은 명령을 보내려면 로그인이 필요해요. 화면의 요청에는 다른 사이트가 붙일 수 없는 머리글을 붙이고, 같은 Mac 의 다른 포트 페이지에서 온 요청도 거절해요.
   - `open` 은 링크를 넘기기 전에 그 포트의 서버가 진짜 이 대시보드인지(열쇠로 서명한 답) 확인해요. 다른 프로그램이 포트를 먼저 잡고 있으면 링크를 보내지 않아요. 서버는 `127.0.0.1` 과 `[::1]` 을 함께 열어, 다른 프로그램이 `localhost` 의 IPv6 쪽을 가로채지 못하게 해요. 다른 프로그램이 이미 `[::1]` 의 같은 포트를 쓰고 있으면 이유를 알리고 켜지지 않아요(그대로 켜면 열린 탭이 그쪽에 쿠키를 보낼 수 있어서).
@@ -345,7 +359,7 @@ Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없�
 | 기록 폴더 | `CLAUDE_CONFIG_DIR` · `CODEX_HOME` 으로 옮긴 폴더 | 대시보드를 켠 셸의 값 **하나만** 읽어요 — 계정(폴더) 여러 개를 동시에 보지는 못해요 |
 
 - **채팅 · 승인 · 닫기는 tmux 로 띄운 세션만** 돼요. 일반 터미널 · 에디터 확장(VS Code · Cursor)에서 띄운 세션은 보기만 돼요.
-- **처음 켤 때 브라우저를 저절로 열지 않아요.** 터미널에 나온 로그인 링크를 열거나 `node bin/agent-dashboard.mjs open`(설치했으면 `agent-dashboard open`)을 실행해요. `run`(실행기)으로 켰다면 링크는 `~/.agent-dashboard/server.log` 에 있어요.
+- **처음 켤 때 브라우저를 저절로 열지 않아요.** 터미널에 나온 로그인 링크를 열거나 `node bin/agent-dashboard.mjs open`(npx 로 켰으면 `npx @yun7420/agent-dashboard open`, 설치했으면 `agent-dashboard open`)을 실행해요. `run`(실행기)으로 켰다면 링크는 `~/.agent-dashboard/server.log` 에 있어요.
 - 프로젝트 폴더의 `.claude/settings.json` 에 자기 상태줄(`statusLine`)이 있으면 그 프로젝트 세션은 계정 사용 한도 값이 오지 않아요(상태줄 다리가 불리지 않아서).
 - **Codex 는 일부만** — 목록 · 상태 · 지금 탭(요청 · 답변 · 대화 창) · 기록 탭 · 전체 검색 · 채팅은 돼요. 승인 창 감지 · 오늘 한 일 · 토큰 · 계정 사용 한도 · 자동 요약 시각 · 서브에이전트 · 세션 간 메시지 · 새 세션 · 복구는 Claude Code 만이에요.
 - Gemini 등 다른 도구는 아직 없어요(어댑터 파일 하나로 붙일 수 있게 만들어 뒀어요).

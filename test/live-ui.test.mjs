@@ -46,11 +46,11 @@ test('처음 여는 중(연동 카드가 떠 있음)에 403 이면 그 카드를
   const h2 = { textContent: '이 컴퓨터의 AI 세션을 연동하고 있어요' }, p = { textContent: '' };
   const boot = { classList: { add: (c) => cls.add(c), contains: (c) => cls.has(c) }, querySelector: (s) => (s === 'h2' ? h2 : p) };
   const banner = { hidden: true };
-  const { run } = loadFront(['01-core.js'], browserStub({ document: { documentElement: { dataset: { openCmd: 'npx agent-dashboard open' } }, querySelector: (s) => (s === '#boot' ? boot : s === '#login-needed' ? banner : null), hidden: true }, fetch: async () => res(403, '로그인이 필요해요 — 터미널에서 「agent-dashboard open」') }));
+  const { run } = loadFront(['01-core.js'], browserStub({ document: { documentElement: { dataset: { openCmd: 'npx @yun7420/agent-dashboard open' } }, querySelector: (s) => (s === '#boot' ? boot : s === '#login-needed' ? banner : null), hidden: true }, fetch: async () => res(403, '로그인이 필요해요 — 터미널에서 「agent-dashboard open」') }));
   await assert.rejects(run('api')('/api/env'));
   assert.ok(cls.has('login'));
   assert.equal(h2.textContent, '로그인이 필요해요');
-  assert.equal(p.textContent, '아무 터미널에서 「npx agent-dashboard open」을 실행하면 이 브라우저에 다시 열려요'); // 제목과 같은 말을 되풀이하지 않고 방법만
+  assert.equal(p.textContent, '아무 터미널에서 「npx @yun7420/agent-dashboard open」을 실행하면 이 브라우저에 다시 열려요'); // 제목과 같은 말을 되풀이하지 않고 방법만
   assert.equal(banner.hidden, true); // 카드에 보였으니 위쪽 안내는 띄우지 않는다
 });
 
