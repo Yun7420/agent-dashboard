@@ -44,8 +44,9 @@
 .att img, .att .ic { width: 28px; height: 28px; border-radius: 5px; object-fit: cover; flex: none; background: var(--surface-3); display: grid; place-items: center; font-size: 10px; }
 .att .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .att.up { opacity: .55; }
-.att button { padding: 0 4px; border: none; background: transparent; color: var(--faint); font-size: 12px; }
-.att button:hover { color: var(--waiting); background: transparent !important; }
+.att [data-rm] { padding: 0 4px; border: none; background: transparent; color: var(--faint); font-size: 12px; }
+.att [data-rm]:hover { color: var(--waiting); background: transparent !important; }
+.att .att-view { display: inline-flex; align-items: center; gap: 6px; min-width: 0; padding: 0; border: none; background: transparent !important; color: inherit; cursor: zoom-in; } /* 이미지 칩: 썸네일 + 이름이 크게 보기 단추 */
 #composer .box.drop { border-color: var(--accent); background: var(--accent-soft); }
 #send { color: var(--on-primary); }
 #send svg { transform: translate(-1px, 1px); } /* 종이비행기는 모양이 오른쪽 위로 쏠려 보여서 살짝 보정 */

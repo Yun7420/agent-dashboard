@@ -50,7 +50,12 @@ function pruneDrafts(sessions) {
 // ---------- 첨부 ----------
 function renderAttachments() {
   updateSendState();
-  $('#attach-list').innerHTML = curFiles().map((a) => `<span class="att ${a.uploading ? 'up' : ''}" title="${esc(a.path || a.name)}">${a.url ? `<img src="${a.url}" alt="">` : `<span class="ic">${esc((a.name.split('.').pop() || 'FILE').slice(0, 4).toUpperCase())}</span>`}<span class="nm">${esc(a.name)}</span><button type="button" data-rm="${a.id}" aria-label="${t('Remove')}">✕</button></span>`).join('');
+  $('#attach-list').innerHTML = curFiles().map((a) => {
+    const body = `${a.url ? `<img src="${a.url}" alt="">` : `<span class="ic">${esc((a.name.split('.').pop() || 'FILE').slice(0, 4).toUpperCase())}</span>`}<span class="nm">${esc(a.name)}</span>`;
+    // 다 올라간 이미지 칩은 눌러서 크게 보기(붙인 미리보기 objectURL 그대로 — 서버에 묻지 않음). 파일 칩 · 올리는 중은 누를 것이 없다
+    const view = a.url && !a.uploading ? `<button type="button" class="att-view" data-view="${a.id}" title="${t('View image')}" aria-label="${t('View image')}: ${esc(a.name)}">${body}</button>` : body;
+    return `<span class="att ${a.uploading ? 'up' : ''}" title="${esc(a.path || a.name)}">${view}<button type="button" data-rm="${a.id}" aria-label="${t('Remove')}">✕</button></span>`;
+  }).join('');
 }
 // 첨부는 올리기 시작한 세션의 것 — 올리는 사이 다른 세션으로 바꿔도 그 세션에 붙지 않는다
 async function addFiles(files) {
@@ -76,6 +81,9 @@ async function addFiles(files) {
 $('#attach').addEventListener('click', () => $('#file-input').click());
 $('#file-input').addEventListener('change', (e) => { addFiles([...e.target.files]); e.target.value = ''; });
 $('#attach-list').addEventListener('click', (e) => {
+  const v = e.target.closest('[data-view]');
+  const img = v && curFiles().find((a) => a.id === v.dataset.view && a.url && !a.uploading);
+  if (img) { $('#img-view').src = img.url; $('#img-t').textContent = img.name; return void openModal($('#img-dlg'), v); } // Esc · 바깥 · ✕ 로 닫히고 초점은 칩으로(01-core.js)
   const b = e.target.closest('[data-rm]');
   if (!b) return;
   const list = curFiles();

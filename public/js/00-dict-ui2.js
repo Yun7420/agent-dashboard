@@ -100,8 +100,5 @@ const KO_UI2 = {
   // 가운데 바탕 그래프(07-center.js)
   "none": "없음",
   "Last auto-compact": "마지막 자동 요약",
-  // 보낸 첨부 이미지 미리보기(06-history.js)
-  "View image": "이미지 크게 보기",
-  "The image was deleted": "이미지가 지워졌어요",
-  "Could not load the image": "이미지를 불러오지 못했어요",
+  "View image": "이미지 크게 보기", // 입력 칸 이미지 칩(09-attach.js)
 };

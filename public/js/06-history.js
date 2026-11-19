@@ -33,39 +33,9 @@ function ctxText(s) {
 // 요청 말풍선 하나(지금 탭 · 기록 탭): 사람이 보냈든 다른 세션이 보냈든 같은 모양 · 같은 함수 — 위 이름표만 다르다(「나」 / 「↙ 세션 이름」).
 // 길면 4줄까지 + 「더 보기」(안쪽 스크롤 없음). 이름표(askWho)는 맨 위 검색 결과도 쓰므로 01-core.js
 const askLong = (text) => text.length > 240 || text.split('\n').length > 4;
-function askBubble(raw, from) {
-  const { text, imgs } = splitAtt(raw);
+function askBubble(text, from) {
   const long = askLong(text);
-  return `<div class="ask">${askWho(from)}${text ? `<div class="ask-p md${long ? ' fold closed' : ''}">${md(text)}</div>` : ''}${long ? `<button class="more ask-more" type="button">${t('More')} ▾</button>` : ''}${
-    imgs.length ? `<div class="att-imgs">${imgs.map((p) => `<button type="button" class="att-img" data-path="${esc(p)}" title="${esc(p.split('/').pop())}" aria-label="${t('View image')}"></button>`).join('')}</div>` : ''}</div>`;
-}
-// 보낸 첨부 이미지: 「Attached: <uploads 안 이미지 경로>」 줄(09-attach.js 가 보낼 때 붙임 — 그때 언어라 두 말 다)은 미리보기로, 나머지 줄은 글 그대로.
-// 이미지가 아니거나 uploads 밖이면 글자로 둔다. 서버도 uploads 안 이미지만 준다(lib/uploads.mjs)
-const ATT_IMG = new RegExp(`^(?:Attached|${KO.Attached}): (/\\S+/\\.agent-dashboard/uploads/\\d{4}-\\d\\d-\\d\\d/[^/\\s]+\\.(?:png|jpe?g|gif|webp))$`, 'i');
-function splitAtt(raw) {
-  const imgs = [], rest = [];
-  for (const line of String(raw).split('\n')) { const m = line.match(ATT_IMG); if (m) imgs.push(m[1]); else rest.push(line); }
-  return { text: imgs.length ? rest.join('\n').trimEnd() : String(raw), imgs };
-}
-// 그림은 fetch → blob 주소로(img 태그는 요청 머리글을 못 붙여서). 다시 그려도 다시 받지 않게 경로별로 두고, 40개 넘으면 오래된 것부터 놓아 준다
-const attUrls = new Map();
-function attUrl(p) {
-  const had = attUrls.get(p);
-  if (had) { attUrls.delete(p); attUrls.set(p, had); return had; }
-  const v = apiFetch(`/api/upload?path=${encodeURIComponent(p)}`)
-    .then(async (r) => (r.ok ? { url: URL.createObjectURL(await r.blob()) } : { err: r.status === 404 ? t('The image was deleted') : t('Could not load the image') }), () => ({ err: t('Could not load the image') }));
-  attUrls.set(p, v);
-  if (attUrls.size > 40) { const [k, old] = attUrls.entries().next().value; attUrls.delete(k); old.then((o) => o.url && URL.revokeObjectURL(o.url)); }
-  return v;
-}
-// 말풍선을 그린 뒤(08-now.js 지금 탭 · 12-panel.js 기록 탭) 부른다
-function loadAttImgs(root) {
-  for (const b of root.querySelectorAll('.att-img:not([data-done])')) {
-    b.dataset.done = '1';
-    attUrl(b.dataset.path).then((o) => {
-      if (o.url) { b.dataset.url = o.url; b.innerHTML = `<img src="${o.url}" alt="">`; } else { b.disabled = true; b.textContent = o.err; b.removeAttribute('aria-label'); } // 화면 읽기도 「지워졌어요」를
-    });
-  }
+  return `<div class="ask">${askWho(from)}<div class="ask-p md${long ? ' fold closed' : ''}">${md(text)}</div>${long ? `<button class="more ask-more" type="button">${t('More')} ▾</button>` : ''}</div>`;
 }
 // 답변 코드 블록 복사(00-md.js 의 단추): 블록마다 리스너를 달지 않고 위임 하나로. 글자는 <pre> 의 textContent = ``` · 언어 이름 없는 원문
 // 1.5초 동안 ✓ 「복사됨」, 권한 등으로 실패하면 「복사하지 못했어요」. <button> 이라 Enter · Space 도 같은 click
@@ -81,8 +51,6 @@ async function copyCode(btn) {
 document.addEventListener('click', (e) => {
   const c = e.target.closest?.('.copy-code');
   if (c) return void copyCode(c);
-  const im = e.target.closest?.('.att-img[data-url]'); // 미리보기 → 크게 보기(Esc · 바깥 누름 · ✕ 로 닫힘, 01-core.js 의 openModal)
-  if (im) { $('#img-view').src = im.dataset.url; $('#img-t').textContent = im.title; return void openModal($('#img-dlg'), im); }
   const b = e.target.closest?.('.ask-more');
   if (!b) return;
   b.textContent = b.previousElementSibling.classList.toggle('closed') ? `${t('More')} ▾` : `${t('Fold')} ▴`;

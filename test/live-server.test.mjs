@@ -223,50 +223,6 @@ test('업로드: 임시 홈의 uploads 에 600 으로, 중간에 끊기면 .part
   assert.equal((await req('/api/perf', { headers: H })).status, 200); // 서버는 그대로
 });
 
-// 보낸 첨부 이미지 다시 보기(GET /api/upload?path=, lib/uploads.mjs): uploads 안의 이미지 파일만 — 홈의 다른 파일을 읽는 길이 되지 않게
-test('첨부 이미지 보기: uploads 안 이미지만 200(확장자 Content-Type · nosniff), 우회 · 링크 · 밖 · 다른 확장자 · 폴더 · 머리글 없음 · 다른 출처는 거절', async () => {
-  const up = async (name, body) => JSON.parse((await req(`/api/upload?name=${name}`, { method: 'POST', headers: AUTH, body })).text).path;
-  const view = (p, headers = AUTH) => req(`/api/upload?path=${encodeURIComponent(p)}`, { headers });
-  const png = await up('shot.png', 'PNGDATA');
-  const ok = await view(png);
-  assert.equal(ok.status, 200);
-  assert.equal(ok.text, 'PNGDATA');
-  assert.equal(ok.headers['content-type'], 'image/png');
-  assert.equal(ok.headers['x-content-type-options'], 'nosniff');
-  assert.equal(ok.headers['cache-control'], 'no-store');
-  assert.equal((await view(await up('a.JPG', 'j'))).headers['content-type'], 'image/jpeg');
-  const day = path.dirname(png);
-  fs.writeFileSync(path.join(OUTSIDE, 'secret.png'), 'SECRET');
-  fs.symlinkSync(path.join(OUTSIDE, 'secret.png'), path.join(day, 'out.png')); // 밖을 가리키는 링크
-  fs.symlinkSync(png, path.join(day, 'in.png')); // 안을 가리키는 링크도 링크라 거절(O_NOFOLLOW)
-  fs.symlinkSync(OUTSIDE, path.join(UPLOADS, 'dir-link')); // 중간 폴더가 링크
-  fs.mkdirSync(path.join(day, 'folder.png'));
-  fs.writeFileSync(path.join(HOME, 'home.png'), 'HOME');
-  const denied = {
-    '../ 우회': `${day}/../../../home.png`,
-    '../ 우회(정규화하면 안)': `${day}/../${path.basename(day)}/${path.basename(png)}`,
-    '밖을 가리키는 링크': path.join(day, 'out.png'),
-    '안을 가리키는 링크': path.join(day, 'in.png'),
-    '중간 폴더 링크': path.join(UPLOADS, 'dir-link', 'secret.png'),
-    'uploads 밖': path.join(HOME, 'home.png'),
-    'uploads 밖 없는 파일(있는지 없는지 알려 주지 않게 404 아닌 403)': path.join(HOME, 'nope.png'),
-    '이미지 아닌 확장자': await up('note.txt', 'txt'),
-    '확장자 없음': await up('noext', 'x'),
-    '폴더': path.join(day, 'folder.png'),
-    '상대 경로': path.relative(HOME, png),
-  };
-  for (const [what, p] of Object.entries(denied)) {
-    const r = await view(p);
-    assert.equal(r.status, 403, `${what}: ${r.status} ${r.text}`);
-    assert.ok(!/SECRET|HOME|txt/.test(r.text), what);
-  }
-  assert.equal((await view(path.join(day, 'gone.png'))).status, 404);
-  assert.equal((await view(png, { cookie: AUTH.cookie })).status, 403); // X-Dashboard-Request 없음(img 태그 · 다른 사이트의 링크)
-  assert.equal((await view(png, { ...AUTH, origin: 'http://evil.example' })).status, 403);
-  assert.equal((await view(png, { ...AUTH, 'sec-fetch-site': 'cross-site' })).status, 403);
-  assert.equal((await view(png, { 'x-dashboard-request': '1' })).status, 403); // 로그인 쿠키 없음
-});
-
 // 평소 실행(시험 모드 아님)은 DASHBOARD_HOME · DASHBOARD_TOKEN_FILE 을 무시한다 — lib/paths.mjs 를 각 환경으로 불러 확인
 test('평소 실행에서는 DASHBOARD_HOME · DASHBOARD_TOKEN_FILE 를 무시(DASHBOARD_TEST 없음 · 데모)', () => {
   const probe = (extra) => {

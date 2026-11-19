@@ -127,7 +127,6 @@ function renderHistory() {
       ${askBubble(h.prompt, h.from)}
       ${h.reply ? `<div class="who">CLAUDE</div>${foldable('r', h.reply)}` : ''}
     </div>`).join('') + more || emptyLine(hist.q ? t('No matching prompts') : t('No prompts yet'));
-  loadAttImgs($('#log-list'));
 }
 $('#log-list').addEventListener('click', async (e) => {
   if (e.target.id !== 'hist-more' || !selected) return;

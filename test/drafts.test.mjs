@@ -6,7 +6,7 @@ import { loadFront } from './_helpers/vm.mjs';
 
 function load(init = {}) {
   const els = {};
-  const el = (sel) => (els[sel] ??= { sel, value: '', innerHTML: '', textContent: '', disabled: false, hidden: false, dataset: {}, style: {}, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0, bottom: 0 }) });
+  const el = (sel) => (els[sel] ??= { sel, value: '', innerHTML: '', textContent: '', disabled: false, hidden: false, dataset: {}, style: {}, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, on: {}, addEventListener(type, fn) { this.on[type] = fn; }, getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0, bottom: 0 }) });
   const stored = { ...init };
   const sent = [];
   const uploads = []; // 아직 끝나지 않은 업로드 { resolve }
@@ -165,4 +165,34 @@ test('입력 칸: 승인 대기면 칸 · 보내기 비활성 + 「먼저 위 �
   assert.deepEqual(show({ tmux: true, status: 'ended' }), [true, true, '종료된 세션이에요.']);
   assert.deepEqual(show({ tmux: false, status: 'idle' }), [true, true, 'tmux 밖에서 시작한 세션이라 보기만 돼요']);
   assert.equal(els['#why'], undefined); // 안내 줄은 더 이상 없다
+});
+
+// 입력 칸 첨부 칩 크게 보기(09-attach.js): 다 올라간 이미지 칩만 단추(키보드 Enter · Space = click), ✕ 는 빼기, 파일 칩 · 올리는 중은 열지 않음
+test('이미지 칩을 누르면 붙인 미리보기 그대로 크게 보기, ✕ 는 빼기 · 파일 칩 · 올리는 중은 열지 않음', async () => {
+  const { el, uploads, run, file } = load();
+  run('globalThis.__opened = []; openModal = (dlg, opener) => __opened.push([dlg.sel, opener.dataset.view])'); // 창 열기만 흉내(01-core.js)
+  run('useDraft("A")');
+  const up = run('addFiles')([file('shot.png'), { name: 'notes.txt', size: 1, type: 'text/plain' }]);
+  assert.ok(!el('#attach-list').innerHTML.includes('data-view')); // 올리는 중엔 크게 보기 단추 없음
+  uploads.shift()();
+  await flush();
+  uploads.shift()();
+  await up;
+  const html = el('#attach-list').innerHTML;
+  const [img, txt] = run('filesOf("A")');
+  assert.match(html, new RegExp(`<button type="button" class="att-view" data-view="${img.id}" title="이미지 크게 보기" aria-label="이미지 크게 보기: shot\\.png"><img src="${img.url}"`));
+  assert.ok(!html.includes(`data-view="${txt.id}"`)); // 파일 칩은 누를 것이 없다
+  const click = (attr, id) => el('#attach-list').on.click({ target: { closest: (sel) => (sel === `[${attr}]` ? { dataset: { [attr === 'data-view' ? 'view' : 'rm']: id } } : null) } });
+  click('data-view', img.id);
+  assert.deepEqual(JSON.parse(JSON.stringify(run('globalThis.__opened'))), [['#img-dlg', img.id]]);
+  assert.equal(el('#img-view').src, img.url);
+  assert.equal(el('#img-t').textContent, 'shot.png');
+  click('data-view', txt.id); // 이미지 아닌 칩(같은 id 를 흉내 내도) → 열지 않음
+  img.uploading = true;
+  click('data-view', img.id); // 올리는 중 → 열지 않음
+  img.uploading = false;
+  assert.equal(run('globalThis.__opened').length, 1);
+  click('data-rm', img.id); // ✕ → 크게 보기가 아니라 빼기
+  assert.equal(run('globalThis.__opened').length, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(run('filesOf("A")').map((a) => a.name))), ['notes.txt']);
 });
