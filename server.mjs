@@ -15,7 +15,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { adapters } from './adapters/index.mjs';
-import { unknownStatuses } from './adapters/claude.mjs';
+import { unknownStatuses, formatIssues } from './adapters/claude.mjs';
 import * as tmux from './lib/tmux.mjs';
 import { saveUpload, jsonBody, bodyFail } from './lib/body.mjs';
 import { createLock } from './lib/lock.mjs';
@@ -86,7 +86,7 @@ const env = createEnvCheck({
   tokenInfo: () => ({ createdNow: TOKEN_CREATED_NOW, path: tildify(TOKEN_FILE), createdAt: fs.statSync(TOKEN_FILE).birthtime.toISOString(), openCmd: OPEN_CMD, loginDays: SESSION_MS / 86400_000 }),
   detectEditors,
   dialogIssues,
-  unknownStatuses,
+  unknownStatuses, formatIssues,
 });
 const { checkEnv } = env;
 

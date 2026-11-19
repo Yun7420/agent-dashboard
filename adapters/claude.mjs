@@ -13,7 +13,9 @@ import { turnStart } from './claude/prompts.mjs';
 import { collectChange, attachResult, trackPending } from './claude/changes.mjs';
 import { createLiveSessions } from './claude/live.mjs';
 import { daySummary } from './claude/day.mjs';
+import { newRecordCount, watchRecordLine } from './claude/format.mjs';
 export { unknownStatuses } from './claude/live.mjs'; // 환경 점검 「세션 상태 값」 줄(server.mjs → lib/env.mjs)
+export { formatIssues } from './claude/format.mjs'; // 환경 점검 「기록 형식」 · 「세션 파일 형식」 줄
 
 const ROOT = path.join(CLAUDE_DIR, 'projects');
 const encodeCwd = (cwd) => cwd.replace(/[^a-zA-Z0-9]/g, '-');
@@ -94,10 +96,12 @@ const describeReader = createIncremental({
     describeStats.scans += 1;
     return findTurnStart(file, size, isTurnStartLine);
   },
-  init: (found) => ({ clipped: found.clipped, st: newDescribeState() }),
+  init: (found) => ({ clipped: found.clipped, st: newDescribeState(), fmt: newRecordCount() }),
   onLine(c, line) {
     const d = parse(line);
-    if (d) applyLine(c.st, d);
+    if (!d) return;
+    watchRecordLine(c.fmt, d); // 형식이 바뀌었나(이미 읽는 줄로만, adapters/claude/format.mjs)
+    applyLine(c.st, d);
   },
   onBatch: () => (describeStats.reads += 1),
 });

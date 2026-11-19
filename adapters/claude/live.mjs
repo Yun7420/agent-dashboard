@@ -5,6 +5,7 @@ import { promisify } from 'node:util';
 import path from 'node:path';
 import { readJsonOrNull } from '../../lib/util.mjs';
 import { CLAUDE_DIR } from '../../lib/paths.mjs';
+import { watchSessionFiles } from './format.mjs';
 
 const exec = promisify(execFile);
 // shell = 응답은 끝났지만 백그라운드 명령(테스트·빌드 등)이 아직 도는 중 → 화면에선 "백그라운드 작업 중"
@@ -45,13 +46,15 @@ export function createLiveSessions({ dir = path.join(CLAUDE_DIR, 'sessions'), ru
       files = null; // 폴더가 없는 버전
     }
     if (files) {
-      const out = [];
+      const out = [], seen = [];
       for (const f of files) {
         const a = await readJsonOrNull(path.join(dir, f));
+        if (a && (typeof a.pid !== 'number' || alive(a.pid))) seen.push([f, a]); // 형식 검사는 살아 있는(또는 pid 를 못 읽는) 파일만 — 끝난 세션이 남긴 옛 파일은 빼고
         if (!a?.pid || !a.sessionId || !alive(a.pid)) continue; // 살아 있는 프로세스만
         // cwd: lsof 로 작업 폴더를 못 읽은 프로세스도 짝짓게 · procStart: PID 재사용 확인(lib/state.mjs samePidStart, 호환성 검토 C4 · C11)
         out.push({ pid: a.pid, sessionId: a.sessionId, status: liveStatus(a.status), waitingFor: a.waitingFor ?? null, name: a.name ?? null, background: a.kind && a.kind !== 'interactive', startedAt: a.startedAt, cwd: a.cwd ?? null, procStart: a.procStart ?? null });
       }
+      watchSessionFiles(seen); // 필드가 빠지거나 타입이 바뀌었나(adapters/claude/format.mjs)
       return out;
     }
     if (cached && now() - cached.at < ttlMs) return cached.value;
