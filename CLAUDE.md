@@ -86,7 +86,8 @@ docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 - 셸 함정: macOS 기본 bash 3 에는 `mapfile` 없음, zsh 는 변수 목록이 한 덩어리로 넘어감 → 반복 검사 스크립트는 결과가 "없음"이어도 **실제 대상에 먼저 돌려 잡히는지** 확인.
 - 브라우저 저장 키는 `agent-deck` (바꾸면 사용자 정렬 · 설정이 초기화됨).
 - 데모 모드 데이터: `lib/demo.mjs`. README 스크린샷 · GIF 도 데모로 찍는다(회사 · 개인 정보가 화면에 나오면 안 됨).
-- 상용화 · 클라우드 · npx 공개 배포는 **나중에**(사용자 결정 대기). Vercel 같은 서버 배포는 구조상 불가 — 서버가 내 Mac 의 파일 · tmux 에 닿을 수 없음. 하려면 "수집기가 밖으로 먼저 연결 + 상태 요약만" 방식(ROADMAP 「나중에」).
+- **npm 출시**: `@yun7420/agent-dashboard` 0.1.0 을 2026-11-19 에 공개(첫 버전만 사용자가 직접 publish). 다음 버전은 `docs/CONVENTIONS.md` 「출시 절차」대로 버전 올리기 → `v*` 태그 → `.github/workflows/publish.yml`(GitHub 환경 `npm` 에서 사용자 승인 · 출처 증명). 태그 push 는 사용자 승인 뒤에만.
+- 상용화 · 클라우드는 **나중에**(사용자 결정 대기). Vercel 같은 서버 배포는 구조상 불가 — 서버가 내 Mac 의 파일 · tmux 에 닿을 수 없음. 하려면 "수집기가 밖으로 먼저 연결 + 상태 요약만" 방식(ROADMAP 「나중에」).
 - 회사 저장소 · 회사 정보는 이 저장소에 절대 넣지 않는다(이 저장소는 공개).
 - **프로세스 끄기 사고(2026-11-13)**: 데모를 끄려고 `pkill -f "^node server.mjs$" -P 1` 을 썼다가 tmux 밖 Claude 세션 전부 · Cursor · Chrome 탭이 SIGTERM 으로 꺼졌다. macOS 에서 `-f` 와 `-P` 는 "둘 중 하나라도"로 묶여 57~61개가 골라진다. 규칙:
   1. `pkill` · `killall` · `lsof … | xargs kill` 금지
