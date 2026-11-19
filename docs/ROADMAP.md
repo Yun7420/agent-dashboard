@@ -90,7 +90,7 @@
 - [x] 보기 요청에도 토큰, 첨부 14일 자동 삭제 (`031c865`)
 - [x] npx 출시 준비 R1(사용자 승인): 이름 `@yun7420/agent-dashboard` · private 해제 · publishConfig public · 0.1.0, README · 도움말 · 데모의 npx 안내를 새 이름으로(다르면 시험 실패), `publish.yml`(v* 태그 · 환경 npm · OIDC · SHA 고정 · 태그 = version 확인 · Node 24 npm test → provenance), 출시 절차는 CONVENTIONS. 실제 publish · 태그는 사용자 `f524408`
 - [x] npm 0.1.0 출시(2026-11-19, 사용자가 직접 publish) · Trusted Publisher 연결 · GitHub 환경 `npm`(필수 승인자 · v* 태그만) — 0.1.1 은 자동 출시 시험(version 만 올림, 태그 → publish.yml → 승인)
-- [x] 대화 속 첨부 이미지 미리보기 + 크게 보기(사용자 승인 · 보안) — 「첨부/Attached: <uploads 안 이미지>」 줄을 askBubble 에서 미리보기로(지금 · 기록 탭 공용), 누르면 #img-dlg(openModal · Esc · 바깥), 지워졌으면 짧은 글. GET /api/upload?path= 는 uploads 안 이미지 파일만(isInside · isInsideReal · O_NOFOLLOW · 폴더 · 확장자 · 413 · 데모 404) `71fd536`
+- [x] 첨부 크게 보기(사용자 결정 — 입력 칸만): 입력 칸의 다 올라간 이미지 칩(썸네일 + 이름)을 누르면 붙인 objectURL 그대로 #img-dlg(openModal · Esc · 바깥 · ✕, 초점은 칩으로), ✕ 는 빼기 · 파일 칩 · 올리는 중은 열지 않음 `af45728`. 먼저 만든 말풍선 미리보기 · GET /api/upload(`71fd536`)는 되돌림
 - [x] npx 한 줄 설치 — `npx @yun7420/agent-dashboard` (0.1.0 · 0.1.1, 점검표: [NPX-CHECKLIST](NPX-CHECKLIST.md)). 로그인 시 자동 실행은 아래 「다음 계획」 3
 - [ ] 로그인 화면 — **다른 기기에서 접속하게 할 때만** (Tailscale 등과 함께)
 
