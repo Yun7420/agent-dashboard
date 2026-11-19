@@ -6,6 +6,9 @@ import path from 'node:path';
 import { CODEX_DIR } from '../lib/paths.mjs';
 import { clip, joinReply, parse, readHeadLines, statOrNull } from '../lib/util.mjs';
 import { createIncremental, readTurnTail, newTurns, addTurnEvent } from '../lib/history-core.mjs';
+// 이 어댑터의 조각들(adapters/codex/). 밖(서버 · lib)은 이 파일만 부른다
+import { daySummary } from './codex/day.mjs';
+import { formatIssues, watchRecordLines } from './codex/format.mjs';
 
 const ROOT = path.join(CODEX_DIR, 'sessions');
 
@@ -69,9 +72,9 @@ export default {
     const { lines, clipped } = await readTurnTail(s.file, isTurnStartLine);
     let contextUsed = null, contextWindow = null;
     let cwd = meta.cwd ?? null, lastPrompt = null, lastPromptAt = null, lastText = '', lastTool = null, turnState = 'idle', lastAt = null;
-    for (const l of lines) {
-      const d = parse(l);
-      if (!d) continue;
+    const rows = lines.map(parse).filter(Boolean);
+    watchRecordLines(rows); // 형식이 바뀌었나(이미 읽은 줄로만, adapters/codex/format.mjs)
+    for (const d of rows) {
       if (d.timestamp) lastAt = d.timestamp;
       const p = d.payload ?? {};
       if (d.type === 'turn_context' && p.cwd) cwd = p.cwd;
@@ -113,4 +116,7 @@ export default {
   async history(s) {
     return (await historyReader.read(s)).items;
   },
+
+  daySummary, // 오늘 한 일(요청 · 명령 · 커밋 · 토큰, 고친 파일은 없음)
+  formatIssues, // 환경 점검 「Codex 기록 형식」 줄
 };

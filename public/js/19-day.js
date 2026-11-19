@@ -7,7 +7,11 @@ const shortPath = (f) => f.split('/').slice(-2).join('/');
 const tokTotal = (x) => (x.tokens?.total ?? 0) + (x.subTokens?.total ?? 0);
 // 토큰은 합계 · 캐시 제외(입력 + 출력, 서브에이전트 포함)만 보이고, 다섯 갈래는 마우스를 올리면(간추리기 B5)
 const tokNoCache = (x) => [x.tokens, x.subTokens].reduce((n, k) => n + (k?.input ?? 0) + (k?.output ?? 0), 0);
-const tokParts = (x) => `${t('input')} ${fmtTok(x.tokens.input)} · ${t('output')} ${fmtTok(x.tokens.output)} · ${t('cache read')} ${fmtTok(x.tokens.cacheRead)} · ${t('cache write')} ${fmtTok(x.tokens.cacheWrite)}${x.subTokens?.total ? ` · ${t('subagents')} ${fmtTok(x.subTokens.total)}` : ''}`;
+// 도구에 없는 갈래(null — Codex 의 캐시 쓰기)는 빼고
+const tokParts = (x) => [['input', x.tokens.input], ['output', x.tokens.output], ['cache read', x.tokens.cacheRead], ['cache write', x.tokens.cacheWrite], ['subagents', x.subTokens?.total || null]]
+  .filter(([, v]) => v != null).map(([k, v]) => `${t(k)} ${fmtTok(v)}`).join(' · ');
+// 고친 파일을 못 세는 도구(Codex, filesTracked false)는 0 개가 아니라 「지원 안 함」
+const noFiles = (x) => (x.filesTracked === false ? t('File edits: not supported in {tool}', { tool: state?.tools?.find((k) => k.id === x.tool)?.label ?? x.tool }) : '');
 const hm = (iso) => (iso ? new Date(iso).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', hour12: false }) : '');
 
 async function loadDay(date) {
@@ -25,12 +29,13 @@ async function loadDay(date) {
   day.items = items;
   const sum = (k) => items.reduce((n, x) => n + (Array.isArray(x[k]) ? x[k].length : x[k]), 0);
   const tokens = items.reduce((n, x) => n + tokTotal(x), 0);
-  $('#day-total').textContent = items.length ? t('{s} sessions · {p} requests · {f} files edited · {c} commands · {g} commits · {tk} tokens (Claude Code)', { s: items.length, p: sum('prompts'), f: sum('files'), c: sum('commands'), g: sum('commits'), tk: fmtTok(tokens) }) : t('No logs left for this day');
+  $('#day-total').textContent = items.length ? t('{s} sessions · {p} requests · {f} files edited · {c} commands · {g} commits · {tk} tokens', { s: items.length, p: sum('prompts'), f: sum('files'), c: sum('commands'), g: sum('commits'), tk: fmtTok(tokens) }) : t('No logs left for this day');
   $('#day-list').innerHTML = items.map((x) => `
     <div class="day-item">
       <div class="day-head">${state?.sessions.some((s) => s.key === x.key) ? `<button type="button" class="link" data-open="${esc(x.key)}">${esc(x.title)}</button>` : `<b>${esc(x.title)}</b>`}<span>${esc(x.project ?? '')}</span><span>${hm(x.firstAt)}~${hm(x.lastAt)}</span>
         <span class="grow"></span><span>${t('requests')} ${x.prompts} · ${t('commands')} ${x.commands}</span>${tokTotal(x) ? `<span class="day-tok" tabindex="0" data-tip="${esc(tokParts(x))}">${t('tokens')} ${fmtTok(tokTotal(x))} · ${t('excl. cache')} ${fmtTok(tokNoCache(x))}</span>` : ''}</div>
       ${x.commits.length ? `<ul class="day-commits">${x.commits.map((c) => `<li><span>${hm(c.at)}</span> ${esc(c.message)}</li>`).join('')}</ul>` : ''}
+      ${noFiles(x) ? `<div class="day-files"><span class="none">${esc(noFiles(x))}</span></div>` : ''}
       ${x.files.length ? `<div class="day-files">${x.files.slice(0, 12).map((f) => `<span title="${esc(f.file)}">${esc(shortPath(f.file))}${f.edits > 1 ? ` ×${f.edits}` : ''}</span>`).join('')}${x.files.length > 12 ? `<span>${t('+{n} more', { n: x.files.length - 12 })}</span>` : ''}</div>` : ''}
     </div>`).join('');
 }
@@ -39,7 +44,7 @@ function dayMarkdown() {
   const lines = [`## ${t('Work on {d}', { d: day.date })}`, ''];
   for (const x of day.items) {
     lines.push(`### ${x.title}${x.project ? ` (${x.project})` : ''}`);
-    lines.push(`- ${t('{p} requests · {c} commands · {f} files edited', { p: x.prompts, c: x.commands, f: x.files.length })}`);
+    lines.push(`- ${noFiles(x) ? `${t('requests')} ${x.prompts} · ${t('commands')} ${x.commands} · ${noFiles(x)}` : t('{p} requests · {c} commands · {f} files edited', { p: x.prompts, c: x.commands, f: x.files.length })}`);
     if (tokTotal(x)) lines.push(`- ${t('tokens')} ${fmtTok(tokTotal(x))} (${tokParts(x)})`);
     for (const c of x.commits) lines.push(`- ${t('Commit')}: ${c.message}`);
     if (x.files.length) lines.push(`- ${t('Files')}: ${x.files.slice(0, 12).map((f) => shortPath(f.file)).join(', ')}${x.files.length > 12 ? ` ${t('+{n} more', { n: x.files.length - 12 })}` : ''}`);

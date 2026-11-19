@@ -26,3 +26,15 @@ test('오늘 한 일: 지금 목록에 있는 세션만 누를 수 있는 이름
   await run(`select('claude:old')`);
   assert.equal(run('selected'), 'claude:live'); // 없는 세션을 가리키지 않는다
 });
+
+// Codex: 기록에 없는 것은 짓지 않는다 — 캐시 쓰기 갈래(null)는 빼고, 고친 파일은 0 개가 아니라 「지원 안 함」(화면 · 마크다운)
+test('Codex 오늘 한 일: 없는 토큰 갈래는 빼고, 고친 파일은 「Codex 는 지원 안 함」', () => {
+  const { run } = loadFront(['00-md.js', '01-core.js', '19-day.js'], browserStub({ document: { querySelector: () => ({ addEventListener() {}, classList: { toggle() {} } }), addEventListener() {} } }));
+  const x = { key: 'codex:a', tool: 'codex', title: 'A', prompts: 2, commands: 3, files: [], filesTracked: false, commits: [], tokens: { input: 100, output: 20, cacheRead: 300, cacheWrite: null, total: 420 }, subTokens: { total: 0 } };
+  run(`state = { sessions: [], tools: [{ id: 'codex', label: 'Codex' }] }; day.items = [${JSON.stringify(x)}]; day.date = '2026-11-19';`);
+  assert.doesNotMatch(run(`tokParts(${JSON.stringify(x)})`), /캐시 쓰기/);
+  assert.match(run(`tokParts(${JSON.stringify(x)})`), /캐시 읽기 300/);
+  assert.equal(run(`noFiles(${JSON.stringify(x)})`), '고친 파일: Codex 는 지원 안 함');
+  assert.equal(run(`noFiles({ files: [] })`), ''); // Claude(filesTracked 없음)는 그대로 0 개
+  assert.match(run('dayMarkdown()'), /- 요청 2 · 명령 3 · 고친 파일: Codex 는 지원 안 함/);
+});

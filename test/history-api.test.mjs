@@ -107,3 +107,11 @@ test('searchHistory: 한 번에 하나 — 겹쳐 온 검색은 마지막 것만
   assert.ok(slow.calls.history < 40, String(slow.calls.history));
   assert.ok(Array.isArray(await second));
 });
+
+test('daySummary: daySummary 가 있는 도구는 모두(Codex 도) — 열쇠는 「도구:ID」, tool 칸, 최신순', async () => {
+  const file = (id, h) => ({ id, file: `/f/${id}`, size: 1, mtimeMs: Date.parse(T(h)), birthtimeMs: 0 });
+  const one = (id, h) => ({ id, scan: async () => [file(`${id}1`, h)], history: async () => [], describe: async () => ({ title: `${id} 제목`, cwd: '/p' }), daySummary: async () => ({ prompts: 1, files: [], commands: 0, lastAt: T(h) }) });
+  const api = createHistoryApi({ adapters: [one('claude', 3), one('codex', 5), { id: 'other', scan: async () => [file('o', 5)] }], sessions: () => [], projectName: () => 'p' });
+  const r = await api.daySummary(new Date(Date.parse(T(5))).toLocaleDateString('sv'));
+  assert.deepEqual(r.map((x) => [x.key, x.tool, x.title]), [['codex:codex1', 'codex', 'codex 제목'], ['claude:claude1', 'claude', 'claude 제목']]);
+});

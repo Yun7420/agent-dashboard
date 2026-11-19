@@ -17,3 +17,4 @@
 .day-commits span { color: var(--faint); font-family: var(--mono); font-size: 11px; }
 .day-files { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .day-files span { font-family: var(--mono); font-size: 11px; color: var(--dim); background: var(--surface-3); border-radius: 6px; padding: 1px 7px; }
+.day-files .none { font-family: inherit; color: var(--faint); background: none; padding: 0; } /* 파일 자리의 「지원 안 함」(Codex) — 파일 칩처럼 보이지 않게 */

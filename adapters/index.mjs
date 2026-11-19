@@ -29,11 +29,15 @@
 //                              도구가 알려 주는 「떠 있는 세션」 공식 목록. 없으면 ps · lsof 로 추정
 //   peers(s) → Promise<{ msgs: [{ at, fromAddr, fromName, fromPid, text }], names: [] }>   세션 사이 메시지(보라 화살표)
 //   lastCompact(s) → Promise<시각ms | null>   마지막 자동 요약 시각(패널 대화 창 줄의 설명, 없으면 「없음」)
-//   daySummary(s, fromMs, toMs)  오늘 한 일 — 지금은 서버가 Claude 것만 부른다
+//   daySummary(s, fromMs, toMs)  오늘 한 일 { prompts, files, commands, commits, firstAt, lastAt, tokens, subTokens, filesTracked? }
+//                              — 고친 파일을 못 세는 도구는 filesTracked: false(화면이 「지원 안 함」), 없는 토큰 갈래는 null
+//   formatIssues() → { records: [], sessions?: [] }   기록 · 세션 파일 형식 이상(환경 점검 「기록 형식」 줄)
 //
-// 지금 Codex 는 필수만 있어서 오늘 한 일 · 자동 요약 시각 · 세션 간 메시지 · 공식 상태가 없다(README 「지원 환경과 한계」)
+// 지금 Codex 는 오늘 한 일(고친 파일 빼고) · 기록 형식은 있고, 자동 요약 시각 · 세션 간 메시지 · 공식 상태가 없다(README 「지원 환경과 한계」)
 
 import claude from './claude.mjs';
 import codex from './codex.mjs';
 
 export const adapters = [claude, codex];
+// 도구별 형식 이상 { claude: { records, sessions }, codex: { records } } — 환경 점검(lib/env.mjs)
+export const formatIssues = () => Object.fromEntries(adapters.filter((a) => a.formatIssues).map((a) => [a.id, a.formatIssues()]));

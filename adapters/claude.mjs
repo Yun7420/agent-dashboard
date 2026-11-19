@@ -13,9 +13,8 @@ import { turnStart } from './claude/prompts.mjs';
 import { collectChange, attachResult, trackPending } from './claude/changes.mjs';
 import { createLiveSessions } from './claude/live.mjs';
 import { daySummary } from './claude/day.mjs';
-import { newRecordCount, watchRecordLine } from './claude/format.mjs';
+import { newRecordCount, watchRecordLine, formatIssues } from './claude/format.mjs';
 export { unknownStatuses } from './claude/live.mjs'; // 환경 점검 「세션 상태 값」 줄(server.mjs → lib/env.mjs)
-export { formatIssues } from './claude/format.mjs'; // 환경 점검 「기록 형식」 · 「세션 파일 형식」 줄
 
 const ROOT = path.join(CLAUDE_DIR, 'projects');
 const encodeCwd = (cwd) => cwd.replace(/[^a-zA-Z0-9]/g, '-');
@@ -287,4 +286,5 @@ export default {
 
   // 하루 동안 한 일(adapters/claude/day.mjs)
   daySummary,
+  formatIssues, // 환경 점검 「기록 형식」 · 「세션 파일 형식」 줄(adapters/claude/format.mjs)
 };

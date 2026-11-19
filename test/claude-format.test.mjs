@@ -3,7 +3,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import claude, { formatIssues } from '../adapters/claude.mjs';
+import claude from '../adapters/claude.mjs';
 import { clearFormatIssues } from '../adapters/claude/format.mjs';
 import { createLiveSessions } from '../adapters/claude/live.mjs';
 import { createEnvCheck, CHECKED_CLAUDE_VERSION } from '../lib/env.mjs';
@@ -21,7 +21,8 @@ function describe(lines) {
   fs.writeFileSync(file, lines.map((l) => JSON.stringify(l)).join('\n') + '\n');
   return claude.describe({ file, id: 'r', size: fs.statSync(file).size, mtimeMs: fs.statSync(file).mtimeMs });
 }
-const env = () => createEnvCheck({ formatIssues });
+const formatIssues = () => claude.formatIssues();
+const env = () => createEnvCheck({ formatIssues: () => ({ claude: formatIssues() }) });
 
 beforeEach(() => clearFormatIssues());
 
@@ -32,7 +33,7 @@ test('기록 형식: type 이름이 바뀐 줄만 쌓이면 「알아보는 줄 
   const item = env().recordFormatEnvItem();
   assert.equal(item.level, 'warn');
   assert.equal(item.detail, `알아보는 줄 없이 50줄 — 기록 형식이 바뀌었을 수 있어요. 대화 · 오늘 한 일이 비어 보일 수 있어요 (확인한 Claude Code 버전: ${CHECKED_CLAUDE_VERSION} · 지금: 알 수 없음)`);
-  assert.equal(tr(item.detail, 'en'), `50 lines with none recognized — Claude Code may have changed its record format. The chat and Today's work may look empty (checked with Claude Code ${CHECKED_CLAUDE_VERSION} · now unknown)`);
+  assert.equal(tr(item.detail, 'en'), `50 lines with none recognized — the record format may have changed. The chat and Today's work may look empty (checked with Claude Code ${CHECKED_CLAUDE_VERSION} · now unknown)`);
 });
 
 test('기록 형식: message.content 가 문자열 · 배열이 아닌 객체로 바뀌면 경고(어느 줄인지)', async () => {

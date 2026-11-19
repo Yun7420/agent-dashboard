@@ -14,8 +14,8 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { adapters } from './adapters/index.mjs';
-import { unknownStatuses, formatIssues } from './adapters/claude.mjs';
+import { adapters, formatIssues } from './adapters/index.mjs';
+import { unknownStatuses } from './adapters/claude.mjs';
 import * as tmux from './lib/tmux.mjs';
 import { saveUpload, jsonBody, bodyFail } from './lib/body.mjs';
 import { createLock } from './lib/lock.mjs';
