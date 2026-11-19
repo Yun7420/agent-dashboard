@@ -25,7 +25,7 @@ import { createStateBuilder } from './lib/state.mjs';
 import { createSpawned, findCommand } from './lib/spawn.mjs';
 import { createEnvCheck, startupNotices } from './lib/env.mjs';
 import { detectEditors, openDir } from './lib/open-dir.mjs';
-import { UPLOAD_DIR, UPLOAD_MAX } from './lib/uploads.mjs';
+import { UPLOAD_DIR, UPLOAD_MAX, DEMO_UPLOAD_DIR, createUploadView } from './lib/uploads.mjs';
 import { sendText, sendJson, friendly, logPath, SECURITY_HEADERS } from './lib/respond.mjs';
 import { isObject } from './lib/validate.mjs';
 import { DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
@@ -204,6 +204,7 @@ const ROUTES = [
   { path: '/api/search', handler: history.getSearch },
   { path: '/api/pane', handler: getPane },
   { path: '/api/upload', method: 'POST', handler: postUpload },
+  { path: '/api/upload', method: 'GET', handler: createUploadView({ demo: DEMO }) }, // 보낸 첨부 이미지 미리보기(uploads 안 이미지만, lib/uploads.mjs)
   { prefix: '/api/cmd/', method: 'POST', handler: postCommand },
 ];
 
@@ -221,7 +222,7 @@ async function getPane(req, res, url) {
 }
 
 async function postUpload(req, res, url) {
-  if (DEMO) return void sendJson(res, 200, { path: `/Users/me/.agent-dashboard/uploads/${url.searchParams.get('name')}`, name: url.searchParams.get('name'), size: 0 });
+  if (DEMO) return void sendJson(res, 200, { path: `${DEMO_UPLOAD_DIR}/${url.searchParams.get('name')}`, name: url.searchParams.get('name'), size: 0 });
   try {
     sendJson(res, 200, await saveUpload(req, url.searchParams.get('name'), { dir: UPLOAD_DIR, max: UPLOAD_MAX }));
   } catch (e) {

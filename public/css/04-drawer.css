@@ -63,6 +63,11 @@
 .ask-p.fold.closed { max-height: calc(6.4em + 18px); -webkit-mask-image: linear-gradient(currentColor 65%, transparent); mask-image: linear-gradient(currentColor 65%, transparent); }
 .ask-p.fold.closed::after { display: none; }
 .ask .more { margin-top: 4px; }
+/* 보낸 첨부 이미지 미리보기(누르면 크게 — 06-dialog.css #img-view). 지워졌으면 같은 자리에 짧은 글 */
+.att-imgs { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: flex-start; gap: var(--sp-2); margin-top: var(--sp-1); }
+.att-img { width: 120px; height: 90px; padding: 0; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface-2); cursor: zoom-in; }
+.att-img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.att-img:disabled { width: auto; height: auto; padding: 4px 10px; opacity: 1; cursor: default; font-size: 12px; color: var(--dim); } /* 흐린 단추(.4)가 아니라 읽히는 안내 글 */
 .now-card { flex: 1 1 0; min-height: 0; overflow-y: auto; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; }
 .now-card.working { border-color: color-mix(in srgb, var(--working) 45%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--working) 8%, transparent); }
 .now-card.waiting { border-color: color-mix(in srgb, var(--waiting) 50%, transparent); }

@@ -33,6 +33,7 @@ function renderNow(s) {
   if ($('#now-prompt').dataset.sig !== sig) {
     $('#now-prompt').dataset.sig = sig;
     $('#now-prompt').innerHTML = prompt ? askBubble(prompt, sender) : '';
+    loadAttImgs($('#now-prompt'));
   }
   const card = document.querySelector('.now-card');
   card.classList.toggle('working', s.status === 'working');

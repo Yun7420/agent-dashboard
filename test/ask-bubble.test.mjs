@@ -32,3 +32,46 @@ test('세 곳 모두 같은 함수 · 옛 분기(peer 말풍선 · 점선 · 안
   const css = fs.readFileSync(new URL('../public/css/04-drawer.css', import.meta.url), 'utf8');
   assert.ok(!/\.now-prompt\.peer|\.p\.peer|gs-peer|who\.peer/.test(css + readFront('12-panel.js') + readFront('18-search.js')));
 });
+
+// 보낸 첨부 이미지(06-history.js 의 splitAtt · askBubble): 「첨부/Attached: <uploads 안 이미지>」 줄만 미리보기, 나머지는 글 그대로
+const splitAtt = run('splitAtt');
+const UP = '/Users/me/.agent-dashboard/uploads/2026-11-19';
+test('첨부 이미지 줄 → 미리보기 단추(두 언어 표식 · 대소문자 확장자), 이미지 아님 · uploads 밖 · 다른 글 속 경로는 글자 그대로', () => {
+  const r = splitAtt(`이거 봐 줘\n첨부: ${UP}/a1b2c3-shot.png\nAttached: ${UP}/d4e5f6-b.JPEG\n첨부: ${UP}/0a0b0c-log.txt`);
+  assert.deepEqual([...r.imgs], [`${UP}/a1b2c3-shot.png`, `${UP}/d4e5f6-b.JPEG`]);
+  assert.equal(r.text, `이거 봐 줘\n첨부: ${UP}/0a0b0c-log.txt`);
+  for (const keep of [`첨부: /Users/me/Desktop/a.png`, `첨부: /Users/me/.agent-dashboard/uploads/a.png`, `봐 줘 첨부: ${UP}/a.png`, `첨부: ${UP}/../../token.png`]) {
+    assert.equal(splitAtt(keep).imgs.length, 0, keep);
+    assert.equal(splitAtt(keep).text, keep);
+  }
+  const html = askBubble(`봐 줘\n첨부: ${UP}/a1b2c3-shot.png`, null);
+  assert.match(html, /<div class="att-imgs"><button type="button" class="att-img" data-path="\/Users\/me\/\.agent-dashboard\/uploads\/2026-11-19\/a1b2c3-shot\.png" title="a1b2c3-shot\.png" aria-label="이미지 크게 보기"><\/button><\/div>/);
+  assert.ok(!html.includes('첨부:'));
+  assert.ok(!askBubble('그냥 글', null).includes('att-img'));
+});
+
+test('미리보기 불러오기: 200 이면 blob 그림 · 누를 수 있음, 404 면 「이미지가 지워졌어요」로 꺼짐, 같은 경로는 한 번만 받기', async () => {
+  const calls = [];
+  const { run: r2 } = loadFront(['00-md.js', '01-core.js', '06-history.js'], { window: {}, document: { querySelector: () => ({ addEventListener() {}, classList: { contains: () => false } }), addEventListener() {}, hidden: true }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, setTimeout() {}, clearTimeout() {},
+    URL: Object.assign(function () {}, { createObjectURL: () => 'blob:x', revokeObjectURL() {} }),
+    fetch: async (p, o) => { calls.push([p, o.headers['X-Dashboard-Request']]); return p.includes('gone') ? { ok: false, status: 404 } : { ok: true, status: 200, blob: async () => ({}) }; } });
+  const btn = (p) => ({ dataset: { path: p }, innerHTML: '', textContent: '', disabled: false, label: 'x', removeAttribute(a) { if (a === 'aria-label') this.label = null; } });
+  const a = btn(`${UP}/a.png`), b = btn(`${UP}/gone.png`), c = btn(`${UP}/a.png`);
+  const root = { querySelectorAll: () => [a, b, c].filter((x) => !x.dataset.done) };
+  r2('loadAttImgs')(root);
+  r2('loadAttImgs')(root); // 다시 그려도 이미 맡은 단추는 건너뜀
+  await new Promise((res) => setImmediate(res));
+  assert.equal(a.dataset.url, 'blob:x');
+  assert.equal(a.innerHTML, '<img src="blob:x" alt="">');
+  assert.equal(c.dataset.url, 'blob:x');
+  assert.equal(b.disabled, true);
+  assert.equal(b.textContent, '이미지가 지워졌어요');
+  assert.equal(b.label, null); // 「이미지 크게 보기」 이름표가 글을 덮지 않게
+  assert.deepEqual(calls.map((x) => x[1]), ['1', '1']); // 같은 경로(a · c)는 한 번 · 요청 머리글 붙음
+  assert.match(calls[0][0], /^\/api\/upload\?path=%2FUsers%2Fme/);
+});
+
+test('지금 탭 · 기록 탭 모두 말풍선을 그린 뒤 미리보기를 불러온다', () => {
+  assert.match(readFront('08-now.js'), /askBubble\(prompt, sender\) : '';\n\s+loadAttImgs\(\$\('#now-prompt'\)\);/);
+  assert.match(readFront('12-panel.js'), /loadAttImgs\(\$\('#log-list'\)\);/);
+});
