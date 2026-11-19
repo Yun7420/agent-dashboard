@@ -17,7 +17,7 @@ Claude Code · Codex · zero dependencies · everything stays on your machine
 > ⚠️ **This is a personal, experimental tool.** It types into your AI sessions, so please read [Security](#security) first and use it at your own judgment. Features and structure may change without notice.
 >
 
-**Roadmap** — ✅ Stage 1: vanilla JS, built fast and used for real · ✅ Stage 2: split files · clean up (two trimming passes), still zero dependencies · ✅ released on npm (npx) · 🔄 Now: daily use and 0.1.x fixes · ⏳ Stage 3: move to React
+**Roadmap** — ✅ Stage 1: vanilla JS, built fast and used for real · ✅ Stage 2: split files · clean up (two trimming passes), still zero dependencies · ✅ released on npm (npx) · 🔄 Now: daily use and 0.1.x fixes
 
 ![Demo — org chart node highlight, a message dot, the usage-limit popup, an approval card with a risk warning, live diffs of a working session, history search and the ⋯ menu](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/demo-en.gif)
 
