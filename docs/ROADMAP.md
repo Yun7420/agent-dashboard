@@ -89,6 +89,7 @@
 ## 3. 설치 · 보안
 - [x] 보기 요청에도 토큰, 첨부 14일 자동 삭제 (`031c865`)
 - [x] npx 출시 준비 R1(사용자 승인): 이름 `@yun7420/agent-dashboard` · private 해제 · publishConfig public · 0.1.0, README · 도움말 · 데모의 npx 안내를 새 이름으로(다르면 시험 실패), `publish.yml`(v* 태그 · 환경 npm · OIDC · SHA 고정 · 태그 = version 확인 · Node 24 npm test → provenance), 출시 절차는 CONVENTIONS. 실제 publish · 태그는 사용자 `f524408`
+- [x] npm 0.1.0 출시(2026-11-19, 사용자가 직접 publish) · Trusted Publisher 연결 · GitHub 환경 `npm`(필수 승인자 · v* 태그만) — 0.1.1 은 자동 출시 시험(version 만 올림, 태그 → publish.yml → 승인)
 - [ ] npx 한 줄 설치 + 로그인 시 자동 실행(LaunchAgent) — 배포 전 점검: [npx 배포 점검표](NPX-CHECKLIST.md)
 - [ ] 로그인 화면 — **다른 기기에서 접속하게 할 때만** (Tailscale 등과 함께)
 

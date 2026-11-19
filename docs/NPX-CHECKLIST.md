@@ -10,6 +10,7 @@
 
 - 끝난 것 17개, 남은 것 8개(처음 정리 때는 9 · 16 → manager 가 할 수 있는 7개를 `9a7ff1d`, 기록 폴더 환경 변수를 `6d8f081` 에서 끝냄)
 - 남은 것 중 **사용자 결정** 7개: 공개 · 패키지 이름 · 버전 정책 · Node 지원 범위 · LaunchAgent · Actions 설정 · 실제 배포
+- **2026-11-19 출시:** `@yun7420/agent-dashboard` 0.1.0 공개(사용자가 직접 publish) · Trusted Publisher 연결 · GitHub 환경 `npm` 만듦 → 0.1.1 은 자동 출시(태그 → Actions) 시험. 공개 · 이름 · 버전 · 실제 배포 4개 끝, 남은 사용자 결정 3개(Node 범위 · LaunchAgent · Actions 설정)
 - 깨질 하드코딩(내 Mac 경로 · Homebrew · nvm · fnm 경로)은 **없음** — 데모 데이터의 가짜 경로 `/Users/me` 뿐이에요
 
 ## 시험해 본 결과 (2026-11-13)
@@ -119,9 +120,11 @@
   - 지금(읽기만 함): 외부 기여자 PR 실행 승인 = 처음 기여하는 사람만(`first_time_contributors`), 허용 액션 = 전부, SHA 고정 강제 = 꺼짐, 워크플로 기본 권한 = 읽기
   - 남은 일: 「모든 외부 기여자 승인」 · 「SHA 고정 강제」로 조일지
   - 결정: **사용자**
-- [ ] **실제 배포(`npm publish`)**
-  - 남은 일: 위 항목이 모두 끝난 뒤. npm 계정 2단계 인증 확인, npm 패키지 설정에 Trusted Publisher(이 저장소 · `publish.yml` · 환경 `npm`) 등록, 저장소에 환경 `npm`(승인 필요) 만들기, 그다음 태그 push
-  - 결정: **사용자**
+- [x] **실제 배포(`npm publish`)**
+  - 0.1.0: 2026-11-19 사용자가 직접 publish(npm latest 0.1.0 · npx 확인)
+  - Trusted Publisher 연결함(이 저장소 · `publish.yml` · 환경 `npm` · npm publish 허용) — 「Pending validation」이라 2026-11-21 00:33 UTC 전에 한 번 출시해야 확정돼요
+  - GitHub 환경 `npm` 만듦(필수 승인자 · `v*` 태그만)
+  - 0.1.1: 자동 출시 시험 — `package.json` version 만 올리고, 태그 push 는 manager(사용자 승인 뒤) → Actions → 환경 `npm` 승인
 
 ### 그 밖
 
