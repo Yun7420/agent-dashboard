@@ -1,0 +1,54 @@
+# 새 사용자 첫 실행 시험: npm 에 올라간 패키지를 빈 임시 홈에서 npx 로 켜 본다(scripts/smoke-npx.mjs).
+# publish 워크플로가 성공하면 그 태그의 버전으로 자동으로 돌고, Actions 화면에서 버전을 넣어 손으로도 돌린다.
+# 저장소는 읽기만 하고 비밀값은 쓰지 않는다. 시험하는 것은 저장소 코드가 아니라 registry 의 패키지다.
+name: smoke
+
+on:
+  workflow_run:
+    workflows: [publish]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '시험할 버전(예: 0.1.2)'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    # 자동 실행은 출시가 성공했을 때만
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        node: [18, 24]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+      # 버전: 손으로 돌리면 입력값, 자동이면 출시한 태그(v0.1.2 → 0.1.2). 값은 env 로만 넘겨 명령에 끼워 넣지 않는다
+      - name: 버전 정하기
+        env:
+          INPUT: ${{ github.event.inputs.version }}
+          TAG: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          V="${INPUT:-${TAG#v}}"
+          if ! printf '%s' "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then echo "::error::버전 모양이 아니에요: $V"; exit 1; fi
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+      # 막 올라간 직후에는 registry 에 아직 안 보일 수 있어 30초 간격으로 최대 10번 기다린다
+      - name: registry 에 보일 때까지 기다리기
+        run: |
+          for i in $(seq 10); do
+            if [ "$(npm view "@yun7420/agent-dashboard@$VERSION" version 2>/dev/null)" = "$VERSION" ]; then exit 0; fi
+            echo "아직 안 보임($i/10)"; sleep 30
+          done
+          echo "::error::registry 에 $VERSION 이 보이지 않아요"; exit 1
+      - run: node scripts/smoke-npx.mjs "$VERSION" 4747
