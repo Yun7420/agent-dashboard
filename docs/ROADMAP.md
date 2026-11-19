@@ -97,6 +97,7 @@
 ## 다음 계획 (2026-11-19 정리 — 출시 뒤. 위에서부터 하나씩, 시작 전 사용자 확인)
 1. [ ] **실사용 바퀴** — 출시판(npx)을 매일 쓰며 불편 · 버그를 모아 0.1.x 로 고침. 알려진 것: CI macOS · Node 18 에서 「macOS 알림」 시험이 가끔 10초 안에 안 끝남(다시 돌리면 통과 — 기다리는 시간 넉넉히)
    - [x] 새 사용자 첫 실행 시험 — registry 패키지를 빈 임시 홈 · 임시 npm 캐시에서 npx 로 켜서 로그인 링크 · /hello · 로그인 전 /api 403 · 로그인 뒤 / · 700/600 · tmux 없는 PATH · 5초 뒤 생존 확인(`scripts/smoke-npx.mjs <버전> [포트]`, 자기가 띄운 npx 와 자식만 끔 · 패키지에 안 들어감) + `.github/workflows/smoke.yml`(publish 성공 뒤 자동 · 손 실행, macOS · Ubuntu × Node 18 · 24, registry 에 보일 때까지 30초 × 10) `7daf9a5` — 0.1.2 로컬 통과 · Actions run 44482442838 네 조합 녹색. README 맨 위 로드맵 줄 지금 상태로 `88c307f`
+   - [x] Claude Code 형식 대비 — 환경 점검 「기록 형식」(이미 읽는 새 줄만: 아는 줄(user · assistant · ai-title · queued_command) 없이 50줄 · user/assistant 의 message.content 모양 이상, 모르는 메타 줄은 무시) · 「세션 파일 형식」(pid · sessionId · cwd · status 빠짐 · 타입, 두 번 연속 · 끝난 세션 파일 제외 · 폴더 없는 옛 버전은 ok) 줄, 경고에만 「확인한 Claude Code 버전 2.1.311 · 지금 Y」(lib/env.mjs CHECKED_CLAUDE_VERSION), README 지원 환경 표 Claude Code 줄 `5bfb525` — 시험 5개 · 실제 서버 /api/env 두 줄 ok
 2. [ ] **Gemini CLI 어댑터 · Codex 보강** — `adapters/gemini.mjs` 하나(세션 찾기 · 기록 읽기 · 상태), Codex 는 오늘 한 일 · 사용량. 다른 도구 사용자도 쓰게(출시 목표와 같은 방향)
 3. [ ] **로그인 시 자동 실행** — `agent-dashboard autostart on/off`(macOS LaunchAgent, Linux 는 안내만). 지금은 tmux 의 `run`
 4. [ ] **여러 계정 · tmux 소켓** — `CLAUDE_CONFIG_DIR` 로 나눈 계정, 기본 소켓이 아닌 tmux 서버
