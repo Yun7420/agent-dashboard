@@ -18,14 +18,14 @@ const PORT = 4690;
 const TOKEN = 'c'.repeat(48);
 
 // host 에 /hello 를 받는 서버를 띄운다. real 이면 토큰으로 맞게 답하고, 아니면 다른 프로그램처럼 엉뚱하게 답한다. 못 열면 null
-function listen(host, real) {
+function listen(host, real, port = PORT) {
   const srv = http.createServer((req, res) => {
     const n = new URL(req.url, 'http://x').searchParams.get('n');
-    res.end(real ? proofFor(TOKEN, PORT, n) : '<html>가짜 대시보드</html>');
+    res.end(real ? proofFor(TOKEN, port, n) : '<html>가짜 대시보드</html>');
   });
   return new Promise((resolve) => {
     srv.once('error', () => resolve(null));
-    srv.listen(PORT, host, () => resolve(srv));
+    srv.listen(port, host, () => resolve(srv));
   });
 }
 const close = (s) => new Promise((r) => (s ? s.close(r) : r()));
@@ -175,11 +175,13 @@ test('openOnStart: 열면 「브라우저에서 열었어요」 한 줄 · 열�
 });
 
 test('openLogin: 열었는지(opened) · 쓴 명령(opener)을 같이 돌려준다(켤 때 한 줄 안내용)', async () => {
-  const srv = await listen('127.0.0.1', true), srv6 = await listen('::1', true);
+  // 따로 포트(4689 — 다른 시험이 쓰지 않는 번호) — 바로 앞 시험이 4690 에 띄운 진짜 서버가 아직 끝나는 중일 수 있다(CI macOS · Node 20 에서 엇갈림)
+  const P = 4689, srv = await listen('127.0.0.1', true, P), srv6 = await listen('::1', true, P);
+  assert.ok(srv, '127.0.0.1:4689 을 열지 못함');
   try {
-    const ok = await openLogin({ token: TOKEN, port: PORT, platform: 'darwin', run: (c, a, cb) => cb(null) });
-    assert.deepEqual([ok.opened, ok.opener], [true, 'open']);
-    const bad = await openLogin({ token: TOKEN, port: PORT, platform: 'linux', run: (c, a, cb) => cb(new Error('no display')) });
+    const ok = await openLogin({ token: TOKEN, port: P, platform: 'darwin', run: (c, a, cb) => cb(null) });
+    assert.deepEqual([ok.opened, ok.opener], [true, 'open'], ok.message);
+    const bad = await openLogin({ token: TOKEN, port: P, platform: 'linux', run: (c, a, cb) => cb(new Error('no display')) });
     assert.deepEqual([bad.ok, bad.opened, bad.opener], [true, false, 'xdg-open']);
   } finally { await close(srv); await close(srv6); }
 });
