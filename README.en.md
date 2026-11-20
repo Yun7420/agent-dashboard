@@ -399,3 +399,5 @@ Please use the [bug report form](https://github.com/Yun7420/agent-dashboard/issu
 ## License
 
 [MIT](LICENSE)
+
+This is an unofficial personal project and is not affiliated with or endorsed by Anthropic, OpenAI or Google. Claude, Claude Code, Codex and Gemini are trademarks of their respective owners.

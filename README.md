@@ -399,3 +399,5 @@ Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없�
 ## 라이선스
 
 [MIT](LICENSE)
+
+이 프로젝트는 개인이 만든 비공식 도구이며 Anthropic · OpenAI · Google 과 관계가 없어요. Claude · Claude Code · Codex · Gemini 는 각 회사의 상표예요.
