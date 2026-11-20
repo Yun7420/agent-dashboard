@@ -99,6 +99,7 @@ test('켠 방법별 명령: npx · 설치 명령 · 자동 실행(설치본) · 
   assert.equal(updateCommand({ startCmd: 'node bin/agent-dashboard.mjs', root: '/opt/homebrew/lib/node_modules/@yun7420/agent-dashboard', autostart: true }), 'npm i -g @yun7420/agent-dashboard@latest && agent-dashboard autostart on');
   assert.equal(updateCommand({ startCmd: '', root: '/Users/me/agent-dashboard' }), 'git pull');
   assert.equal(updateCommand({ startCmd: 'node bin/agent-dashboard.mjs run', root: '/Users/me/agent-dashboard' }), 'git pull');
+  assert.equal(updateCommand({ startCmd: 'node bin/agent-dashboard.mjs', root: '/Users/me/agent-dashboard', autostart: true }), 'git pull && node bin/agent-dashboard.mjs autostart on'); // 다시 걸어야 새 코드로
   assert.ok(isNewer('0.1.10', '0.1.9') && isNewer('1.0.0', '0.9.9') && !isNewer('0.1.6', '0.1.6') && !isNewer('0.1.6', '0.1.7') && isNewer('0.1.7', '0.1.7-beta.1') === false);
 });
 
@@ -133,8 +134,9 @@ test('진짜 연결의 응답 검사: 고정 주소 · 머리글은 User-Agent(a
   assert.ok(Date.now() - t0 < 1000 && hang.seen.destroyed);
 });
 
-test('자동 실행 plist: DASHBOARD_NO_UPDATE_CHECK 는 있을 때만 넣는다', () => {
+test('자동 실행 plist: 끄기 변수 둘(DASHBOARD_NO_UPDATE_CHECK · NO_UPDATE_NOTIFIER)은 있을 때만 넣는다', () => {
   const base = { node: '/usr/local/bin/node', script: '/x/bin/agent-dashboard.mjs', workDir: '/x', logFile: '/x/a.log' };
   assert.match(plistXml({ ...base, env: { DASHBOARD_NO_UPDATE_CHECK: '1' } }), /<key>DASHBOARD_NO_UPDATE_CHECK<\/key>\n\t\t<string>1<\/string>/);
+  assert.match(plistXml({ ...base, env: { NO_UPDATE_NOTIFIER: '1' } }), /<key>NO_UPDATE_NOTIFIER<\/key>\n\t\t<string>1<\/string>/);
   assert.doesNotMatch(plistXml({ ...base, env: {} }), /NO_UPDATE/);
 });
