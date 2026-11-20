@@ -49,6 +49,7 @@ const KO_UI2 = {
   "This session has ended. Reopen it to chat and approve here.": "이 세션은 끝났어요. 다시 열면 여기서 채팅 · 승인할 수 있어요.",
   "Close it in its original terminal and you can reopen it in tmux.": "원래 터미널에서 이 세션을 끄면 tmux 로 다시 열 수 있어요.",
   "Close it in the editor and you can reopen it in tmux.": "에디터에서 이 세션을 끄면 tmux 로 다시 열 수 있어요.",
+  "A closed session moves to the \"Ended\" tab — reopen it here or with \"Reopen\" in that tab.": "끈 세션은 「종료」 탭으로 옮겨 가고, 여기나 「종료」 탭의 「다시 열기」로 열면 돼요.",
   "Turns on once you close the session in its original terminal": "원래 터미널의 세션을 끄면 켜져요",
   "Turns on once you close the session in the editor": "에디터의 세션을 끄면 켜져요",
   "Open the session to see how to reopen it in tmux": "세션을 열면 tmux 로 다시 여는 방법이 나와요",

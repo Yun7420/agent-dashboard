@@ -9,11 +9,11 @@ const note = (s) => run(`viewNoteHtml(${JSON.stringify({ tool: 'claude', id: 'ab
 
 test('떠 있는 tmux 밖 세션: 제목 「보기만 세션」 + 오른쪽 꺼진 「다시 열기」(까닭은 title · aria-describedby) + 흐린 설명(할 일만 — 까닭은 꼬리표 말풍선에) — 노란 글 없음', () => {
   const h = note({});
-  assert.equal(h, '<div class="vn-head"><b class="vn-title">보기만 세션</b><button type="button" class="reopen" disabled title="원래 터미널의 세션을 끄면 켜져요" aria-describedby="vn-off">다시 열기</button></div><p>원래 터미널에서 이 세션을 끄면 tmux 로 다시 열 수 있어요.</p><span id="vn-off" hidden>원래 터미널의 세션을 끄면 켜져요</span>');
+  assert.equal(h, '<div class="vn-head"><b class="vn-title">보기만 세션</b><button type="button" class="reopen" disabled title="원래 터미널의 세션을 끄면 켜져요" aria-describedby="vn-off">다시 열기</button></div><p>원래 터미널에서 이 세션을 끄면 tmux 로 다시 열 수 있어요. 끈 세션은 「종료」 탭으로 옮겨 가고, 여기나 「종료」 탭의 「다시 열기」로 열면 돼요.</p><span id="vn-off" hidden>원래 터미널의 세션을 끄면 켜져요</span>');
   assert.doesNotMatch(h, /data-reopen|vn-first/); // 떠 있는 동안은 누를 수 없다(같은 대화를 두 곳에서 열지 않게)
   assert.equal(run(`composerHint(${JSON.stringify({ status: 'idle', tmux: null })})`), 'tmux 밖에서 시작해 여기선 채팅 · 승인이 안 돼요');
   const ide = note({ ide: true });
-  assert.match(ide, /<p>에디터에서 이 세션을 끄면 tmux 로 다시 열 수 있어요\.<\/p>/);
+  assert.match(ide, /<p>에디터에서 이 세션을 끄면 tmux 로 다시 열 수 있어요\. 끈 세션은 「종료」 탭으로 옮겨 가고, 여기나 「종료」 탭의 「다시 열기」로 열면 돼요\.<\/p>/);
   assert.match(ide, /title="에디터의 세션을 끄면 켜져요"/);
 });
 

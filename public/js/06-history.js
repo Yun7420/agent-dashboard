@@ -112,7 +112,7 @@ function viewNoteHtml(s) {
   const live = s.status !== 'ended';
   if (s.tool !== 'claude' || (live ? s.tmux : !s.reopen)) return '';
   const desc = !live ? t('This session has ended. Reopen it to chat and approve here.')
-    : s.ide ? t('Close it in the editor and you can reopen it in tmux.') : t('Close it in its original terminal and you can reopen it in tmux.');
+    : `${s.ide ? t('Close it in the editor and you can reopen it in tmux.') : t('Close it in its original terminal and you can reopen it in tmux.')} ${t('A closed session moves to the "Ended" tab — reopen it here or with "Reopen" in that tab.')}`; // 끄면 카드가 「종료」 탭으로 옮겨 가 「없어졌네」 할 수 있어 미리(사용자)
   const off = live ? (s.ide ? t('Turns on once you close the session in the editor') : t('Turns on once you close the session in its original terminal')) : '';
   const btn = live ? `<button type="button" class="reopen" disabled title="${off}" aria-describedby="vn-off">` : `<button type="button" class="reopen" data-reopen="${esc(s.id)}">`;
   return `<div class="vn-head"><b class="vn-title">${live ? t('View-only session') : t('Ended session')}</b>${btn}${t('Reopen')}</button></div><p>${desc}</p>${live ? `<span id="vn-off" hidden>${off}</span>` : ''}`;
