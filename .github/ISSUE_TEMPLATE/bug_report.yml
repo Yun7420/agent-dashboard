@@ -1,0 +1,51 @@
+# 문제 보고 양식(한국어 · 영어 함께). 「점검 결과 복사」는 버전 · 점검 단계 · 고정 코드만 담는다(lib/env-report.mjs)
+name: 문제 보고 / Bug report
+description: 동작하지 않거나 이상한 점 / Something doesn't work or looks wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        보안 문제는 공개 이슈 대신 비공개로 알려 주세요(아래 「보안 문제」 링크). 개인 · 회사 정보(경로 · 세션 이름 · 토큰 · 로그인 링크)는 적지 마세요.
+        For security issues, please report privately instead (see "Security issue" link). Don't include personal or company info (paths, session names, tokens, login links).
+  - type: textarea
+    id: what
+    attributes:
+      label: 무슨 일이 있었나요? / What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 다시 일으키는 방법 / Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대한 것 / What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: 점검 결과 / Check results
+      description: |
+        대시보드 오른쪽 위 ⋯ → 도움말 → 「점검 결과 복사」를 눌러 붙여 넣어 주세요. 버전과 점검 단계만 들어 있어요 — 붙이기 전에 한 번 확인해 주세요.
+        In the dashboard: ⋯ (top right) → Help → "Copy check results", then paste here. It only has versions and check results — please look it over before pasting.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 스크린샷(선택) / Screenshots (optional)
+      description: |
+        개인 · 회사 정보(폴더 경로 · 세션 이름 · 대화 내용)가 보이지 않게 가리거나 잘라 주세요.
+        Please hide or crop anything personal or company-related (folder paths, session names, conversation text).
+    validations:
+      required: false

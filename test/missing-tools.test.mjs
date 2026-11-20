@@ -110,7 +110,7 @@ test('환경 점검 Claude Code · Codex 줄: 명령 없음과 깨진 설치(실
   assert.equal(codexEnvItem(bad, true).detail, '명령은 있지만 실행되지 않아요(다시 설치 필요) — 예전 기록은 읽어요');
   assert.equal(codexEnvItem(bad, false).detail, '명령은 있지만 실행되지 않아요(다시 설치 필요)');
   assert.equal(claudeEnvItem(gone, true).detail, '명령을 찾지 못했어요 — 기록 파일만 읽어서 보여 줘요');
-  assert.deepEqual(claudeEnvItem(bad, false), { name: 'Claude Code', level: 'error', detail: '명령은 있지만 실행되지 않아요(다시 설치 필요) — 기록 파일만 읽어서 보여 줘요' });
+  assert.deepEqual(claudeEnvItem(bad, false), { name: 'Claude Code', level: 'error', code: 'broken', detail: '명령은 있지만 실행되지 않아요(다시 설치 필요) — 기록 파일만 읽어서 보여 줘요' });
   assert.equal(claudeEnvItem({ ok: true, out: '2.1.311 (Claude Code)' }, true).level, 'ok');
   for (const r of [gone, bad]) for (const rec of [true, false]) for (const item of [codexEnvItem(r, rec), claudeEnvItem(r, rec)]) assert.notEqual(tr(item.detail, 'en'), item.detail, item.detail); // 영어 사전에 모두 있다
 });

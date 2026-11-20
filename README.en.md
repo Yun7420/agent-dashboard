@@ -369,6 +369,10 @@ Uses Node's built-in test runner (`node --test`), nothing to install. The tests 
 - If Claude Code changes its transcript format, some details may be wrong (only the adapter needs fixing).
 - Prompts are detected from Claude Code's English hint line at the bottom of the screen **or** from numbered options with a cursor (❯). If one of them changes the other still catches it, and when the signals (including the official status) disagree, the **"Approval detection"** row in the environment check turns into a warning.
 
+## If something goes wrong
+
+Please use the [bug report form](https://github.com/Yun7420/agent-dashboard/issues/new?template=bug_report.yml). Open ⋯ at the top right → Help → **"Copy check results"** and paste it in (it only has versions and check results — no paths or session names). For security issues, please report [privately](https://github.com/Yun7420/agent-dashboard/security/advisories/new) instead of opening a public issue.
+
 ## License
 
 [MIT](LICENSE)

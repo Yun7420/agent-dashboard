@@ -41,6 +41,21 @@ function renderEnv() {
   $('#env-list').innerHTML = envData.items.map((it) => `<div class="env-row"><span class="lv ${esc(it.level)}">${LV_ICON[it.level]}</span><span class="nm">${esc(it.name)}</span><span class="dt">${esc(it.detail)}</span></div>`).join('');
 }
 function openWelcome() { renderEnv(); openModal($('#welcome'), $('#app-more')); }
+// 점검 결과 복사(문제 보고용): 서버가 고른 값(report — 버전 · 줄 이름 · 단계 · 고정 코드 · 고정 문장, lib/env-report.mjs)만 마크다운으로.
+// 줄 설명(detail)은 세션 제목 · 경로가 섞일 수 있어 넣지 않는다
+const LV_WORD = { ok: 'OK', warn: 'Warning', error: 'Error', info: 'Info' };
+function envReportText(r) {
+  const v = (x) => x ?? t('unknown');
+  return [`### ${t('Agent Dashboard check results')}`, '',
+    `- ${t('Version')} ${v(r.version)} · ${v(r.os)} · Node ${v(r.node)}`,
+    `- Claude Code ${v(r.claude)} · tmux ${v(r.tmux)} · Codex ${v(r.codex)}`,
+    `- ${t('Screen language')}: ${LANG}`, '',
+    ...r.items.map((x) => `- ${LV_ICON[x.level]} ${t(LV_WORD[x.level])} · ${x.name}${x.code ? ` · \`${x.code}\`` : ''}${x.note && x.level !== 'ok' ? ` — ${x.note}` : ''}`)].join('\n');
+}
+$('#env-copy').addEventListener('click', async () => {
+  if (!envData?.report) return toast(t('Nothing to copy'));
+  try { await navigator.clipboard.writeText(envReportText(envData.report)); toast(t('Copied — please check it once before pasting')); } catch { toast(t('Could not copy')); }
+});
 $('#help').addEventListener('click', openWelcome);
 $('#welcome').addEventListener('close', async () => {
   pref.welcomed = true; savePref();

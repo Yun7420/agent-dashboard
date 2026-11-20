@@ -369,6 +369,10 @@ Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없�
 - Claude Code 기록 형식이 바뀌면 일부 표시가 틀릴 수 있어요(어댑터만 고치면 돼요).
 - 선택창은 Claude Code 화면 맨 아래의 영어 안내 문구 **또는** 커서(❯)가 있는 번호 선택지로 알아봐요. 둘 중 하나가 바뀌어도 잡히고, 두 신호(공식 상태 포함)가 엇갈리면 환경 점검의 **「승인 감지」** 줄이 경고로 바뀌어요.
 
+## 문제가 생기면
+
+[문제 보고 양식](https://github.com/Yun7420/agent-dashboard/issues/new?template=bug_report.yml)으로 알려 주세요. 오른쪽 위 ⋯ → 도움말 → **「점검 결과 복사」**를 눌러 붙여 넣으면 돼요(버전 · 점검 단계만 담기고 경로 · 세션 이름은 빠져요). 보안 문제는 공개 이슈 대신 [비공개로](https://github.com/Yun7420/agent-dashboard/security/advisories/new) 알려 주세요.
+
 ## 라이선스
 
 [MIT](LICENSE)

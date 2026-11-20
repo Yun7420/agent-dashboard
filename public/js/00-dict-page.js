@@ -76,6 +76,8 @@ const KO_PAGE = {
   "Working folder": "작업 폴더",
   "Close session": "세션 닫기",
   "Check again": "다시 점검",
+  "Copy check results": "점검 결과 복사",
+  "For bug reports: versions and check results only, no paths or session names": "문제 보고용: 버전과 점검 결과만 담아요(경로 · 세션 이름 없음)",
   "Theme": "화면 색",
   "Light": "밝음",
   "New task — run an agent": "새 작업 — 에이전트 실행",

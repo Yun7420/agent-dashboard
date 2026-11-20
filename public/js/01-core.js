@@ -50,10 +50,13 @@ const probeVerdict = (status) => (status === 403 ? 'gone' : 'reconnect');
 function toast(msg, ms = 3500) {
   const el = $('#toast');
   el.textContent = msg;
+  // 열린 창(dialog.modal)이 있으면 그 창 안 아래쪽에 — 창은 맨 위 층(top layer)이라 바깥 알림은 z-index 와 상관없이 뒤에 가려졌다(오늘 한 일 · 점검 결과 복사 등)
+  const dlg = [...document.querySelectorAll('dialog[open]')].at(-1) ?? null;
+  if (el.parentElement !== (dlg ?? document.body)) (dlg ?? document.body).append(el);
   // 세션 패널이 열려 있으면 패널 가운데·입력창 바로 위에, 아니면 그래프 영역 가운데·하단 안내 위에 띄운다
   const drawer = $('#drawer');
-  const open = drawer.classList.contains('open');
-  const area = (open ? drawer : $('#graph')).getBoundingClientRect();
+  const open = !dlg && drawer.classList.contains('open');
+  const area = (dlg ?? (open ? drawer : $('#graph'))).getBoundingClientRect();
   const floor = open ? $('#composer').getBoundingClientRect().top : area.bottom - 56;
   el.style.left = `${area.left + area.width / 2}px`;
   el.style.bottom = `${innerHeight - floor + 12}px`;
