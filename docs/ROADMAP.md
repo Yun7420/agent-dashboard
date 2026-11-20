@@ -110,6 +110,7 @@
 - [x] 0.1.5 묶음 — autostart 가 CLAUDE_CONFIG_DIR · CODEX_HOME 도 plist 에(있을 때만) `8897a70` · 환경 점검 「자동 실행」 줄(macOS 만, status 와 같은 inspect · 복사엔 off · on · stale) `e622c5f` · OS 를 「macOS 26.x (Darwin …)」 · Linux os-release 이름으로(복사엔 글자 · 숫자 · 점 · 공백 모양만) `60b6386` · 데모 영어 탭 패널의 명령 설명도 영어 판에서 `e4e0a42` · README 그림 6장 + GIF 2개 다시 · 좁은 화면 서랍 그림 2장 `0313903`
 6. [x] **CPU · 메모리 보기 1단계** — 머리 칩(컴퓨터 전체: os.cpus 차이 · vm_stat + sysctl 사용된 메모리 · 압력, 10초마다) · 세션별(procs 의 ps 에 누적 CPU · rss 열만 더해 세션 루트 + 자손 합계, 누적 시간 차이로 코어 하나 = 100%, 다른 세션 가지 제외, 자식은 실행 파일 이름만) · 카드 · 노드 꼬리표는 무거울 때만(80% · 1.5GB 두 번 연속 붙임 / 60% · 1.2GB 두 번 뗌, 압력 색도 같은 규칙) · aria-live 없음 `9e616b1` — 틱 중간값 42ms(전 59ms, 새 계산 0.6ms) · 실제 값은 top 과 몇 % 안
 - [x] 밝은 판 눈부심 줄이기 — 밝음 · 따뜻한 밝음 바탕 surface 상대 밝기 94 · 92 → 80%(bg 89 · 87 → 76 · 75), 글자 · 상태색은 대비 규칙만큼 어둡게, 대비 시험의 따뜻한 밝음 블록 찾기 버그 고침 · waiting-bg · peer-bg 면 · 바탕 83% 이하 검사 `8127c45`. 조직도 글자 최소 크기는 이미 2081f02(맞춤 배율 1배 아래 안 줄임 → 이름 12px, 실측 1024 · 1600 모두 12px)
+- [x] 승인 창 질문(AskUserQuestion) 막힘 고침 — Claude Code 2.1.311 실측(테스트 tmux · test/fixtures/ask 10장): 여러 개 고르기는 체크 상자 단추 + 「다음 · 제출 화면으로 →」(→ 키 · 마지막 질문에서도), 「Type something」 · 「Chat about this」는 단추에서 빼고 서버 409, 커서가 글 칸이면 터미널 안내 + ↑↓, ← → 단축키 `9d51d08`
 - 출시 방법: 버전 올리기 → CI 초록 → 사용자 승인 뒤 `v*` 태그 → Actions 「Review deployments」에서 사용자 Approve (`docs/CONVENTIONS.md` 「출시 절차」)
 - 사용자 몫(선택): npm 패키지 Settings → Publishing access 를 「Require 2FA and disallow bypass 2fa tokens」로(Trusted Publisher 출시는 그대로 됨)
 
