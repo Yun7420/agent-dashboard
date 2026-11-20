@@ -6,7 +6,12 @@ let clipSeq = 0; // 그릴 때마다 0 부터 — 같은 화면이면 같은 HTM
 // 글자 폭은 어림(03-graph.js 와 같은 자리 · 크기: 12px 이름 줄 · 10px 상태 줄 · 10px CPU · 메모리 줄, 한글은 글자 크기만큼) + 양옆 4px
 const textW = (str, latin, wide, max) => Math.min([...String(str)].reduce((a, c) => a + (c.charCodeAt(0) > 0x2e80 ? wide : latin), 0), max) + 8;
 const hole = (w, gw, y, hh) => `M${+((w - gw) / 2).toFixed(1)},${y} h${+gw.toFixed(1)} v${hh} h${-gw.toFixed(1)} Z`;
-const textHoles = ({ w, h, label = '', sub, load }) => hole(w, textW(label, 7.4, 12, w - 46), sub ? h / 2 - (load ? 24 : 17) : h / 2 - 8, 16) + (sub ? hole(w, textW(sub, 6.8, 10, w - 12), h / 2 + (load ? -6 : 3), 14) : '') + (load ? hole(w, textW(load.text, 6.4, 10, w - 12), h / 2 + 9, 14) : '');
+// 노드 글 줄의 기준선(03-graph.js 도 이 자리에 그린다): 이름 12px · 상태 10px (+ CPU · 메모리 10px). 줄 묶음 전체가 노드 위아래 가운데에 오게
+const nodeRows = ({ h, sub, load }) => { const y = sub ? h / 2 - (load ? 17 : 4) : h / 2 + 4; return { label: y, sub: y + (load ? 15 : 17), cpu: y + 29, mem: y + 43 }; };
+const textHoles = (n) => {
+  const { w, label = '', sub, load } = n, r = nodeRows(n), small = (s, y) => hole(w, textW(s, 6.8, 10, w - 12), y - 10, 14); // 10px 줄 구멍(기준선 위 10 · 높이 14 — 이웃 줄 구멍과 겹치지 않게)
+  return hole(w, textW(label, 7.4, 12, w - 46), r.label - 13, 16) + (sub ? small(sub, r.sub) : '') + (load ? small(load.cpu, r.cpu) + small(load.mem, r.mem) : '');
+};
 function waterSvg(n) {
   const { w, h } = n, p = Math.max(0, Math.min(100, n.ctx.percent)), y = +(h * (1 - p / 100)).toFixed(1), id = `wc${clipSeq++}`;
   const was = fillWas.get(n.key);

@@ -10,7 +10,7 @@ function load(saved, light = false) {
   const stored = { 'agent-deck': saved === undefined ? null : JSON.stringify(saved) };
   const sys = { matches: light, addEventListener(t, fn) { sys.onchange = fn; } };
   const root = { dataset: {} };
-  const { run } = loadFront(['00-md.js', '01-core.js', '12-load-pop.js', '13-controls.js'], {
+  const { run } = loadFront(['00-md.js', '01-core.js', '13-controls.js'], {
     window: {},
     document: { querySelector: el, documentElement: root, addEventListener() {} },
     localStorage: { getItem: (k) => stored[k] ?? null, setItem: (k, v) => (stored[k] = v) },

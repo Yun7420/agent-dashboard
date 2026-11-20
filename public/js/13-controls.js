@@ -54,6 +54,16 @@ if (typeof ResizeObserver === 'function') { // 브라우저에서만(단위 테�
   for (const el of [$('main'), $('aside')]) new ResizeObserver(floatSync).observe(el);
   new MutationObserver(floatSync).observe($('main'), { attributes: true, attributeFilter: ['style'] }); // 패널 폭(--dw)이 바뀔 때(07-center.js 의 dwSync)
 }
+// 머리 세 칸: 좁은 쪽 칸을 넓은 묶음 폭까지 넓히면 검색이 화면 정가운데. 다만 검색이 280px 보다 좁아지지 않는 만큼만(좁은 창에선 가운데에 가장 가깝게)
+function headSync() {
+  const h = $('header'), cs = getComputedStyle(h), w = (sel) => Math.ceil($(sel).getBoundingClientRect().width);
+  const l = w('.h-left'), r = w('.h-right'), s = Math.max(l, r);
+  const room = h.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2 * parseFloat(cs.columnGap);
+  const fill = (own) => Math.max(own, Math.min(s, room - 280 - s)); // 넓은 쪽은 제 폭 그대로
+  h.style.setProperty('--hl', `minmax(${fill(l)}px, 1fr)`);
+  h.style.setProperty('--hr', `minmax(${fill(r)}px, 1fr)`);
+}
+if (typeof ResizeObserver === 'function') for (const sel of ['header', '.h-left', '.h-right']) new ResizeObserver(headSync).observe($(sel)); // 창 폭 · 칩 글자 · 승인 칩이 바뀔 때
 
 // 화면 색(⋯ → 화면 설정): 테마 목록 — 어두운 판 초록(기본 dark) · 회색 · 푸른 밤, 밝은 판 밝음 · 따뜻한 밝음, 시스템 따라가기(어두우면 초록 · 밝으면 밝음).
 // 고른 값은 agent-deck 의 theme 에(초록은 비움). 예전 값 dark · light · system 은 이름이 같아 그대로 이어진다. 색은 00-base.css 의 :root[data-theme] 토큰
@@ -71,6 +81,24 @@ applyTheme();
 $('#app-more').addEventListener('click', (e) => { e.stopPropagation(); $('#limits-pop').classList.remove('show'); /* 한도 추이 팝업과 겹치지 않게 */ $('#app-more').setAttribute('aria-expanded', $('#app-menu').classList.toggle('show')); });
 $('#app-menu').addEventListener('click', () => { $('#app-menu').classList.remove('show'); $('#app-more').setAttribute('aria-expanded', 'false'); }, true);
 document.addEventListener('click', (e) => { if (!e.target.closest('#app-menu')) { $('#app-menu').classList.remove('show'); $('#app-more').setAttribute('aria-expanded', 'false'); } });
+// 머리 칩 「CPU 46/100% · 메모리 12.8/16GB」: 컴퓨터 전체(모든 코어 = 100%, 그래서 「/100%」) · 메모리는 활성 상태 보기 「사용된 메모리」와 같은 셈.
+// 압력이 주의 · 위험이면 글자 색만(lib/sysload.mjs 가 두 번 연속일 때 바꿈). 세션 하나하나는 조직도 노드에 늘 보인다(03-graph).
+// 값이 6~10초마다 바뀌어 aria-live 로 알리지 않는다 — 뜻(몇 코어만큼 · 압력)은 aria-label · title
+const gb = (b, whole) => (whole ? String(Math.round(b / 2 ** 30)) : (b / 2 ** 30).toFixed(1)); // 쓴 양은 소수 한 자리, 전체는 정수(13.7/16GB)
+const PRESSURE = { normal: 'Normal', warn: 'Warning', critical: 'Critical' };
+function renderSysload(l) {
+  const el = $('#sysload');
+  el.hidden = !l || (l.cpu == null && l.memUsed == null);
+  if (el.hidden) return;
+  const cpu = `CPU ${l.cpu ?? '—'}/100%`;
+  const mem = l.memUsed != null && l.memTotal ? `${gb(l.memUsed)}/${gb(l.memTotal, true)}GB` : null;
+  setHtml(el, `<span>${cpu}</span>${mem ? `<span class="mem">· ${t('Memory')} ${mem}</span>` : ''}`);
+  el.className = `sysload ${l.pressure === 'critical' ? 'crit' : l.pressure === 'warn' ? 'warn' : ''}`;
+  const cores = l.cores && l.cpu != null ? t('About {u} of {n} cores in use (whole Mac = 100%)', { u: ((l.cpu / 100) * l.cores).toFixed(1), n: l.cores }) : '';
+  const label = [cpu, cores, mem ? `${t('Memory')} ${mem}${l.pressure ? ` · ${t('pressure')} ${t(PRESSURE[l.pressure])}` : ''}` : ''].filter(Boolean).join(' · ');
+  el.setAttribute('aria-label', label);
+  el.title = label;
+}
 // 목록 탭 바꾸기(← → 로도, 04-list.js). 종료 탭에선 정렬 · 끌기가 없다(종료 세션은 끝난 차례대로)
 function setListTab(tab) {
   if (pref.listTab === tab) return;

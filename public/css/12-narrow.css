@@ -25,7 +25,7 @@
   body.aside-peek #aside-scrim { display: block; position: fixed; inset: 56px 0 0; z-index: var(--z-scrim); background: color-mix(in srgb, var(--shade) 45%, transparent); }
   body:has(#drawer.open) :is(.status-chips, .kinds, .zoom-btns) { visibility: hidden; } /* 패널이 가운데를 다 덮으니 그 위로 뜨지 않게 */
   /* 검색은 🔍 하나로 — 누르면(또는 /) 칸이 머리 폭을 덮으며 펼쳐지고, 결과 목록은 그 아래 머리 폭 그대로 */
-  .gs { flex: none; position: static; margin: 0 0 0 auto; }
+  .gs { position: static; justify-self: end; }
   #gs-btn { display: inline-grid; }
   .gs-field { display: none; }
   .gs.open { position: absolute; inset: 0; z-index: var(--z-raised); display: flex; align-items: center; padding: 0 12px; background: var(--surface); }
@@ -52,7 +52,7 @@
   #drawer .head-top .grow { display: none; }
 }
 
-@media (max-width: 600px) { #app-menu, #load-pop { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; } } /* 좁은 화면에선 ⋯ 단추 기준으로 두면 왼쪽이 화면 밖으로 나간다 */
+@media (max-width: 600px) { #app-menu { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; } } /* 좁은 화면에선 ⋯ 단추 기준으로 두면 왼쪽이 화면 밖으로 나간다 */
 /* 「동작 줄이기」를 켠 사람: 한 번 깜빡임 · 상태가 바뀐 노드 빛남 · 그래프 나타남 효과도 끈다· 로딩 고리는 멈춘 고리로(계속 움직이는 효과는 로딩 고리 말고는 처음부터 없음) */
 @keyframes peek-in { from { translate: -24px 0; opacity: .6; } }
 @media (prefers-reduced-motion: reduce) {

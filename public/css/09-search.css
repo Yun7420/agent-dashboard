@@ -1,6 +1,6 @@
 /* 전체 기록 검색 */
-/* ---------- 맨 위 가운데 기록 검색: 칸(약 360px, 남는 폭에 맞춰 줄어듦) + 바로 아래 결과 목록 ---------- */
-.gs { position: relative; flex: 0 1 360px; min-width: 0; margin: 0 auto; }
+/* ---------- 맨 위 가운데 기록 검색: 칸(화면 정가운데, 최대 800px · 좁으면 줄어듦) + 바로 아래 결과 목록 ---------- */
+.gs { position: relative; min-width: 0; } /* 머리 가운데 칸(최대 800px, 01-header)을 채운다 — 결과 목록(.gs-drop)도 이 폭을 따른다 */
 #gs-btn { display: none; } /* 🔍 단추는 좁은 화면에서만(12-narrow.css) */
 .gs-field { display: flex; align-items: center; gap: var(--sp-2); height: 34px; padding: 0 var(--sp-2) 0 var(--sp-3); border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--border); color: var(--faint); cursor: text; }
 .gs-field:hover { border-color: var(--border-strong); }

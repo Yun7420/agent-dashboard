@@ -15,7 +15,7 @@ function buildTree() {
       const p = { kind: 'group', label: project, dir: items.find((s) => s.cwd)?.cwd ?? null, children: [], status: items.some((s) => s.status === 'waiting') ? 'waiting' : items.some((s) => s.status === 'working') ? 'working' : items.some((s) => s.status === 'background') ? 'background' : items.some((s) => s.status === 'idle') ? 'idle' : 'ended' };
       for (const s of items) {
         p.children.push({
-          kind: 'session', key: s.key, tool: s.tool, label: s.title, sub: `${STATUS_KO[s.status]}${s.lastTool && s.status === 'working' ? ' · ' + s.lastTool : ''}`, load: nodeLoad(s), /* CPU · 메모리는 셋째 줄(02-load) */ status: s.status, ctx: s.status === 'ended' ? null : s.context,
+          kind: 'session', key: s.key, tool: s.tool, label: s.title, sub: `${STATUS_KO[s.status]}${s.lastTool && s.status === 'working' ? ' · ' + s.lastTool : ''}`, load: nodeLoad(s), /* CPU · 메모리는 셋째 · 넷째 줄(02-load) */ status: s.status, ctx: s.status === 'ended' ? null : s.context,
           children: subNodes(s),
         });
       }
@@ -39,7 +39,7 @@ function subNodes(s) {
   return [...running.map(node), ...(done ? [{ kind: 'sub', more: true, toggle: s.key, label: t('{n} done', { n: done }), sub: t('Click to expand'), status: 'ended', children: [] }] : [])];
 }
 
-const NODE_W = 152, NODE_H = 54, SES_H = 66, GAP_X = 20, SUB_W = 136, SUB_H = 44; // 세션 6개 한 줄(약 1010px)이 1440 가운데 칸에 12px 글자 그대로 들어가게 · 세션은 CPU · 메모리 줄만큼 높게(셋째 줄이 없어도 같은 높이로 줄 맞춤)
+const NODE_W = 152, NODE_H = 54, SES_H = 82, GAP_X = 20, SUB_W = 136, SUB_H = 44; // 세션 6개 한 줄(약 1010px)이 1440 가운데 칸에 12px 글자 그대로 들어가게 · 세션은 CPU · 메모리 줄만큼 높게(셋째 줄이 없어도 같은 높이로 줄 맞춤)
 let GAP_Y = 64; // 세션 사이 메시지 화살표가 있으면 위 칸을 넓혀 화살표 자리를 만든다
 function layout(node, depth = 0, x0 = 0) {
   node.w = node.kind === 'sub' ? SUB_W : NODE_W;
@@ -96,11 +96,11 @@ function renderGraph() {
     });
     const cls = ['node', n.dir ? 'proj' : '', n.kind === 'sub' ? 'sub' : '', n.more ? 'more' : '', n.kind === 'group' || n.kind === 'root' ? 'group' : '', n.status || '', n.key && n.key === selected ? 'sel' : ''].join(' ');
     const max = Math.floor((n.w - 14 - (n.tool ? 32 : 0)) / 7.4); // 12px 글자 기준 — 이름은 가운데, 왼쪽 위 종류 표식 자리만큼 양쪽을 비운다
-    const subMax = Math.floor((n.w - 12) / 6.4); // 10px
+    const subMax = Math.floor((n.w - 12) / 6.4), r = nodeRows(n); // 10px · 줄 자리(02-water, 물낯 선 구멍과 같은 자리)
     nodes += `<g class="${esc(cls)}" data-path="${p}" data-st="${esc(n.status || '')}" ${n.key ? `data-key="${esc(n.key)}"` : ''} ${n.toggle ? `data-toggle="${esc(n.toggle)}"` : ''} ${n.dir ? `data-dir="${esc(n.dir)}"` : ''} transform="translate(${n.x},${n.y})">
       ${n.load && !n.ctx ? `<title>${esc(n.load.tip)}</title>` : ''}<rect width="${n.w}" height="${n.h}" rx="10"/>${n.ctx ? waterSvg(n) : ''}${n.tool ? kmarkSvg(n.tool, 14, 14) : ''}
-      <text x="${n.w / 2}" y="${n.sub ? n.h / 2 - (n.load ? 11 : 4) : n.h / 2 + 4}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
-      ${n.sub ? `<text class="t2" x="${n.w / 2}" y="${n.h / 2 + (n.load ? 4 : 13)}" text-anchor="middle">${esc(fit(String(n.sub).toUpperCase(), subMax))}</text>` : ''}${n.load ? `<text class="ld ${n.load.hot ? 'hot' : ''}" x="${n.w / 2}" y="${n.h / 2 + 19}" text-anchor="middle">${esc(fit(n.load.text, subMax))}</text>` : ''}
+      <text x="${n.w / 2}" y="${r.label}" text-anchor="middle" font-weight="700">${esc(fit(n.label, max))}</text>
+      ${n.sub ? `<text class="t2" x="${n.w / 2}" y="${r.sub}" text-anchor="middle">${esc(fit(String(n.sub).toUpperCase(), subMax))}</text>` : ''}${n.load ? ['cpu', 'mem'].map((k) => `<text class="ld ${n.load.hot === k ? 'hot' : ''}" x="${n.w / 2}" y="${r[k]}" text-anchor="middle">${esc(fit(n.load[k], subMax))}</text>`).join('') : ''}
     </g>`;
   };
   walk(tree);

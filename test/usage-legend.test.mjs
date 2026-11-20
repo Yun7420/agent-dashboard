@@ -8,7 +8,7 @@ import { loadFront } from './_helpers/vm.mjs';
 function load(lang = 'ko') {
   const els = {};
   const el = (s) => (els[s] ??= { id: s, hidden: false, innerHTML: '', textContent: '', dataset: {}, style: { setProperty() {} }, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, setAttribute(k, v) { this[k] = v; }, getBoundingClientRect: () => ({}) });
-  const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '11-usage.js', '12-load-pop.js', '13-controls.js'], {
+  const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '11-usage.js', '13-controls.js'], {
     window: {}, document: { documentElement: { dataset: {} }, querySelector: el, querySelectorAll: () => [], addEventListener() {}, body: { classList: { toggle() {}, add() {}, remove() {} } } },
     localStorage: { getItem: () => JSON.stringify({ lang }), setItem() {} }, setInterval() {}, setTimeout, clearTimeout, matchMedia: () => ({ matches: false, addEventListener() {} }),
     asideW: () => 296, // 03-graph.js(범례 자리 셈에 쓰임)
@@ -69,7 +69,7 @@ test('세 무리 배치: 범례 + 확대 단추가 보이는 칸에 안 들어�
   };
   const el = (s) => (els[s] ??= { id: s, hidden: false, innerHTML: '', textContent: '', dataset: {}, style: { setProperty() {} }, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, setAttribute(k, v) { this[k] = v; }, getBoundingClientRect: () => ({}) });
   let aw = 296;
-  const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '11-usage.js', '12-load-pop.js', '13-controls.js'], {
+  const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '11-usage.js', '13-controls.js'], {
     window: {}, document: { documentElement: { dataset: {} }, querySelector: el, querySelectorAll: () => [], addEventListener() {}, body: { classList: { toggle() {}, add() {}, remove() {} } } },
     localStorage: { getItem: () => JSON.stringify({ lang: 'ko' }), setItem() {} }, setInterval() {}, setTimeout, clearTimeout, matchMedia: () => ({ matches: false, addEventListener() {} }),
     asideW: () => aw,
