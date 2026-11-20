@@ -94,3 +94,23 @@ test('환경 점검 프로세스 목록 줄: ps 없음 error · lsof 없음은 m
   const linux = procEnvItem({ ps: true, lsof: false, platform: 'linux' });
   assert.deepEqual([linux.level, /\/proc/.test(linux.detail)], ['ok', true]);
 });
+
+// 「Claude Code」 · 「Codex」 줄: 명령이 없음(ENOENT)과 있는데 실행 실패(npm 래퍼만 남은 깨진 설치 등)를 나눈다
+test('환경 점검 Claude Code · Codex 줄: 명령 없음과 깨진 설치(실행 실패)를 나눠 보여 준다', async () => {
+  const { probe, claudeEnvItem, codexEnvItem } = await import('../lib/env.mjs');
+  const { tr } = await import('../lib/i18n.mjs');
+  const dir = tmpDir('ad-broken-');
+  const broken = path.join(dir, 'codex');
+  fs.writeFileSync(broken, '#!/bin/sh\necho "Error: spawn …/vendor/codex ENOENT" >&2\nexit 1\n', { mode: 0o755 }); // 래퍼는 있지만 안쪽 실행 파일이 없음
+  const gone = await probe(path.join(dir, 'none'), ['--version']);
+  const bad = await probe(broken, ['--version']);
+  assert.deepEqual([gone.ok, gone.missing, bad.ok, bad.missing], [false, true, false, false]);
+  assert.equal(codexEnvItem(gone, true).detail, '명령은 없지만 예전 기록은 읽어요');
+  assert.equal(codexEnvItem(gone, false).detail, '설치 안 됨 (쓰면 자동으로 잡혀요)');
+  assert.equal(codexEnvItem(bad, true).detail, '명령은 있지만 실행되지 않아요(다시 설치 필요) — 예전 기록은 읽어요');
+  assert.equal(codexEnvItem(bad, false).detail, '명령은 있지만 실행되지 않아요(다시 설치 필요)');
+  assert.equal(claudeEnvItem(gone, true).detail, '명령을 찾지 못했어요 — 기록 파일만 읽어서 보여 줘요');
+  assert.deepEqual(claudeEnvItem(bad, false), { name: 'Claude Code', level: 'error', detail: '명령은 있지만 실행되지 않아요(다시 설치 필요) — 기록 파일만 읽어서 보여 줘요' });
+  assert.equal(claudeEnvItem({ ok: true, out: '2.1.311 (Claude Code)' }, true).level, 'ok');
+  for (const r of [gone, bad]) for (const rec of [true, false]) for (const item of [codexEnvItem(r, rec), claudeEnvItem(r, rec)]) assert.notEqual(tr(item.detail, 'en'), item.detail, item.detail); // 영어 사전에 모두 있다
+});
