@@ -1,0 +1,14 @@
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+←  ☐ Color  ☐ Pet  ✔ Submit  →
+
+Favorite color?
+
+❯ 1. Red
+     A bold, warm color
+  2. Blue
+     A cool, calm color
+  3. Type something.
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  4. Chat about this
+
+Enter to select · Tab/Arrow keys to navigate · Esc to cancel

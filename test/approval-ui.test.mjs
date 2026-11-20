@@ -78,3 +78,29 @@ test('긴 줄: 공백 5만 칸 · 「1.」 뒤 긴 줄도 선택지 읽기가 �
   choices('1. a' + ' '.repeat(50_000) + 'x\n2. b', '');
   assert.ok(performance.now() - t0 < 100, `${Math.round(performance.now() - t0)}ms`);
 });
+
+// 질문 창(AskUserQuestion) 실측 화면(Claude Code 2.1.311, test/fixtures/ask — 2026-11-20 테스트 tmux 에서 찍음):
+// 여러 개 고르기는 숫자가 고르기만 하고 넘어가지 않아(제출 단추가 없어) 답을 못 보냈고, 「Type something」을 누르면 그 칸에 숫자가 쳐져 계속 안 넘어갔다
+const fx = async (f) => (await import('node:fs')).readFileSync(new URL(`./fixtures/ask/${f}`, import.meta.url), 'utf8');
+test('질문 창: 여러 개 고르기는 체크 상자 + 마지막 질문에서도 「다음 → 제출 화면」, 글 칸 선택지는 단추가 아니다 · 서버와 같은 규칙', async () => {
+  const a = choices(await fx('a-multi.txt'), 'Fruits');
+  assert.deepEqual(a.options.map((o) => [o.n, o.label, o.box, o.picked]), [['1', 'Apple', true, false], ['2', 'Banana', true, false], ['3', 'Cherry', true, false]]); // 4 Type something · 5 Chat about this 는 빠짐
+  assert.deepEqual([a.multi, a.advance, a.typing, a.free], [true, 'submit', false, true]);
+  assert.equal(a.tabs.canNext, true, '질문이 하나뿐이어도 제출 화면으로 갈 수 있다(예전엔 막혀 있었다)');
+  const t2 = choices(await fx('a-multi-toggled.txt'), 'Fruits');
+  assert.deepEqual(t2.options.map((o) => o.picked), [true, false, false]);
+  assert.equal(choices(await fx('c-multi-next.txt'), 'Tools').advance, 'next');
+  // 단일 선택 여러 개: 답하면 다음으로 넘어가고(숫자 그대로), 답하기 전엔 다음이 막혀 있다
+  const b = choices(await fx('b-q1.txt'), 'Color');
+  assert.deepEqual([b.multi, b.options.map((o) => o.label), b.tabs.canNext], [false, ['Red', 'Blue'], false]);
+  // 확인 화면: 1 제출 · 2 취소, 이전으로 갈 수 있다
+  const r = choices(await fx('b-review.txt'), 'Submit');
+  assert.deepEqual([r.options.map((o) => o.label), r.tabs.canPrev], [['Submit answers', 'Cancel'], true]);
+  // 커서가 글 칸에 있음(쳐진 글 「1」이 이름이 된 것까지) → 단추 대신 터미널 안내
+  for (const f of ['d-typing.txt', 'd-typed.txt']) assert.equal(choices(await fx(f)).typing, true, f);
+  // 서버(lib/dialog.mjs)와 같은 선택지 · 같은 글 칸 판정 — 서버는 글 칸 번호를 409 로 거절한다
+  for (const f of ['a-multi.txt', 'b-q1.txt', 'b-review.txt', 'c-q2.txt', 'd-typed.txt']) {
+    const s = await fx(f);
+    assert.deepEqual(choices(s).options.map((o) => o.n), dialogOptions(s).filter((o) => !o.free).map((o) => o.n), f);
+  }
+});

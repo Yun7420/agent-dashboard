@@ -1,0 +1,17 @@
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+←  ☐ Tools  ☐ Size  ✔ Submit  →
+
+Which tools?
+
+❯ 1. [ ] Git
+         Distributed version control
+  2. [ ] Make
+         Build automation via Makefiles
+  3. [ ] Npm
+         Node.js package manager
+  4. [ ] Type something
+     Next
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+
+Enter to select · Tab/Arrow keys to navigate · Esc to cancel

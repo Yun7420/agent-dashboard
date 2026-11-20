@@ -1,0 +1,14 @@
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+←  ☒ Color  ☐ Pet  ✔ Submit  →
+
+Favorite pet?
+
+❯ 1. Cat
+     Independent and affectionate
+  2. Dog
+     Loyal and energetic
+  3. Type something.
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  4. Chat about this
+
+Enter to select · Tab/Arrow keys to navigate · Esc to cancel

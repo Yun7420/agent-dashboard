@@ -1,0 +1,17 @@
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+←  ☐ Fruits  ✔ Submit  →
+
+Which fruits do you like?
+
+❯ 1. [ ] Apple
+         Crisp and sweet, widely available
+  2. [ ] Banana
+         Soft, energy-rich, easy to peel
+  3. [ ] Cherry
+         Small, sweet-tart stone fruit
+  4. [ ] Type something
+     Submit
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+
+Enter to select · ↑/↓ to navigate · Esc to cancel

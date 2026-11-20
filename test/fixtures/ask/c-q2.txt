@@ -1,0 +1,14 @@
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+←  ☒ Tools  ☐ Size  ✔ Submit  →
+
+Team size?
+
+❯ 1. Small
+     A handful of people
+  2. Large
+     Many people across several groups
+  3. Type something.
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  4. Chat about this
+
+Enter to select · Tab/Arrow keys to navigate · Esc to cancel

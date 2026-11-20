@@ -1,0 +1,14 @@
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ ☐ Lang
+
+Language?
+
+  1. Go
+     Simple, fast compiled language from Google
+  2. Rust
+     Memory-safe systems language with no garbage collector
+❯ 3. 1
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  4. Chat about this
+
+Enter to select · ↑/↓ to navigate · ctrl+g to edit in VS Code · Esc to cancel

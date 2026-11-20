@@ -100,3 +100,17 @@ test('inputReady: 입력칸(가로줄 + 「❯ 」)만 참 — 뜨는 중 · 폴
   assert.equal(inputReady('> 인용문\n> 둘째 줄'), false);
   assert.equal(inputReady(`${RULE}\n❯ \n${RULE}\n ❯ 1. Yes\n   2. No\n Esc to cancel`), false); // 입력칸 아래에 선택창이 붙어 떠도 넣지 않는다 // 가로줄 없는 「> 」는 입력칸이 아님
 });
+
+// 질문 창 실측(Claude Code 2.1.311, test/fixtures/ask): 여러 개 고르기 · 넘어가는 줄(Submit · Next) · 글 칸(Type something · Chat about this, 쳐진 글 포함)
+test('dialogMode · dialogOptions: 체크 상자 · 넘어가기 줄 · 글 칸(free) · 커서가 글 칸이면 typing', async () => {
+  const fs = await import('node:fs');
+  const fx = (f) => fs.readFileSync(new URL(`./fixtures/ask/${f}`, import.meta.url), 'utf8');
+  const { dialogMode, dialogOptions } = await import('../lib/dialog.mjs');
+  assert.deepEqual(dialogMode(fx('a-multi.txt')), { box: true, advance: 'submit', typing: false });
+  assert.deepEqual(dialogMode(fx('c-multi-next.txt')), { box: true, advance: 'next', typing: false });
+  assert.deepEqual(dialogMode(fx('b-review.txt')), { box: false, advance: null, typing: false });
+  assert.deepEqual(dialogMode(fx('d-typed.txt')), { box: false, advance: null, typing: true });
+  const a = dialogOptions(fx('a-multi-toggled.txt'));
+  assert.deepEqual(a.map((o) => [o.n, o.label, o.box, o.picked, Boolean(o.free)]), [['1', 'Apple', true, true, false], ['2', 'Banana', true, false, false], ['3', 'Cherry', true, false, false], ['4', 'Type something', true, false, true], ['5', 'Chat about this', false, false, true]]);
+  assert.deepEqual(dialogOptions(fx('d-typed.txt')).filter((o) => o.free).map((o) => [o.n, o.label]), [['3', '1'], ['4', 'Chat about this']]); // 쳐진 글 「1」도 글 칸 자리로
+});

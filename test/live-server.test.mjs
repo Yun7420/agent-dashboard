@@ -107,6 +107,18 @@ test('approve: 승인 기다리는 세션에만, 화면의 번호 · 글자가 �
   try {
     assert.equal((await cmd('approve', { key: `claude:${ID[1]}`, choice: '2', label: 'No' })).status, 200);
     assert.deepEqual(tmuxCalls('send-keys').at(-1).args, ['send-keys', '-t', '%2', '2']);
+    // 질문 창(실측 test/fixtures/ask): 「Type something」(글을 치는 칸)은 누르지 않고, 커서가 그 칸에 있으면 숫자를 보내지 않는다(그 칸에 숫자가 쳐져 안 넘어갔다)
+    const fx = (f) => fs.readFileSync(new URL(`./fixtures/ask/${f}`, import.meta.url), 'utf8');
+    const sent = tmuxCalls('send-keys').length;
+    home.setScreen(fx('b-q1.txt'));
+    assert.equal((await cmd('approve', { key: `claude:${ID[1]}`, choice: '3', label: 'Type something.' })).status, 409);
+    home.setScreen(fx('d-typed.txt'));
+    assert.equal((await cmd('approve', { key: `claude:${ID[1]}`, choice: '1', label: 'Go' })).status, 409);
+    assert.equal(tmuxCalls('send-keys').length, sent, '글 칸에는 아무 키도 보내지 않았다');
+    home.setScreen(fx('a-multi.txt')); // 여러 개 고르기: 숫자는 고르기 · → 는 제출 화면으로
+    assert.equal((await cmd('approve', { key: `claude:${ID[1]}`, choice: '1', label: 'Apple' })).status, 200);
+    assert.equal((await cmd('approve', { key: `claude:${ID[1]}`, choice: 'right' })).status, 200);
+    assert.deepEqual(tmuxCalls('send-keys').slice(-2).map((c) => c.args.at(-1)), ['1', 'Right']);
   } finally {
     home.setScreen('> ');
   }

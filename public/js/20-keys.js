@@ -75,6 +75,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'j' || e.key === 'k') { moveCursor(e.key === 'j' ? 1 : -1); done = true; }
   else if ((e.key === 'g' || e.key === 'Enter') && kbKey && !$('#drawer').classList.contains('open')) { setPeek(false); select(kbKey); done = true; }
   else if (/^[1-9]$/.test(e.key)) done = approveKey(e.key);
+  else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') done = approveKey(e.key === 'ArrowRight' ? 'right' : 'left'); // 질문 창 다음 · 이전(제출 화면으로) — 승인 창이 없으면 그대로
   else if (e.key === '+' || e.key === '=' || e.key === '-') { zoomBy(e.key === '-' ? 1 / 1.2 : 1.2); done = true; } // 조직도 확대 · 축소(= 는 Shift 없이 누른 +)
   else if (e.key === '0') { recenter(); done = true; }
   else if (e.key === 'Escape' && !document.querySelector('#dir-menu.show, #more-menu.show, #d-meta.show, #app-menu.show, #limits-pop.show, #tip.show')) done = approveKey('Escape');

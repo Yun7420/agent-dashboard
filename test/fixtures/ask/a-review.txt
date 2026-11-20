@@ -1,0 +1,12 @@
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+←  ☒ Fruits  ✔ Submit  →
+
+Review your answers
+
+ ● Which fruits do you like?
+   → Apple
+
+Ready to submit your answers?
+
+❯ 1. Submit answers
+  2. Cancel
