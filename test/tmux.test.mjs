@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { FAKE_BIN } from './_helpers/server.mjs';
-import { listPanes, findPane, capture, captureWithFocus, sendText, sendKey, newSession, cleanText, isSlashLine } from '../lib/tmux.mjs';
+import { listPanes, findPane, capture, captureWithFocus, sendText, sendKey, newSession, cleanText, isSlashLine, SESSION_ENV } from '../lib/tmux.mjs';
 
 const dir = tmpDir('ad-tmux-');
 const LOG = path.join(dir, 'fake.log');
@@ -59,7 +59,7 @@ test('sendText: 붙여넣기 버퍼(stdin) → paste-buffer → Enter 순서, se
   await sendKey('%2', 'Escape');
   assert.deepEqual(calls().at(-1).args, ['send-keys', '-t', '%2', 'Escape']);
   assert.equal(await newSession({ name: 'n', cwd: '/w', command: ['claude', '--', '-x'] }), '%90'); // 새 창 번호(-P -F) — 첫 프롬프트를 넣을 곳
-  assert.deepEqual(calls().at(-1).args, ['new-session', '-d', '-P', '-F', '#{pane_id}', '-s', 'n', '-c', '/w', '-x', '200', '-y', '50', '--', 'claude', '--', '-x']);
+  assert.deepEqual(calls().at(-1).args, ['new-session', '-d', '-P', '-F', '#{pane_id}', '-s', 'n', '-c', '/w', '-x', '200', '-y', '50', '--', '/usr/bin/env', ...SESSION_ENV.flatMap((k) => ['-u', k]), 'claude', '--', '-x']); // 세션 고유 Claude 표시를 지운 env 로 감쌈
 });
 
 // 보안 검토 2026-11-18: ESC · 붙여넣기 끝 신호가 섞이면 붙여넣기 밖으로 빠져 키 입력으로 읽힐 수 있다 → \n · \t 만 남기고 지운다
@@ -107,4 +107,9 @@ test('isSlashLine: 명령 이름 꼴(첫 낱말에 / 없음)만 글자로 치고
   for (const s of ['/Users/me/a.ts 고쳐줘', '/tmp/x 지워 줘', '/', '/ 공백', '/1abc', '//주석', '/compact\n둘째 줄', 'compact', ' /compact', '/한글명령']) assert.equal(isSlashLine(s), false, s);
   for (const s of ['/compact 끝;', '/clear;']) assert.equal(isSlashLine(s), false, s); // B9: 끝 ; 는 tmux 명령 구분자 → 붙여넣기
   assert.equal(isSlashLine('/compact a; b'), true); // 가운데 ; 는 글자 그대로
+});
+
+test('새 창 명령은 세션 고유 Claude 표시만 지운다 — 기록 끄기 · 다른 세션 통로 · 토큰 · IDE 포트는 지우고, 다른 계정(CLAUDE_CONFIG_DIR) · 사용자 설정은 남김', () => {
+  for (const k of ['CLAUDECODE', 'CLAUDE_CODE_CHILD_SESSION', 'CLAUDE_CODE_SESSION_ID', 'CLAUDE_CODE_SSE_PORT', 'CLAUDE_CODE_MESSAGING_TOKEN']) assert.ok(SESSION_ENV.includes(k), k);
+  for (const k of ['CLAUDE_CONFIG_DIR', 'CLAUDE_CODE_USE_BEDROCK', 'CLAUDE_CODE_MAX_OUTPUT_TOKENS', 'ANTHROPIC_API_KEY', 'PATH']) assert.ok(!SESSION_ENV.includes(k), k);
 });

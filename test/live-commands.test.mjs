@@ -9,6 +9,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { startServer, FAKE_BIN } from './_helpers/server.mjs';
 import { createLiveHome } from './_helpers/live-home.mjs';
+import { launched } from './_helpers/launched.mjs';
 
 const PORT = 4695;
 const [A, B, OUT, GONE, R1, R2, R3, R4, LOUT, LIN] = Array.from({ length: 10 }, () => crypto.randomUUID());
@@ -107,7 +108,7 @@ test('approve: 보내기 직전 화면을 다시 읽어 번호 · 글자가 다�
   }
 });
 
-const resumed = (from) => tmuxCalls('new-session').slice(from).map((c) => c.args.slice(c.args.indexOf('--') + 1));
+const resumed = (from) => tmuxCalls('new-session').slice(from).map((c) => launched(c.args));
 
 test('restore: 재시동 전 목록에서 떠 있는 것은 빼고 N개를 --resume 으로, 다시 누르면 「없어요」', async () => {
   const n = tmuxCalls('new-session').length;

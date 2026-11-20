@@ -13,6 +13,7 @@ import { until } from './_helpers/until.mjs';
 import { ROOT, startServer, FAKE_BIN } from './_helpers/server.mjs';
 import { createLiveHome } from './_helpers/live-home.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
+import { launched } from './_helpers/launched.mjs';
 
 const PORT = 4697;
 const ID = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
@@ -147,7 +148,7 @@ test('spawn: 홈 밖은 400, 첫 프롬프트는 claude 인자에 없고 입력�
   assert.equal(r.status, 200);
   const args = tmuxCalls('new-session').at(-1).args;
   assert.equal(args[args.indexOf('-c') + 1], CWD);
-  const claude = args.slice(args.indexOf('--') + 1);
+  const claude = launched(args);
   assert.equal(claude[0], path.join(FAKE_BIN, 'claude')); // 서버가 찾은 절대 경로(호환성 C9)
   assert.ok(!claude.includes(prompt) && !claude.includes('--'));
   assert.ok(await until(() => tmuxCalls('paste-buffer').some((c) => c.pasted === prompt)));
@@ -216,7 +217,7 @@ test('recent-restore: 동시에 두 번이면 하나는 409, 본문의 cwd 는 �
   assert.equal(news.length, 1);
   const args = news[0].args;
   assert.equal(args[args.indexOf('-c') + 1], CWD);
-  assert.deepEqual(args.slice(args.indexOf('--') + 1), [path.join(FAKE_BIN, 'claude'), '--resume', ID[2]]);
+  assert.deepEqual(launched(args), [path.join(FAKE_BIN, 'claude'), '--resume', ID[2]]);
   assert.equal((await cmd('recent-restore', body)).status, 400); // 방금 띄운 것 → 후보에서 빠짐
   assert.ok(await until(async () => (await reopen()).length === 0));
   assert.deepEqual(JSON.parse((await req('/api/recent', { headers: H })).text).launched.map((l) => l.id), [ID[2]]);

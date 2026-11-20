@@ -9,6 +9,7 @@ import { tmpDir } from './_helpers/tmp.mjs';
 import { until, wait } from './_helpers/until.mjs';
 import { portOpen } from './_helpers/http.mjs';
 import { ROOT, testEnv, FAKE_BIN } from './_helpers/server.mjs';
+import { launched } from './_helpers/launched.mjs';
 
 const BIN = path.join(ROOT, 'bin', 'agent-dashboard.mjs');
 const tmp = () => tmpDir('ad-runner-');
@@ -192,11 +193,11 @@ test('restore(실행 파일): 떠 있는 세션은 빼고 꺼진 것만 --resume
   const news = t.calls().filter((c) => c.cmd === 'tmux' && c.args[0] === 'new-session');
   assert.equal(news.length, 2);
   const sess = news.find((c) => c.args.includes(t.id(2)));
-  assert.deepEqual(sess.args.slice(sess.args.indexOf('--') + 1), [path.join(FAKE_BIN, 'claude'), '--resume', t.id(2), '--name=꺼짐', '--model', 'sonnet']);
+  assert.deepEqual(launched(sess.args), [path.join(FAKE_BIN, 'claude'), '--resume', t.id(2), '--name=꺼짐', '--model', 'sonnet']);
   assert.equal(sess.args[sess.args.indexOf('-c') + 1], t.cwd);
   assert.ok(!news.some((c) => c.args.includes(t.id(1)))); // 떠 있는 세션은 다시 안 띄움
   const dash = news.find((c) => c.args[c.args.indexOf('-s') + 1] === 'dashboard');
-  assert.deepEqual(dash.args.slice(dash.args.indexOf('--') + 1), [process.execPath, BIN, 'run']);
+  assert.deepEqual(launched(dash.args), [process.execPath, BIN, 'run']);
   assert.equal(dash.args[dash.args.indexOf('-c') + 1], ROOT.replace(/\/$/, ''));
   assert.deepEqual(t.calls().filter((c) => c.args.some((a) => /^kill/.test(a)) || c.cmd === 'kill'), []);
 });
@@ -210,7 +211,7 @@ test('restore(실행 파일): 대시보드가 떠 있으면 다시 켜지 않고
   const down = restoreSetup(['sa', 'sb']);
   spawnSync(process.execPath, [BIN, 'restore'], { env: down.env, encoding: 'utf8' });
   const dash = down.calls().find((c) => c.args[0] === 'new-session');
-  assert.deepEqual(dash.args.slice(dash.args.indexOf('--') + 1).slice(-2), [BIN, 'run']);
+  assert.deepEqual(launched(dash.args).slice(-2), [BIN, 'run']);
 });
 
 test('--help: 하위 명령(run · restore) 목록', () => {
