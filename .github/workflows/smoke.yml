@@ -21,7 +21,7 @@ jobs:
     # 자동 실행은 출시가 성공했을 때만
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 20 # 기다리기 10분 + 시험
     strategy:
       fail-fast: false
       matrix:
@@ -43,12 +43,14 @@ jobs:
           V="${INPUT:-${TAG#v}}"
           if ! printf '%s' "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then echo "::error::버전 모양이 아니에요: $V"; exit 1; fi
           echo "VERSION=$V" >> "$GITHUB_ENV"
-      # 막 올라간 직후에는 registry 에 아직 안 보일 수 있어 30초 간격으로 최대 10번 기다린다
-      - name: registry 에 보일 때까지 기다리기
+      # 막 올라간 직후에는 npm view 에 버전이 보여도 패키지 파일(dist.tarball)이 몇 분 동안 404 일 수 있다(0.1.3 때 약 5분, npx E404)
+      # → 파일 주소가 200 을 줄 때까지 30초 간격으로 최대 20번(10분) 기다린다
+      - name: registry 에 패키지 파일이 보일 때까지 기다리기
         run: |
-          for i in $(seq 10); do
-            if [ "$(npm view "@yun7420/agent-dashboard@$VERSION" version 2>/dev/null)" = "$VERSION" ]; then exit 0; fi
-            echo "아직 안 보임($i/10)"; sleep 30
+          for i in $(seq 20); do
+            URL="$(npm view "@yun7420/agent-dashboard@$VERSION" dist.tarball 2>/dev/null)"
+            if [ -n "$URL" ] && curl -sfIL -o /dev/null "$URL"; then echo "보임: $URL"; exit 0; fi
+            echo "아직 안 보임($i/20)"; sleep 30
           done
-          echo "::error::registry 에 $VERSION 이 보이지 않아요"; exit 1
+          echo "::error::registry 에 $VERSION 패키지 파일이 보이지 않아요"; exit 1
       - run: node scripts/smoke-npx.mjs "$VERSION" 4747
