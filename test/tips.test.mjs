@@ -14,7 +14,7 @@ function load() {
     document: { documentElement: { dataset: {} }, body, querySelector: el, querySelectorAll: () => [], addEventListener: (ty, fn) => { (on[ty] ??= []).push(fn); } },
     localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, setTimeout, clearTimeout,
   });
-  const target = { dataset: { tip: '입력 1K · 출력 2K' }, closest: (s) => (s === '[data-tip]' ? target : null), getBoundingClientRect: () => ({ left: 100, top: 300, bottom: 320 }) };
+  const target = { dataset: { tip: '입력 1K · 출력 2K' }, hasAttribute: () => false, setAttribute() {}, closest: (s) => (s === '[data-tip]' ? target : null), getBoundingClientRect: () => ({ left: 100, top: 300, bottom: 320 }) };
   const outside = { closest: () => null };
   const fire = (ty, e) => { for (const fn of on[ty] ?? []) fn({ preventDefault() {}, stopImmediatePropagation() {}, ...e }); };
   return { run, box, shown: () => cls.has('show'), target, outside, fire };
@@ -40,4 +40,15 @@ test('말풍선: 누르기로 열리고(터치) · 다시 누르기 · 바깥 �
   assert.ok(shown()); // 눌러 연 것은 마우스가 떠나도 그대로(바깥 누름 · Esc 로 닫기)
   fire('keydown', { key: 'a', target });
   assert.ok(shown());
+});
+
+test('말풍선 자리에 마우스를 올리면 빈 title — 카드 같은 조상의 title(브라우저 기본 말풍선)이 우리 말풍선을 덮지 않게 · 제 title 이 있으면 그대로', () => {
+  const { fire } = load();
+  const mk = (attrs) => { const a = { ...attrs }; const el = { dataset: { tip: '설명' }, getBoundingClientRect: () => ({ left: 0, top: 0, bottom: 10 }), hasAttribute: (k) => k in a, setAttribute: (k, v) => { a[k] = v; }, attrs: a }; el.closest = (s) => (s === '[data-tip]' ? el : null); return el; };
+  const plain = mk({});
+  fire('mouseover', { target: plain });
+  assert.equal(plain.attrs.title, '');
+  const own = mk({ title: '제 설명' });
+  fire('mouseover', { target: own });
+  assert.equal(own.attrs.title, '제 설명');
 });

@@ -136,6 +136,8 @@ function tipShow(el, pin) {
 const tipHide = () => { $('#tip').classList.remove('show'); Object.assign(tip, { el: null, pin: false }); };
 document.addEventListener('mouseover', (e) => {
   const el = e.target.closest?.('[data-tip]');
+  // 조상(카드 등)의 title 이 브라우저 기본 말풍선으로 우리 말풍선을 덮지 않게: 제 title 이 없으면 빈 title — 브라우저는 가장 가까운 title 을 띄우는데 비어 있으면 아무것도 안 띄운다
+  if (el && !el.hasAttribute?.('title')) el.setAttribute('title', '');
   if (el && el !== tip.el) tipShow(el, false); else if (!el && tip.el && !tip.pin) tipHide();
 });
 document.addEventListener('click', (e) => {
