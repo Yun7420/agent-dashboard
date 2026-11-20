@@ -114,6 +114,7 @@
 - [x] 머리 칩 확장 — CPU · 메모리 막대(사용 한도와 같은 lp-bar, 메모리는 압력 색) · 「— 에이전트 N% · GB」(세션 합 ÷ 코어 수, 1180 이하 먼저 숨김) · 누르면 세션별 표(무거운 순 · 열린 동안 순서 고정 · 행 → 그 세션 · Esc · 바깥 · 초점) · 칩이 실제 모드에서 안 보이던 것(틱 메시지에 sysload) `fc8c576` `480cb54` · README 「업데이트」 표
 - [x] 세션 CPU · 메모리는 조직도 노드에 늘(이름 · 상태 · CPU · 메모리 네 줄 가운데, 무거운 줄만 강조 · 목록 꼬리표 뺌) · 머리 칩 「CPU 46/100% · 메모리 12.8/16GB」(막대 · 에이전트 합계 · 세션별 표 뺌) · 검색창 화면 정가운데(머리 세 칸 grid, 최대 800px · 좁으면 280px 바닥) · README 그림 다시 `71a54a8` `01b5cc6`
 - [x] 새 버전 알림(사용자 승인 — 밖으로 여는 유일한 연결): 켤 때 하루 한 번 npm `…/latest` 에 버전 번호만(node:https · 3초 · UA `agent-dashboard/<버전>`), `~/.agent-dashboard/update-check.json`(600) 기억, X.Y.Z 만 · 숫자 비교, 새 판이면 시작 로그 한 줄 + 환경 점검 「버전」 줄(켠 방법별 명령 · 복사엔 latest|outdated|unknown), 끄기 DASHBOARD_NO_UPDATE_CHECK · NO_UPDATE_NOTIFIER · 데모 · 시험 0 `69c4141`
+- [x] 보기만(tmux 밖) 세션 안내: 패널 입력 칸 자리에 까닭(터미널 · 에디터 확장) + 「tmux 로 다시 열기」(떠 있는 동안 꺼짐 · 「원래 세션을 먼저 끄세요」, 끝나면 켜짐 — 「다시 열기」와 같은 --resume 길) · 꼬리표 설명 한 줄 `bf4d1e3`
 - 출시 방법: 버전 올리기 → CI 초록 → 사용자 승인 뒤 `v*` 태그 → Actions 「Review deployments」에서 사용자 Approve (`docs/CONVENTIONS.md` 「출시 절차」)
 - 사용자 몫(선택): npm 패키지 Settings → Publishing access 를 「Require 2FA and disallow bypass 2fa tokens」로(Trusted Publisher 출시는 그대로 됨)
 
