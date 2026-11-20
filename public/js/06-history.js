@@ -104,7 +104,22 @@ function composerHint(s) {
   if (s.status === 'waiting') return t('Answer the approval request above first');
   return t('Send a message');
 }
+// tmux 밖(보기만) Claude 세션 · 다시 열 수 있는 끝난 세션: 입력 칸 자리에 까닭과 해결 단추 「tmux 로 다시 열기」(같은 대화를 --resume, 16-restore.js 의 data-reopen 길).
+// 떠 있는 동안은 단추를 꺼 둔다 — 같은 대화를 두 곳에서 열면 한 기록에 두 프로세스가 쓰고, 서버도 떠 있는 세션은 거절한다(lib/recent.mjs pick). 끝나면 켜진다
+function viewNoteHtml(s) {
+  const live = s.status !== 'ended';
+  if (s.tool !== 'claude' || (live ? s.tmux : !s.reopen)) return '';
+  const why = !live ? t('This session has ended. Reopen the same conversation in tmux to chat and approve here.')
+    : s.ide ? t('This session was started from an editor extension, so the dashboard cannot type into it. Reopen the same conversation in tmux with the button below to chat and approve here.')
+    : t('This session was started in a regular terminal (or editor), so the dashboard cannot type into it. Reopen the same conversation in tmux with the button below to chat and approve here.');
+  const first = live ? `<span class="vn-first">${s.ide ? t('Close it in the editor first — the button turns on once it ends') : t('Close it in its original terminal first — the button turns on once it ends')}</span>` : '';
+  return `<p>${why}</p><div class="vn-act"><button type="button" class="primary" ${live ? 'disabled' : `data-reopen="${esc(s.id)}"`}>${t('Reopen in tmux')}</button>${first}</div>`;
+}
 function renderComposer(s) {
+  const note = viewNoteHtml(s);
+  setHtml($('#view-note'), note);
+  $('#view-note').hidden = !note;
+  $('#composer').classList.toggle('viewing', Boolean(note));
   const can = s.tmux && s.status !== 'ended' && s.status !== 'waiting';
   $('#msg').disabled = !can;
   $('#msg').placeholder = composerHint(s);
