@@ -4,7 +4,7 @@
 
 **내 맥에서 돌아가는 AI 코딩 에이전트 세션을 한 화면에서 보고, 채팅하고, 승인하는 로컬 대시보드**
 
-Claude Code · Codex 지원 · 설치할 패키지 없음 · 모든 처리는 내 컴퓨터 안에서만
+Claude Code · Codex 지원 · 설치할 패키지 없음 · 모든 처리는 내 컴퓨터 안에서(밖으로는 하루 한 번 새 버전 번호 확인뿐)
 
 **한국어** · [English](README.en.md)
 
@@ -153,6 +153,7 @@ node bin/agent-dashboard.mjs restore   # 재시동 전 세션들을 tmux 로 다
 | `server.log` | 실행기(`run`)가 남기는 서버 출력. 5MB 를 넘으면 `server.log.1` 로 한 번 돌려요(그전 것은 지움). 요청 주소는 경로만 남겨요(토큰 · 검색어 안 남음) | 600 |
 | `restore.json` · `restore-prev.json` | 재시동 복구 목록(지금 · 재시동 전) | 600 |
 | `recent.json` | 「다시 열기」용 최근 7일 세션 기억 | 600 |
+| `update-check.json` | 새 버전 확인 결과(마지막으로 물은 시각 · 최신 버전 번호 — 하루 한 번만 묻게) | 600 |
 | `notify.json` | 알림 설정 | 600 |
 | `settings.backup.<시각>.json` · `statusline-original.json` | 사용 한도를 켜기 전 `~/.claude/settings.json` 백업(최근 5개만) · 원래 상태줄 | 600 |
 | `bin/statusline.mjs` | 사용 한도 상태줄 다리 복사본 | 폴더 700 · 파일 600 |
@@ -299,6 +300,7 @@ node bin/agent-dashboard.mjs restore   # 재시동 전 세션들을 tmux 로 다
 - 대화 목록·기록을 보는 요청도 명령과 같은 로그인이 있어야 해요(같은 Mac 의 다른 계정·프로그램이 내 대화를 읽지 못하게).
 - 다른 웹사이트가 이 화면을 몰래 띄워(iframe) 승인 단추를 누르게 속이지 못하게, 모든 응답에 화면 끼워 넣기 금지(`X-Frame-Options: DENY` · `frame-ancestors 'none'`)와 `nosniff` 를 붙여요.
 - 화면 코드에 실수(XSS)가 하나 생겨도 남의 스크립트가 돌거나 밖으로 보내지 못하게 CSP 를 붙여요: 스크립트는 이 서버의 파일만(`script-src 'self'`, 인라인 스크립트 · onclick 없음), 연결도 이 서버로만(`connect-src 'self'`), 플러그인 · `<base>` 없음, 다른 곳으로 가는 주소에 이 주소를 붙이지 않음(`Referrer-Policy: no-referrer`).
+- **밖으로 나가는 연결은 이것 하나**: 켤 때 하루 한 번 npm 에 이 패키지의 최신 버전 번호만 물어봐요(`registry.npmjs.org` 고정 주소, 3초 제한). 보내는 정보는 없어요(머리글은 `agent-dashboard/<버전>` 뿐). 받거나 설치하지 않고, 새 판이 있으면 시작 로그 한 줄과 환경 점검 「버전」 줄로 알려만 줘요. 결과는 `~/.agent-dashboard/update-check.json`(600)에 기억해 하루 안에는 다시 묻지 않아요. 끄려면 `DASHBOARD_NO_UPDATE_CHECK=1`(또는 `NO_UPDATE_NOTIFIER=1`) 로 켜세요 — 자동 실행은 그 값을 넣고 `autostart on` 을 다시 하면 이어져요.
 - 권한 모드는 각자 Claude 설정을 그대로 따라요. 권한 건너뛰기 옵션을 쓰지 않아요.
 - 새 세션의 첫 프롬프트는 claude 명령 인자로 넘기지 않아요. 인자는 `ps` 로 이 Mac 의 다른 계정에도 보여서, 세션이 뜨고 입력칸이 보이면(보통 1초 남짓) tmux 버퍼로 붙여 넣어요. 그래서 `-` 로 시작하는 글(예: `--permission-mode …`)이 옵션으로 읽힐 일도 없어요. 폴더 신뢰 확인 창이 떠 있으면 카드에 「신뢰 확인을 기다리는 중」을 보이고, 답할 때까지(최대 10분) 기다렸다가 넣어요. 끝내 넣지 못하면 쓴 글을 그 세션의 입력 칸에(세션이 이미 닫혔으면 「새 작업」 창의 첫 프롬프트 칸에) 돌려놓고 알림으로 알려요.
 

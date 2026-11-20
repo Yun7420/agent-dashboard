@@ -24,6 +24,7 @@ import { createProcesses } from './lib/procs.mjs';
 import { createStateBuilder } from './lib/state.mjs';
 import { createSpawned, findCommand } from './lib/spawn.mjs';
 import { createEnvCheck, startupNotices } from './lib/env.mjs';
+import { createUpdateCheck } from './lib/update-check.mjs';
 import { detectEditors, openDir } from './lib/open-dir.mjs';
 import { UPLOAD_DIR, UPLOAD_MAX } from './lib/uploads.mjs';
 import { sendText, sendJson, friendly, logPath, SECURITY_HEADERS } from './lib/respond.mjs';
@@ -80,13 +81,11 @@ function findSession(key) {
 // ---------- 환경 점검 · 폴더 열기 ----------
 // 환경 점검은 lib/env.mjs, 에디터 · Finder 로 열기는 lib/open-dir.mjs
 const env = createEnvCheck({
-  demo: DEMO,
-  demoEnv: demo.DEMO_ENV,
+  demo: DEMO, demoEnv: demo.DEMO_ENV,
   usageEnabled: () => usage.usageEnabled(), bridgeNode: () => usage.bridgeNode(),
   tokenInfo: () => ({ createdNow: TOKEN_CREATED_NOW, path: tildify(TOKEN_FILE), createdAt: fs.statSync(TOKEN_FILE).birthtime.toISOString(), openCmd: OPEN_CMD, loginDays: SESSION_MS / 86400_000 }),
-  detectEditors,
-  dialogIssues,
-  unknownStatuses, formatIssues,
+  detectEditors, dialogIssues, unknownStatuses, formatIssues,
+  update: createUpdateCheck({ demo: DEMO }), // 새 버전 알림 — 밖으로 여는 유일한 연결(하루 한 번 npm 에 버전 번호만, 데모 · 시험 · 끄기 변수면 0)
 });
 const { checkEnv } = env;
 
@@ -286,6 +285,7 @@ server.listen(PORT, '127.0.0.1', () => {
   server6.listen(PORT, '::1');
   // 없는 도구(tmux · Claude Code) · 다른 OS 는 로그에 한국어로 안내만 하고 서버는 계속(보기 전용으로라도)
   checkEnv().then((e) => { if (!DEMO) for (const line of startupNotices(e)) termLog(line); }).catch((e) => console.error('[환경 점검]', e.message)); // 시작 때 실패해도 서버는 계속(화면에서 다시 점검 가능)
+  env.update.start(termLog); // 켜기를 기다리게 하지 않는다(새 판이 있을 때만 로그 한 줄, lib/update-check.mjs)
   feed.start();
   if (!DEMO) {
     startHousekeeping({ limitsDir: LIMITS_DIR, statusDir: STATUS_DIR }); // 권한 · 첨부 · 한도 기록 · 상태줄 파일 정리(켤 때 + 6시간마다, lib/housekeeping.mjs)

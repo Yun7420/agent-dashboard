@@ -4,7 +4,7 @@
 
 **A local dashboard to watch, chat with and approve the AI coding agent sessions running on your Mac — all in one place**
 
-Claude Code · Codex · zero dependencies · everything stays on your machine
+Claude Code · Codex · zero dependencies · everything stays on your machine (the only outside call is a once-a-day check for a new version number)
 
 [한국어](README.md) · **English**
 
@@ -152,6 +152,7 @@ Everything the dashboard writes lives in `~/.agent-dashboard/` (it never writes 
 | `server.log` | server output written by the runner (`run`). Over 5MB it is rotated once to `server.log.1` (the previous one is dropped). Request URLs are logged as paths only (no token or search text) | 600 |
 | `restore.json` · `restore-prev.json` | restore-after-reboot lists (now · before the reboot) | 600 |
 | `recent.json` | sessions from the last 7 days, for "Reopen" | 600 |
+| `update-check.json` | new-version check result (when it last asked · the latest version number — so it asks only once a day) | 600 |
 | `notify.json` | notification settings | 600 |
 | `settings.backup.<time>.json` · `statusline-original.json` | backup of `~/.claude/settings.json` before turning on usage limits (latest 5 kept) · your original status line | 600 |
 | `bin/statusline.mjs` | copy of the usage-limit status-line bridge | folder 700 · file 600 |
@@ -298,6 +299,7 @@ A session already running in a terminal has no official way to receive input fro
 - Reading the session list and history also requires the same login as commands (so other accounts or programs on the same Mac can't read your conversations).
 - Every response carries `X-Frame-Options: DENY`, `frame-ancestors 'none'` and `nosniff`, so another website can't load this page in a hidden iframe and trick you into clicking approve.
 - A Content Security Policy limits the damage if a bug (XSS) ever slips into the page: scripts only from this server (`script-src 'self'`, no inline scripts or onclick), connections only to this server (`connect-src 'self'`), no plugins or `<base>`, and `Referrer-Policy: no-referrer`.
+- **The only outside connection**: once a day at startup it asks npm for this package's latest version number (fixed `registry.npmjs.org` address, 3-second limit). Nothing about you is sent (the only header is `agent-dashboard/<version>`). It never downloads or installs anything — if a newer version exists it just says so in one startup log line and in the "Version" row of the environment check. The result is remembered in `~/.agent-dashboard/update-check.json` (600), so it doesn't ask again within a day. To turn it off, start with `DASHBOARD_NO_UPDATE_CHECK=1` (or `NO_UPDATE_NOTIFIER=1`) — for autostart, set it and run `autostart on` again.
 - Permission modes follow your own Claude settings. The dashboard never uses permission-skipping flags.
 - A new session's first prompt is never passed as a claude argument (arguments are visible to other accounts on this Mac via `ps`). Once the session's input box appears (usually about a second), it is pasted through a tmux buffer, so text starting with `-` (e.g. `--permission-mode …`) can't be read as an option either. If the folder-trust prompt is showing, the card says so and it waits (up to 10 minutes) for your answer. If it still can't be delivered, your text is put back into that session's input box (or the first-prompt box of New task if the session already closed) and a notice tells you.
 
