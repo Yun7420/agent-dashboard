@@ -3,7 +3,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { execFile } from 'node:child_process';
 import { parseModelAliases, orderModels, createModels, readHelp, DEFAULT_MODELS, LIST_FAILED } from '../lib/models.mjs';
 import { newSessionArgs } from '../lib/spawn.mjs';
 import { modelAlias } from '../lib/restore.mjs';
@@ -27,12 +26,9 @@ test('모양이 이상하면 null: --model 줄 없음 · 따옴표 별칭 없음
 });
 
 // 실제 claude 는 help 를 다 쓰기 전에 끝나 파이프(execFile)로 받으면 8KB · 16KB 에서 잘렸다(2.1.311, 22KB · --model 줄은 13KB 뒤) — 실제 서버가 기본 목록으로 떨어졌다.
-// 가짜 claude 도 쓰자마자 process.exit → 파이프는 잘리고, 파일로 받는 readHelp 는 전부
+// 가짜 claude 도 쓰자마자 process.exit — 파이프가 잘리는지는 OS · 속도에 달려(이 Mac 은 잘림, CI 러너는 안 잘림) 재현은 단정하지 않고, 파일로 받는 readHelp 가 전부 받는지만
 test('claude --help 는 파일로 받는다 — 바로 끝나는 claude 도 끝까지 · 못 띄우면 거절', async () => {
   const fake = new URL('./fake-bin/claude', import.meta.url).pathname;
-  const piped = await new Promise((r) => execFile(fake, ['--help'], (e, out) => r(String(out))));
-  assert.ok(piped.length < HELP.length, `파이프 ${piped.length} < ${HELP.length}`); // 재현: 잘림
-  assert.equal(parseModelAliases(piped), null);
   const full = await readHelp({ cmd: fake });
   assert.equal(full, HELP);
   assert.deepEqual(parseModelAliases(full), ['fable', 'opus', 'sonnet']);
