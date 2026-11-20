@@ -32,6 +32,7 @@
   4. 로그인 — `/events` 와 `/api/*` 전부 로그인 쿠키(`ad_session_<포트>`, HttpOnly · SameSite=Strict · 7일, 값은 토큰 HMAC 서명). 토큰은 **화면 파일(index.html · js · css)에 두지 않는다** — 로그인 링크(`/login?t=`, 10분 · 한 번만)는 토큰 파일을 읽을 수 있는 `agent-dashboard open`(서버가 진짜인지 `/hello` 서명으로 확인)과 시작 로그만 만든다. `/api/*` 는 `X-Dashboard-Request: 1` 머리글과 같은 출처(Origin · Sec-Fetch-Site)도 요구한다. 주소에 토큰을 싣지 않는다(`?token=` 없음)
   5. 파일 권한 — 토큰 `~/.agent-dashboard/token` 600(링크 거절 · 예전 저장소의 `.dashboard-token` 은 처음 켤 때 옮기고 지움 · 데모는 `demo-token`), `~/.agent-dashboard` 700 / 경로 검사 — 첨부는 uploads 폴더 안만, 폴더 열기는 목록의 세션 폴더만
   6. 첨부는 14일 지나면 자동 삭제
+  7. 밖으로 나가는 연결은 **새 버전 확인 하나만**(`lib/update-check.mjs`: 켤 때 하루 한 번 npm 에 최신 버전 번호만 묻고, 보내는 정보 · 자동 설치 없음, `DASHBOARD_NO_UPDATE_CHECK` 로 끔 — 사용자 승인 2026-11-20). 다른 외부 연결을 더하려면 사용자 승인
 - 다른 기기에서 접속하게 만드는 일(로그인 · Tailscale · 클라우드)은 **사용자와 정하기 전에 하지 않는다.** 이 Mac 에서만 쓰는 동안 로그인 화면은 필요 없다는 결론(2026-11-12).
 - 사용자가 나중에 코드를 **직접 읽으며 배운다**(같이 읽기는 포트폴리오 뒤로 미룸) — 파일은 작고 구역이 분명하게, 주석은 "왜"를 한국어로 짧게. 큰 리팩터링은 먼저 사용자에게 묻는다.
 - 답변 · 커밋 · 문서는 **한국어**. 쉬운 말로, 결과와 확인 방법을 먼저.
@@ -61,6 +62,8 @@ lib/                  구역별 일(모듈은 createXxx(deps) 로 필요한 것�
   tmux · dialog · approval · spawn · demo · util   tmux 조작 · 선택창 감지 · 승인 카드 · 새 세션 인자 · 데모 · 기록 읽기
   i18n · i18n-en · lang-pref · demo-en   서버 문구 언어(한국어 원문 → 내보낼 때 영어 사전) · 브라우저 밖 문구 언어 저장(/api/lang) · 영어 데모 글
   atomic-write         파일 한 번에 바꾸기(난수 임시 파일 → fsync → rename, 링크를 따라가지 않음)
+  autostart · accounts   로그인 시 자동 실행(macOS LaunchAgent) · 여러 계정 · tmux 서버(설정한 것만, DASHBOARD_CLAUDE_DIRS · DASHBOARD_TMUX_SOCKETS)
+  proc-load · sysload · update-check   세션별 CPU · 메모리(자손 포함) · 컴퓨터 전체 CPU · 메모리 · 새 버전 알림(하루 한 번)
 bin/                  agent-dashboard.mjs(실행 명령 하나: start · run · restore · open — 실행 방법은 이것과 `npm start` 만) · statusline.mjs(상태줄 다리 원본)
 public/               index.html 뼈대 · css/00-base.css ~ 12-narrow.css(구역별 모양, 번호 순서 · @media 는 맨 뒤 파일 · 색은 00-base 토큰만) · js/00-*.js ~ 20-keys.js(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다 · 00-prefs.js 브라우저 저장값 모양 검사 · 00-i18n.js + 00-dict-*.js 화면 글자는 영어 원문, 한국어는 사전)
 test/                 node --test (lib 단위 + 데모 서버로 보안 · 응답 모양 + 시험 서버(가짜 tmux · 임시 홈)로 실제 모드)
@@ -85,7 +88,7 @@ docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 - 선택창 감지는 Claude Code 화면 **맨 아래 영어 안내 문구** 기준(`lib/dialog.mjs`). 대화 속 같은 문구에 속지 않게 맨 아래 10줄만 본다.
 - 셸 함정: macOS 기본 bash 3 에는 `mapfile` 없음, zsh 는 변수 목록이 한 덩어리로 넘어감 → 반복 검사 스크립트는 결과가 "없음"이어도 **실제 대상에 먼저 돌려 잡히는지** 확인.
 - 브라우저 저장 키는 `agent-deck` (바꾸면 사용자 정렬 · 설정이 초기화됨).
-- 데모 모드 데이터: `lib/demo.mjs`. README 스크린샷 · GIF 도 데모로 찍는다(회사 · 개인 정보가 화면에 나오면 안 됨).
+- 데모 모드 데이터: `lib/demo.mjs`. README 스크린샷 · GIF 도 데모로 찍는다(회사 · 개인 정보가 화면에 나오면 안 됨). 보고용 대표 그림 · README 그림은 **어두운 테마(기본 「초록」)로 고정**해서 찍는다 — 사용자가 「시스템 따라가기」를 쓰고 밝은 화면을 보기 힘들어함. 밝은 판 그림은 그 작업이 밝은 판에 관한 것일 때만, 어두운 판과 함께.
 - **npm 출시**: `@yun7420/agent-dashboard` 0.1.0 을 2026-11-19 에 공개(첫 버전만 사용자가 직접 publish). 다음 버전은 `docs/CONVENTIONS.md` 「출시 절차」대로 버전 올리기 → `v*` 태그 → `.github/workflows/publish.yml`(GitHub 환경 `npm` 에서 사용자 승인 · 출처 증명). 태그 push 는 사용자 승인 뒤에만.
 - 상용화 · 클라우드는 **나중에**(사용자 결정 대기). Vercel 같은 서버 배포는 구조상 불가 — 서버가 내 Mac 의 파일 · tmux 에 닿을 수 없음. 하려면 "수집기가 밖으로 먼저 연결 + 상태 요약만" 방식(ROADMAP 「나중에」).
 - 회사 저장소 · 회사 정보는 이 저장소에 절대 넣지 않는다(이 저장소는 공개).
