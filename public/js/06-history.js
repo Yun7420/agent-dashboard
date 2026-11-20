@@ -109,10 +109,12 @@ function composerHint(s) {
 function viewNoteHtml(s) {
   const live = s.status !== 'ended';
   if (s.tool !== 'claude' || (live ? s.tmux : !s.reopen)) return '';
+  // 할 일을 문장 안에 차례대로(끄기 → 단추) — 단추 옆 따로 쓴 노란 글은 경고처럼 보였다(사용자). 첫 문장은 꼬리표 · placeholder 와 같은 글(04-list.js viewWhy)
   const why = !live ? t('This session has ended. Reopen the same conversation in tmux to chat and approve here.')
-    : `${viewWhy(s)}. ${t('Reopen the same conversation in tmux with the button below to chat and approve here.')}`; // 첫 문장은 꼬리표 · placeholder 와 같은 글(04-list.js)
-  const first = live ? `<span class="vn-first">${s.ide ? t('Close it in the editor first — the button turns on once it ends') : t('Close it in its original terminal first — the button turns on once it ends')}</span>` : '';
-  return `<p>${why}</p><div class="vn-act"><button type="button" class="primary" ${live ? 'disabled' : `data-reopen="${esc(s.id)}"`}>${t('Reopen in tmux')}</button>${first}</div>`;
+    : `${viewWhy(s)}. ${s.ide ? t('Close the session in the editor, then reopen the same conversation in tmux with the button below to chat and approve here.') : t('Close the session in its original terminal, then reopen the same conversation in tmux with the button below to chat and approve here.')}`;
+  const off = live ? (s.ide ? t('Turns on once you close the session in the editor') : t('Turns on once you close the session in its original terminal')) : '';
+  const btn = live ? `<button type="button" class="primary" disabled title="${off}" aria-describedby="vn-off">` : `<button type="button" class="primary" data-reopen="${esc(s.id)}">`;
+  return `<p>${why}</p><div class="vn-act">${btn}${t('Reopen in tmux')}</button>${live ? `<span id="vn-off" hidden>${off}</span>` : ''}</div>`;
 }
 function renderComposer(s) {
   const note = viewNoteHtml(s);

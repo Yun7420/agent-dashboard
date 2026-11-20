@@ -9,13 +9,14 @@ const note = (s) => run(`viewNoteHtml(${JSON.stringify({ tool: 'claude', id: 'ab
 
 test('떠 있는 tmux 밖 세션: 까닭(터미널 · 에디터 확장) + 꺼진 단추 + 「원래 세션을 먼저 끄세요」', () => {
   const h = note({});
-  assert.match(h, /^<p>tmux 밖에서 시작한 세션이라 보기만 돼요\. 아래 단추로 같은 대화를 tmux 로 다시 열면 여기서 채팅 · 승인할 수 있어요\.<\/p>/); // 첫 문장 = 꼬리표 · placeholder 와 같은 글(viewWhy)
+  assert.match(h, /^<p>tmux 밖에서 시작한 세션이라 보기만 돼요\. 원래 터미널의 세션을 끈 뒤, 아래 단추로 같은 대화를 tmux 로 다시 열면 여기서 채팅 · 승인할 수 있어요\.<\/p>/); // 할 일을 문장 안에 차례대로 // 첫 문장 = 꼬리표 · placeholder 와 같은 글(viewWhy)
   assert.equal(run(`composerHint(${JSON.stringify({ status: 'idle', tmux: null })})`), 'tmux 밖에서 시작한 세션이라 보기만 돼요');
-  assert.match(h, /<button type="button" class="primary" disabled>tmux 로 다시 열기<\/button><span class="vn-first">원래 터미널의 세션을 먼저 끄세요 — 꺼지면 단추가 켜져요<\/span>/);
+  assert.match(h, /<div class="vn-act"><button type="button" class="primary" disabled title="원래 터미널의 세션을 끄면 켜져요" aria-describedby="vn-off">tmux 로 다시 열기<\/button><span id="vn-off" hidden>원래 터미널의 세션을 끄면 켜져요<\/span><\/div>$/); // 단추는 혼자, 까닭은 올림 · 화면 읽기
+  assert.doesNotMatch(h, /vn-first|먼저 끄세요/); // 따로 쓴 노란 글 없음
   assert.doesNotMatch(h, /data-reopen/); // 떠 있는 동안은 누를 수 없다(같은 대화를 두 곳에서 열지 않게)
   const ide = note({ ide: true });
-  assert.match(ide, /^<p>에디터 확장에서 시작한 세션이라 보기만 돼요\. 아래 단추로/);
-  assert.match(ide, /에디터의 세션을 먼저 끄세요/);
+  assert.match(ide, /^<p>에디터 확장에서 시작한 세션이라 보기만 돼요\. 에디터의 세션을 끈 뒤, 아래 단추로/);
+  assert.match(ide, /title="에디터의 세션을 끄면 켜져요"/);
 });
 
 test('끝났고 다시 열 수 있으면 켜진 단추(data-reopen — 「다시 열기」와 같은 길) · 그 밖(tmux 세션 · 다시 못 여는 끝 · Codex)은 안내 없음', () => {

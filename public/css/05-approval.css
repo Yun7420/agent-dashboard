@@ -54,8 +54,7 @@
 .view-note { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3); border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); font-size: 13.5px; line-height: 1.55; color: var(--dim); }
 .view-note[hidden] { display: none; }
 .view-note p { margin: 0; }
-.view-note .vn-act { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); }
-.view-note .vn-first { font-size: 12.5px; color: var(--working-text); }
+.view-note .vn-act { display: flex; } /* 단추는 문장 아래 혼자 — 꺼져 있을 때 까닭은 마우스 올림 · aria-describedby */
 #composer .box.drop { border-color: var(--accent); background: var(--accent-soft); }
 #send { color: var(--on-primary); }
 #send svg { transform: translate(-1px, 1px); } /* 종이비행기는 모양이 오른쪽 위로 쏠려 보여서 살짝 보정 */

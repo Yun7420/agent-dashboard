@@ -27,7 +27,7 @@ test('남은 양 = 100 − 쓴 양(0~100), 색 경계: 15% 이하 빨강 · 40% 
 test('usageHtml: 범례는 「· 5시간 74% 남음 · 주간 9% 남음」(남은 양 색) + 짧은 꼴 숫자(.us) · 꺼져 있으면 꺼진 스위치 · 값이 없으면 안내', () => {
   const { run } = load();
   run(`state = { tools: ${JSON.stringify(TOOLS)}, sessions: [], usage: { enabled: true, fiveHour: { percent: 26 }, sevenDay: { percent: 91 } } }`);
-  assert.match(run('usageHtml()'), /^<button type="button" class="k-use pops" data-usage[^>]*><span class="sep">·<\/span><span class="u"><span class="ul">5시간 <\/span><b class=""><span class="ul">74% 남음<\/span><span class="us">74%<\/span><\/b><\/span><span class="sep">·<\/span><span class="u"><span class="ul">주간 <\/span><b class="high"><span class="ul">9% 남음<\/span><span class="us">9%<\/span><\/b><\/span><\/button>$/);
+  assert.match(run('usageHtml()'), /^<button type="button" class="k-use" data-usage[^>]*><span class="sep">·<\/span><span class="u"><span class="ul">5시간 <\/span><b class=""><span class="ul">74% 남음<\/span><span class="us">74%<\/span><\/b><\/span><span class="sep">·<\/span><span class="u"><span class="ul">주간 <\/span><b class="high"><span class="ul">9% 남음<\/span><span class="us">9%<\/span><\/b><\/span><\/button>$/);
   run('state.usage = { enabled: false }');
   assert.match(run('usageHtml()'), /^<span class="sep">·<\/span><button type="button" class="switch k-use off" role="switch" aria-checked="false" data-usage-sw title="[^"]+"><span class="track"><\/span>사용 한도 보기<\/button>$/);
   run('state.usage = { enabled: true }');
@@ -40,7 +40,7 @@ test('범례: Claude Code 항목에만 사용 한도(마우스 올림 자리 dat
     renderList = () => {}; renderGraph = () => {};`);
   run('render()');
   const [claude, codex] = els['#kinds'].innerHTML.split('</span><span class="kind"');
-  assert.match(claude, /^<span class="kind" data-lp>.*<span class="kl">Claude Code<\/span><button type="button" class="k-use pops" data-usage.*5시간 <\/span><b class=""><span class="ul">68% 남음.*주간 <\/span><b class=""><span class="ul">79% 남음/);
+  assert.match(claude, /^<span class="kind" data-lp>.*<span class="kl">Claude Code<\/span><button type="button" class="k-use" data-usage.*5시간 <\/span><b class=""><span class="ul">68% 남음.*주간 <\/span><b class=""><span class="ul">79% 남음/);
   assert.match(codex, /<span class="kl">Codex<\/span><\/span>$/);
   assert.doesNotMatch(codex, /k-use|data-lp/);
 });
@@ -61,10 +61,10 @@ test('세 무리 배치: 범례 + 확대 단추가 보이는 칸에 안 들어�
   const cls = () => { const set = new Set(); return { set, toggle: (c, on) => (on ?? !set.has(c) ? set.add(c) : set.delete(c), set.has(c)), contains: (c) => set.has(c), add: (c) => set.add(c), remove: (c) => set.delete(c) }; };
   const props = {};
   // 긴 꼴 · 짧은 꼴 폭(.short 를 떼고 잰 값이 긴 꼴)
-  const box = (long, short, tiny = short) => { const b = { innerHTML: '', addEventListener() {}, classList: cls(), offsetHeight: 36 }; Object.defineProperty(b, 'offsetWidth', { get: () => (b.classList.contains('tiny') ? tiny : b.classList.contains('short') ? short : long) }); return b; };
+  const box = (long, short) => { const b = { innerHTML: '', addEventListener() {}, classList: cls(), offsetHeight: 36 }; Object.defineProperty(b, 'offsetWidth', { get: () => (b.classList.contains('gone') ? 0 : b.classList.contains('short') ? short : long) }); return b; };
   const els = {
     main: { clientWidth: 1440, classList: cls(), style: { getPropertyValue: (k) => props[k] ?? '' } },
-    '#kinds': box(330, 120, 56), '#status-chips': box(420, 170), '.zoom-btns': { offsetWidth: 36, classList: cls(), style: { setProperty: (k, v) => (props[k] = v) } },
+    '#kinds': box(330, 120), '#status-chips': box(420, 170), '.zoom-btns': { offsetWidth: 36, classList: cls(), style: { setProperty: (k, v) => (props[k] = v) } },
     '#status-chips [data-st="waiting"]': { classList: cls(), setAttribute() {} },
   };
   const el = (s) => (els[s] ??= { id: s, hidden: false, innerHTML: '', textContent: '', dataset: {}, style: { setProperty() {} }, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, setAttribute(k, v) { this[k] = v; }, getBoundingClientRect: () => ({}) });
@@ -88,16 +88,16 @@ test('세 무리 배치: 범례 + 확대 단추가 보이는 칸에 안 들어�
   props['--dw'] = '0px';
   run('floatSync()');
   assert.deepEqual([short('#kinds'), short('#status-chips')], [false, false]);
-  // 아주 좁은 칸(목록 펼침 + 넓은 패널 — 사용자 발견): 겹치지 않게 「C ▾」(.tiny) → 그래도 모자라면 + − ⌖ 를 범례 위로(.up), 숨기지 않는다
-  const tiny = () => els['#kinds'].classList.contains('tiny'), up = () => els['.zoom-btns'].classList.contains('up');
-  for (const [visible, want] of [[320, [true, false, false]], [280, [true, false, false]], [240, [true, false, false]], [200, [true, true, false]], [140, [true, true, false]], [120, [true, true, true]]]) {
+  // 아주 좁은 칸(넓은 패널 — 사용자 발견): 짧은 꼴 「C 68% · 79%」(120)도 확대 단추 옆에 안 들어가면(보이는 칸 204 미만) 범례를 숨긴다(.gone) — 「C ▾」 같은 조각을 남기지 않는다
+  const gone = () => els['#kinds'].classList.contains('gone');
+  for (const [visible, want] of [[900, [false, false]], [600, [false, false]], [420, [false, false]], [400, [true, false]], [320, [true, false]], [204, [true, false]], [203, [true, true]], [200, [true, true]]]) {
     props['--dw'] = `${1180 - 296 - visible}px`;
     run('floatSync()');
-    assert.deepEqual([short('#kinds'), tiny(), up()], want, `보이는 칸 ${visible}`);
+    assert.deepEqual([short('#kinds'), gone()], want, `보이는 칸 ${visible}`);
     const room = visible - 32, k = els['#kinds'].offsetWidth;
-    if (!up()) assert.ok(k + 16 + 36 <= room, `${visible}: 범례 ${k} + 확대 단추가 옆에 들어감`); // 같은 줄이면 겹치지 않는다
+    assert.ok(gone() || k + 16 + 36 <= room, `${visible}: 범례 ${k} + 확대 단추가 옆에 들어감`); // 보이면 겹치지 않는다
   }
-  assert.equal(props['--kh'], '36px'); // 올릴 높이 = 범례 높이
+  assert.equal(els['.zoom-btns'].classList.contains('up'), false); // 확대 단추는 옮기지 않는다(범례가 숨으니)
   // 200px 미만: 조직도 대신 패널을 넓게 보는 중 — 세 무리를 숨긴다(main.floats-off). 200 부터는 숨기지 않는다
   for (const [visible, off] of [[199, true], [200, false], [120, true], [320, false]]) {
     props['--dw'] = `${1180 - 296 - visible}px`;
@@ -106,7 +106,7 @@ test('세 무리 배치: 범례 + 확대 단추가 보이는 칸에 안 들어�
   }
   props['--dw'] = '0px';
   run('floatSync()');
-  assert.deepEqual([short('#kinds'), tiny(), up()], [false, false, false]); // 넓어지면 모두 되돌림
+  assert.deepEqual([short('#kinds'), gone()], [false, false]); // 넓어지면 모두 되돌림
   // 390 휴대폰(목록 띠 56): 334 − 32 = 302. 범례 330 + 52 > 302 → 짧게, 상태 칩 420 > 302 → 점 + 숫자
   els.main.clientWidth = 390; aw = 56;
   run('floatSync()');
@@ -124,4 +124,17 @@ test('세 무리 배치: 범례 + 확대 단추가 보이는 칸에 안 들어�
   run(`state.sessions[0].status = 'idle'; render()`);
   assert.ok(!els['#status-chips [data-st="waiting"]'].classList.contains('hot')); // 0 이면 흐리게
   assert.equal(els['#status-chips [data-st="waiting"]'].disabled, true); // 0 인 칩은 누를 수 없다(열 세션이 없음)
+});
+
+test('짧은 꼴에도 외톨이 점 없이: 이름 · 긴 글과 그 앞 구분 점만 숨김(꺼진 스위치 앞 점 포함) · 값 없음은 「—」 · 화면 읽기는 전체 글(aria-label)', async () => {
+  const { run } = load();
+  run(`state = { tools: ${JSON.stringify(TOOLS)}, sessions: [], usage: { enabled: true, fiveHour: { percent: 32 }, sevenDay: { percent: 21 } } }`);
+  assert.match(run('usageHtml()'), /aria-label="Claude 계정 사용 한도\(5시간·주간\): 5시간 68% 남음 · 주간 79% 남음"/);
+  run('state.usage = { enabled: true }');
+  assert.match(run('usageHtml()'), /<span class="k-wait">[^<]+<\/span><span class="us">—<\/span><\/span>$/); // 짧은 꼴 「C ● —」
+  const css = (await import('node:fs')).readFileSync(new URL('../public/css/11-center.css', import.meta.url), 'utf8');
+  assert.match(css, /\.kinds\.short :is\(\.kl, \.ul, \.kind > \.sep, \.k-use \.sep:first-child, \.k-wait\) \{ display: none; \}/);
+  assert.match(css, /\.kinds\.gone \{ display: none; \}/);
+  assert.doesNotMatch(css, /\.kinds\.tiny|\.zoom-btns\.up/); // 「C ▾」 조각 단계는 없앰
+  assert.doesNotMatch(run('state.usage = { enabled: true, fiveHour: { percent: 1 } }; usageHtml()'), /pops/); // 끝의 ▾ 도 점처럼 읽혀 범례에선 뺌
 });
