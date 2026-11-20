@@ -283,7 +283,8 @@ test('더 볼 게 있는 곳: data-tip 은 모두 tabindex="0"(또는 단추), �
 // 본문 7~10:1(네 면 모두) · 보조 · 강조 · 상태 글자 4.5 이상 · 주 단추 글자 4.5 이상 · 점 · 강조 · 스위치(비텍스트) 3 이상
 test('테마 대비: 초록 · 회색 · 푸른 밤 · 밝음 · 따뜻한 밝음 모두 본문 7~10 · 보조 4.5 · 비텍스트 3 이상', () => {
   const css = read('public/css/00-base.css');
-  const block = (sel) => { const i = css.indexOf(`${sel} {`); assert.ok(i >= 0, sel); return css.slice(i, css.indexOf('\n}', i)); };
+  // 줄 첫머리에서 찾는다 — 예전엔 「:root[data-theme="warm"] {」가 공용 줄(light, warm)에서 먼저 잡혀 따뜻한 밝음 자기 토큰을 한 번도 안 봤다
+  const block = (sel) => { const i = css.indexOf(`\n${sel} {`) + 1; assert.ok(i > 0, sel); return css.slice(i, css.indexOf('\n}', i)); };
   const tokens = (body) => Object.fromEntries([...body.matchAll(/--([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
   const base = tokens(block(':root'));
   const lightBase = { ...base, ...tokens(block(':root[data-theme="light"], :root[data-theme="warm"]')) };
@@ -304,6 +305,14 @@ test('테마 대비: 초록 · 회색 · 푸른 밤 · 밝음 · 따뜻한 밝�
       need('text', s, 7, 10.05);
       for (const k of ['dim', 'faint', 'accent-text', 'working-text', 'waiting-text']) need(k, s, 4.5);
     }
+    // 승인 칸(waiting-bg) · 세션 사이 메시지(peer-bg) 바탕 위에서도 본문 7 · 보조 · 상태 4.5
+    for (const s of ['waiting-bg', 'peer-bg']) {
+      need('text', s, 7);
+      for (const k of ['dim', 'faint', 'accent-text', 'working-text', 'waiting-text']) need(k, s, 4.5);
+    }
+    need('peer-text', 'peer-bg', 4.5);
+    // 밝은 판 눈부심(2026-11-20): 바탕 상대 밝기 83% 이하 — 흰 종이처럼 밝으면 화면 대부분이 눈부시다
+    if (name === 'light' || name === 'warm') for (const s of ['bg', 'surface']) if (lum(hex(s)) > 0.83) bad.push(`${name}: --${s} 상대 밝기 ${(lum(hex(s)) * 100).toFixed(1)}% > 83%`);
     // 목록 카드의 상태 글자(02-list.css: 작업 중 --working · 승인 필요 --waiting · 백그라운드 --working-text · 대기 --dim)는 고른 카드(surface-3) · 마우스 올림(surface-2) 바탕 위에서도(회귀 점검 G4)
     for (const s of ['surface', 'surface-2', 'surface-3']) for (const k of ['working', 'waiting', 'working-text', 'dim']) need(k, s, 4.5);
     need('on-primary', 'primary', 4.5);

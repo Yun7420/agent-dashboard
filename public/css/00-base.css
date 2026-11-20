@@ -102,35 +102,36 @@
   --switch-off: #848c97; --code-text: #bec6d0; --reply-text: #bac2cd; --on-status: #151a22;
   --waiting: #de7e86; /* 고른 카드(surface-3) 위 「승인 필요」 4.47 → 4.64 */
 }
-:root[data-theme="light"], :root[data-theme="warm"] {
-  color-scheme: light; --bg: #f2f3ee; --surface: #f8f9f5; --surface-2: #e9ebe5; --surface-3: #e0e3dc;
-  --ink: #2a2f2c; --shade: #8f938c; /* 밝은 판의 안쪽 칸 · 그림자는 옅게 */ --text: #3a403d; --dim: #555c58; --faint: #5c635f;
-  --accent: #2c7a57; --accent-2: #3f8f6a; --accent-text: #23694a; --on-accent: #f7f6f1; --glow: color-mix(in srgb, var(--accent) 6%, transparent);
-  --working: #85580f; --working-text: #7d5410; --waiting: #a83a45; --waiting-text: #8a2e38; --waiting-bg: #f7e6e3;
-  --idle: #52657a; --ok: #2c6e4f; --ok-text: #245c42; --ended: #a2a59e; --peer: #2a6580;
-  --peer-bg: #e2eef1; --peer-text: #1f4f63; --code-text: #3a403d; --code-inline: #84431a; --reply-text: #3a403d;
-  --on-status: #f8f9f5; --claude: #92482b; --codex: #2f5a8f; --kind-gemini: #5b4a92;
+:root[data-theme="light"], :root[data-theme="warm"] { /* 눈부심 줄이기(2026-11-20): 「흰 종이」→「색 있는 종이」 — surface 상대 밝기 94 → 80%(83% 이하, conventions 시험), 글자는 대비 규칙만큼 어둡게 */
+  color-scheme: light; --bg: #e1e2dd; --surface: #e7e8e4; --surface-2: #d9dbd5; --surface-3: #d0d3cd;
+  --ink: #2a2f2c; --shade: #8f938c; /* 밝은 판의 안쪽 칸 · 그림자는 옅게 */ --text: #343a37; --dim: #4d5450; --faint: #555c58;
+  --accent: #2c7a57; --accent-2: #3f8f6a; --accent-text: #226648; --on-accent: #f7f6f1; --glow: color-mix(in srgb, var(--accent) 6%, transparent);
+  --working: #7c520d; --working-text: #7a520f; --waiting: #9e3640; --waiting-text: #8a2e38; --waiting-bg: #e6d6d3;
+  --idle: #52657a; --ok: #2c6e4f; --ok-text: #245c42; --ended: #a2a59e; --peer: #28607a;
+  --peer-bg: #d2dde0; --peer-text: #1f4f63; --code-text: #343a37; --code-inline: #84431a; --reply-text: #343a37;
+  --on-status: #f8f9f5; --claude: #8e462a; --codex: #2f5a8f; --kind-gemini: #5b4a92;
 }
 /* 따뜻한 밝음: 밝은 판 위에 누런 미색 바탕 + 갈색 강조 */
 :root[data-theme="warm"] {
-  --bg: #f3efe7;
-  --surface: #f9f6f0;
-  --surface-2: #ebe6dc;
-  --surface-3: #e2dccf;
+  --bg: #e4e0d9;
+  --surface: #eae7e1;
+  --surface-2: #ddd8ce;
+  --surface-3: #d4cec2;
   --ink: #2e2a25;
   --shade: #948e84;
-  --text: #45403a;
+  --text: #403b36;
   --dim: #5a534a;
-  --faint: #60594f;
+  --faint: #5e574d;
   --accent: #9a5b25;
   --accent-2: #a86a33;
   --accent-text: #7f4a1c;
   --primary: #8a4f1e;
   --primary-hover: #7d471b;
   --on-accent: #faf7f1;
-  --code-text: #45403a;
-  --reply-text: #45403a;
+  --code-text: #403b36;
+  --reply-text: #403b36;
   --on-status: #f9f6f0;
+  --waiting-bg: #e8d8d5; --peer-bg: #d4dfe2; --working-text: #78500f; --working: #79500d; --waiting: #9a353f; --claude: #8b4428; --peer: #275e77; /* 어두워진 바탕 위 대비(밝음과 같은 셈) */
 }
 * { box-sizing: border-box; }
 ::selection { background: var(--accent-soft); }
