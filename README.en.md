@@ -109,6 +109,7 @@ Pick the **colors** under **⋯ → Display → Theme**: dark **Green** (default
 
 - Turn off · check: `agent-dashboard autostart off` · `agent-dashboard autostart status` (on or off, which node it points to, last exit code). Logs go to `~/.agent-dashboard/autostart.log` (readable only by you; over 5 MB it moves to `.1` on `autostart on`). If another dashboard already holds the port, it retries every 5 minutes.
 - It can't be set up from npx — the npx cache can be cleared, so the path may be gone after a reboot. If Node lives in a version folder (nvm, fnm), run `autostart on` again after switching Node.
+- If the repo is under Documents, Desktop, Downloads (or iCloud Drive), macOS asks once for permission to access that folder — the server doesn't start until you allow it (if you don't see the prompt: System Settings → Privacy & Security → Files and Folders). If `autostart status` says the server is not answering yet, check this first.
 - It stores the PATH you had when turning it on, so it finds tmux and claude. If a dashboard is already running (e.g. the tmux runner below) it only warns — use one or the other. On Linux it only prints an example systemd unit.
 
 Or run it inside tmux with the auto-restart runner; if the server stops it comes back after 2 seconds. Logs go to `~/.agent-dashboard/server.log` (readable only by you).

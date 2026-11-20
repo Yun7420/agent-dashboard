@@ -110,6 +110,7 @@ node bin/agent-dashboard.mjs open   # 링크가 지났거나 다른 브라우저
 
 - 끄기 · 확인: `agent-dashboard autostart off` · `agent-dashboard autostart status`(켜짐 여부 · 가리키는 node · 마지막 종료 코드). 로그는 `~/.agent-dashboard/autostart.log`(본인만 읽기, 5MB 를 넘으면 `autostart on` 할 때 `.1` 로). 포트를 이미 다른 대시보드가 쓰고 있으면 5분마다 다시 시도해요.
 - npx 로는 걸 수 없어요 — npx 캐시는 지워질 수 있어 재부팅 뒤 경로가 사라져요. nvm · fnm 처럼 Node 를 버전 폴더에 두었다면 Node 를 바꾼 뒤 `autostart on` 을 다시 해 주세요.
+- 저장소가 문서 · 데스크탑 · 다운로드(또는 iCloud Drive) 폴더 아래면 macOS 가 처음 한 번 「문서 폴더 접근」 허락을 물어요 — 허락할 때까지 서버가 뜨지 않으니 창이 뜨면 허용(안 보이면 시스템 설정 → 개인정보 보호 및 보안 → 파일 및 폴더). `autostart status` 가 「아직 응답하지 않아요」를 보여 주면 이것부터 확인하세요.
 - 켤 때의 PATH 를 그대로 넣어 tmux · claude 를 찾아요. 이미 대시보드(아래 tmux 실행기 등)가 떠 있으면 경고만 하니, 하나만 쓰세요. Linux 는 systemd 유닛 예시만 보여 줘요.
 
 또는 tmux 안에서 자동 재시작 실행기로 띄우면, 서버가 멈춰도 2초 뒤 다시 켜져요. 기록은 `~/.agent-dashboard/server.log`(본인만 읽기).

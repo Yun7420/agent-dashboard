@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { createAutostart, plistXml, programArgs, inNpxCache, versionedNode, LABEL } from '../lib/autostart.mjs';
+import { createAutostart, plistXml, programArgs, inNpxCache, versionedNode, protectedDir, LABEL } from '../lib/autostart.mjs';
 import { exitAfterListenFail, AUTOSTART_RETRY_MS } from '../lib/launch.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { ROOT, FAKE_BIN } from './_helpers/server.mjs';
@@ -196,4 +196,24 @@ test('server.mjs 그대로: 포트가 쓰이고 있으면 자동 실행은 기�
   } finally {
     srv.close();
   }
+});
+
+// 2026-11-20 이 Mac 에 적용할 때: 저장소가 ~/Documents 아래라 launchd 로 뜬 node 가 「문서 폴더 접근」 허락을 기다리며 몇 분 멈췄다(로그 비어 있음 · never exited)
+test('보호 폴더(문서 · 데스크탑 · 다운로드 · iCloud) 아래면 on 이 허락 안내, status 는 켜졌는데 포트가 응답 없으면 한 줄', async () => {
+  const home = '/Users/me';
+  assert.equal(protectedDir('/Users/me/Documents/x/bin/a.mjs', home), true);
+  assert.equal(protectedDir('/Users/me/Library/Mobile Documents/com~apple~CloudDocs/x', home), true);
+  assert.equal(protectedDir('/Users/me/Desktop', home), true);
+  assert.equal(protectedDir('/Users/me/Documents2/x', home), false);
+  assert.equal(protectedDir('/opt/homebrew/lib/node_modules/@yun7420/agent-dashboard', home), false);
+  const docs = setup();
+  const inDocs = createAutostart({ home: docs.home, uid: 501, platform: 'darwin', execPath: '/opt/homebrew/bin/node', script: path.join(docs.home, 'Documents', 'agent-dashboard', 'bin', 'agent-dashboard.mjs'), env: ENV, launchctl: async (a) => ({ code: a[0] === 'print' ? 113 : 0, out: '' }), portBusy: async () => false });
+  assert.match((await inDocs.on()).lines.at(-1), /^macOS 가 처음 한 번 「문서 폴더 접근」 허락을 물어요/);
+  const plain = setup();
+  assert.ok(!(await plain.auto.on()).lines.some((l) => /문서 폴더 접근/.test(l)), '보호 폴더 밖이면 안내 없음');
+  const quiet = (await plain.auto.status()).lines.join('\n');
+  assert.match(quiet, /서버가 아직 4545 포트에서 응답하지 않아요 — 허락 창\(문서 폴더 접근\)이나 로그\(.*autostart\.log\)를 확인해 주세요/);
+  const up = setup({ busy: true });
+  await up.auto.on();
+  assert.ok(!(await up.auto.status()).lines.some((l) => /응답하지 않아요/.test(l)), '응답하면 없음');
 });
