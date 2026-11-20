@@ -127,12 +127,14 @@ test('approve: 승인 기다리는 세션에만, 화면의 번호 · 글자가 �
 test('pane: tmux 창 세션은 그 창 화면(capture-pane -t 창), 목록에 없는 세션은 404', async () => {
   const st = await firstState();
   const s = st.sessions.find((x) => x.id === ID[0]);
+  const before = tmuxCalls('capture-pane').length;
   const r = await req(`/api/pane?key=${encodeURIComponent(s.key)}`, { headers: H });
   assert.equal(r.status, 200);
   assert.equal(r.text, '>'); // 가짜 tmux 의 기본 화면 「> 」(끝 공백은 뗀다)
   assert.equal(r.headers['x-focus-tab'], ''); // 질문 탭 줄이 없으면 빈 값
-  const cap = tmuxCalls('capture-pane').at(-1).args;
-  assert.equal(cap[cap.indexOf('-t') + 1], '%1');
+  // 2초 틱의 선택창 감시도 승인 대기 세션(%2)을 capture-pane 하므로 「마지막 호출」이 아니라 요청 뒤 호출들 중에서 찾는다(CI 에서 엇갈린 적 있음)
+  const targets = tmuxCalls('capture-pane').slice(before).map((c) => c.args[c.args.indexOf('-t') + 1]);
+  assert.ok(targets.includes('%1'), JSON.stringify(targets));
   for (const key of ['claude:없는-세션', '']) assert.equal((await req(`/api/pane?key=${encodeURIComponent(key)}`, { headers: H })).status, 404, key);
 });
 
