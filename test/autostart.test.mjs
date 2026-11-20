@@ -253,3 +253,30 @@ test('plist: CLAUDE_CONFIG_DIR · CODEX_HOME 은 있을 때만 넣고, 다른 �
   const none = plistXml({ node: '/n', script: '/s', workDir: '/w', env: { PATH: '/p', CLAUDE_CONFIG_DIR: '' }, logFile: '/l' });
   assert.doesNotMatch(none, /CLAUDE_CONFIG_DIR|CODEX_HOME/); // 빈 값 · 없음이면 칸이 없다
 });
+
+// 환경 점검 「자동 실행」 줄(0.1.5): 판정은 status 와 같은 inspect 하나. 점검 결과 복사에는 코드만
+test('환경 점검 「자동 실행」: 꺼짐 안내 · 켜짐 ok(버전 폴더면 덧붙임) · 가리키는 node 가 없으면 stale 경고 · 경로는 글에 없음', async () => {
+  const { autostartEnvItem } = await import('../lib/env.mjs');
+  const { envReport } = await import('../lib/env-report.mjs');
+  const { tr } = await import('../lib/i18n.mjs');
+  const { auto, home } = setup({ execPath: process.execPath });
+  assert.deepEqual(autostartEnvItem(await auto.inspect(), 'agent-dashboard'), { name: '자동 실행', level: 'info', code: 'off', detail: '꺼짐 — agent-dashboard autostart on 으로 로그인 때 켤 수 있어요' });
+  fs.mkdirSync(path.join(home, 'pkg', 'bin'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'pkg', 'bin', 'agent-dashboard.mjs'), '');
+  await auto.on();
+  const on = autostartEnvItem(await auto.inspect(), 'agent-dashboard');
+  assert.equal(on.level, 'ok');
+  assert.equal(on.code, 'on');
+  assert.equal(on.detail.includes('버전 폴더'), versionedNode(process.execPath));
+  const ver = setup({ execPath: '/Users/me/.nvm/versions/node/v24.1.0/bin/node' });
+  await ver.auto.on();
+  const stale = autostartEnvItem(await ver.auto.inspect(), 'node bin/agent-dashboard.mjs');
+  assert.equal(stale.level, 'warn'); // 가리키는 node(가짜 경로)가 없다 = Node 를 바꾼 뒤
+  assert.equal(stale.code, 'stale');
+  assert.match(tr(stale.detail, 'en'), /^On, but the node or script it points to is gone .* run node bin\/agent-dashboard\.mjs autostart on again$/);
+  const notLoaded = autostartEnvItem({ on: true, loaded: false, nodeOk: true, scriptOk: true }, 'x');
+  assert.equal(notLoaded.code, 'stale'); // 파일은 있지만 올라가 있지 않음
+  const rep = envReport([on, stale]).items;
+  assert.deepEqual(rep.map((x) => [x.name, x.code, x.note]), [['자동 실행', 'on', on.detail === '켜짐 — 로그인 때 저절로 켜져요' ? on.detail : null], ['자동 실행', 'stale', null]]); // 경로 · 명령이 든 글은 복사에 안 들어감
+  assert.ok(![on, stale].some((x) => x.detail.includes(home) || x.detail.includes('/Users/me')), '설명에도 경로 없음');
+});
