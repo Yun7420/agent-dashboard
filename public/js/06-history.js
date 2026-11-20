@@ -105,13 +105,14 @@ function composerHint(s) {
   return t('Send a message');
 }
 // tmux 밖(보기만) Claude 세션 · 다시 열 수 있는 끝난 세션: 입력 칸(.box) 안을 이 안내로 바꾼다 — 테두리 · 높이는 입력 칸 그대로(새 모양 없이).
-// 제목 + 오른쪽 「다시 열기」(목록 끝난 카드와 같은 .reopen, 16-restore.js 의 data-reopen 길) + 흐린 설명 두 줄. 첫 문장은 꼬리표 · placeholder 와 같은 글(04-list.js viewWhy).
+// 제목 + 오른쪽 「다시 열기」(목록 끝난 카드와 같은 .reopen, 16-restore.js 의 data-reopen 길) + 흐린 설명. 까닭 문장(viewWhy)은 꼬리표 말풍선 한 곳에만 —
+// 말풍선에서 까닭을 읽고 「세션을 열면 방법이 나와요」를 따라 온 사람에게 같은 말을 또 하지 않고, 이어지는 말(할 일)만(사용자).
 // 떠 있는 동안은 단추를 꺼 둔다 — 같은 대화를 두 곳에서 열면 한 기록에 두 프로세스가 쓰고, 서버도 떠 있는 세션은 거절한다(lib/recent.mjs pick). 끝나면 켜진다
 function viewNoteHtml(s) {
   const live = s.status !== 'ended';
   if (s.tool !== 'claude' || (live ? s.tmux : !s.reopen)) return '';
   const desc = !live ? t('This session has ended. Reopen it to chat and approve here.')
-    : `${viewWhy(s)}. ${s.ide ? t('Close it in the editor and you can reopen it in tmux.') : t('Close it in its original terminal and you can reopen it in tmux.')}`;
+    : s.ide ? t('Close it in the editor and you can reopen it in tmux.') : t('Close it in its original terminal and you can reopen it in tmux.');
   const off = live ? (s.ide ? t('Turns on once you close the session in the editor') : t('Turns on once you close the session in its original terminal')) : '';
   const btn = live ? `<button type="button" class="reopen" disabled title="${off}" aria-describedby="vn-off">` : `<button type="button" class="reopen" data-reopen="${esc(s.id)}">`;
   return `<div class="vn-head"><b class="vn-title">${live ? t('View-only session') : t('Ended session')}</b>${btn}${t('Reopen')}</button></div><p>${desc}</p>${live ? `<span id="vn-off" hidden>${off}</span>` : ''}`;

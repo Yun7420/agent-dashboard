@@ -7,13 +7,13 @@ import { loadFront } from './_helpers/vm.mjs';
 const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '02-load.js', '04-list.js', '06-history.js'], { window: {}, document: { querySelector: () => ({ addEventListener() {}, classList: { contains: () => false } }), addEventListener() {}, hidden: true }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, setTimeout() {} });
 const note = (s) => run(`viewNoteHtml(${JSON.stringify({ tool: 'claude', id: 'abc-1', status: 'idle', tmux: null, ide: false, ...s })})`);
 
-test('떠 있는 tmux 밖 세션: 제목 「보기만 세션」 + 오른쪽 꺼진 「다시 열기」(까닭은 title · aria-describedby) + 흐린 설명(첫 문장 = viewWhy) — 노란 글 없음', () => {
+test('떠 있는 tmux 밖 세션: 제목 「보기만 세션」 + 오른쪽 꺼진 「다시 열기」(까닭은 title · aria-describedby) + 흐린 설명(할 일만 — 까닭은 꼬리표 말풍선에) — 노란 글 없음', () => {
   const h = note({});
-  assert.equal(h, '<div class="vn-head"><b class="vn-title">보기만 세션</b><button type="button" class="reopen" disabled title="원래 터미널의 세션을 끄면 켜져요" aria-describedby="vn-off">다시 열기</button></div><p>tmux 밖에서 시작해 여기선 채팅 · 승인이 안 돼요. 원래 터미널에서 이 세션을 끄면 tmux 로 다시 열 수 있어요.</p><span id="vn-off" hidden>원래 터미널의 세션을 끄면 켜져요</span>');
+  assert.equal(h, '<div class="vn-head"><b class="vn-title">보기만 세션</b><button type="button" class="reopen" disabled title="원래 터미널의 세션을 끄면 켜져요" aria-describedby="vn-off">다시 열기</button></div><p>원래 터미널에서 이 세션을 끄면 tmux 로 다시 열 수 있어요.</p><span id="vn-off" hidden>원래 터미널의 세션을 끄면 켜져요</span>');
   assert.doesNotMatch(h, /data-reopen|vn-first/); // 떠 있는 동안은 누를 수 없다(같은 대화를 두 곳에서 열지 않게)
   assert.equal(run(`composerHint(${JSON.stringify({ status: 'idle', tmux: null })})`), 'tmux 밖에서 시작해 여기선 채팅 · 승인이 안 돼요');
   const ide = note({ ide: true });
-  assert.match(ide, /<p>에디터 확장에서 시작해 여기선 채팅 · 승인이 안 돼요\. 에디터에서 이 세션을 끄면 tmux 로 다시 열 수 있어요\.<\/p>/);
+  assert.match(ide, /<p>에디터에서 이 세션을 끄면 tmux 로 다시 열 수 있어요\.<\/p>/);
   assert.match(ide, /title="에디터의 세션을 끄면 켜져요"/);
 });
 
@@ -31,15 +31,16 @@ test('끝났고 다시 열 수 있으면 「끝난 세션」 + 켜진 「다시 
   assert.match(css, /\.view-note \{[^}]*min-height: 92px;/); // 입력 칸 60 + 단추 줄 32
   const base = fs.readFileSync(new URL('../public/css/00-base.css', import.meta.url), 'utf8');
   assert.match(base, /^\.reopen \{/m); // 목록 카드와 같은 모양(공용)
+  assert.match(base, /\.reopen:disabled \{ opacity: 1; color: var\(--faint\); border-color: var\(--border-strong\); \}/); // 꺼짐도 또렷한 회색 테두리(흐린 .4 는 넓은 패널에서 안 보였다)
 });
 
-test('같은 뜻은 같은 글: 꼬리표 말풍선 · 입력 칸 placeholder · 패널 안내 첫 문장이 한 까닭(viewWhy)을 같이 쓴다 — 에디터 확장 판도', () => {
+test('까닭 문장(viewWhy)은 꼬리표 말풍선 한 곳(과 placeholder)에만 — 패널 안내 상자는 이어지는 말만, 같은 까닭을 되풀이하지 않는다 — 에디터 확장 판도', () => {
   for (const ide of [false, true]) {
     const why = run(`viewWhy(${JSON.stringify({ ide })})`);
     assert.match(why, ide ? /^에디터 확장에서 시작해 여기선 채팅 · 승인이 안 돼요$/ : /^tmux 밖에서 시작해 여기선 채팅 · 승인이 안 돼요$/);
     assert.match(run(`tags(${JSON.stringify({ tmux: null, status: 'idle', ide })})`), new RegExp(`data-tip="${why}\\. 세션을 열면 tmux 로 다시 여는 방법이 나와요"`));
     assert.equal(run(`composerHint(${JSON.stringify({ tmux: null, status: 'idle', ide })})`), why);
-    assert.ok(note({ ide }).includes(`<p>${why}. `));
+    assert.ok(!note({ ide }).includes(why), '패널 상자에 까닭 문장을 되풀이하지 않음');
   }
 });
 

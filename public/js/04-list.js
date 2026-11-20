@@ -2,7 +2,7 @@
 // 카드는 이름 · 상태 · 흐린 한 줄(폴더 · 시간)만 — 대화 창은 조직도 물 채우기(전체 비교)와 패널 머리 %(정확한 숫자)가 맡는다.
 // 꼬리표는 기본값이 아닐 때만: tmux 밖(보기만 되는) 세션에만 「보기만」. 에이전트 종류는 이름 앞 표식(02-kinds.js 의 kmark)
 // 꼬리표는 기본값이 아닐 때만: tmux 밖(보기만 — 떠 있는 세션만, 종료 세션은 tmux 칸이 늘 비어 붙던 것을 뺌) · 다른 계정(DASHBOARD_CLAUDE_DIRS) · 다른 tmux 서버(DASHBOARD_TMUX_SOCKETS)
-// 보기만(tmux 밖) 까닭 한 문장 — 꼬리표 말풍선 · 입력 칸 placeholder · 패널 안내(06-history.js)가 같은 글을 쓴다(곳마다 말이 달라 헷갈렸다)
+// 보기만(tmux 밖) 까닭 한 문장 — 꼬리표 말풍선(과 입력 칸 placeholder)에만. 패널 안내 상자는 이어지는 말(할 일)만(06-history.js viewNoteHtml)
 const viewWhy = (s) => (s.ide ? t('Started from an editor extension, so chat · approve are off here') : t('Started outside tmux, so chat · approve are off here'));
 const tags = (s) => [
   s.tmux || s.status === 'ended' ? '' : `<span class="badge badge-view" tabindex="0" data-tip="${viewWhy(s)}. ${t('Open the session to see how to reopen it in tmux')}">${t('View only')}</span>`,
