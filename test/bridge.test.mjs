@@ -92,3 +92,21 @@ test('서버 시작(syncBridge): 옛 경로 등록 → 새 경로로, 다른 키
   assert.equal(fs.existsSync(off.dst), false);
   assert.deepEqual(syncBridge({ ...setup(), src: SRC }), { enabled: false, copied: false, migrated: false }); // settings 없음
 });
+
+test('서버 시작(syncBridge): 다른 node 로 켠 서버끼리 번갈아 고쳐 쓰지 않는다 — 있는 node 면 그대로 · 사라진 node · 옛 경로면 바꿈', () => {
+  // 다른(있는) node: 이 시험을 돌리는 node 로 등록돼 있고 서버는 /usr/local/bin/node 로 켬 → 그대로
+  const t = setup();
+  const other = `"${process.execPath}" "${t.dst}"`;
+  fs.writeFileSync(t.settingsFile, `${JSON.stringify({ statusLine: { type: 'command', command: other } })}\n`);
+  const h = hash(t.settingsFile);
+  assert.deepEqual(syncBridge({ ...t, src: SRC }), { enabled: true, copied: true, migrated: false });
+  assert.equal(hash(t.settingsFile), h, 'settings.json 그대로');
+  // 사라진 node → 지금 서버의 node 로
+  fs.writeFileSync(t.settingsFile, `${JSON.stringify({ statusLine: { type: 'command', command: `"${path.join(t.base, 'gone', 'node')}" "${t.dst}"` } })}\n`);
+  assert.deepEqual(syncBridge({ ...t, src: SRC }), { enabled: true, copied: false, migrated: true });
+  assert.equal(read(t.settingsFile).statusLine.command, `"${t.node}" "${t.dst}"`);
+  // 옛 경로(패키지 폴더의 다리) → 있는 node 여도 새 경로로
+  fs.writeFileSync(t.settingsFile, `${JSON.stringify({ statusLine: { type: 'command', command: `"${process.execPath}" "${SRC}"` } })}\n`);
+  assert.deepEqual(syncBridge({ ...t, src: SRC }), { enabled: true, copied: false, migrated: true });
+  assert.equal(read(t.settingsFile).statusLine.command, `"${t.node}" "${t.dst}"`);
+});
