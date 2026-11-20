@@ -77,7 +77,7 @@ You need: **macOS · Node 18+ · tmux · Claude Code**. If something is missing 
 **With npm** (no repo needed)
 
 ```bash
-npx @yun7420/agent-dashboard          # download and start → open the "login link (10 min)" printed in the terminal
+npx @yun7420/agent-dashboard          # download and start → a logged-in browser opens for you
 npx @yun7420/agent-dashboard open     # link expired, another browser, or after 7 days: opens a fresh login link in your browser
 
 npm i -g @yun7420/agent-dashboard     # or install it for a short command
@@ -91,11 +91,13 @@ agent-dashboard                       # start (open · run · restore · --help 
 ```bash
 git clone https://github.com/Yun7420/agent-dashboard.git
 cd agent-dashboard
-npm start          # → open the "login link (10 min)" printed in the terminal
+npm start          # → a logged-in browser opens for you
 node bin/agent-dashboard.mjs open   # link expired, another browser, or after 7 days: opens a fresh login link in your browser
 ```
 
-The page lives at `http://localhost:4545`, but the first visit has to come through a **login link**. That browser then stays logged in for 7 days (see "Security").
+The page lives at `http://localhost:4545`, but the first visit has to come through a **login link**. Started from a terminal, it opens your browser with that link (turn it off with `--no-open` or `DASHBOARD_NO_OPEN=1`); if nothing opens, click the link printed in the terminal. That browser then stays logged in for 7 days (see "Security").
+
+Leave that terminal running while you use the dashboard (a cursor that seems stuck is normal) — press Ctrl+C there to stop it.
 
 You can also run `node bin/agent-dashboard.mjs` (see `--help`); it's the same as the `agent-dashboard` command you get from npm.
 
@@ -380,7 +382,7 @@ Uses Node's built-in test runner (`node --test`), nothing to install. The tests 
 | Record folders | Folders moved with `CLAUDE_CONFIG_DIR` · `CODEX_HOME` | By default the one value of the shell that started the dashboard. Add other account folders with `DASHBOARD_CLAUDE_DIRS=~/.claude-work:…` (only folders under home, owned by you, not linking outside — others are skipped with the reason in the environment check). Sessions · history · search · reopen work per account; usage limits · default model · new sessions use the default account; Today's work is combined. Codex reads one folder |
 
 - **Chat · approve · close work only for sessions started in tmux.** Sessions started in a plain terminal or an editor extension (VS Code · Cursor) are view-only.
-- **It doesn't open a browser by itself on first start.** Open the login link printed in the terminal or run `node bin/agent-dashboard.mjs open` (`npx @yun7420/agent-dashboard open` with npx, `agent-dashboard open` if installed). If you started it with `run` (the runner), the link is in `~/.agent-dashboard/server.log`.
+- **It opens the browser by itself only when started from a terminal.** With autostart, the runner (`run`) or `--no-open` it doesn't, so open the login link printed in the terminal or run `node bin/agent-dashboard.mjs open` (`npx @yun7420/agent-dashboard open` with npx, `agent-dashboard open` if installed). If you started it with `run` (the runner), the link is in `~/.agent-dashboard/server.log`.
 - If a project's `.claude/settings.json` has its own `statusLine`, sessions in that project don't get account usage limits (the status-line bridge isn't called).
 - **Codex is partial** — list · status · Now tab (request · answer · context) · History tab · search · chat · **Today's work** (prompts · commands · commits · tokens — edited files are not in its transcripts, so they show "not supported") · the "Codex record format" environment check work (verified with 0.125 transcripts). Prompt detection · account usage limits · last auto-compact time · subagents · messages between sessions · new session · restore are Claude Code only.
 - No Gemini or other tools yet (each can be added as one adapter file).

@@ -6,7 +6,8 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { openLogin } from '../lib/login-open.mjs';
+import { openLogin, openOnStart } from '../lib/login-open.mjs';
+import { shouldAutoOpen } from '../lib/launch.mjs';
 import { proofFor, LOGIN_TTL_MS } from '../lib/auth.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { request } from './_helpers/http.mjs';
@@ -141,4 +142,55 @@ test('실행 명령 open: 시험 서버에 맞는 링크를 가짜 open 으로 �
   } finally {
     await s.stop();
   }
+});
+
+test('켤 때 저절로 열기(shouldAutoOpen): 사람이 터미널에서 켰을 때만 — 자동 실행 · 실행기 자식 · 데모 · 시험 · 터미널 아님 · --no-open · DASHBOARD_NO_OPEN 은 안 연다', () => {
+  const tty = { env: {}, argv: ['node', 'server.mjs'], isTTY: true };
+  assert.equal(shouldAutoOpen(tty), true); // npx · agent-dashboard · start · npm start 모두 이 모양(터미널 출력, 끄기 표시 없음)
+  for (const [why, o] of [
+    ['자동 실행', { env: { DASHBOARD_AUTOSTART: '1' } }],
+    ['실행기 자식 · restore(bin 이 넣음)', { env: { DASHBOARD_NO_OPEN: '1' } }],
+    ['끄기 변수', { env: { DASHBOARD_NO_OPEN: 'yes' } }],
+    ['--no-open', { argv: ['node', 'server.mjs', '--no-open'] }],
+    ['터미널 아님(파이프 · 로그 파일)', { isTTY: false }],
+    ['출력 정보 없음', { isTTY: undefined }],
+    ['데모', { demo: true }],
+    ['시험', { test: true }],
+  ]) assert.equal(shouldAutoOpen({ ...tty, ...o }), false, why);
+});
+
+test('openOnStart: 열면 「브라우저에서 열었어요」 한 줄 · 열기 실패 · 서버 확인 실패 · 던짐에도 이유 한 줄만(서버는 그대로) · 안 열 때는 open 을 부르지 않음', async () => {
+  const run = async (r, o = {}) => {
+    const logs = [];
+    let calls = 0;
+    const out = await openOnStart({ token: TOKEN, port: PORT, log: (l) => logs.push(l), env: {}, argv: [], isTTY: true, test: false, open: async (a) => { calls++; assert.deepEqual(a, { token: TOKEN, port: PORT }); if (r instanceof Error) throw r; return r; }, ...o });
+    return { out, logs, calls };
+  };
+  assert.deepEqual(await run({ ok: true, opened: true, opener: 'open', url: 'u', message: 'm' }), { out: 'opened', logs: ['브라우저에서 열었어요 — 이 브라우저는 7일 동안 로그인돼요'], calls: 1 });
+  assert.deepEqual(await run({ ok: true, opened: false, opener: 'xdg-open', url: 'u', message: 'm\nu' }), { out: 'failed', logs: ['브라우저를 열지 못했어요(xdg-open) — 위 로그인 링크를 브라우저에 붙여 넣으세요'], calls: 1 });
+  assert.deepEqual(await run({ ok: false, message: '127.0.0.1:4690 에 대시보드가 아닌 프로그램이 떠 있어요 — 로그인 링크를 보내지 않았어요.\n둘째 줄' }), { out: 'failed', logs: ['브라우저를 저절로 열지 못했어요 — 127.0.0.1:4690 에 대시보드가 아닌 프로그램이 떠 있어요 — 로그인 링크를 보내지 않았어요.'], calls: 1 });
+  assert.deepEqual(await run(new Error('spawn open ENOENT')), { out: 'failed', logs: ['브라우저를 저절로 열지 못했어요 — spawn open ENOENT'], calls: 1 });
+  assert.deepEqual(await run({ ok: true, opened: true }, { isTTY: false }), { out: 'skip', logs: [], calls: 0 });
+  assert.deepEqual(await run({ ok: true, opened: true }, { env: { DASHBOARD_AUTOSTART: '1' } }), { out: 'skip', logs: [], calls: 0 });
+});
+
+test('openLogin: 열었는지(opened) · 쓴 명령(opener)을 같이 돌려준다(켤 때 한 줄 안내용)', async () => {
+  const srv = await listen('127.0.0.1', true), srv6 = await listen('::1', true);
+  try {
+    const ok = await openLogin({ token: TOKEN, port: PORT, platform: 'darwin', run: (c, a, cb) => cb(null) });
+    assert.deepEqual([ok.opened, ok.opener], [true, 'open']);
+    const bad = await openLogin({ token: TOKEN, port: PORT, platform: 'linux', run: (c, a, cb) => cb(new Error('no display')) });
+    assert.deepEqual([bad.ok, bad.opened, bad.opener], [true, false, 'xdg-open']);
+  } finally { await close(srv); await close(srv6); }
+});
+
+test('bin --no-open: 어느 자리든 인자에서 빼고(모르는 명령이 아님) · 실행기 run 은 자식에 DASHBOARD_NO_OPEN · 도움말에 --no-open', () => {
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'agent-dashboard.mjs'), '--no-open', '--version'], { encoding: 'utf8', env: { ...process.env, LANG: 'ko_KR.UTF-8' } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /^\d+\.\d+\.\d+/);
+  const h = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'agent-dashboard.mjs'), '--help'], { encoding: 'utf8', env: { ...process.env, LANG: 'ko_KR.UTF-8' } });
+  assert.match(h.stdout, /--no-open/);
+  const bin = fs.readFileSync(path.join(ROOT, 'bin', 'agent-dashboard.mjs'), 'utf8');
+  assert.match(bin, /process\.env\.DASHBOARD_NO_OPEN = '1'; \/\/ 실행기의 자식 서버는[^\n]*\n\s+const runner = createRunner\(/);
+  assert.match(fs.readFileSync(path.join(ROOT, 'server.mjs'), 'utf8'), /openOnStart\(\{ token: TOKEN, port: PORT, demo: DEMO, log: termLog \}\)/); // 듣기 시작한 뒤(링크 줄 다음)
 });

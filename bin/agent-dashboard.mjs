@@ -31,11 +31,12 @@ ${usage([
   ['autostart', 'on | off | status — 로그인하면 저절로 켜기(macOS, npm i -g 로 설치한 경우)'],
   ['--help', '이 도움말(-h · help 도 같아요)'],
   ['--version', '버전(-v)'],
+  ['--no-open', '켤 때 브라우저를 저절로 열지 않아요(DASHBOARD_NO_OPEN=1 도 같아요)'],
 ])}
   포트 바꾸기: PORT=4546 ${BASE} (open 도 같은 PORT 로)
 
 필요한 것: macOS(Linux 는 실험적 · Windows 미지원) · Node 18 이상 · tmux(채팅 · 승인 · 새 세션) · Claude Code
-처음 켤 때 브라우저를 저절로 열지 않아요 — 터미널의 로그인 링크나 ${BASE} open 으로
+터미널에서 켜면 로그인된 브라우저가 저절로 열려요(안 열리면 터미널의 로그인 링크나 ${BASE} open) — 켠 터미널은 그대로 두고, 끌 때는 Ctrl+C
 설명서: ${homepage}`; // npx 로 받으면 패키지 폴더는 캐시 안 긴 경로라 GitHub 주소로
 const HELP_EN = `Agent Dashboard ${version} — a local dashboard that shows the AI coding sessions (Claude Code, Codex) on your Mac in one screen
 
@@ -49,14 +50,17 @@ ${usage([
   ['autostart', 'on | off | status — start on login (macOS, when installed with npm i -g)'],
   ['--help', 'This help (-h and help work too)'],
   ['--version', 'Version (-v)'],
+  ['--no-open', "Don't open the browser on start (same as DASHBOARD_NO_OPEN=1)"],
 ])}
   Another port: PORT=4546 ${BASE} (use the same PORT for open)
 
 Needs: macOS (Linux experimental, Windows not supported) · Node 18 or later · tmux (chat, approval, new sessions) · Claude Code
-It doesn't open a browser on first start — use the login link in the terminal or ${BASE} open
+Started from a terminal, it opens a logged-in browser for you (if not, use the login link in the terminal or ${BASE} open) — leave that terminal running, Ctrl+C to stop
 Docs: ${homepage}`;
 const HELP = termLang() === 'ko' ? HELP_KO : HELP_EN;
 
+// --no-open: 켤 때 브라우저를 저절로 열지 않기(어느 자리든) — 인자에서 빼고 환경 변수로 서버에 넘긴다(lib/launch.mjs shouldAutoOpen)
+if (process.argv.includes('--no-open')) { process.argv = process.argv.filter((a) => a !== '--no-open'); process.env.DASHBOARD_NO_OPEN = '1'; }
 const [cmd] = process.argv.slice(2);
 // 포트 충돌 안내에 쓸 「다시 켤 명령」 — 사용자가 켠 방법 그대로(lib/launch.mjs). 실행기의 자식 서버도 이 환경을 받는다
 if (cmd === undefined || cmd === 'start' || cmd === 'run') {
@@ -71,6 +75,7 @@ else if (cmd === 'run') {
   const { DATA_DIR, TEST_MODE } = await import('../lib/paths.mjs');
   // 시험 모드에서만 띄울 서버를 바꿀 수 있다(가짜 서버로 다시 켜기 · 신호 전달을 시험) — 평소엔 무시
   const server = TEST_MODE && process.env.DASHBOARD_RUN_SERVER ? process.env.DASHBOARD_RUN_SERVER : path.join(root, 'server.mjs');
+  process.env.DASHBOARD_NO_OPEN = '1'; // 실행기의 자식 서버는 다시 켤 때마다 브라우저를 열지 않는다(restore 가 띄우는 run 도)
   const runner = createRunner({ command: [process.execPath, server], cwd: root, logFile: path.join(DATA_DIR, 'server.log') });
   for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => runner.stop(sig));
   process.exitCode = await runner.done;

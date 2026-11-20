@@ -78,7 +78,7 @@ Agent Dashboard는 이걸 한 화면에 모읍니다.
 **npm 으로** (저장소 없이)
 
 ```bash
-npx @yun7420/agent-dashboard          # 받아서 바로 켜기 → 터미널에 나온 「로그인 링크(10분)」를 브라우저로 열기
+npx @yun7420/agent-dashboard          # 받아서 바로 켜기 → 로그인된 브라우저가 저절로 열려요
 npx @yun7420/agent-dashboard open     # 링크가 지났거나 다른 브라우저 · 7일이 지났을 때: 로그인 링크를 브라우저로 열어 줘요
 
 npm i -g @yun7420/agent-dashboard     # 또는 설치해 두고 짧은 명령으로
@@ -92,11 +92,13 @@ npm 의 `agent-dashboard`(@ 없는 이름)는 이 프로젝트와 상관없는 �
 ```bash
 git clone https://github.com/Yun7420/agent-dashboard.git
 cd agent-dashboard
-npm start          # → 터미널에 나온 「로그인 링크(10분)」를 브라우저로 열기
+npm start          # → 로그인된 브라우저가 저절로 열려요
 node bin/agent-dashboard.mjs open   # 링크가 지났거나 다른 브라우저 · 7일이 지났을 때: 로그인 링크를 브라우저로 열어 줘요
 ```
 
-화면 주소는 `http://localhost:4545` 이지만, 처음 한 번은 **로그인 링크**로 들어와야 해요. 그 브라우저는 7일 동안 로그인돼요(아래 「보안」).
+화면 주소는 `http://localhost:4545` 이지만, 처음 한 번은 **로그인 링크**로 들어와야 해요. 터미널에서 켜면 그 링크로 브라우저를 저절로 열고(싫으면 `--no-open` 또는 `DASHBOARD_NO_OPEN=1`), 안 열리면 터미널에 나온 링크를 눌러요. 그 브라우저는 7일 동안 로그인돼요(아래 「보안」).
+
+켠 터미널은 서버가 도는 동안 그대로 두세요(커서가 멈춘 듯 보이는 게 정상) — 끌 때는 그 터미널에서 Ctrl+C.
 
 같은 일을 `node bin/agent-dashboard.mjs` 로도 할 수 있어요(`--help` 로 도움말). npm 으로 설치했을 때의 `agent-dashboard` 명령과 같아요.
 
@@ -380,7 +382,7 @@ Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없�
 | 기록 폴더 | `CLAUDE_CONFIG_DIR` · `CODEX_HOME` 으로 옮긴 폴더 | 기본은 대시보드를 켠 셸의 값 하나예요. 다른 계정 폴더는 `DASHBOARD_CLAUDE_DIRS=~/.claude-work:…` 로 더해요(홈 아래 · 내 소유 · 링크로 밖을 가리키지 않는 폴더만 — 어긋나면 그 폴더만 빼고 환경 점검에 이유). 세션 · 기록 · 검색 · 다시 열기는 계정별, 사용 한도 · 기본 모델 · 새 세션은 기본 계정만, 오늘 한 일은 합쳐서. Codex 는 하나만 |
 
 - **채팅 · 승인 · 닫기는 tmux 로 띄운 세션만** 돼요. 일반 터미널 · 에디터 확장(VS Code · Cursor)에서 띄운 세션은 보기만 돼요.
-- **처음 켤 때 브라우저를 저절로 열지 않아요.** 터미널에 나온 로그인 링크를 열거나 `node bin/agent-dashboard.mjs open`(npx 로 켰으면 `npx @yun7420/agent-dashboard open`, 설치했으면 `agent-dashboard open`)을 실행해요. `run`(실행기)으로 켰다면 링크는 `~/.agent-dashboard/server.log` 에 있어요.
+- **터미널에서 켤 때만 브라우저를 저절로 열어요.** 자동 실행 · 실행기(`run`) · `--no-open` 이면 열지 않으니 터미널에 나온 로그인 링크를 열거나 `node bin/agent-dashboard.mjs open`(npx 로 켰으면 `npx @yun7420/agent-dashboard open`, 설치했으면 `agent-dashboard open`)을 실행해요. `run`(실행기)으로 켰다면 링크는 `~/.agent-dashboard/server.log` 에 있어요.
 - 프로젝트 폴더의 `.claude/settings.json` 에 자기 상태줄(`statusLine`)이 있으면 그 프로젝트 세션은 계정 사용 한도 값이 오지 않아요(상태줄 다리가 불리지 않아서).
 - **Codex 는 일부만** — 목록 · 상태 · 지금 탭(요청 · 답변 · 대화 창) · 기록 탭 · 전체 검색 · 채팅 · **오늘 한 일**(요청 · 명령 · 커밋 · 토큰 — 고친 파일은 기록에 없어 「지원 안 함」) · 환경 점검 「Codex 기록 형식」은 돼요(0.125 기록으로 확인). 승인 창 감지 · 계정 사용 한도 · 자동 요약 시각 · 서브에이전트 · 세션 간 메시지 · 새 세션 · 복구는 Claude Code 만이에요.
 - Gemini 등 다른 도구는 아직 없어요(어댑터 파일 하나로 붙일 수 있게 만들어 뒀어요).

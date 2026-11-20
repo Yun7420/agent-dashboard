@@ -32,6 +32,7 @@ import { isObject } from './lib/validate.mjs';
 import { DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
 import { loadToken } from './lib/token.mjs';
 import { createAuth, loginUrl, SESSION_MS } from './lib/auth.mjs';
+import { openOnStart } from './lib/login-open.mjs';
 import { portInUseMessage, markIndex, exitAfterListenFail, withPort } from './lib/launch.mjs';
 import { createNotifyApi } from './lib/notify-api.mjs';
 import { createLiveFeed } from './lib/live-feed.mjs';
@@ -276,7 +277,7 @@ server.on('error', (e) => {
 server.listen(PORT, '127.0.0.1', () => {
   // localhost 는 [::1] 로도 가므로, 다른 프로그램이 [::1]:포트 를 쓰고 있으면 켜지 않고 끝낸다 — 그대로 켜면 열린 탭이 그쪽에
   // 로그인 쿠키를 보낼 수 있다(보안 검토 2026-11-18). IPv6 가 없는 Mac(EADDRNOTAVAIL 등)은 이유만 남기고 127.0.0.1 로 계속. 링크는 그 뒤에
-  const link = () => termLog(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}\n로그인 링크(10분) — 나중엔 「${OPEN_CMD}」:\n${loginUrl({ token: TOKEN, port: PORT })}`); // 링크는 줄 맨 앞 한 줄로(앞 글에 밀려 두 줄로 넘어가면 터미널에서 눌렀을 때 잘린다)
+  const link = () => (termLog(`Agent Dashboard${DEMO ? ' (데모 모드)' : ''} → http://localhost:${PORT}\n로그인 링크(10분) — 나중엔 「${OPEN_CMD}」:\n${loginUrl({ token: TOKEN, port: PORT })}`), openOnStart({ token: TOKEN, port: PORT, demo: DEMO, log: termLog })); // 링크는 줄 맨 앞 한 줄로(두 줄로 넘어가면 눌렀을 때 잘림) · 터미널에서 켰으면 브라우저도(lib/login-open.mjs)
   server6.once('listening', link).once('error', (e) => {
     if (e.code !== 'EADDRINUSE') return void (termErr(`[::1]:${PORT} 은 열지 못했어요(${e.code ?? e.message}) — 127.0.0.1 로만 받아요`), link());
     termErr('서버를 열지 못했어요:', `다른 프로그램이 [::1]:${PORT} 를 쓰고 있어요 — 그대로 켜면 열린 탭이 그쪽에 로그인 쿠키를 보낼 수 있어요. 그 프로그램을 끄고 다시 켜 주세요`);

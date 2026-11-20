@@ -76,7 +76,7 @@ test('실행 파일: --help 는 도움말(종료 0) · --version · 모르는 �
   assert.ok(fs.statSync(bin).mode & 0o111, '실행 비트');
   const help = spawnSync(process.execPath, [bin, '--help'], { encoding: 'utf8' });
   assert.equal(help.status, 0);
-  assert.match(help.stdout, /사용법[\s\S]*node bin\/agent-dashboard\.mjs --help[\s\S]*필요한 것: macOS\(Linux 는 실험적 · Windows 미지원\) · Node 18 이상 · tmux[\s\S]*브라우저를 저절로 열지 않아요/);
+  assert.match(help.stdout, /사용법[\s\S]*node bin\/agent-dashboard\.mjs --help[\s\S]*필요한 것: macOS\(Linux 는 실험적 · Windows 미지원\) · Node 18 이상 · tmux[\s\S]*터미널에서 켜면 로그인된 브라우저가 저절로 열려요[\s\S]*끌 때는 Ctrl\+C/);
   const v = spawnSync(process.execPath, [bin, '--version'], { encoding: 'utf8' });
   assert.equal(v.stdout.trim(), JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version);
   const bad = spawnSync(process.execPath, [bin, 'restore-all'], { encoding: 'utf8' });
