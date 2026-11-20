@@ -6,6 +6,7 @@ import path from 'node:path';
 import { clip, parse, readHeadLines, readJsonOrNull, readTailLines, statOrNull } from '../lib/util.mjs';
 import { createLru } from '../lib/lru.mjs';
 import { CLAUDE_DIR } from '../lib/paths.mjs';
+import { ACCOUNTS } from '../lib/accounts.mjs';
 import { createIncremental, findTurnStart, newTurns, addTurnEvent } from '../lib/history-core.mjs';
 import { usageOf, contextOf, DROP } from '../lib/usage.mjs';
 // 이 어댑터의 조각들(adapters/claude/). 밖(서버 · lib)은 이 파일만 부른다
@@ -16,7 +17,8 @@ import { daySummary } from './claude/day.mjs';
 import { newRecordCount, watchRecordLine, formatIssues } from './claude/format.mjs';
 export { unknownStatuses } from './claude/live.mjs'; // 환경 점검 「세션 상태 값」 줄(server.mjs → lib/env.mjs)
 
-const ROOT = path.join(CLAUDE_DIR, 'projects');
+// 기본 계정 + 설정한 다른 계정 폴더(DASHBOARD_CLAUDE_DIRS, lib/accounts.mjs). 세션 ID 는 UUID 라 계정이 달라도 열쇠(claude:<ID>)가 겹치지 않는다
+const DIRS = ACCOUNTS.claudeDirs;
 const encodeCwd = (cwd) => cwd.replace(/[^a-zA-Z0-9]/g, '-');
 
 // 세션끼리 주고받은 메시지(SendMessage). 받는 쪽 기록에
@@ -38,7 +40,12 @@ function peerTexts(d) {
   return [];
 }
 
-const liveSessions = createLiveSessions();
+// 떠 있는 세션 공식 목록: 계정 폴더마다(다른 계정은 claude agents 로 가지 않음). 기본이 null(옛 버전)이면 추정 방식 그대로
+const lives = DIRS.map((dir) => (dir === CLAUDE_DIR ? createLiveSessions() : createLiveSessions({ dir: path.join(dir, 'sessions'), fallback: false })));
+async function liveSessions() {
+  const [main, ...extra] = await Promise.all(lives.map((f) => f()));
+  return main === null ? null : [...main, ...extra.flat()];
+}
 
 // ---------- 세션 상태(describe): 마지막 턴부터, 새로 붙은 줄만 ----------
 // 예전엔 끝 256KB 만 읽어서, 마지막 요청 뒤에 큰 출력(스크린샷 · 긴 로그)이 쌓이면 요청 · 이번 턴 변경 목록을 잃었다.
@@ -178,16 +185,19 @@ export default {
     return mine && !/(?:\bclaude|cli\.js)\s+(agents|--version|-v|doctor|mcp|update|upgrade|auth|config|logs|attach|stop|kill|rm)\b/.test(command);
   },
 
+  // configDir: 기본이 아닌 계정의 세션만(카드 꼬리표 · 다시 열 때 CLAUDE_CONFIG_DIR)
   async scan() {
     const out = [];
-    const dirs = await fsp.readdir(ROOT).catch(() => []);
-    for (const dir of dirs) {
-      const files = await fsp.readdir(path.join(ROOT, dir)).catch(() => []);
-      for (const f of files) {
-        if (!f.endsWith('.jsonl')) continue;
-        const file = path.join(ROOT, dir, f);
-        const st = await statOrNull(file);
-        if (st) out.push({ id: f.slice(0, -6), file, mtimeMs: st.mtimeMs, birthtimeMs: st.birthtimeMs, size: st.size, ino: st.ino, cwdKey: dir });
+    for (const account of DIRS) {
+      const root = path.join(account, 'projects');
+      for (const dir of await fsp.readdir(root).catch(() => [])) {
+        const files = await fsp.readdir(path.join(root, dir)).catch(() => []);
+        for (const f of files) {
+          if (!f.endsWith('.jsonl')) continue;
+          const file = path.join(root, dir, f);
+          const st = await statOrNull(file);
+          if (st) out.push({ id: f.slice(0, -6), file, mtimeMs: st.mtimeMs, birthtimeMs: st.birthtimeMs, size: st.size, ino: st.ino, cwdKey: dir, ...(account === CLAUDE_DIR ? {} : { configDir: account }) });
+        }
       }
     }
     return out;

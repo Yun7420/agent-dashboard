@@ -5,8 +5,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { record, answer, readStdin } from './_fake.mjs';
-const args = process.argv.slice(2);
+// -S <소켓> 이 앞에 오면(lib/tmux.mjs 의 다른 tmux 서버) 그 소켓 이름별 답(panes-<이름>.txt), FAKE_DIR/dead-<이름> 이 있으면 꺼진 서버처럼 실패
+const all = process.argv.slice(2);
+const sock = all[0] === '-S' ? path.basename(all[1]) : null;
+const args = sock ? all.slice(2) : all;
 const sub = args[0];
+if (sock && fs.existsSync(path.join(process.env.FAKE_DIR ?? '', `dead-${sock}`))) { record('tmux', all); process.exit(1); }
 const buf = (name) => path.join(process.env.FAKE_DIR ?? '', `buffer-${name}`);
 const opt = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
 if (sub === 'load-buffer') {
@@ -22,10 +26,10 @@ if (sub === 'load-buffer') {
 } else if (sub === 'delete-buffer') {
   record('tmux', args);
   fs.rmSync(buf(opt('-b') ?? 'default'), { force: true });
-} else record('tmux', args);
+} else record('tmux', all);
 if (answer('fail.txt').split('\n').includes(sub)) process.exit(1);
 if (sub === '-V') process.stdout.write('tmux 3.4\n');
-else if (sub === 'list-panes') process.stdout.write(answer('panes.txt'));
+else if (sub === 'list-panes') process.stdout.write(answer(sock ? `panes-${sock}.txt` : 'panes.txt'));
 else if (sub === 'capture-pane') process.stdout.write(answer('screen.txt', '> '));
 else if (sub === 'new-session') {
   await new Promise((r) => setTimeout(r, Number(process.env.FAKE_NEW_DELAY_MS ?? 0)));

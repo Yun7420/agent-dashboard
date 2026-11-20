@@ -1,7 +1,12 @@
 // 왼쪽 세션 목록
 // 카드는 이름 · 상태 · 흐린 한 줄(폴더 · 시간)만 — 대화 창은 조직도 물 채우기(전체 비교)와 패널 머리 %(정확한 숫자)가 맡는다.
 // 꼬리표는 기본값이 아닐 때만: tmux 밖(보기만 되는) 세션에만 「보기만」. 에이전트 종류는 이름 앞 표식(02-kinds.js 의 kmark)
-const tags = (s) => (s.tmux ? '' : `<span class="badge badge-view" tabindex="0" data-tip="${t('Started outside tmux — chat · approve are off')}">${t('View only')}</span>`);
+// 꼬리표는 기본값이 아닐 때만: tmux 밖(보기만) · 다른 계정(DASHBOARD_CLAUDE_DIRS) · 다른 tmux 서버(DASHBOARD_TMUX_SOCKETS)
+const tags = (s) => [
+  s.tmux ? '' : `<span class="badge badge-view" tabindex="0" data-tip="${t('Started outside tmux — chat · approve are off')}">${t('View only')}</span>`,
+  s.account ? `<span class="badge badge-view" tabindex="0" data-tip="${t('Claude account (CLAUDE_CONFIG_DIR)')}: ${esc(s.configDir ?? '')}">${esc(s.account)}</span>` : '',
+  s.tmux?.socket ? `<span class="badge badge-view" tabindex="0" data-tip="${t('tmux server (socket)')}">${esc(s.tmux.socket)}</span>` : '',
+].join('');
 // 탭: 활성 = 지금 떠 있는 세션(정렬 · 끌기) / 종료 = 최근 24시간에 끝난 세션(서버가 24시간만 보낸다) · 다시 열기.
 // 접힌 띠는 탭과 상관없이 활성만(띠의 점 · 머리글자로 지금 일을 보는 자리)
 pref.listTab = pref.listTab === 'ended' ? 'ended' : 'live';

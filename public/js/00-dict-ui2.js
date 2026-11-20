@@ -93,6 +93,8 @@ const KO_UI2 = {
   "Nothing to copy": "복사할 내용이 없어요",
   "Copied as Markdown": "마크다운으로 복사했어요",
   "Could not copy": "복사하지 못했어요",
+  "Claude account (CLAUDE_CONFIG_DIR)": "Claude 계정(CLAUDE_CONFIG_DIR)",
+  "tmux server (socket)": "tmux 서버(소켓)",
   "Copied — please check it once before pasting": "복사했어요 — 붙여 넣기 전에 한 번 확인해 주세요",
   "Agent Dashboard check results": "Agent Dashboard 점검 결과",
   "Version": "버전",

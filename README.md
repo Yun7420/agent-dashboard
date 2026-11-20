@@ -314,7 +314,7 @@ agent-dashboard/
 │  ├─ dialog-watch · peer-links                   선택창 감시(두 틱에 한 번 · 엇갈림 기록) · 세션 사이 메시지 잇기
 │  ├─ commands · spawn · open-dir · env · launch  명령(채팅 · 승인 · 새 세션 …) · 새 세션 인자 · 폴더 열기 · 환경 점검 · 켠 방법에 맞는 안내
 │  ├─ body · uploads · respond · validate         요청 본문 · 첨부 · 응답 모양 · 입력 검사
-│  ├─ token · auth · login-open · paths · perms    비밀 열쇠 · 로그인 링크 · 쿠키 · open(서버 확인) · 경로(폴더 안 검사) · 파일 권한
+│  ├─ token · auth · login-open · paths · accounts · perms    비밀 열쇠 · 로그인 링크 · 쿠키 · open(서버 확인) · 경로(폴더 안 검사) · 다른 계정 · tmux 서버(설정한 것만) · 파일 권한
 │  ├─ usage-bridge · claude-settings · bridge · status · limits · usage   사용 한도(상태줄 다리 · 기본 모델 지키기 · 옛 한도 기록 정리 · 토큰 합계)
 │  ├─ i18n · i18n-en · lang-pref · atomic-write   서버 문구 두 언어(사전) · 터미널 · 알림 언어 · 파일 안전하게 쓰기
 │  ├─ command-risk · node-check                   승인 카드 위험 판정 · 켤 때 Node 버전 확인
@@ -361,9 +361,9 @@ Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없�
 |---|---|---|
 | OS | **macOS**(만들고 매일 쓰는 곳) | **Linux 는 실험적** — 세션은 `ps`, 작업 폴더는 `/proc`(없으면 `lsof`)로 찾고, 폴더 열기는 `xdg-open`, macOS 알림은 없어요. 테스트만 CI 에서 돌려요. **Windows 는 지원하지 않아요** — 켜면 이유를 알리고 끝나요(WSL 안의 Linux 는 Linux 와 같아요) |
 | Node.js | 18 이상(22 · 24 권장) | 18 보다 낮으면 켜지 않아요. 18 · 20 · 홀수 버전은 지원이 끝난 버전이라 한 줄 안내 후 켜요 |
-| tmux | 3.0 이상으로 생각하고 만들었어요(3.6 에서 매일 써요) | 기본 소켓의 세션만 봐요(`tmux -L 이름` · `-S 경로` 로 띄운 세션은 못 봐요) |
+| tmux | 3.0 이상으로 생각하고 만들었어요(3.6 에서 매일 써요) | 기본 소켓은 늘 봐요. `tmux -L 이름` · `-S 경로` 로 띄운 서버는 `DASHBOARD_TMUX_SOCKETS=소켓경로:소켓경로` 로 알려 주면 그 세션도 보고 채팅 · 승인 · 닫기가 그 서버로 가요(`-L 이름` 의 소켓은 `/tmp/tmux-$(id -u)/이름`). 내 소유 소켓 · 링크 아님만 받고, 자동으로 찾지는 않아요. 새 세션은 기본 서버에 |
 | Claude Code | 최신 버전 권장(2.1.311 에서 매일 써요 · 형식이 바뀌면 환경 점검에 경고) | 상태는 `~/.claude/sessions` 파일로 읽고, 그 폴더가 없는 옛 버전은 `claude agents --json`, 그것도 없으면 프로세스로 짐작해요(승인 필요 감지가 약해짐). 선택창은 **영어 화면 문구** 기준이에요. 기록 · 세션 파일 모양이 예상과 다르면 환경 점검 「기록 형식」 · 「세션 파일 형식」 줄이 경고로 바뀌어요(확인한 버전 · 지금 버전과 함께) |
-| 기록 폴더 | `CLAUDE_CONFIG_DIR` · `CODEX_HOME` 으로 옮긴 폴더 | 대시보드를 켠 셸의 값 **하나만** 읽어요 — 계정(폴더) 여러 개를 동시에 보지는 못해요 |
+| 기록 폴더 | `CLAUDE_CONFIG_DIR` · `CODEX_HOME` 으로 옮긴 폴더 | 기본은 대시보드를 켠 셸의 값 하나예요. 다른 계정 폴더는 `DASHBOARD_CLAUDE_DIRS=~/.claude-work:…` 로 더해요(홈 아래 · 내 소유 · 링크로 밖을 가리키지 않는 폴더만 — 어긋나면 그 폴더만 빼고 환경 점검에 이유). 세션 · 기록 · 검색 · 다시 열기는 계정별, 사용 한도 · 기본 모델 · 새 세션은 기본 계정만, 오늘 한 일은 합쳐서. Codex 는 하나만 |
 
 - **채팅 · 승인 · 닫기는 tmux 로 띄운 세션만** 돼요. 일반 터미널 · 에디터 확장(VS Code · Cursor)에서 띄운 세션은 보기만 돼요.
 - **처음 켤 때 브라우저를 저절로 열지 않아요.** 터미널에 나온 로그인 링크를 열거나 `node bin/agent-dashboard.mjs open`(npx 로 켰으면 `npx @yun7420/agent-dashboard open`, 설치했으면 `agent-dashboard open`)을 실행해요. `run`(실행기)으로 켰다면 링크는 `~/.agent-dashboard/server.log` 에 있어요.

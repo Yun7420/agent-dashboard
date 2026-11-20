@@ -23,8 +23,9 @@ export const unknownStatuses = () => [...unknownStatus];
 // 폴더를 읽었으면 빈 목록이어도 그대로 돌려준다 — 예전엔 빈 목록이면 아래로 내려가, 떠 있는 세션이 없을 때 2초마다 claude 를 실행했다.
 // 폴더가 없는 옛 버전만 `claude agents --json` 을 쓰고, 그 결과는 30초 기억 · 실행 중이면 같은 Promise 를 나눠 쓴다.
 // 한 번 실패하면(하위 명령이 없는 더 옛 버전) 다시 부르지 않는다 — 30초마다 claude 를 띄워 실패하기를 되풀이했다(호환성 검토 C5)
-// deps: dir 세션 폴더 · run claude 실행(execFile) · now 시계 · ttlMs 기억 시간 · alive(pid) 살아 있는지 — 모두 시험에서 바꿔 끼운다
-export function createLiveSessions({ dir = path.join(CLAUDE_DIR, 'sessions'), run = exec, now = Date.now, ttlMs = 30_000, alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } } } = {}) {
+// deps: dir 세션 폴더 · run claude 실행(execFile) · now 시계 · ttlMs 기억 시간 · alive(pid) 살아 있는지 — 모두 시험에서 바꿔 끼운다.
+// fallback: 폴더가 없을 때 claude agents 로 갈지(기본 계정만 — 다른 계정 폴더(DASHBOARD_CLAUDE_DIRS)는 폴더가 없으면 빈 목록)
+export function createLiveSessions({ dir = path.join(CLAUDE_DIR, 'sessions'), fallback = true, run = exec, now = Date.now, ttlMs = 30_000, alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } } } = {}) {
   let cached = null; // { at, value }
   let pending = null;
   let gaveUp = false;
@@ -57,6 +58,7 @@ export function createLiveSessions({ dir = path.join(CLAUDE_DIR, 'sessions'), ru
       watchSessionFiles(seen); // 필드가 빠지거나 타입이 바뀌었나(adapters/claude/format.mjs)
       return out;
     }
+    if (!fallback) return [];
     if (cached && now() - cached.at < ttlMs) return cached.value;
     pending ??= fromCommand().then((value) => {
       cached = { at: now(), value };
