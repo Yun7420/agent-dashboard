@@ -87,6 +87,7 @@ $('#status-chips').addEventListener('click', (e) => {
   const st = e.target.closest('[data-st]')?.dataset.st;
   if (!st) return;
   if (st === 'ended') setListTab('ended');
+  if (st === 'ended' && matchMedia('(max-width: 860px)').matches) return; // 좁은 화면은 목록 서랍을 종료 탭으로 연다(14-collapse.js)
   const s = (st === 'ended' ? ordered(state.sessions.filter((x) => !pref.hidden.includes(x.key))) : visible()).find((x) => x.status === st || (st === 'working' && x.status === 'background'));
   if (s) select(s.key);
 });

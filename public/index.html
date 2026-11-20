@@ -42,8 +42,10 @@
     </div>
   </span>
 </header>
-<aside>
+<aside id="aside">
   <div class="sort-bar">
+    <!-- 좁은 화면(860px 이하)에서만: 접힌 띠의 목록을 조직도 위에 펼친다(14-collapse.js) -->
+    <button type="button" class="ghost icon-btn" id="aside-peek" title="Open list" aria-label="Open list" aria-expanded="false" aria-controls="aside"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
     <!-- 목록 탭: 활성(지금 떠 있는 세션 · 정렬 · 끌기) / 종료(최근 24시간, 다시 열기) — 고른 탭은 agent-deck 의 listTab(04-list.js) -->
     <div class="list-tabs seg" role="tablist" aria-label="Sessions">
       <button type="button" class="tab" role="tab" id="tab-live" data-tab="live" aria-selected="true">Active <b id="tab-live-n">0</b></button>
@@ -218,6 +220,7 @@
   </form>
 </dialog>
 <div class="menu-pop" id="dir-menu"></div>
+<div id="aside-scrim" hidden></div>
 <div id="toast" role="status"></div>
 <div id="tip" role="tooltip"></div>
 <div id="login-needed" role="alert" hidden><span id="login-how">Login needed</span> <button type="button" class="primary" id="login-reload">Reload</button></div>

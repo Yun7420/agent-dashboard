@@ -194,7 +194,7 @@ A session already running in a terminal has no official way to receive input fro
 - Sorting is the small icon at the top right of the list
 - Card: name · status + one faint line (folder · time). Context use is shown by the water fill in the org chart nodes; the exact number is in ⓘ session info. Tags only when not the default (Codex · "View only" outside tmux)
 - **Collapse the list** with the ‹ tab at the middle of its right edge — a thin rail keeps status dots + initials (› to expand, click to open)
-- List tabs **Active N** · **Ended N** — the Ended tab shows sessions that ended in the last 24 hours (with "Reopen"); your tab is remembered. The folded strip shows active sessions only
+- List tabs **Active N** · **Ended N** — the Ended tab shows sessions that ended in the last 24 hours (with "Reopen"); your tab is remembered. The folded strip shows active sessions only — on narrow screens (860px or less, always the strip) the **☰ button** at the top of the strip opens the list over the org chart with the Ended tab and "Reopen" (closes on outside tap, Esc or picking a session; the Ended status chip opens it too)
 - Hover for ✕ (always shown on touch and narrow screens) — close the session (with confirmation) / hide an ended session
 </details>
 

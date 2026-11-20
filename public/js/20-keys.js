@@ -71,8 +71,9 @@ function approveKey(key) {
 document.addEventListener('keydown', (e) => {
   if (ignoreKey(e, document.activeElement, Boolean(document.querySelector('dialog[open]')))) return;
   let done = false;
-  if (e.key === 'j' || e.key === 'k') { moveCursor(e.key === 'j' ? 1 : -1); done = true; }
-  else if ((e.key === 'g' || e.key === 'Enter') && kbKey && !$('#drawer').classList.contains('open')) { select(kbKey); done = true; }
+  if (e.key === 'Escape' && peekOpen()) { setPeek(false); done = true; } // 목록 서랍(14-collapse.js)이 먼저 — 승인 거절로 가지 않게
+  else if (e.key === 'j' || e.key === 'k') { moveCursor(e.key === 'j' ? 1 : -1); done = true; }
+  else if ((e.key === 'g' || e.key === 'Enter') && kbKey && !$('#drawer').classList.contains('open')) { setPeek(false); select(kbKey); done = true; }
   else if (/^[1-9]$/.test(e.key)) done = approveKey(e.key);
   else if (e.key === '+' || e.key === '=' || e.key === '-') { zoomBy(e.key === '-' ? 1 / 1.2 : 1.2); done = true; } // 조직도 확대 · 축소(= 는 Shift 없이 누른 +)
   else if (e.key === '0') { recenter(); done = true; }
