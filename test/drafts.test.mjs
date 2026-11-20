@@ -157,7 +157,7 @@ test('음성 입력은 없앴다(간추리기 B3): 단추 · 안내 창 · 저�
 test('입력 칸: 승인 대기면 칸 · 보내기 비활성 + 「먼저 위 승인 요청에 답해 주세요」 · 작업 중이면 보낼 수 있고 기본 안내 · 끝남 · 보기만도 칸 안에', () => {
   const els = {};
   const el = (sel) => (els[sel] ??= { sel, value: '', placeholder: '', innerHTML: '', disabled: false, dataset: {}, style: {}, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {} });
-  const { run } = loadFront(['00-md.js', '01-core.js', '06-history.js', '09-attach.js'], { window: {}, document: { querySelector: el, hidden: true, addEventListener() {} }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, setTimeout: (fn) => fn(), clearTimeout() {} });
+  const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '02-load.js', '04-list.js', '06-history.js', '09-attach.js'], { window: {}, document: { querySelector: el, hidden: true, addEventListener() {} }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, setTimeout: (fn) => fn(), clearTimeout() {} });
   const show = (s) => { run('renderComposer')({ key: 'a', title: 'A', id: 'x', ...s }); return [els['#msg'].disabled, els['#send'].disabled, els['#msg'].placeholder]; };
   els['#msg'] = el('#msg'); els['#msg'].value = '보낼 글';
   assert.deepEqual(show({ tmux: true, status: 'waiting' }), [true, true, '먼저 위 승인 요청에 답해 주세요']);

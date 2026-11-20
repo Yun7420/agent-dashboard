@@ -100,7 +100,7 @@ function renderDrawerHead(s) {
 // 작업 중에는 그대로 보낼 수 있다(Claude Code 가 줄을 세워 끝나면 처리)
 function composerHint(s) {
   if (s.status === 'ended') return t('This session has ended.');
-  if (!s.tmux) return s.ide ? t('Started from an editor extension · view only') : t('Started outside tmux · view only');
+  if (!s.tmux) return viewWhy(s); // 04-list.js — 꼬리표 말풍선 · 패널 안내와 같은 글
   if (s.status === 'waiting') return t('Answer the approval request above first');
   return t('Send a message');
 }
@@ -110,8 +110,7 @@ function viewNoteHtml(s) {
   const live = s.status !== 'ended';
   if (s.tool !== 'claude' || (live ? s.tmux : !s.reopen)) return '';
   const why = !live ? t('This session has ended. Reopen the same conversation in tmux to chat and approve here.')
-    : s.ide ? t('This session was started from an editor extension, so the dashboard cannot type into it. Reopen the same conversation in tmux with the button below to chat and approve here.')
-    : t('This session was started in a regular terminal (or editor), so the dashboard cannot type into it. Reopen the same conversation in tmux with the button below to chat and approve here.');
+    : `${viewWhy(s)}. ${t('Reopen the same conversation in tmux with the button below to chat and approve here.')}`; // 첫 문장은 꼬리표 · placeholder 와 같은 글(04-list.js)
   const first = live ? `<span class="vn-first">${s.ide ? t('Close it in the editor first — the button turns on once it ends') : t('Close it in its original terminal first — the button turns on once it ends')}</span>` : '';
   return `<p>${why}</p><div class="vn-act"><button type="button" class="primary" ${live ? 'disabled' : `data-reopen="${esc(s.id)}"`}>${t('Reopen in tmux')}</button>${first}</div>`;
 }
