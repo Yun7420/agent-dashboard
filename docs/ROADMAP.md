@@ -101,7 +101,8 @@
    - [x] 다른 사람 써 보기 준비 — 환경 점검 창 「점검 결과 복사」(서버가 허용 목록으로 고른 report: 버전 · 줄 이름 · 단계 · 고정 코드(mismatch · unknown-status · content-shape · fields · missing/broken · node-broken 등) · 사전 그대로인 문장만, 설명 · 호스트 · 경로 · 세션 제목 · 토큰은 빠짐, lib/env-report.mjs) · 열린 창 위 알림이 창 뒤에 가려지던 것 → 창 안으로(오늘 한 일 복사도) · .github/ISSUE_TEMPLATE 문제 보고 양식(두 언어 · 점검 결과 필수) + config(보안은 비공개 보고 링크 — 저장소의 비공개 보고 기능은 꺼져 있음, 켜기는 사용자 승인) · README 「문제가 생기면」 `0f76c3a`
 2. [ ] **Gemini CLI 어댑터 · Codex 보강** — `adapters/gemini.mjs` 하나(세션 찾기 · 기록 읽기 · 상태), Codex 는 오늘 한 일 · 사용량. 다른 도구 사용자도 쓰게(출시 목표와 같은 방향)
    - [x] Codex 보강 — 오늘 한 일(adapters/codex/day.mjs: 요청 = user_message · 명령 = exec_command · 커밋(exec_command_end 끝 코드로 실패 뺌) · 토큰 = token_count 누적값의 그날 차이, 고친 파일 · 캐시 쓰기는 기록에 없어 「Codex 는 지원 안 함」 · 갈래 빼기) · history-api 는 daySummary 가 있는 어댑터 모두 · 환경 점검 「Codex 기록 형식」 줄(describe 가 읽은 줄만, 아는 줄 없이 50줄 · message · last_token_usage · name 모양, Codex 기록 폴더가 있을 때만, 확인한 버전 0.125.0) `f4aa6b3` — 실제 기록 344,637 토큰 일치 · 실제 서버 /api/env 세 형식 줄 ok. Gemini 는 이 Mac 에 없어 뺌
-3. [ ] **로그인 시 자동 실행** — `agent-dashboard autostart on/off`(macOS LaunchAgent, Linux 는 안내만). 지금은 tmux 의 `run`
+3. [x] **로그인 시 자동 실행** — `agent-dashboard autostart on/off`(macOS LaunchAgent, Linux 는 안내만). 지금은 tmux 의 `run`
+   - [x] `agent-dashboard autostart on | off | status` — LaunchAgent(io.github.yun7420.agent-dashboard, node · bin 절대 경로 + start, KeepAlive · ThrottleInterval 10, on 할 때의 PATH · LANG · PORT 만, plist · autostart.log 600), npx 캐시면 거절 · 포트 사용 중이면 경고만 · 버전 폴더 node 면 다시 on 안내 · Linux 는 systemd 예시만 `26b3d13` — 가짜 launchctl 시험만, 이 Mac 에서 실제 on 은 사용자 확인 뒤
 4. [ ] **여러 계정 · tmux 소켓** — `CLAUDE_CONFIG_DIR` 로 나눈 계정, 기본 소켓이 아닌 tmux 서버
 5. [ ] **좁은 화면(모바일 폭) 종료 목록** — 390px 에서 「종료」 탭 보기 다듬기
 - 출시 방법: 버전 올리기 → CI 초록 → 사용자 승인 뒤 `v*` 태그 → Actions 「Review deployments」에서 사용자 Approve (`docs/CONVENTIONS.md` 「출시 절차」)
