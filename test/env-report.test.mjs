@@ -87,3 +87,17 @@ test('toast: 열린 창이 있으면 그 창 안으로 옮겨 띄우고, 창이 
   run(`toast('b')`);
   assert.equal(el.parentElement, body);
 });
+
+// 0.1.5: OS 를 사람이 읽는 이름으로(macOS 는 sw_vers, Linux 는 /etc/os-release) — 복사에는 글자 · 숫자 · 점 · 공백 모양일 때만, 커널은 괄호로
+test('OS 이름: os-release 읽기 · report 는 허용 모양만(아니면 커널 이름 그대로)', async () => {
+  const { parseOsRelease } = await import('../lib/env.mjs');
+  assert.equal(parseOsRelease('NAME="Ubuntu"\nVERSION_ID="24.04"\nPRETTY_NAME="Ubuntu 24.04 LTS"\n'), 'Ubuntu 24.04');
+  assert.equal(parseOsRelease('NAME=Fedora Linux\nVERSION_ID=41\n'), 'Fedora Linux 41');
+  assert.equal(parseOsRelease('ID=alpine\n'), null);
+  const os = (osName) => envReport([], { os: 'darwin', osRelease: '25.6.0', osName }).os;
+  assert.equal(os('macOS 26.1'), 'macOS 26.1 (darwin 25.6.0)');
+  assert.equal(os(null), 'darwin 25.6.0');
+  assert.equal(os('/Users/secret-person'), 'darwin 25.6.0'); // 모양이 아니면 버린다
+  assert.equal(os('a'.repeat(41)), 'darwin 25.6.0');
+  assert.equal(envReport([], { os: 'linux', osRelease: '6.8.0', osName: 'Ubuntu 24.04' }).os, 'Ubuntu 24.04 (linux 6.8.0)');
+});
