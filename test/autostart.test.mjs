@@ -7,6 +7,7 @@ import net from 'node:net';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createAutostart, plistXml, programArgs, inNpxCache, versionedNode, LABEL } from '../lib/autostart.mjs';
+import { exitAfterListenFail, AUTOSTART_RETRY_MS } from '../lib/launch.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { ROOT, FAKE_BIN } from './_helpers/server.mjs';
 
@@ -113,7 +114,7 @@ test('plist: 경로에 & < " 가 있어도 XML 이 깨지지 않고 다시 읽�
     assert.equal(r.status, 0, r.stderr);
     const j = JSON.parse(r.stdout);
     assert.deepEqual(j.ProgramArguments, ['/A & B/<node>', '/x/"q"/bin/agent-dashboard.mjs', 'start']);
-    assert.deepEqual(Object.keys(j.EnvironmentVariables), ['PATH']);
+    assert.deepEqual(Object.keys(j.EnvironmentVariables), ['PATH', 'DASHBOARD_AUTOSTART']);
     assert.equal(j.KeepAlive, true);
   }
 });
@@ -144,6 +145,54 @@ test('실행 명령 autostart on · status · off: 임시 HOME 에만 쓰고, �
     assert.equal(bad.status, 1);
     assert.match(bad.stderr, /Add one of on · off · status after autostart/);
     assert.deepEqual(fs.readFileSync(path.join(fake, 'log'), 'utf8').trim().split('\n').map((l) => JSON.parse(l).args[0]), ['print', 'bootstrap', 'print', 'print', 'bootout']);
+  } finally {
+    srv.close();
+  }
+});
+
+// autostart.log 크기 제한: 포트 충돌이면 launchd 가 10초마다 다시 켜 하루 8천 줄이 넘게 쌓였다
+test('로그: on 할 때 5MB 넘으면 .1 로(내린 뒤라 launchd 가 연 파일과 엇갈리지 않음), 작으면 그대로', async () => {
+  const { auto, calls } = setup();
+  fs.mkdirSync(path.dirname(auto.logFile), { recursive: true });
+  fs.writeFileSync(auto.logFile, 'x'.repeat(5 * 1024 * 1024 + 1));
+  await auto.on();
+  assert.equal(fs.statSync(`${auto.logFile}.1`).size, 5 * 1024 * 1024 + 1);
+  assert.equal(fs.statSync(auto.logFile).size, 0);
+  assert.equal(mode(auto.logFile), '600');
+  fs.writeFileSync(auto.logFile, 'small');
+  calls.length = 0;
+  await auto.on(); // 이미 올라가 있음 → bootout 이 먼저, 그 뒤에 돌리기 · bootstrap
+  assert.equal(fs.readFileSync(auto.logFile, 'utf8'), 'small');
+  assert.deepEqual(calls.map((c) => c.split(' ')[0]), ['print', 'bootout', 'bootstrap']);
+  assert.match(fs.readFileSync(auto.plist, 'utf8'), /<key>DASHBOARD_AUTOSTART<\/key>\s*<string>1<\/string>/);
+});
+
+test('포트를 못 열면: 자동 실행(DASHBOARD_AUTOSTART=1)은 5분 뒤에 끝나고, 그 밖엔 바로 끝난다', () => {
+  const exits = [], waits = [];
+  exitAfterListenFail({ env: {}, exit: (c) => exits.push(c), wait: (fn, ms) => waits.push([fn, ms]) });
+  assert.deepEqual([exits, waits.length], [[1], 0]);
+  exitAfterListenFail({ env: { DASHBOARD_AUTOSTART: '1' }, exit: (c) => exits.push(c), wait: (fn, ms) => waits.push([fn, ms]) });
+  assert.deepEqual(exits, [1]); // 아직 안 끝남
+  assert.equal(waits[0][1], AUTOSTART_RETRY_MS);
+  assert.equal(AUTOSTART_RETRY_MS, 5 * 60_000);
+  waits[0][0]();
+  assert.deepEqual(exits, [1, 1]);
+});
+
+test('server.mjs 그대로: 포트가 쓰이고 있으면 자동 실행은 기다리고(살아 있음) · 평소엔 바로 코드 1', async () => {
+  const srv = net.createServer().listen(0, '127.0.0.1');
+  await new Promise((r) => srv.once('listening', r));
+  const port = srv.address().port;
+  const home = tmpDir('ad-auto-srv-');
+  const { spawn } = await import('node:child_process');
+  const start = (extra) => spawn(process.execPath, [path.join(ROOT, 'server.mjs')], { cwd: ROOT, stdio: 'ignore', env: { PATH: process.env.PATH, DASHBOARD_TEST: '1', DASHBOARD_HOME: home, PORT: String(port), LANG: 'ko_KR.UTF-8', DASHBOARD_NODE_NOTICED: '1', ...extra } });
+  const exited = (c, ms) => new Promise((r) => { const t = setTimeout(() => r(null), ms); c.once('exit', (code) => { clearTimeout(t); r(code); }); });
+  try {
+    assert.equal(await exited(start({}), 8000), 1);
+    const auto = start({ DASHBOARD_AUTOSTART: '1' });
+    assert.equal(await exited(auto, 1500), null, '자동 실행은 5분 기다린다');
+    auto.kill(); // 이 시험이 띄운 자식만
+    await exited(auto, 3000);
   } finally {
     srv.close();
   }

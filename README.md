@@ -108,7 +108,7 @@ node bin/agent-dashboard.mjs open   # 링크가 지났거나 다른 브라우저
 
 **로그인하면 저절로 켜기(macOS)**: `npm i -g @yun7420/agent-dashboard` 로 설치한 뒤 `agent-dashboard autostart on` — 로그인 항목(LaunchAgent)으로 서버를 켜 두고, 꺼지면 10초 뒤 다시 켜요. 저장소에서는 `node bin/agent-dashboard.mjs autostart on`.
 
-- 끄기 · 확인: `agent-dashboard autostart off` · `agent-dashboard autostart status`(켜짐 여부 · 가리키는 node · 마지막 종료 코드). 로그는 `~/.agent-dashboard/autostart.log`(본인만 읽기).
+- 끄기 · 확인: `agent-dashboard autostart off` · `agent-dashboard autostart status`(켜짐 여부 · 가리키는 node · 마지막 종료 코드). 로그는 `~/.agent-dashboard/autostart.log`(본인만 읽기, 5MB 를 넘으면 `autostart on` 할 때 `.1` 로). 포트를 이미 다른 대시보드가 쓰고 있으면 5분마다 다시 시도해요.
 - npx 로는 걸 수 없어요 — npx 캐시는 지워질 수 있어 재부팅 뒤 경로가 사라져요. nvm · fnm 처럼 Node 를 버전 폴더에 두었다면 Node 를 바꾼 뒤 `autostart on` 을 다시 해 주세요.
 - 켤 때의 PATH 를 그대로 넣어 tmux · claude 를 찾아요. 이미 대시보드(아래 tmux 실행기 등)가 떠 있으면 경고만 하니, 하나만 쓰세요. Linux 는 systemd 유닛 예시만 보여 줘요.
 

@@ -31,7 +31,7 @@ import { isObject } from './lib/validate.mjs';
 import { DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
 import { loadToken } from './lib/token.mjs';
 import { createAuth, loginUrl, SESSION_MS } from './lib/auth.mjs';
-import { portInUseMessage, markIndex } from './lib/launch.mjs';
+import { portInUseMessage, markIndex, exitAfterListenFail } from './lib/launch.mjs';
 import { createNotifyApi } from './lib/notify-api.mjs';
 import { createLiveFeed } from './lib/live-feed.mjs';
 import { startHousekeeping } from './lib/housekeeping.mjs';
@@ -271,7 +271,7 @@ process.on('unhandledRejection', (e) => console.error('[처리 안 된 거절]',
 server.on('error', (e) => {
   if (e.code === 'EADDRINUSE') termErr(portInUseMessage(PORT, process.env.DASHBOARD_START_CMD || 'npm start')); // 켠 방법에 맞는 예시(lib/launch.mjs)
   else termErr('서버를 열지 못했어요:', e.message);
-  process.exit(1);
+  exitAfterListenFail(); // 자동 실행이면 5분 뒤(launchd 가 10초마다 다시 켜 로그가 쌓이지 않게, lib/launch.mjs)
 });
 
 server.listen(PORT, '127.0.0.1', () => {

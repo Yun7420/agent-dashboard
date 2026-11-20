@@ -107,7 +107,7 @@ Pick the **colors** under **⋯ → Display → Theme**: dark **Green** (default
 
 **Start on login (macOS)**: install with `npm i -g @yun7420/agent-dashboard`, then `agent-dashboard autostart on` — a login item (LaunchAgent) keeps the server running and restarts it 10 seconds after it stops. From the repo: `node bin/agent-dashboard.mjs autostart on`.
 
-- Turn off · check: `agent-dashboard autostart off` · `agent-dashboard autostart status` (on or off, which node it points to, last exit code). Logs go to `~/.agent-dashboard/autostart.log` (readable only by you).
+- Turn off · check: `agent-dashboard autostart off` · `agent-dashboard autostart status` (on or off, which node it points to, last exit code). Logs go to `~/.agent-dashboard/autostart.log` (readable only by you; over 5 MB it moves to `.1` on `autostart on`). If another dashboard already holds the port, it retries every 5 minutes.
 - It can't be set up from npx — the npx cache can be cleared, so the path may be gone after a reboot. If Node lives in a version folder (nvm, fnm), run `autostart on` again after switching Node.
 - It stores the PATH you had when turning it on, so it finds tmux and claude. If a dashboard is already running (e.g. the tmux runner below) it only warns — use one or the other. On Linux it only prints an example systemd unit.
 
