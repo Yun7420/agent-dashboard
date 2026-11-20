@@ -11,6 +11,7 @@ import { mkdtempSync, mkdirSync, readdirSync, existsSync, statSync, symlinkSync,
 import { tmpdir } from 'node:os';
 import { join, delimiter } from 'node:path';
 import { randomBytes } from 'node:crypto';
+import { startWithRetry } from './npx-retry.mjs';
 
 const [version, port = '4747'] = process.argv.slice(2);
 if (!/^\d+\.\d+\.\d+(-[\w.]+)?$/.test(version ?? '') || !/^\d+$/.test(port)) {
@@ -73,21 +74,26 @@ async function run(label, { noTmux }) {
     const found = (() => { try { return execFileSync('sh', ['-c', 'command -v tmux'], { env, encoding: 'utf8' }).trim(); } catch { return ''; } })();
     if (!check(!found, 'PATH 에 tmux 없음', found)) return;
   }
+  // 한 번 켜 보기: 로그인 링크가 나오거나 · 끝나거나 · 시간이 다 될 때까지. npm 이 새 판을 아직 모르면(ETARGET · E404) 30초 뒤 다시(scripts/npx-retry.mjs)
   // cwd 는 임시 홈 — 저장소 안에서 켜면 npx 가 같은 이름의 package.json 을 보고 로컬 bin 을 찾다 127 로 끝난다
-  const child = spawn('npx', ['-y', PKG], { cwd: home, env, stdio: ['ignore', 'pipe', 'pipe'] });
-  let log = '';
-  child.stdout.on('data', (b) => { log += b; });
-  child.stderr.on('data', (b) => { log += b; });
-  let exited = null;
-  child.on('exit', (code, sig) => { exited = sig ?? code; });
+  const launch = async () => {
+    const s = { child: spawn('npx', ['-y', PKG], { cwd: home, env, stdio: ['ignore', 'pipe', 'pipe'] }), log: '', exited: null };
+    s.child.stdout.on('data', (b) => { s.log += b; });
+    s.child.stderr.on('data', (b) => { s.log += b; });
+    s.child.on('exit', (code, sig) => { s.exited = sig ?? code; });
+    const until = Date.now() + START_MS;
+    while (!/\/login\?t=[^\s&]+/.test(s.log) && s.exited === null && Date.now() < until) await sleep(200);
+    s.link = s.log.match(/http:\/\/localhost:\d+\/login\?t=[^\s&]+/)?.[0];
+    s.ok = Boolean(s.link);
+    return s;
+  };
+  const s = await startWithRetry(launch, { sleep });
+  const { child, link } = s;
   try {
     // a. 시작 로그
-    const until = Date.now() + START_MS;
-    while (!/\/login\?t=[^\s&]+/.test(log) && exited === null && Date.now() < until) await sleep(200);
-    const link = log.match(/http:\/\/localhost:\d+\/login\?t=[^\s&]+/)?.[0];
-    if (!check(!!link, 'a. 시작 로그에 로그인 링크', link ? '' : `exit=${exited}\n${mask(log)}`)) return;
-    check(log.includes(`${BASE}`), 'a. 시작 로그에 주소', BASE);
-    check(log.includes('npx @yun7420/agent-dashboard open'), 'a. 다시 여는 안내가 npx 꼴');
+    if (!check(!!link, 'a. 시작 로그에 로그인 링크', link ? '' : `exit=${s.exited}\n${mask(s.log)}`)) return;
+    check(s.log.includes(`${BASE}`), 'a. 시작 로그에 주소', BASE);
+    check(s.log.includes('npx @yun7420/agent-dashboard open'), 'a. 다시 여는 안내가 npx 꼴');
     // b. /hello — 서버 확인 답
     const n = randomBytes(16).toString('hex');
     const hello = await get(`/hello?n=${n}`);
@@ -112,7 +118,7 @@ async function run(label, { noTmux }) {
     // f. 2초 틱이 몇 번 돈 뒤에도 살아 있다(tmux · ps 를 부르다 죽지 않는다)
     await sleep(5000);
     const again = await get(`/hello?n=${n}`).catch(() => null);
-    check(exited === null && again?.status === 200, 'f. 5초 뒤에도 살아 있음', exited === null ? `${again?.status}` : `exit=${exited}\n${mask(log)}`);
+    check(s.exited === null && again?.status === 200, 'f. 5초 뒤에도 살아 있음', s.exited === null ? `${again?.status}` : `exit=${s.exited}\n${mask(s.log)}`);
   } finally {
     await stop(child);
     rmSync(home, { recursive: true, force: true });
