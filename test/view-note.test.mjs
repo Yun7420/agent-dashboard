@@ -42,3 +42,14 @@ test('같은 뜻은 같은 글: 꼬리표 말풍선 · 입력 칸 placeholder ·
     assert.ok(note({ ide }).includes(`<p>${why}. `));
   }
 });
+
+test('목록 카드 둘째 줄: 폴더 · 시간 · (서브 N) · 꼬리표(보기만 · 계정 · tmux 서버)는 맨 뒤 — 다른 카드처럼 폴더로 시작, 좁으면 폴더만 말줄임', () => {
+  const src = fs.readFileSync(new URL('../public/js/04-list.js', import.meta.url), 'utf8');
+  const line = src.split('\n').find((l) => l.includes('<div class="sub">'));
+  const at = (x) => line.indexOf(x);
+  assert.ok(line.startsWith('        <div class="sub"><span class="proj">'), '폴더로 시작');
+  assert.ok(at('<span class="proj">') < at('data-key="${esc(s.key)}"') && at('data-key="${esc(s.key)}"') < at("t('sub {n}'") && at("t('sub {n}'") < at('${tags(s) ? `<span class="ago">·</span>${tags(s)}`'), '폴더 · 시간 · 서브 · 꼬리표 순서');
+  const css = fs.readFileSync(new URL('../public/css/02-list.css', import.meta.url), 'utf8');
+  assert.match(css, /\.card \.sub \.ago, \.card \.sub \.badge \{ flex: none; \}/);
+  assert.match(css, /\.card \.sub \.proj \{ min-width: 2em; overflow: hidden; text-overflow: ellipsis; \}/);
+});

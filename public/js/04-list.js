@@ -38,7 +38,7 @@ function renderList() {
         <span class="ini"><span class="dot-s ${esc(s.status)} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${esc(initials(s.title))}</span>
         <div class="row"><div class="title">${kmark(s.tool)}${esc(s.title)}</div><span class="status ${esc(s.status)}"><span class="dot-s ${esc(s.status)} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${STATUS_KO[s.status]}</span></div>
         <button class="x" data-close="${esc(s.key)}" title="${s.status === 'ended' ? t('Hide from list') : t('End session')}" aria-label="${esc(s.title)} ${s.status === 'ended' ? t('Hide from list') : t('End session')}">✕</button>
-        <div class="sub">${tags(s)}<span class="proj">${esc(s.project)}</span><span class="ago" data-key="${esc(s.key)}"></span>${s.subagents?.length ? `<span class="ago">· ${t('sub {n}', { n: s.subagents.length })}</span>` : ''}</div>
+        <div class="sub"><span class="proj">${esc(s.project)}</span><span class="ago" data-key="${esc(s.key)}"></span>${s.subagents?.length ? `<span class="ago">· ${t('sub {n}', { n: s.subagents.length })}</span>` : ''}${tags(s) ? `<span class="ago">·</span>${tags(s)}` : ''}</div>
         ${s.reopen ? `<div class="re"><button type="button" class="reopen" data-reopen="${esc(s.id)}" aria-label="${esc(s.title)} ${t('Reopen')}">${t('Reopen')}</button></div>` : ''}
       </div>`;
     }

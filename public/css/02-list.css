@@ -62,7 +62,7 @@ kbd { font: 11px var(--mono); padding: 0 5px; border: 1px solid var(--border-str
 .card .status.background { color: var(--working-text); }
 .card .sub { display: flex; align-items: center; gap: 6px; margin-top: var(--sp-2); color: var(--faint); font-size: 12px; white-space: nowrap; overflow: hidden; }
 .card .sub .proj { min-width: 2em; overflow: hidden; text-overflow: ellipsis; }
-.card .sub .ago { flex: none; }
+.card .sub .ago, .card .sub .badge { flex: none; } /* 줄이 좁으면 폴더 이름만 말줄임 — 시간 · 서브 · 꼬리표(맨 뒤)는 남는다 */
 .card .x { position: absolute; right: 8px; bottom: 8px; width: 24px; height: 24px; padding: 0; border-radius: 8px; font-size: 11px; line-height: 22px; color: var(--faint); background: var(--surface-3); border: 1px solid var(--border); opacity: 0; }
 .card:hover .x, .card:focus-within .x { opacity: 1; } /* 키보드로 카드 · ✕ 에 닿으면 보이게 */
 .card:focus-visible, .card .x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
