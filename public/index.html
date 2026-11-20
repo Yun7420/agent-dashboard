@@ -24,6 +24,8 @@
     <h1>Agent <span>Dashboard</span></h1>
   </div>
   <button type="button" id="appr-count" class="appr-count" hidden><span class="dot-s waiting"></span>Needs approval <em id="c-waiting">0</em></button>
+  <!-- 컴퓨터 전체 CPU · 메모리(13-controls.js renderSysload) — 6~10초마다 바뀌어 화면 읽기에 알리지 않는다(aria-live 없음, 뜻은 aria-label) -->
+  <span id="sysload" class="sysload" tabindex="0" hidden></span>
   <span id="conn" role="status" hidden></span>
   <!-- 맨 위 가운데 기록 검색: 칸에 바로 치면 바로 아래 결과 목록(18-search.js). 좁은 화면은 🔍 를 누르면 칸이 머리 폭으로 펼쳐진다 -->
   <div class="gs" id="gs">
@@ -281,6 +283,7 @@
 <script src="/js/00-prefs.js"></script>
 <script src="/js/01-core.js"></script>
 <script src="/js/02-kinds.js"></script>
+<script src="/js/02-load.js"></script>
 <script src="/js/02-water.js"></script>
 <script src="/js/03-graph.js"></script>
 <script src="/js/04-list.js"></script>

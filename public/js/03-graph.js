@@ -15,7 +15,7 @@ function buildTree() {
       const p = { kind: 'group', label: project, dir: items.find((s) => s.cwd)?.cwd ?? null, children: [], status: items.some((s) => s.status === 'waiting') ? 'waiting' : items.some((s) => s.status === 'working') ? 'working' : items.some((s) => s.status === 'background') ? 'background' : items.some((s) => s.status === 'idle') ? 'idle' : 'ended' };
       for (const s of items) {
         p.children.push({
-          kind: 'session', key: s.key, tool: s.tool, label: s.title, sub: `${STATUS_KO[s.status]}${s.lastTool && s.status === 'working' ? ' · ' + s.lastTool : ''}`, status: s.status, ctx: s.status === 'ended' ? null : s.context,
+          kind: 'session', key: s.key, tool: s.tool, label: s.title, sub: `${STATUS_KO[s.status]}${hotText(s) ? ' · ' + hotText(s) : s.lastTool && s.status === 'working' ? ' · ' + s.lastTool : ''}`, /* 무거우면 도구 이름 대신 꼬리표(노드 폭) */ status: s.status, ctx: s.status === 'ended' ? null : s.context,
           children: subNodes(s),
         });
       }

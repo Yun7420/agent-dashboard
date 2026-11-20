@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// 가짜 ps: 정해 둔 프로세스 목록(pid ppid etime command)
+// 가짜 ps: 정해 둔 프로세스 목록. ps.txt 는 예전 꼴(pid ppid etime command) — lib/procs.mjs 가 time= · rss= 열을 달라고 하면 0 으로 채워 준다.
+// ps-load.txt 가 있으면 그대로(pid ppid etime time rss command — CPU · 메모리 시험)
 // FAKE_PS_FIRST_DELAY_MS: 첫 호출만 늦게 답한다 — 서버 시작 틱이 늦어 /events 가 먼저 답하는 순간(명령이 볼 상태는 아직 없음)을 매번 만든다
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,4 +13,6 @@ if (delay) {
     await new Promise((r) => setTimeout(r, delay));
   } catch {}
 }
-process.stdout.write(answer('ps.txt'));
+const load = answer('ps-load.txt', null);
+const args = process.argv.slice(2).join(' ');
+process.stdout.write(load ?? (args.includes('time=') ? answer('ps.txt').replace(/^(\s*\d+\s+\d+\s+\S+)\s+/gm, '$1 0:00.00 0 ') : answer('ps.txt')));

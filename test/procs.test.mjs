@@ -40,7 +40,7 @@ test('processes: 어댑터가 고른 것만, --resume ID · 에디터 확장(str
   const lsof = JSON.parse(fs.readFileSync(LOG, 'utf8').trim().split('\n').reverse().find((l) => JSON.parse(l).cmd === 'lsof'));
   assert.deepEqual(lsof.args, ['-a', '-d', 'cwd', '-Fn', '-p', '501,502']); // 고른 PID 만
   const ps = JSON.parse(fs.readFileSync(LOG, 'utf8').trim().split('\n').reverse().find((l) => JSON.parse(l).cmd === 'ps'));
-  assert.deepEqual(ps.args, ['-U', String(process.getuid()), '-ww', '-o', 'pid=,ppid=,etime=,command=']); // 내 계정 것만(점검 C8) · -ww 명령줄 자르지 않기(Linux COLUMNS, 호환성 C7)
+  assert.deepEqual(ps.args, ['-U', String(process.getuid()), '-ww', '-o', 'pid=,ppid=,etime=,time=,rss=,command=']); // 내 계정 것만(점검 C8) · -ww 명령줄 자르지 않기(Linux COLUMNS, 호환성 C7)
 });
 
 // Linux 는 lsof 가 없는 배포판이 많아 /proc/<pid>/cwd 를 먼저 읽고, 못 읽은 것만 lsof 로(호환성 검토 C3)

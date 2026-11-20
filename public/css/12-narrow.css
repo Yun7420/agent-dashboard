@@ -39,6 +39,7 @@
   .brand h1 { display: none; } /* 로고만 남겨 머리 단추가 줄바꿈되지 않게 */
   .appr-count { font-size: 0; gap: var(--sp-1); } .appr-count em { font-size: 13px; } /* 점 + 숫자만(글자는 화면 읽기용으로 남김) */
   #new-session { padding: 0 12px; }
+  .sysload .mem { display: none; } /* 휴대폰 폭: 머리 칩은 CPU 만(메모리는 마우스 올림 · 누르기 글) */
   #new-session span { display: none; } /* 「+」만(이름은 title · aria-label) */
   header { gap: var(--sp-1); }
   /* 휴대폰은 손가락으로 누르니 아이콘 · 주 단추의 누를 자리를 40px 로(docs/CONVENTIONS.md 「화면 디자인 규칙」) */

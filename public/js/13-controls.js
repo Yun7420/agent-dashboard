@@ -14,6 +14,7 @@ function render() {
     b.setAttribute('aria-label', `${b.title} ${n}`);
   }
   $('#status-chips [data-st="waiting"]').classList.toggle('hot', count('waiting') > 0); // 승인 필요 1 이상은 경고색
+  renderSysload(state.sysload);
   renderKinds();
   renderList();
   renderGraph();
@@ -70,6 +71,20 @@ applyTheme();
 $('#app-more').addEventListener('click', (e) => { e.stopPropagation(); $('#limits-pop').classList.remove('show'); /* 한도 추이 팝업과 겹치지 않게 */ $('#app-more').setAttribute('aria-expanded', $('#app-menu').classList.toggle('show')); });
 $('#app-menu').addEventListener('click', () => { $('#app-menu').classList.remove('show'); $('#app-more').setAttribute('aria-expanded', 'false'); }, true);
 document.addEventListener('click', (e) => { if (!e.target.closest('#app-menu')) { $('#app-menu').classList.remove('show'); $('#app-more').setAttribute('aria-expanded', 'false'); } });
+// 머리 칩: 컴퓨터 전체 CPU(모든 코어 = 100%) · 메모리(활성 상태 보기 「사용된 메모리」와 같은 셈), 압력이 주의 · 위험이면 색만(lib/sysload.mjs 가 두 번 연속일 때 바꿈)
+const gb = (b, whole) => (whole ? String(Math.round(b / 2 ** 30)) : (b / 2 ** 30).toFixed(1)); // 쓴 양은 소수 한 자리, 전체는 정수(13.7/16GB)
+const PRESSURE = { normal: 'Normal', warn: 'Warning', critical: 'Critical' };
+function renderSysload(l) {
+  const el = $('#sysload');
+  el.hidden = !l || (l.cpu == null && l.memUsed == null);
+  if (el.hidden) return;
+  const mem = l.memUsed != null && l.memTotal ? `${gb(l.memUsed)}/${gb(l.memTotal, true)}GB` : null;
+  el.innerHTML = `<span>CPU ${l.cpu ?? '—'}%</span>${mem ? `<span class="mem">· ${t('Memory')} ${mem}</span>` : ''}`;
+  el.className = `sysload ${l.pressure === 'critical' ? 'crit' : l.pressure === 'warn' ? 'warn' : ''}`;
+  const tip = [t('Whole computer: CPU {c}% of all cores', { c: l.cpu ?? '—' }), mem ? `${t('Memory')} ${mem}${l.pressure ? ` · ${t('pressure')} ${t(PRESSURE[l.pressure])}` : ''}` : '', t('Session CPU (ⓘ session info) counts one core as 100%, so several sessions can add up past 100%')].filter(Boolean).join('\n');
+  el.dataset.tip = tip;
+  el.setAttribute('aria-label', tip);
+}
 // 목록 탭 바꾸기(← → 로도, 04-list.js). 종료 탭에선 정렬 · 끌기가 없다(종료 세션은 끝난 차례대로)
 function setListTab(tab) {
   if (pref.listTab === tab) return;

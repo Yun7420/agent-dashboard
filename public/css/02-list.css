@@ -77,5 +77,6 @@ body.aside-folded .card .re { display: none; }
 .tool.codex { background: color-mix(in srgb, var(--codex) 14%, transparent); color: var(--codex); }
 .badge-tmux { background: color-mix(in srgb, var(--ok) 12%, transparent); color: var(--ok); }
 .badge-view { background: var(--surface-3); color: var(--dim); font-weight: 500; }
+.badge-hot { background: color-mix(in srgb, var(--working) 16%, transparent); color: var(--working-text); font-variant-numeric: tabular-nums; } /* 무거운 세션(CPU · 메모리) */
 .id { font-family: var(--mono); font-size: 11px; color: var(--faint); }
 #aside-peek, #aside-scrim { display: none; } /* 좁은 화면 목록 서랍(12-narrow.css) */

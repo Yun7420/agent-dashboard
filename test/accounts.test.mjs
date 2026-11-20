@@ -128,7 +128,7 @@ test('떠 있는 세션: 계정 폴더마다 sessions 를 읽어 합친다(다�
 test('카드 꼬리표: 기본이 아닐 때만 계정 · tmux 서버 이름(값은 글자로 — esc)', async () => {
   const { loadFront } = await import('./_helpers/vm.mjs');
   const el = () => ({ addEventListener() {}, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, dataset: {}, style: {}, setAttribute() {}, querySelectorAll: () => [] });
-  const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '04-list.js'], { window: {}, document: { querySelector: el, querySelectorAll: () => [], addEventListener() {}, documentElement: { dataset: {} }, body: { classList: { contains: () => false } } }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, setTimeout() {} });
+  const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '02-load.js', '04-list.js'], { window: {}, document: { querySelector: el, querySelectorAll: () => [], addEventListener() {}, documentElement: { dataset: {} }, body: { classList: { contains: () => false } } }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, setTimeout() {} });
   assert.equal(run(`tags({ tmux: { target: '%1', session: 'a' } })`), ''); // 기본(지금과 같음)
   assert.match(run(`tags({ status: 'idle', tmux: null })`), /보기만/); // tmux 밖에서 떠 있는 세션
   assert.equal(run(`tags({ status: 'ended', tmux: null })`), ''); // 종료 세션은 tmux 칸이 늘 비어 「보기만」이 붙었다

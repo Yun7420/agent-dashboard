@@ -23,7 +23,7 @@ function load(saved = {}, { folded = false } = {}) {
     querySelectorAll: () => [], focus() {},
   });
   let cards = [];
-  const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '04-list.js', '13-controls.js', '20-keys.js'], {
+  const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '02-load.js', '04-list.js', '13-controls.js', '20-keys.js'], {
     window: {}, matchMedia: undefined,
     document: { querySelector: el, querySelectorAll: (q) => (q === '#list .card[data-key]' ? cards : []), addEventListener() {}, documentElement: { dataset: {} }, body: { classList: { contains: (c) => c === 'aside-folded' && folded } } },
     localStorage: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; } },

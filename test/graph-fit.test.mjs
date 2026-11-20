@@ -93,7 +93,7 @@ test('visibleBox: 위 띠 = 상태 칩, 아래 띠 = 범례와 + − ⌖ 중 높
 // B8: 첫 상태가 오기 전 0 키(⌖) · 창 크기 바꿈 · 더블클릭 · 정렬 바꿈이 renderGraph · renderList 를 불러 TypeError 가 났다
 test('첫 상태 전: renderGraph · renderList 는 아무것도 안 하고 돌아온다', () => {
   const el = () => ({ getBoundingClientRect: () => ({}), classList: { contains: () => false, add() {}, remove() {}, toggle() {} }, addEventListener() {}, setAttribute() {}, style: {}, dataset: {} });
-  const { run } = loadFront(['00-md.js', '01-core.js', '03-graph.js', '04-list.js'], {
+  const { run } = loadFront(['00-md.js', '01-core.js', '02-load.js', '03-graph.js', '04-list.js'], {
     window: { addEventListener() {} }, innerWidth: 1440, getComputedStyle: () => ({ getPropertyValue: () => '' }),
     document: { querySelector: el, querySelectorAll: () => [], addEventListener() {} }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {},
   });
