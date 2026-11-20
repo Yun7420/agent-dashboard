@@ -112,6 +112,7 @@
 - [x] 밝은 판 눈부심 줄이기 — 밝음 · 따뜻한 밝음 바탕 surface 상대 밝기 94 · 92 → 80%(bg 89 · 87 → 76 · 75), 글자 · 상태색은 대비 규칙만큼 어둡게, 대비 시험의 따뜻한 밝음 블록 찾기 버그 고침 · waiting-bg · peer-bg 면 · 바탕 83% 이하 검사 `8127c45`. 조직도 글자 최소 크기는 이미 2081f02(맞춤 배율 1배 아래 안 줄임 → 이름 12px, 실측 1024 · 1600 모두 12px)
 - [x] 승인 창 질문(AskUserQuestion) 막힘 고침 — Claude Code 2.1.311 실측(테스트 tmux · test/fixtures/ask 10장): 여러 개 고르기는 체크 상자 단추 + 「다음 · 제출 화면으로 →」(→ 키 · 마지막 질문에서도), 「Type something」 · 「Chat about this」는 단추에서 빼고 서버 409, 커서가 글 칸이면 터미널 안내 + ↑↓, ← → 단축키 `9d51d08`
 - [x] 머리 칩 확장 — CPU · 메모리 막대(사용 한도와 같은 lp-bar, 메모리는 압력 색) · 「— 에이전트 N% · GB」(세션 합 ÷ 코어 수, 1180 이하 먼저 숨김) · 누르면 세션별 표(무거운 순 · 열린 동안 순서 고정 · 행 → 그 세션 · Esc · 바깥 · 초점) · 칩이 실제 모드에서 안 보이던 것(틱 메시지에 sysload) `fc8c576` `480cb54` · README 「업데이트」 표
+- [x] 세션 CPU · 메모리는 조직도 노드에 늘(이름 · 상태 · CPU · 메모리 네 줄 가운데, 무거운 줄만 강조 · 목록 꼬리표 뺌) · 머리 칩 「CPU 46/100% · 메모리 12.8/16GB」(막대 · 에이전트 합계 · 세션별 표 뺌) · 검색창 화면 정가운데(머리 세 칸 grid, 최대 800px · 좁으면 280px 바닥) · README 그림 다시 `71a54a8` `01b5cc6`
 - 출시 방법: 버전 올리기 → CI 초록 → 사용자 승인 뒤 `v*` 태그 → Actions 「Review deployments」에서 사용자 Approve (`docs/CONVENTIONS.md` 「출시 절차」)
 - 사용자 몫(선택): npm 패키지 Settings → Publishing access 를 「Require 2FA and disallow bypass 2fa tokens」로(Trusted Publisher 출시는 그대로 됨)
 
