@@ -13,18 +13,19 @@ import { ROOT, FAKE_BIN } from './_helpers/server.mjs';
 
 const TOKENISH = 'deadbeefcafebabe0123456789abcdef';
 const ENV = { PATH: '/opt/homebrew/bin:/usr/bin:/bin', LANG: 'ko_KR.UTF-8', HOME: '/x', DASHBOARD_TOKEN: TOKENISH, GITHUB_TOKEN: TOKENISH, npm_config_cache: '/x/.npm' };
-function setup({ platform = 'darwin', script, execPath = '/opt/homebrew/bin/node', env = ENV, busy = false, failBootstrap = false } = {}) {
+// lingers: bootout 뒤에도 print 가 몇 번 「아직 있음」(bootout 은 비동기) · fail5: 처음 몇 번 bootstrap 이 5(EIO)
+function setup({ platform = 'darwin', script, execPath = '/opt/homebrew/bin/node', env = ENV, busy = false, failBootstrap = false, lingers = 0, fail5 = 0 } = {}) {
   const home = tmpDir('ad-auto-');
   const calls = [];
-  let up = false;
+  let up = false, linger = 0, eio = 0;
   const launchctl = async (args) => {
     calls.push(args.join(' '));
-    if (args[0] === 'print') return up ? { code: 0, out: 'state = running\n\tlast exit code = 1\n' } : { code: 113, out: '' };
-    if (args[0] === 'bootstrap') { if (failBootstrap) return { code: 5, out: '' }; up = true; return { code: 0, out: '' }; }
-    if (args[0] === 'bootout') { const was = up; up = false; return { code: was ? 0 : 113, out: '' }; }
+    if (args[0] === 'print') { if (linger > 0) { linger--; return { code: 0, out: 'state = stopping\n' }; } return up ? { code: 0, out: 'state = running\n\tlast exit code = 1\n' } : { code: 113, out: '' }; }
+    if (args[0] === 'bootstrap') { if (failBootstrap) return { code: 5, out: '' }; if (linger > 0 || eio > 0) { eio--; return { code: 5, out: '' }; } up = true; return { code: 0, out: '' }; }
+    if (args[0] === 'bootout') { const was = up; up = false; linger = lingers; eio = fail5; return { code: was ? 0 : 113, out: '' }; }
     return { code: 64, out: '' };
   };
-  const auto = createAutostart({ home, uid: 501, platform, execPath, script: script ?? path.join(home, 'pkg', 'bin', 'agent-dashboard.mjs'), env, launchctl, portBusy: async () => busy });
+  const auto = createAutostart({ home, uid: 501, platform, execPath, script: script ?? path.join(home, 'pkg', 'bin', 'agent-dashboard.mjs'), env, launchctl, portBusy: async () => busy, sleep: async () => {} });
   return { home, calls, auto, isUp: () => up };
 }
 const mode = (f) => (fs.statSync(f).mode & 0o777).toString(8);
@@ -51,7 +52,7 @@ test('on: plist(절대 경로 · start · PATH · LANG 만 · 600) 를 쓰고 bo
   assert.deepEqual(calls, ['print gui/501/' + LABEL, `bootstrap gui/501 ${auto.plist}`]);
   calls.length = 0;
   await auto.on();
-  assert.deepEqual(calls, ['print gui/501/' + LABEL, `bootout gui/501/${LABEL}`, `bootstrap gui/501 ${auto.plist}`]);
+  assert.deepEqual(calls, ['print gui/501/' + LABEL, `bootout gui/501/${LABEL}`, 'print gui/501/' + LABEL, `bootstrap gui/501 ${auto.plist}`]); // 내린 것을 확인한 뒤 올린다
 });
 
 test('on: npx 캐시에서 켠 것은 거절(파일 · launchctl 없음), 포트를 누가 쓰고 있으면 경고만(끄지 않음), 버전 폴더 node 면 안내', async () => {
@@ -144,7 +145,7 @@ test('실행 명령 autostart on · status · off: 임시 HOME 에만 쓰고, �
     const bad = run(['nope'], 'en_US.UTF-8');
     assert.equal(bad.status, 1);
     assert.match(bad.stderr, /Add one of on · off · status after autostart/);
-    assert.deepEqual(fs.readFileSync(path.join(fake, 'log'), 'utf8').trim().split('\n').map((l) => JSON.parse(l).args[0]), ['print', 'bootstrap', 'print', 'print', 'bootout']);
+    assert.deepEqual(fs.readFileSync(path.join(fake, 'log'), 'utf8').trim().split('\n').map((l) => JSON.parse(l).args[0]), ['print', 'bootstrap', 'print', 'print', 'bootout', 'print']);
   } finally {
     srv.close();
   }
@@ -163,7 +164,7 @@ test('로그: on 할 때 5MB 넘으면 .1 로(내린 뒤라 launchd 가 연 파�
   calls.length = 0;
   await auto.on(); // 이미 올라가 있음 → bootout 이 먼저, 그 뒤에 돌리기 · bootstrap
   assert.equal(fs.readFileSync(auto.logFile, 'utf8'), 'small');
-  assert.deepEqual(calls.map((c) => c.split(' ')[0]), ['print', 'bootout', 'bootstrap']);
+  assert.deepEqual(calls.map((c) => c.split(' ')[0]), ['print', 'bootout', 'print', 'bootstrap']);
   assert.match(fs.readFileSync(auto.plist, 'utf8'), /<key>DASHBOARD_AUTOSTART<\/key>\s*<string>1<\/string>/);
 });
 
@@ -216,4 +217,29 @@ test('보호 폴더(문서 · 데스크탑 · 다운로드 · iCloud) 아래면 
   const up = setup({ busy: true });
   await up.auto.on();
   assert.ok(!(await up.auto.status()).lines.some((l) => /응답하지 않아요/.test(l)), '응답하면 없음');
+});
+
+// 2026-11-20 실제 사례: Node 24 로 올린 뒤 다시 on 하니 ① 4545 를 듣는 우리 자동 실행 서버를 남으로 보고 경고 ② bootout 이 끝나기 전 bootstrap → 코드 5, 대시보드가 꺼진 채로
+test('다시 on: 이미 걸려 있으면 포트 경고 없음 · 내림이 끝날 때까지 기다리고 · 5 면 몇 번 더 · 그래도 안 되면 다시 하라는 안내', async () => {
+  const a = setup({ busy: true });
+  await a.auto.on(); // 처음: 누가 듣고 있으면 경고
+  const again = setup({ busy: true, lingers: 3, fail5: 1 });
+  await again.auto.on();
+  again.calls.length = 0;
+  const r = await again.auto.on();
+  assert.equal(r.ok, true, r.lines.join('\n'));
+  assert.ok(!r.lines.some((l) => /포트에 이미 대시보드/.test(l)), '다시 걸 때 그 포트는 우리 서버');
+  const kinds = again.calls.map((c) => c.split(' ')[0]);
+  assert.deepEqual(kinds, ['print', 'bootout', 'print', 'print', 'print', 'print', 'bootstrap', 'bootstrap']); // 「있음」 3번 뒤 「없음」, 첫 bootstrap 은 5
+  assert.equal(again.isUp(), true);
+  const stuck = setup({ failBootstrap: true });
+  const s2 = await stuck.auto.on();
+  assert.equal(s2.ok, false);
+  assert.match(s2.lines.at(-1), /launchctl bootstrap 이 실패했어요\(코드 5\) — .* 다시 한 번 agent-dashboard autostart on 을 실행해 주세요$/);
+  assert.equal(stuck.calls.filter((c) => c.startsWith('bootstrap')).length, 4); // 5 는 몇 번 더(0.5초 간격)
+  const off = setup({ lingers: 2 });
+  await off.auto.on();
+  off.calls.length = 0;
+  await off.auto.off();
+  assert.deepEqual(off.calls.map((c) => c.split(' ')[0]), ['print', 'bootout', 'print', 'print', 'print']); // off 도 다 내린 뒤에 파일을 지운다
 });
