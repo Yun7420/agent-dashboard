@@ -159,6 +159,15 @@ Everything the dashboard writes lives in `~/.agent-dashboard/` (it never writes 
 | `limits/` | old account limit history (no longer written — deleted after 30 days) | folder 700 · files 600 |
 | `uploads/` | attachments (per day, deleted after 14 days) | folder 700 · files 600 |
 
+### Updating
+
+| How you run it | To get the new version |
+|---|---|
+| npx | Stop it, then `npx @yun7420/agent-dashboard@latest` — without a version npx may start the copy it cached earlier |
+| Global install | `npm i -g @yun7420/agent-dashboard@latest`, then restart |
+| Autostart (installed) | After updating the install, `agent-dashboard autostart on` (re-registers with the new path and node) |
+| Repo | `git pull`, then restart |
+
 ### Stopping and uninstalling
 
 1. **Stop the server** — if you started it with `npm start` or `npx`, press Ctrl+C in that terminal. If you used the runner (`run`), press Ctrl+C in its window (the server stops too). To stop the whole tmux `dashboard` session: `tmux kill-session -t dashboard`.

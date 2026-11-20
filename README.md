@@ -160,6 +160,15 @@ node bin/agent-dashboard.mjs restore   # 재시동 전 세션들을 tmux 로 다
 | `limits/` | 예전 계정 한도 기록(이제 쓰지 않음 — 30일 지나면 자동 삭제) | 폴더 700 · 파일 600 |
 | `uploads/` | 첨부 파일(날짜별, 14일 지나면 삭제) | 폴더 700 · 파일 600 |
 
+### 업데이트
+
+| 쓰는 방식 | 새 판으로 |
+|---|---|
+| npx | 끈 뒤 `npx @yun7420/agent-dashboard@latest` — 버전을 안 붙이면 npx 가 예전에 받아 둔 판을 다시 켤 수 있어요 |
+| 전역 설치 | `npm i -g @yun7420/agent-dashboard@latest` 뒤 다시 켜기 |
+| 자동 실행(설치본) | 설치를 올린 뒤 `agent-dashboard autostart on`(새 경로 · node 로 다시 걸어요) |
+| 저장소 | `git pull` 뒤 다시 켜기 |
+
 ### 끄기 · 지우기
 
 1. **서버 끄기** — `npm start` · `npx` 로 켰다면 그 터미널에서 Ctrl+C. 실행기(`run`)로 켰다면 그 창에서 Ctrl+C(서버도 함께 꺼져요). tmux `dashboard` 세션째 끄려면 `tmux kill-session -t dashboard`.
