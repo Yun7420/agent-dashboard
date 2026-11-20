@@ -67,6 +67,7 @@ document.addEventListener('click', (e) => { if (e.target.closest('[data-new-sess
 $('#new-session').addEventListener('click', () => {
   const dirs = [...new Set((state?.sessions || []).map((s) => s.cwd).filter(Boolean))];
   $('#cwd-list').innerHTML = dirs.map((d) => `<option value="${esc(d)}">`).join('');
+  fillModels($('#sp-model'), `<option value="">${t('Use default')}</option>`); // 06-history.js
   openModal($('#spawn-dlg'));
 });
 $('#spawn-form').addEventListener('submit', async (e) => {

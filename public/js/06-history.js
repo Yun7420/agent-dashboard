@@ -80,14 +80,21 @@ async function reloadLog(key) {
 }
 // 켜진 지 얼마나(서버는 켜진 시각만 보낸다 — 경과 시간을 보내면 매번 바뀌어 전체를 다시 보내게 됨). 머리는 상태가 올 때마다 다시 그려 분 단위면 충분
 const upFor = (iso) => { const m = Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 60000)); return m >= 1440 ? `${Math.floor(m / 1440)}d ${Math.floor(m / 60) % 24}h` : `${Math.floor(m / 60)}h ${m % 60}m`; };
+// 모델 셀렉트 두 곳(패널 머리 · 새 작업 창): 별칭은 서버가 claude --help 에서 읽어 준 목록(state.models, lib/models.mjs) — 별칭 = 그 계열의 최신.
+// 패널 머리는 지금 세션의 칸에만 실제 버전(「Opus (5.5)」, 기록의 모델 이름). 새 작업 창은 띄우기 전이라 별칭만. 글이 그대로면 다시 그리지 않는다(펼친 목록이 닫히지 않게)
+const aliasName = (a) => a[0].toUpperCase() + a.slice(1);
+function fillModels(sel, first, cur = null, model = '') {
+  const html = first + (state?.models ?? []).map((a) => `<option value="${esc(a)}">${esc(a === cur ? modelName(model) : aliasName(a))}</option>`).join('');
+  if (sel.dataset.html !== html) { sel.dataset.html = html; sel.innerHTML = html; }
+}
 function renderDrawerHead(s) {
   $('#d-title').textContent = s.title;
   $('#d-title').title = s.title;
   $('#d-dot').className = `dot-s ${s.status} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}`;
   $('#d-meta').innerHTML = `<span class="badge tool ${esc(s.tool)}">${esc(s.toolLabel)}</span>${s.model ? `<span class="badge badge-model" tabindex="0" data-tip="${esc(s.model)}">${esc(modelName(s.model))}</span>` : ''}${s.tmux ? '<span class="badge badge-tmux">TMUX</span>' : ''}<span style="display:inline-flex;align-items:center;gap:6px"><span class="dot-s ${esc(s.status)}"></span>${STATUS_KO[s.status]}${s.waitingFor ? ' · ' + esc(s.waitingFor) : ''}</span><span class="path">${esc(s.cwd || '')}</span><span class="mono">${t('Session')} ${esc(s.id.slice(0, 8))}</span>${s.pid ? `<span>PID ${s.pid}</span>${s.startedAt ? `<span tabindex="0" data-tip="${esc(new Date(s.startedAt).toLocaleString())}">${t('Up')} ${upFor(s.startedAt)}</span>` : ''}` : ''}${s.ide ? `<span>${t('Editor extension')}</span>` : ''}${s.load ? `<span tabindex="0" data-tip="${t('One core = 100% (same as Activity Monitor). Includes child processes such as tests, builds and dev servers')}">${esc(loadText(s.load))}</span>` : ''}<span>${t('Log')} ${s.sizeMB ?? 0}MB</span>${s.turnClipped ? `<span tabindex="0" data-tip="${t('The last request is more than 8MB before the end of the log, so only the last 8MB of this turn was read')}">${t('Start of this turn skipped')}</span>` : ''}${s.context ? `<span class="ctx-chip" tabindex="0" data-tip="${s.context.estimated ? t('Window size estimated from the model setting. ') : ''}${t('When full, Claude auto-summarizes (compacts) the earlier part')}"><span class="mini"><span class="ctx-bar ${ctxLevel(s.context.percent)}" style="display:block;width:${s.context.percent}%"></span></span>${ctxText(s)}</span>` : ''}`;
   $('#end-session').hidden = s.status === 'ended';
-  const fam = (s.model || '').match(/opus|sonnet|haiku/)?.[0] ?? '';
-  $('#d-model').value = fam;
+  fillModels($('#d-model'), `<option value="" disabled>${t('Model')}</option>`, s.modelAlias, s.model);
+  $('#d-model').value = s.modelAlias ?? '';
   $('#d-model').disabled = !s.tmux || s.status === 'ended' || s.status === 'waiting';
   $('#d-model').title = $('#d-model').disabled ? t('Model changes work only for sessions started in tmux') : t('Change model — sends /model to the session');
   renderNow(s);

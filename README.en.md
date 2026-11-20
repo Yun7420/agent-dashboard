@@ -49,7 +49,7 @@ Agent Dashboard puts all of this on one screen.
 | 📂 | **Open the folder** | Click a project box to open that folder in VS Code · Cursor or reveal it in Finder — no hunting for the folder when you want to check what changed |
 | ■ | **Stop · close** | Stop only what a session is doing (the conversation stays), or close a session from the dashboard |
 | 📝 | **Live code diff** | Files changed in the current request with +/− counts and red/green diffs; commands with ✓ pass / ✕ fail and output |
-| 🧠 | **Model · usage** | Start sessions with Opus · Sonnet · Haiku, switch a running session's model, context usage, Claude account 5-hour/weekly limits (what is left) |
+| 🧠 | **Model · usage** | Start sessions with an alias such as Fable · Opus · Sonnet · Haiku, switch a running session's model, context usage, Claude account 5-hour/weekly limits (what is left) |
 | 🔔 | **Notifications** | Alert when approval is needed or a task over 1 minute finishes — **macOS notifications that arrive even with the tab closed** (choose a sound), or browser notifications when not on macOS; pending approvals in the tab title |
 | 🛡️ | **Local-only security** | 127.0.0.1 only, Host/Origin checks, a secret token generated per machine (`~/.agent-dashboard/token`), no framing (clickjacking), path checks for attachments and folders |
 
@@ -140,7 +140,7 @@ tmux respawn-pane -k -t dashboard     # restart after editing code (sending Ctrl
 - **All at once**: the **"N sessions were open before the restart"** box at the top of the dashboard list has a **"Reopen all"** button (only ones not running now) — or the "Restore sessions" line from the table (`… restore`). The command also starts a dashboard with the `run` runner if none is running (sessions only if autostart is on or one is already running).
 - **One at a time**: the **"Ended"** tab at the top of the list, then **"Reopen"** on a card.
 
-It only starts things and never stops anything. Sessions that are already running aren't started again. Sessions follow your default model; only ones you picked explicitly (Sonnet/Haiku) keep it. Conversations older than 30 days are cleaned up by Claude Code and can't be resumed.
+It only starts things and never stops anything. Sessions that are already running aren't started again. Sessions follow your default model; only ones you picked explicitly (e.g. Sonnet) keep it. Conversations older than 30 days are cleaned up by Claude Code and can't be resumed.
 
 Even without a restart, if sessions stopped unexpectedly, check the **"Ended"** tab. Claude sessions that were running in the last 24 hours but aren't now (including ones started outside tmux) get a **"Reopen"** button on their card, which resumes the same conversation in tmux. A view-only session started outside tmux shows a "Reopen" button where the message box would be (it turns on once you close the original).
 - Sessions that are running now or were just reopened have no button (no duplicates).
@@ -274,6 +274,7 @@ A session already running in a terminal has no official way to receive input fro
 
 - **CPU · memory** — the header chip "CPU 23/100% · Memory 13.7/16GB" is the whole computer (all cores = 100%; memory counted like Activity Monitor's "Memory Used", colored when memory pressure is warning or critical). Each session's values are always shown as two lines under its map node, "CPU 35%" and "Memory 480MB" (the session plus child processes such as tests, builds and dev servers; one core = 100%). When heavy (above 80% CPU or 1.5GB twice in a row) that line is highlighted, and it goes back after two readings below 60% · 1.2GB. The heaviest child (program name only) is in ⓘ session info
 - **Model** — choose in + New task (the New task window); change a running tmux session's model from the panel header (sends `/model`). Claude's `/model` also saves your default model, so when you change it from the dashboard **only that session** changes and your default is restored automatically.
+  - What you pick is an **alias** (Fable · Opus …) = the latest model of that family. The alias list is read automatically from Claude Code's `claude --help` (again when the Claude Code version changes) — if it can't be read, the default list is used and the environment check says so. Running sessions also show the actual version (e.g. `Opus (5.5)`).
 - **Account usage limits (5-hour · weekly)** — turn on and off with the **Show usage limits** switch in the Claude Code item of the legend. Only the first time you turn it on, a line "Connects a status line in Claude settings (~/.claude/settings.json) · turning it off restores it" and a **Connect** button appear; once connected, that browser turns it on directly. Turning off happens right away, with no confirmation, and restores your original status line. Claude Code only passes this to the status line, so turning it on registers a status line (`bin/statusline.mjs`) in `~/.claude/settings.json`.
   - Every Claude session gets one line at the bottom: `model · context % · 5-hour limit %` (if you already had a status line, it keeps showing yours).
   - Your previous settings are backed up to `~/.agent-dashboard/` and **restored exactly** when you turn it off. While on, context usage becomes exact instead of estimated.
@@ -326,7 +327,7 @@ agent-dashboard/
 ├─ lib/                # one job per file
 │  ├─ live-feed · state · procs · tmux · dialog · approval   2-second tick · SSE · build state · process list · tmux control · prompt detection · "what you're allowing" card
 │  ├─ dialog-watch · peer-links                   watching for prompts (every other tick · mismatch log) · linking messages between sessions
-│  ├─ commands · spawn · open-dir · env · launch  commands (chat · approve · new session …) · new-session args · open folder · environment check · hints matching how you started it
+│  ├─ commands · spawn · models · open-dir · env · launch  commands (chat · approve · new session …) · new-session args · model alias list · open folder · environment check · hints matching how you started it
 │  ├─ body · uploads · respond · validate         request bodies · attachments · response shapes · input checks
 │  ├─ token · auth · login-open · paths · accounts · perms    secret token · login link · cookie · open (server check) · paths (inside-folder checks) · other accounts · tmux servers (configured only) · file permissions
 │  ├─ usage-bridge · claude-settings · bridge · status · limits · usage   usage limits (status-line bridge · keeping the default model · clearing old limit history · token totals)

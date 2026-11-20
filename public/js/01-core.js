@@ -148,10 +148,10 @@ function fmtTok(n) {
 const ctxLevel = (p) => (p >= 85 ? 'high' : p >= 60 ? 'mid' : '');
 // 요청 이름표: 사람 = 「나」, 다른 세션 = 「↙ 세션 이름」(모양은 같고 06 askBubble · 18 검색 결과가 쓴다)
 const askWho = (from) => `<span class="ask-who">${from ? `↙ ${esc(from.name)}` : t('You')}</span>`;
-// 모델: 'claude-opus-5-5' → 'Opus 5.5'
+// 모델: 'claude-opus-5-5' → 'Opus (5.5)'. claude-<계열>-<주>-<부> 꼴(끝에 날짜 -20251001 이 붙은 것 포함)만 풀고, 모르는 꼴은 원래 이름 그대로 — 지어내지 않는다
 function modelName(id) {
-  const m = String(id).match(/claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?:-|$)/);
-  return m ? `${m[1][0].toUpperCase()}${m[1].slice(1)} ${m[2]}${m[3] ? '.' + m[3] : ''}` : id;
+  const m = String(id).match(/^claude-([a-z]+)-(\d+)-(\d{1,2})(?:-\d{8})?$/);
+  return m ? `${m[1][0].toUpperCase()}${m[1].slice(1)} (${m[2]}.${m[3]})` : String(id);
 }
 // 접힌 목록 띠의 이니셜: Lead Manager → LM, Project2 Builder → PB
 function initials(title) {

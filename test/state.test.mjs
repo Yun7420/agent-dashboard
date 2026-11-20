@@ -215,9 +215,13 @@ test('projectName: 홈은 「~ (홈)」, 폴더가 없으면 기록 폴더 열�
   assert.equal(t.b.projectName(path.join(HOME, 'x'), null), 'x');
 });
 
-test('데모면 가짜 상태를 그대로', async () => {
-  const b = createStateBuilder({ demo: true, demoState: () => ({ demo: 1 }), adapters: [] });
-  assert.deepEqual(await b.buildState(24), { demo: 1 });
+test('데모면 가짜 상태를 그대로 — 모델 별칭 목록 · 세션마다 별칭만 실제와 같은 규칙으로 붙인다(영어 판도)', async () => {
+  const S = () => [{ tool: 'claude', model: 'claude-fable-5-1' }, { tool: 'codex', model: 'gpt-5' }];
+  const b = createStateBuilder({ demo: true, demoState: () => ({ demo: 1, sessions: S(), en: { sessions: S() } }), adapters: [] });
+  const st = await b.buildState(24);
+  assert.equal(st.demo, 1);
+  assert.deepEqual(st.models, ['fable', 'opus', 'sonnet', 'haiku']);
+  assert.deepEqual([...st.sessions, ...st.en.sessions].map((s) => s.modelAlias), ['fable', null, 'fable', null]);
 });
 
 // 첫 프롬프트를 들고 기다리는 새 세션(점검 C5 뒤): 카드에 「확인 뒤 보내요」, 넣지 못한 글은 상태(firstPrompts)로 — 받으면 지움
