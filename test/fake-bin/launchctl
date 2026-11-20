@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+// 가짜 launchctl: bootstrap · bootout · print 만. 올라가 있는지는 FAKE_DIR/launchd-<라벨> 파일로 흉내(실제 launchd 는 절대 건드리지 않는다).
+// print 는 올라가 있으면 0 과 「last exit code = 0」, 아니면 113(진짜와 같은 「없음」 코드). FAKE_DIR/fail.txt 에 bootstrap 이 있으면 실패
+import fs from 'node:fs';
+import path from 'node:path';
+import { record, answer } from './_fake.mjs';
+const args = process.argv.slice(2);
+record('launchctl', args);
+const [sub] = args;
+const mark = (label) => path.join(process.env.FAKE_DIR ?? '', `launchd-${label}`);
+const labelOf = (target) => target.split('/').at(-1);
+if (answer('fail.txt').split('\n').includes(sub)) process.exit(5);
+if (sub === 'bootstrap') {
+  const text = fs.readFileSync(args[2], 'utf8');
+  fs.writeFileSync(mark(/<key>Label<\/key>\s*<string>([^<]+)<\/string>/.exec(text)[1]), args[2]);
+} else if (sub === 'bootout') {
+  if (!fs.existsSync(mark(labelOf(args[1])))) process.exit(113);
+  fs.rmSync(mark(labelOf(args[1])));
+} else if (sub === 'print') {
+  if (!fs.existsSync(mark(labelOf(args[1])))) process.exit(113);
+  process.stdout.write(`${args[1]} = {\n\tstate = running\n\tlast exit code = 0\n}\n`);
+} else process.exit(64);

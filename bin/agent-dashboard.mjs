@@ -28,6 +28,7 @@ ${usage([
   ['run', '실행기: 서버가 꺼지면 다시 켜요(로그 ~/.agent-dashboard/server.log). tmux 안에서 띄워 두면 좋아요'],
   ['restore', "맥을 다시 켠 뒤: 재시동 전 tmux 세션을 다시 띄우고 실행기도 tmux 'dashboard' 로 켜요"],
   ['open', '로그인 링크를 브라우저로 열어요(이 브라우저는 7일 동안 로그인 — 처음 · 만료 · 다른 브라우저일 때)'],
+  ['autostart', 'on | off | status — 로그인하면 저절로 켜기(macOS, npm i -g 로 설치한 경우)'],
   ['--help', '이 도움말(-h · help 도 같아요)'],
   ['--version', '버전(-v)'],
 ])}
@@ -45,6 +46,7 @@ ${usage([
   ['run', 'Runner: restarts the server when it stops (log ~/.agent-dashboard/server.log). Good to keep in tmux'],
   ['restore', "After rebooting the Mac: reopens the tmux sessions from before and starts the runner in tmux 'dashboard'"],
   ['open', 'Opens the login link in the browser (that browser stays logged in for 7 days — first time, expired, or another browser)'],
+  ['autostart', 'on | off | status — start on login (macOS, when installed with npm i -g)'],
   ['--help', 'This help (-h and help work too)'],
   ['--version', 'Version (-v)'],
 ])}
@@ -78,6 +80,19 @@ else if (cmd === 'run') {
   const { openLogin } = await import('../lib/login-open.mjs');
   const r = await openLogin({ token: loadToken(tokenFiles(root)).token, port: Number(process.env.PORT ?? 4545) });
   (r.ok ? console.log : console.error)(tr(r.message, termLang()));
+  if (!r.ok) process.exitCode = 1;
+} else if (cmd === 'autostart') {
+  // 일은 lib/autostart.mjs — 여기선 진짜 launchctl · 포트 확인 · 경로만 넘긴다
+  const { createAutostart } = await import('../lib/autostart.mjs');
+  const { execFile } = await import('node:child_process');
+  const net = await import('node:net');
+  const os = await import('node:os');
+  const launchctl = (args) => new Promise((resolve) => execFile('launchctl', args, { timeout: 10_000 }, (e, out) => resolve({ code: e ? (typeof e.code === 'number' ? e.code : 1) : 0, out: String(out ?? '') })));
+  const portBusy = (port) => new Promise((resolve) => { const s = net.connect(port, '127.0.0.1', () => { s.destroy(); resolve(true); }); s.on('error', () => resolve(false)); }); // 듣는 쪽이 있는지만(끄지 않는다)
+  const auto = createAutostart({ home: os.homedir(), uid: process.getuid?.() ?? 0, platform: process.platform, execPath: process.execPath, script: path.join(root, 'bin', 'agent-dashboard.mjs'), env: process.env, launchctl, portBusy, cmd: BASE });
+  const sub = process.argv[3];
+  const r = sub === 'on' || sub === 'off' || sub === 'status' ? await auto[sub]() : { ok: false, lines: [`autostart 다음에 on · off · status 중 하나를 붙여 주세요`] };
+  for (const l of r.lines) (r.ok ? console.log : console.error)(tr(l, termLang()));
   if (!r.ok) process.exitCode = 1;
 } else if (cmd === 'restore') {
   const { restoreAll } = await import('../lib/restore-cli.mjs');

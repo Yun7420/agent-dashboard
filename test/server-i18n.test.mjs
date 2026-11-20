@@ -70,7 +70,7 @@ test('승인 카드 · 세션 카드 · 환경 점검: 서버 문구 자리만 �
 const SOURCES = ['server.mjs', 'lib/commands.mjs', 'lib/body.mjs', 'lib/respond.mjs', 'lib/auth.mjs', 'lib/history-api.mjs', 'lib/notify-api.mjs', 'lib/limits.mjs',
   'lib/live-feed.mjs', 'lib/claude-settings.mjs', 'lib/bridge.mjs', 'lib/token.mjs', 'lib/command-risk.mjs', 'lib/approval.mjs', 'lib/state.mjs', 'lib/dialog-watch.mjs',
   'lib/dialog.mjs', 'lib/env.mjs', 'lib/launch.mjs', 'lib/node-check.mjs', 'lib/login-open.mjs', 'lib/restore-cli.mjs', 'lib/runner.mjs', 'lib/uploads.mjs', 'lib/notify.mjs',
-  'adapters/codex.mjs', 'adapters/claude/prompts.mjs', 'adapters/claude/live.mjs'];
+  'adapters/codex.mjs', 'adapters/claude/prompts.mjs', 'adapters/claude/live.mjs', 'lib/autostart.mjs'];
 // 조각을 이어 붙이는 문장(안쪽 ${조건 ? … : …})은 이 뽑기로 온전한 꼴이 안 나온다 → 이어 붙인 꼴을 아래 시험에서 따로 본다
 const PIECES = new Set([' (외 7건)', '짝수 LTS(22 · 24 …)로', '22 이상으로', ' (1분 안에 7번 꺼져서 간격을 늘렸어요)', '경로에 명령으로 쓸 수 없는 글자(따옴표 · $ · \\',
   '참고: Node 7 은 지원이 끝난 버전이에요(보안 업데이트 없음). 7 올리면 좋아요 — 지금은 그대로 진행해요', '[7] 서버 종료(코드 7) — 7초 뒤 다시 켭니다7\n', '승인이 필요해요7']);

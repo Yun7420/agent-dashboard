@@ -106,7 +106,13 @@ node bin/agent-dashboard.mjs open   # 링크가 지났거나 다른 브라우저
 
 ### 계속 켜 두기 (추천)
 
-tmux 안에서 자동 재시작 실행기로 띄우면, 서버가 멈춰도 2초 뒤 다시 켜져요. 기록은 `~/.agent-dashboard/server.log`(본인만 읽기).
+**로그인하면 저절로 켜기(macOS)**: `npm i -g @yun7420/agent-dashboard` 로 설치한 뒤 `agent-dashboard autostart on` — 로그인 항목(LaunchAgent)으로 서버를 켜 두고, 꺼지면 10초 뒤 다시 켜요. 저장소에서는 `node bin/agent-dashboard.mjs autostart on`.
+
+- 끄기 · 확인: `agent-dashboard autostart off` · `agent-dashboard autostart status`(켜짐 여부 · 가리키는 node · 마지막 종료 코드). 로그는 `~/.agent-dashboard/autostart.log`(본인만 읽기).
+- npx 로는 걸 수 없어요 — npx 캐시는 지워질 수 있어 재부팅 뒤 경로가 사라져요. nvm · fnm 처럼 Node 를 버전 폴더에 두었다면 Node 를 바꾼 뒤 `autostart on` 을 다시 해 주세요.
+- 켤 때의 PATH 를 그대로 넣어 tmux · claude 를 찾아요. 이미 대시보드(아래 tmux 실행기 등)가 떠 있으면 경고만 하니, 하나만 쓰세요. Linux 는 systemd 유닛 예시만 보여 줘요.
+
+또는 tmux 안에서 자동 재시작 실행기로 띄우면, 서버가 멈춰도 2초 뒤 다시 켜져요. 기록은 `~/.agent-dashboard/server.log`(본인만 읽기).
 
 ```bash
 tmux new -d -s dashboard -c <저장소 경로> node bin/agent-dashboard.mjs run   # 실행기
@@ -311,12 +317,12 @@ agent-dashboard/
 │  ├─ usage-bridge · claude-settings · bridge · status · limits · usage   사용 한도(상태줄 다리 · 기본 모델 지키기 · 옛 한도 기록 정리 · 토큰 합계)
 │  ├─ i18n · i18n-en · lang-pref · atomic-write   서버 문구 두 언어(사전) · 터미널 · 알림 언어 · 파일 안전하게 쓰기
 │  ├─ command-risk · node-check                   승인 카드 위험 판정 · 켤 때 Node 버전 확인
-│  ├─ recent · restore · restore-cli · runner     복구 · 재시동 복구 · 실행기
+│  ├─ recent · restore · restore-cli · runner · autostart     복구 · 재시동 복구 · 실행기 · 로그인 시 자동 실행
 │  ├─ history-core · history-api · git-commits    기록 읽기 공용(새로 붙은 줄만 · 턴 묶기 — 어댑터는 줄 해석만) · 기록 탭 · 검색 · 오늘 한 일 · 커밋 제목 읽기
 │  ├─ notify · notify-api · housekeeping           알림(무엇을 언제 · 설정 · 경로) · 켤 때 · 6시간마다 정리
 │  ├─ paging · filecache · lru · serial · lock · util   기록 나눠 받기 · 캐시 · 차례 지키기
 │  └─ demo · demo-en                              데모 데이터(두 언어)
-├─ bin/                # agent-dashboard.mjs(실행 명령: start · run · restore · open) · statusline.mjs(상태줄 다리 원본)
+├─ bin/                # agent-dashboard.mjs(실행 명령: start · run · restore · open · autostart) · statusline.mjs(상태줄 다리 원본)
 ├─ public/             # 화면 (바닐라 HTML/CSS/JS, 빌드 없음)
 │  ├─ index.html       # 뼈대(토큰 없음 — 로그인은 쿠키)
 │  ├─ css/00-base.css ~ 12-narrow.css   # 모양(구역별, 번호 순서대로 불러옴 — 좁은 창 @media 는 맨 뒤 파일)

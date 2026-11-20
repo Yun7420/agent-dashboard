@@ -105,7 +105,13 @@ Pick the **colors** under **⋯ → Display → Theme**: dark **Green** (default
 
 ### Keep it running (recommended)
 
-Run it inside tmux with the auto-restart runner; if the server stops it comes back after 2 seconds. Logs go to `~/.agent-dashboard/server.log` (readable only by you).
+**Start on login (macOS)**: install with `npm i -g @yun7420/agent-dashboard`, then `agent-dashboard autostart on` — a login item (LaunchAgent) keeps the server running and restarts it 10 seconds after it stops. From the repo: `node bin/agent-dashboard.mjs autostart on`.
+
+- Turn off · check: `agent-dashboard autostart off` · `agent-dashboard autostart status` (on or off, which node it points to, last exit code). Logs go to `~/.agent-dashboard/autostart.log` (readable only by you).
+- It can't be set up from npx — the npx cache can be cleared, so the path may be gone after a reboot. If Node lives in a version folder (nvm, fnm), run `autostart on` again after switching Node.
+- It stores the PATH you had when turning it on, so it finds tmux and claude. If a dashboard is already running (e.g. the tmux runner below) it only warns — use one or the other. On Linux it only prints an example systemd unit.
+
+Or run it inside tmux with the auto-restart runner; if the server stops it comes back after 2 seconds. Logs go to `~/.agent-dashboard/server.log` (readable only by you).
 
 ```bash
 tmux new -d -s dashboard -c <repo path> node bin/agent-dashboard.mjs run   # the runner
@@ -310,12 +316,12 @@ agent-dashboard/
 │  ├─ usage-bridge · claude-settings · bridge · status · limits · usage   usage limits (status-line bridge · keeping the default model · clearing old limit history · token totals)
 │  ├─ i18n · i18n-en · lang-pref · atomic-write   server text in two languages (dictionary) · terminal · notification language · safe file writes
 │  ├─ command-risk · node-check                   risk check for approval cards · Node version check at start
-│  ├─ recent · restore · restore-cli · runner     restore · restore after reboot · runner
+│  ├─ recent · restore · restore-cli · runner · autostart     restore · restore after reboot · runner · start on login
 │  ├─ history-core · history-api · git-commits    shared transcript reading (new lines only · grouping into turns — adapters only interpret lines) · history tab · search · today's work · commit titles
 │  ├─ notify · notify-api · housekeeping           notifications (what and when · settings · routes) · cleanup at start and every 6 hours
 │  ├─ paging · filecache · lru · serial · lock · util   paged history · caches · ordering
 │  └─ demo · demo-en                              demo data (both languages)
-├─ bin/                # agent-dashboard.mjs (start · run · restore · open) · statusline.mjs (status-line bridge source)
+├─ bin/                # agent-dashboard.mjs (start · run · restore · open · autostart) · statusline.mjs (status-line bridge source)
 ├─ public/             # UI (vanilla HTML/CSS/JS, no build)
 │  ├─ index.html       # structure (no token — login is a cookie)
 │  ├─ css/00-base.css ~ 12-narrow.css   # styles, one file per area, loaded in number order (narrow-screen @media in the last file)
