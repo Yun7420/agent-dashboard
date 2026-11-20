@@ -243,3 +243,13 @@ test('다시 on: 이미 걸려 있으면 포트 경고 없음 · 내림이 끝�
   await off.auto.off();
   assert.deepEqual(off.calls.map((c) => c.split(' ')[0]), ['print', 'bootout', 'print', 'print', 'print']); // off 도 다 내린 뒤에 파일을 지운다
 });
+
+// 대시보드를 CLAUDE_CONFIG_DIR · CODEX_HOME 으로 켰던 사람이 자동 실행으로 바꿔도 같은 기록 폴더를 보게(0.1.5)
+test('plist: CLAUDE_CONFIG_DIR · CODEX_HOME 은 있을 때만 넣고, 다른 변수는 여전히 넣지 않는다', () => {
+  const xml = plistXml({ node: '/n', script: '/s', workDir: '/w', env: { PATH: '/p', CLAUDE_CONFIG_DIR: '/Users/me/.claude-work', CODEX_HOME: '/Users/me/.codex-x', ANTHROPIC_API_KEY: TOKENISH, HOME: '/Users/me' }, logFile: '/l' });
+  assert.match(xml, /<key>CLAUDE_CONFIG_DIR<\/key>\s*<string>\/Users\/me\/\.claude-work<\/string>/);
+  assert.match(xml, /<key>CODEX_HOME<\/key>\s*<string>\/Users\/me\/\.codex-x<\/string>/);
+  assert.ok(!xml.includes(TOKENISH) && !/ANTHROPIC|<key>HOME</.test(xml));
+  const none = plistXml({ node: '/n', script: '/s', workDir: '/w', env: { PATH: '/p', CLAUDE_CONFIG_DIR: '' }, logFile: '/l' });
+  assert.doesNotMatch(none, /CLAUDE_CONFIG_DIR|CODEX_HOME/); // 빈 값 · 없음이면 칸이 없다
+});
