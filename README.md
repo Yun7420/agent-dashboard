@@ -58,6 +58,8 @@ Agent Dashboard는 이걸 한 화면에 모읍니다.
 
 ![승인 요청 — 허락할 내용 카드(위험하면 경고) + 터미널 화면 그대로 + 선택지 버튼](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/approval.png)
 
+<img src="https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/narrow-drawer.png" width="300" alt="좁은 화면(390px) — ☰ 로 목록 서랍을 펼친 종료 탭과 「다시 열기」">
+
 ## 시작하기
 
 ### 준비물

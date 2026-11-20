@@ -57,6 +57,8 @@ Agent Dashboard puts all of this on one screen.
 
 ![Approval — "what you're allowing" card (amber when risky) + the real terminal screen + option buttons](https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/approval-en.png)
 
+<img src="https://raw.githubusercontent.com/Yun7420/agent-dashboard/main/docs/images/narrow-drawer-en.png" width="300" alt="Narrow screen (390px) — the list drawer opened with ☰, showing the Ended tab and "Reopen"">
+
 ## Getting started
 
 ### Requirements
