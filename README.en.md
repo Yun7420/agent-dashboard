@@ -95,6 +95,8 @@ git clone https://github.com/Yun7420/agent-dashboard.git && cd agent-dashboard  
 - If you started it on another port, put the same `PORT=` in front of `open` too (the startup log and on-screen hints already include it).
 - Why npx updates use `@latest`: without a version, npx may start the copy it cached earlier.
 - `agent-dashboard` on npm (without the scope) is an unrelated package. Always use `@yun7420/agent-dashboard`.
+> **Good to know** — shutting down or restarting the Mac stops tmux and every Claude session inside it.
+> The conversations are saved, so one `restore` line (or the "N sessions were open before the restart" box at the top of the dashboard list, or "Reopen" in the "Ended" tab) brings the same conversations back → [After restarting the Mac](#after-restarting-the-mac)
 
 ### What is "login"?
 
@@ -132,17 +134,15 @@ tmux respawn-pane -k -t dashboard     # restart after editing code (sending Ctrl
 
 ### After restarting the Mac
 
+**What stops**: tmux and every Claude session inside it (and the dashboard too, unless autostart is on). **What stays**: the conversations, plus the list of tmux Claude sessions the dashboard kept saving while it ran (`~/.agent-dashboard/restore.json` — name · folder · session ID). So the same conversations can be reopened (`--resume`).
+
 - **The dashboard**: with autostart on, it starts when you log in. Otherwise use "Start" from the table.
-- **Claude sessions**: the "Restore sessions" line from the table (`… restore`) reopens the pre-restart tmux sessions with the same conversations (`--resume`). If no dashboard is running it also starts one with the `run` runner (sessions only if autostart is on).
+- **All at once**: the **"N sessions were open before the restart"** box at the top of the dashboard list has a **"Reopen all"** button (only ones not running now) — or the "Restore sessions" line from the table (`… restore`). The command also starts a dashboard with the `run` runner if none is running (sessions only if autostart is on or one is already running).
 - **One at a time**: the **"Ended"** tab at the top of the list, then **"Reopen"** on a card.
 
-A restart kills tmux and every session inside it, but the conversations are saved. The dashboard keeps saving the list of live tmux Claude sessions (name · folder · session ID) to `~/.agent-dashboard/restore.json`, so you can bring them all back in one go.
+It only starts things and never stops anything. Sessions that are already running aren't started again. Sessions follow your default model; only ones you picked explicitly (Sonnet/Haiku) keep it. Conversations older than 30 days are cleaned up by Claude Code and can't be resumed.
 
-It only starts things and never stops anything. Sessions that are already running aren't started again. If autostart is on, or a dashboard already holds the port, it only restores the sessions and doesn't start another dashboard.
-
-If you open the dashboard first, the top of the list shows **"N sessions from before the restart · Reopen all"**. Sessions follow your default model; only ones you picked explicitly (Sonnet/Haiku) keep it. Conversations older than 30 days are cleaned up by Claude Code and can't be resumed.
-
-Even without a restart, if sessions stopped unexpectedly, check the **"Ended"** tab. Claude sessions that were running in the last 24 hours but aren't now (including ones started outside tmux) get a **"Reopen"** button on their card, which resumes the same conversation in tmux. A view-only session started outside tmux shows a "Reopen in tmux" button where the message box would be (it turns on once you close the original).
+Even without a restart, if sessions stopped unexpectedly, check the **"Ended"** tab. Claude sessions that were running in the last 24 hours but aren't now (including ones started outside tmux) get a **"Reopen"** button on their card, which resumes the same conversation in tmux. A view-only session started outside tmux shows a "Reopen" button where the message box would be (it turns on once you close the original).
 - Sessions that are running now or were just reopened have no button (no duplicates).
 - If the folder trust prompt appears, the dashboard doesn't answer it for you; it only tells you "trust confirmation needed".
 - The list lives in `~/.agent-dashboard/recent.json` (readable only by you). The page sends only the session ID; folders and names come only from the server's saved list.
