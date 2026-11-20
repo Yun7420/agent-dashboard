@@ -204,3 +204,21 @@ test('firstPrompts: 열린 연결이 틱(patch)으로 받고, 세션이 안 바�
   sync();
   assert.deepEqual(view.firstPrompts, []);
 });
+
+// 데모 영어 탭: 패널의 명령 설명이 한국어로 남았다(README 영어 그림) — 변경 본문도 영어로 바꾼 판(latest.en)에서
+test('changes: 데모 영어 탭은 영어 판에서, 한국어 · 실제 모드(en 없음)는 그대로', async () => {
+  const ch = (d) => ({ edits: [], commands: [{ id: 'c1', at: 't', command: 'npm test', description: d, done: true, error: false, output: '' }] });
+  const sessions = [{ key: 'claude:a', status: 'working', changes: ch('타입 검사') }];
+  const feed = createLiveFeed({ buildState: async () => ({ sessions, links: [], en: { sessions: [{ key: 'claude:a', status: 'working', changes: ch('Type check') }], links: [] } }), scanMs: 60_000 });
+  feed.stop();
+  await feed.start();
+  const get = async (headers) => { const r = fakeRes(); await feed.getChanges({ headers, url: '/api/changes' }, r, new URL('http://x/api/changes?key=claude:a')); return JSON.parse(r.body).commands[0].description; };
+  assert.equal(await get({ 'x-dashboard-lang': 'en' }), 'Type check');
+  assert.equal(await get({ 'x-dashboard-lang': 'ko' }), '타입 검사');
+  const real = createLiveFeed({ buildState: async () => ({ sessions, links: [] }), scanMs: 60_000 });
+  real.stop();
+  await real.start();
+  const r = fakeRes();
+  await real.getChanges({ headers: { 'x-dashboard-lang': 'en' } }, r, new URL('http://x/api/changes?key=claude:a'));
+  assert.equal(JSON.parse(r.body).commands[0].description, '타입 검사'); // 실제 모드: 사용자 · AI 글은 바꾸지 않는다
+});
