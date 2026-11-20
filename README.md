@@ -127,10 +127,10 @@ tmux respawn-pane -k -t dashboard     # 코드를 고친 뒤 다시 켜기 (Ctrl
 재시동하면 tmux 와 그 안의 세션이 모두 꺼지지만, 대화 기록은 남아 있어 `--resume` 으로 이어서 열 수 있어요. 대시보드가 떠 있는 tmux Claude 세션 목록(이름 · 폴더 · 세션 ID)을 `~/.agent-dashboard/restore.json` 에 계속 저장해 두기 때문에, 한 번에 다시 띄울 수 있어요.
 
 ```bash
-node bin/agent-dashboard.mjs restore   # 재시동 전 세션들을 tmux 로 다시 띄우고, 대시보드도 run 실행기로 켜요
+node bin/agent-dashboard.mjs restore   # 재시동 전 세션들을 tmux 로 다시 띄우고, 대시보드도 run 실행기로 켜요(자동 실행이 켜져 있으면 세션만)
 ```
 
-띄우기만 하고 아무것도 끄지 않아요. 이미 떠 있는 세션은 다시 띄우지 않아요.
+띄우기만 하고 아무것도 끄지 않아요. 이미 떠 있는 세션은 다시 띄우지 않아요. 자동 실행(`autostart`)이 켜져 있거나 대시보드가 이미 포트를 쓰고 있으면 대시보드는 띄우지 않고 세션만 복구해요.
 
 대시보드를 먼저 켰다면 목록 맨 위에 **"재시동 전에 떠 있던 세션 N개 · 모두 다시 열기"** 가 떠요. 모델은 기본 설정을 따르고, 따로 고른 모델(Sonnet·Haiku)만 그대로 붙여요. 30일이 지난 대화는 Claude Code 가 기록을 지워서 이어 열 수 없어요.
 

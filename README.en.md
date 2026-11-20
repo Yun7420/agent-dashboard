@@ -126,10 +126,10 @@ tmux respawn-pane -k -t dashboard     # restart after editing code (sending Ctrl
 A restart kills tmux and every session inside it, but the conversations are saved, so they can be reopened with `--resume`. The dashboard keeps saving the list of live tmux Claude sessions (name · folder · session ID) to `~/.agent-dashboard/restore.json`, so you can bring them all back in one go.
 
 ```bash
-node bin/agent-dashboard.mjs restore   # reopens the pre-restart sessions in tmux and starts the dashboard with the run runner
+node bin/agent-dashboard.mjs restore   # reopens the pre-restart sessions in tmux and starts the dashboard with the run runner (sessions only if autostart is on)
 ```
 
-It only starts things and never stops anything. Sessions that are already running aren't started again.
+It only starts things and never stops anything. Sessions that are already running aren't started again. If autostart is on, or a dashboard already holds the port, it only restores the sessions and doesn't start another dashboard.
 
 If you open the dashboard first, the top of the list shows **"N sessions from before the restart · Reopen all"**. Sessions follow your default model; only ones you picked explicitly (Sonnet/Haiku) keep it. Conversations older than 30 days are cleaned up by Claude Code and can't be resumed.
 

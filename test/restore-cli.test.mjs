@@ -25,9 +25,10 @@ function fakeTmux(sessions) {
   const made = [];
   return { made, listPanes: async () => sessions.map((s, i) => ({ target: `%${i}`, pid: 1, session: s })), newSession: async (o) => { made.push(o); sessions.push(o.name); } };
 }
-const run = async (tmux) => {
+// 자동 실행 · 포트는 기본이 꺼짐(진짜 4545 에 무엇이 떠 있든 시험이 흔들리지 않게)
+const run = async (tmux, { autostart = false, busy = false } = {}) => {
   const lines = [];
-  await restoreAll({ root: '/repo', launcher: ['node', 'bin/agent-dashboard.mjs', 'run'], log: (l) => lines.push(l), tmux });
+  await restoreAll({ root: '/repo', launcher: ['node', 'bin/agent-dashboard.mjs', 'run'], log: (l) => lines.push(l), tmux, port: 4545, autostartOn: () => autostart, listening: async () => busy });
   return lines;
 };
 
@@ -67,4 +68,24 @@ test('홈 안의 링크가 홈 밖을 가리키는 폴더는 다시 열지 않�
   const t = fakeTmux(['dashboard']);
   await run(t);
   assert.deepEqual(t.made.map((m) => [m.name, m.cwd]), [['sd', path.join(HOME, 'link-in')]]);
+});
+
+// autostart 와 tmux run 이 4545 를 두고 부딪히지 않게: 자동 실행이 켜져 있거나 누가 이미 포트를 듣고 있으면 대시보드는 띄우지 않는다
+test('자동 실행이 켜져 있으면(plist) 대시보드는 띄우지 않고 한 줄 안내, 포트가 이미 응답해도 띄우지 않는다', async () => {
+  const a = fakeTmux([]);
+  assert.equal((await run(a, { autostart: true })).at(-1), '대시보드는 자동 실행으로 떠 있어요 → http://localhost:4545');
+  assert.deepEqual(a.made.filter((m) => m.name === 'dashboard'), []);
+  const b = fakeTmux([]);
+  assert.equal((await run(b, { busy: true })).at(-1), '대시보드는 이미 켜져 있어요 → http://localhost:4545');
+  assert.deepEqual(b.made.filter((m) => m.name === 'dashboard'), []);
+  const { plistPath } = await import('../lib/autostart.mjs');
+  assert.equal(plistPath(HOME), path.join(HOME, 'Library', 'LaunchAgents', 'io.github.yun7420.agent-dashboard.plist')); // 기본 확인은 시험 홈 기준
+  const c = fakeTmux([]);
+  const lines = [];
+  fs.mkdirSync(path.dirname(plistPath(HOME)), { recursive: true });
+  fs.writeFileSync(plistPath(HOME), '');
+  await restoreAll({ root: '/repo', launcher: ['x'], log: (l) => lines.push(l), tmux: c, listening: async () => false }); // 기본 autostartOn 이 임시 홈의 plist 를 본다
+  fs.rmSync(plistPath(HOME));
+  assert.match(lines.at(-1), /자동 실행으로 떠 있어요/);
+  assert.deepEqual(c.made.filter((m) => m.name === 'dashboard'), []);
 });
