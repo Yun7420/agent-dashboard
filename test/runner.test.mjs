@@ -177,7 +177,9 @@ function restoreSetup(panes) {
   fs.mkdirSync(fake);
   fs.writeFileSync(path.join(fake, 'panes.txt'), panes.map((s, i) => `%${i}\t${process.pid}\t${s}`).join('\n') + '\n');
   const log = path.join(dir, 'fake.log');
-  const env = testEnv({ home, fakeDir: fake, fakeLog: log });
+  // restore 는 누가 PORT 를 듣고 있으면 대시보드를 띄우지 않는다(lib/restore-cli.mjs) — 이 Mac 의 실제 4545 에 흔들리지 않게 빈 포트로
+  const port = spawnSync(process.execPath, ['-e', "const s=require('net').createServer().listen(0,'127.0.0.1',()=>{console.log(s.address().port);s.close()})"], { encoding: 'utf8' }).stdout.trim();
+  const env = { ...testEnv({ home, fakeDir: fake, fakeLog: log }), PORT: port };
   const calls = () => fs.readFileSync(log, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
   return { env, calls, id, cwd };
 }
