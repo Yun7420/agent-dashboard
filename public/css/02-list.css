@@ -69,8 +69,6 @@ kbd { font: 11px var(--mono); padding: 0 5px; border: 1px solid var(--border-str
 .card .x:hover { color: var(--waiting); border-color: color-mix(in srgb, var(--waiting) 50%, transparent); background: color-mix(in srgb, var(--waiting) 10%, transparent); }
 /* 종료된 세션 카드의 「다시 열기」: 늘 보이게(✕ 와 달리 마우스를 올리지 않아도) · 오른쪽 ✕ 자리는 비워 둔다 */
 .card .re { margin-top: 8px; padding-right: 32px; }
-.card .reopen { height: 26px; padding: 0 10px; border-radius: 8px; font-size: 12px; color: var(--accent-text); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
-.card .reopen:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 body.aside-folded .card .re { display: none; }
 .badge { display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 6px; font-size: 11px; font-weight: 600; flex: none; }
 .tool.claude { background: color-mix(in srgb, var(--claude) 14%, transparent); color: var(--claude); }

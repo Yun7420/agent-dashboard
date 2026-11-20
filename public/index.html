@@ -146,9 +146,9 @@
       <div class="btns" id="approve-btns"></div>
     </div>
     <form id="composer">
-      <!-- 보낼 수 없는 까닭(tmux 밖 · 끝남)과 해결 단추 — 이게 보이면 입력 칸은 숨김(06-history.js viewNoteHtml) -->
-      <div id="view-note" class="view-note" hidden></div>
       <div class="box">
+        <!-- 보낼 수 없는 까닭(tmux 밖 · 끝남)과 「다시 열기」 — 보이면 같은 상자 안의 입력 칸 · 단추 줄을 숨긴다(06-history.js viewNoteHtml) -->
+        <div id="view-note" class="view-note" hidden></div>
         <div id="attach-list"></div>
         <textarea id="msg" placeholder="Send a message" aria-label="Message · drop or paste files"></textarea>
         <input type="file" id="file-input" multiple hidden />

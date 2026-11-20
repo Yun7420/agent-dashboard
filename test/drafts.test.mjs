@@ -163,7 +163,7 @@ test('입력 칸: 승인 대기면 칸 · 보내기 비활성 + 「먼저 위 �
   assert.deepEqual(show({ tmux: true, status: 'waiting' }), [true, true, '먼저 위 승인 요청에 답해 주세요']);
   assert.deepEqual(show({ tmux: true, status: 'working' }), [false, false, '메시지 보내기']);
   assert.deepEqual(show({ tmux: true, status: 'ended' }), [true, true, '종료된 세션이에요.']);
-  assert.deepEqual(show({ tmux: false, status: 'idle' }), [true, true, 'tmux 밖에서 시작한 세션이라 보기만 돼요']);
+  assert.deepEqual(show({ tmux: false, status: 'idle' }), [true, true, 'tmux 밖에서 시작해 여기선 채팅 · 승인이 안 돼요']);
   assert.equal(els['#why'], undefined); // 안내 줄은 더 이상 없다
 });
 

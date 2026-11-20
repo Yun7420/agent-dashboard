@@ -104,17 +104,17 @@ function composerHint(s) {
   if (s.status === 'waiting') return t('Answer the approval request above first');
   return t('Send a message');
 }
-// tmux 밖(보기만) Claude 세션 · 다시 열 수 있는 끝난 세션: 입력 칸 자리에 까닭과 해결 단추 「tmux 로 다시 열기」(같은 대화를 --resume, 16-restore.js 의 data-reopen 길).
+// tmux 밖(보기만) Claude 세션 · 다시 열 수 있는 끝난 세션: 입력 칸(.box) 안을 이 안내로 바꾼다 — 테두리 · 높이는 입력 칸 그대로(새 모양 없이).
+// 제목 + 오른쪽 「다시 열기」(목록 끝난 카드와 같은 .reopen, 16-restore.js 의 data-reopen 길) + 흐린 설명 두 줄. 첫 문장은 꼬리표 · placeholder 와 같은 글(04-list.js viewWhy).
 // 떠 있는 동안은 단추를 꺼 둔다 — 같은 대화를 두 곳에서 열면 한 기록에 두 프로세스가 쓰고, 서버도 떠 있는 세션은 거절한다(lib/recent.mjs pick). 끝나면 켜진다
 function viewNoteHtml(s) {
   const live = s.status !== 'ended';
   if (s.tool !== 'claude' || (live ? s.tmux : !s.reopen)) return '';
-  // 할 일을 문장 안에 차례대로(끄기 → 단추) — 단추 옆 따로 쓴 노란 글은 경고처럼 보였다(사용자). 첫 문장은 꼬리표 · placeholder 와 같은 글(04-list.js viewWhy)
-  const why = !live ? t('This session has ended. Reopen the same conversation in tmux to chat and approve here.')
-    : `${viewWhy(s)}. ${s.ide ? t('Close the session in the editor, then reopen the same conversation in tmux with the button below to chat and approve here.') : t('Close the session in its original terminal, then reopen the same conversation in tmux with the button below to chat and approve here.')}`;
+  const desc = !live ? t('This session has ended. Reopen it to chat and approve here.')
+    : `${viewWhy(s)}. ${s.ide ? t('Close it in the editor and you can reopen it in tmux.') : t('Close it in its original terminal and you can reopen it in tmux.')}`;
   const off = live ? (s.ide ? t('Turns on once you close the session in the editor') : t('Turns on once you close the session in its original terminal')) : '';
-  const btn = live ? `<button type="button" class="primary" disabled title="${off}" aria-describedby="vn-off">` : `<button type="button" class="primary" data-reopen="${esc(s.id)}">`;
-  return `<p>${why}</p><div class="vn-act">${btn}${t('Reopen in tmux')}</button>${live ? `<span id="vn-off" hidden>${off}</span>` : ''}</div>`;
+  const btn = live ? `<button type="button" class="reopen" disabled title="${off}" aria-describedby="vn-off">` : `<button type="button" class="reopen" data-reopen="${esc(s.id)}">`;
+  return `<div class="vn-head"><b class="vn-title">${live ? t('View-only session') : t('Ended session')}</b>${btn}${t('Reopen')}</button></div><p>${desc}</p>${live ? `<span id="vn-off" hidden>${off}</span>` : ''}`;
 }
 function renderComposer(s) {
   const note = viewNoteHtml(s);
