@@ -60,6 +60,9 @@ test('시험 서버: 임시 홈의 가짜 세션 2개가 tmux 창과 함께 보�
   assert.equal(byId[ID[1]].cwd, CWD);
   assert.equal(st.home, HOME); // 화면이 경로를 ~ 로 줄일 때 쓴다(public/js/01-core.js 의 tilde)
   assert.ok(fakeLog().some((x) => x.cmd === 'ps') && fakeLog().some((x) => x.cmd === 'tmux'));
+  // CPU · 메모리(다음 계획 6): 데모 경로가 아닌 실제 모드 상태에도 칸이 온다 — 머리 sysload(켠 직후면 null) · 떠 있는 세션 load
+  assert.ok('sysload' in st, '첫 상태에 sysload 칸');
+  for (const s of st.sessions.filter((x) => x.pid && x.status !== 'ended')) assert.ok(s.load && 'cpu' in s.load && 'mem' in s.load, `${s.id} load`);
 });
 
 test('보안 층은 시험 모드에서도 그대로: 토큰 · Host · Origin 403, 보안 헤더', async () => {

@@ -122,7 +122,7 @@ test('patch: 바뀐 세션만 보내고 화면이 합친 결과 = 전체 상태(
   const { run } = loadFront(['01-core.js', '17-live.js'], browserStub({ EventSource: class { close() {} }, window: { addEventListener() {} }, updateAgo() {} }));
   const applyPatch = run('applyPatch');
   const S = (key, status, extra = {}) => ({ key, status, title: key, changes: null, ...extra });
-  let st = { sessions: [S('a', 'idle'), S('b', 'idle'), S('c', 'working')], links: [], usage: { five: 10 }, restore: null, firstPrompts: [] }; // 실제 상태처럼 firstPrompts 는 늘 목록(lib/state.mjs)
+  let st = { sessions: [S('a', 'idle'), S('b', 'idle'), S('c', 'working')], links: [], usage: { five: 10 }, restore: null, firstPrompts: [], sysload: null }; // 실제 상태처럼 firstPrompts 는 늘 목록(lib/state.mjs) · sysload 는 켠 직후 null(lib/sysload.mjs)
   let fail = false;
   const feed = createLiveFeed({ buildState: async () => ({ generatedAt: 'g', host: 'h', home: '/h', tools: [], ...structuredClone(st) }), afterBuild: () => { if (fail) throw new Error('x'); }, scanMs: 60_000 });
   feed.stop();
@@ -141,7 +141,7 @@ test('patch: 바뀐 세션만 보내고 화면이 합친 결과 = 전체 상태(
   const same = async (why) => {
     sync();
     const want = await fresh(), wantEn = await fresh(Object.assign(new EventEmitter(), { url: '/events?lang=en', headers: {} }));
-    for (const [v, w] of [[view.ko, want], [view.en, wantEn]]) for (const f of ['sessions', 'links', 'usage', 'restore', 'firstPrompts']) assert.deepEqual(v[f], w[f], `${why}: ${f}`);
+    for (const [v, w] of [[view.ko, want], [view.en, wantEn]]) for (const f of ['sessions', 'links', 'usage', 'restore', 'firstPrompts', 'sysload']) assert.deepEqual(v[f], w[f], `${why}: ${f}`);
   };
   const last = (r) => JSON.parse(r.writes.at(-1).slice(6));
   await same('처음');
@@ -150,7 +150,15 @@ test('patch: 바뀐 세션만 보내고 화면이 합친 결과 = 전체 상태(
   assert.equal(last(ko).patch, true);
   assert.deepEqual(last(ko).sessions.map((x) => x.key), ['c']); // 바뀐 세션 하나만
   assert.equal('usage' in last(ko), false); // 안 바뀐 부분은 싣지 않는다
+  assert.equal('sysload' in last(ko), false);
   await same('세션 하나 바뀜');
+  // 머리 칩: 켠 직후 null 로 연 탭도 값이 생기면 patch 로 받는다(예전엔 틱 메시지에 없어 칩이 끝내 안 보였다) — 영어 탭도
+  st = { ...st, sysload: { cpu: 21, memUsed: 1, memTotal: 2, pressure: 'normal' } };
+  await feed.start();
+  assert.equal(last(ko).patch, true);
+  assert.deepEqual(last(ko).sysload, st.sysload);
+  assert.deepEqual(last(en).sysload, st.sysload);
+  await same('sysload 생김');
   st = { ...st, sessions: [S('d', 'waiting'), st.sessions[0], st.sessions[2]], links: [{ from: 'a', to: 'c' }], usage: { five: 11 } }; // 추가 · 사라짐(b) · 순서 · links · usage
   await feed.start();
   assert.deepEqual(last(ko).sessions.map((x) => x.key), ['d']);

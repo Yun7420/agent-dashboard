@@ -13,7 +13,7 @@ function applyPatch(prev, d) {
   for (const s of d.sessions) by.set(s.key, s);
   if (d.order.some((k) => !by.has(k))) return null;
   const { patch, order, ...rest } = d;
-  return { links: prev.links, usage: prev.usage, restore: prev.restore, firstPrompts: prev.firstPrompts, ...rest, sessions: order.map((k) => by.get(k)) };
+  return { links: prev.links, usage: prev.usage, restore: prev.restore, firstPrompts: prev.firstPrompts, sysload: prev.sysload, ...rest, sessions: order.map((k) => by.get(k)) };
 }
 function connect() {
   liveES?.close();
