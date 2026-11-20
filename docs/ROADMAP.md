@@ -107,6 +107,7 @@
    - [x] 설정한 것만(사용자 결정 — 자동 탐색 · ps -E · accounts.json 없음): `DASHBOARD_CLAUDE_DIRS` · `DASHBOARD_TMUX_SOCKETS`, 홈 아래 · realpath · 내 소유 · 폴더(projects · sessions) / lstat 소켓 · 내 소유 · 링크 아님 · 부모 내 소유 검사, 어긋나면 그것만 빼고 시작 로그 · 환경 점검 「계정 · tmux 서버」, 세션 · 기록 · 다시 열기(CLAUDE_CONFIG_DIR)는 계정별 · 한도 · 기본 모델 · 새 세션은 기본만, tmux 명령은 target 의 소켓으로 -S(서버 세션 정보에서만 · 직전 재검사), 카드 꼬리표 · autostart plist `e3eaa68`
 5. [x] **좁은 화면(모바일 폭) 종료 목록** — 390px 에서 「종료」 탭 보기 다듬기
    - [x] 목록 서랍(사용자 결정 A): 860px 이하 띠 맨 위 ☰ 단추로 목록을 조직도 위에 펼침(활성 | 종료 탭 · 종료 카드 · 다시 열기 그대로), aria-expanded · aria-controls · 두 언어, 밖 inert + Tab 끝에서 돌기, 덮개 · Esc(승인 거절보다 먼저) · 카드 고르기로 닫고 초점은 단추로, 상태 칩 「종료」도 서랍으로, 동작 줄이기면 미끄러짐 없음, 860 보다 넓으면 그대로 `db3ce10` — 390 · 600 · 860 · 1024 × 두 테마 × 두 언어 넘침 0 · 콘솔 0
+- [x] 0.1.5 묶음 — autostart 가 CLAUDE_CONFIG_DIR · CODEX_HOME 도 plist 에(있을 때만) `8897a70` · 환경 점검 「자동 실행」 줄(macOS 만, status 와 같은 inspect · 복사엔 off · on · stale) `e622c5f` · OS 를 「macOS 26.x (Darwin …)」 · Linux os-release 이름으로(복사엔 글자 · 숫자 · 점 · 공백 모양만) `60b6386` · 데모 영어 탭 패널의 명령 설명도 영어 판에서 `e4e0a42` · README 그림 6장 + GIF 2개 다시 · 좁은 화면 서랍 그림 2장 `0313903`
 - 출시 방법: 버전 올리기 → CI 초록 → 사용자 승인 뒤 `v*` 태그 → Actions 「Review deployments」에서 사용자 Approve (`docs/CONVENTIONS.md` 「출시 절차」)
 - 사용자 몫(선택): npm 패키지 Settings → Publishing access 를 「Require 2FA and disallow bypass 2fa tokens」로(Trusted Publisher 출시는 그대로 됨)
 
