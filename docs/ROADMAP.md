@@ -117,6 +117,7 @@
 - [x] 보기만(tmux 밖) 세션 안내: 패널 입력 칸 자리에 까닭(터미널 · 에디터 확장) + 「tmux 로 다시 열기」(떠 있는 동안 꺼짐 · 「원래 세션을 먼저 끄세요」, 끝나면 켜짐 — 「다시 열기」와 같은 --resume 길) · 꼬리표 설명 한 줄 `bf4d1e3`
 - [x] README 명령 정리(두 언어): 「명령 한눈에」 표(켜기 · 끄기 · 다시 로그인 · 업데이트 · 세션 복구 · 자동 실행 · 다른 포트 × npx · 설치 · 저장소, 명령은 임시 캐시 · 접두로 실행 확인) · 「로그인이 뭔가요?」 · 「컴퓨터를 껐다 켰을 때」, 흩어진 명령은 표를 가리키게
 - [x] 사용 한도 범례 3단계(넓음 · 「C 68% · 79%」 · 숨김, 가운데 실제 폭 · 구분 점은 앞 글 있을 때만 · 끝 ▾ 뺌) `68e716e` · 보기만 안내를 입력 상자 안 기존 모양으로(제목 · 오른쪽 「다시 열기」 공용 .reopen · 흐린 두 줄, 입력 칸과 같은 높이) · viewWhy 짧은 판
+- [x] 모델 고르기: 별칭을 `claude --help` 의 --model 설명(따옴표 낱말만 · `^[a-z][a-z0-9-]{1,20}$`)에서 읽기(lib/models.mjs, claude 버전이 바뀔 때만 · 못 읽으면 기본 fable · opus · sonnet · haiku + 환경 점검 info), 서버 검사 · 복구 · recent · 대화 창 추정 · 셀렉트 두 곳이 「읽은 것 ∪ 기본」 한 목록 · 한 별칭 규칙, 패널 머리 · ⓘ 는 실제 버전 「Opus (5.5)」(claude-<계열>-<주>-<부> 꼴만), 새 작업 창은 별칭만(설명 글 뺌) `bfe1c96` · help 를 파이프로 받으면 8KB · 16KB 에서 잘려 임시 파일로 `c9e6376` `482eac5` · README 비공식 · 상표 안내 `dac472c`
 - 출시 방법: 버전 올리기 → CI 초록 → 사용자 승인 뒤 `v*` 태그 → Actions 「Review deployments」에서 사용자 Approve (`docs/CONVENTIONS.md` 「출시 절차」)
 - 사용자 몫(선택): npm 패키지 Settings → Publishing access 를 「Require 2FA and disallow bypass 2fa tokens」로(Trusted Publisher 출시는 그대로 됨)
 
