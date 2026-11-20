@@ -73,32 +73,36 @@ Agent Dashboard는 이걸 한 화면에 모읍니다.
 | Claude Code | 필수 | 최신 버전 권장 — `brew upgrade claude-code` |
 | tmux | 채팅·승인용 | `brew install tmux` (없으면 보기만 돼요) |
 
-### 실행
+### 실행 — 명령 한눈에
 
-**npm 으로** (저장소 없이)
-
-```bash
-npx @yun7420/agent-dashboard          # 받아서 바로 켜기 → 로그인된 브라우저가 저절로 열려요
-npx @yun7420/agent-dashboard open     # 링크가 지났거나 다른 브라우저 · 7일이 지났을 때: 로그인 링크를 브라우저로 열어 줘요
-
-npm i -g @yun7420/agent-dashboard     # 또는 설치해 두고 짧은 명령으로
-agent-dashboard                       # 켜기 (open · run · restore · --help 도 같은 명령)
-```
-
-npm 의 `agent-dashboard`(@ 없는 이름)는 이 프로젝트와 상관없는 다른 패키지예요. 꼭 `@yun7420/agent-dashboard` 로 받으세요.
-
-**저장소에서**
+쓰는 방식을 하나 고르세요. **npx** 는 받아 두지 않고 바로, **설치**는 짧은 명령(`agent-dashboard`)과 자동 실행, **저장소**는 코드를 직접 볼 때예요.
 
 ```bash
-git clone https://github.com/Yun7420/agent-dashboard.git
-cd agent-dashboard
-npm start          # → 로그인된 브라우저가 저절로 열려요
-node bin/agent-dashboard.mjs open   # 링크가 지났거나 다른 브라우저 · 7일이 지났을 때: 로그인 링크를 브라우저로 열어 줘요
+npm i -g @yun7420/agent-dashboard                                    # 설치해서 쓸 때(한 번)
+git clone https://github.com/Yun7420/agent-dashboard.git && cd agent-dashboard   # 저장소로 쓸 때(한 번 — 명령은 이 폴더에서)
 ```
 
-화면 주소는 `http://localhost:4545` 이지만, 처음 한 번은 **로그인 링크**로 들어와야 해요. 터미널에서 켜면 그 링크로 브라우저를 저절로 열고(싫으면 `--no-open` 또는 `DASHBOARD_NO_OPEN=1`), 안 열리면 터미널에 나온 링크를 눌러요. 그 브라우저는 7일 동안 로그인돼요(아래 「보안」).
+| 하고 싶은 일 | npx 로 쓸 때 | 설치해서 쓸 때 | 저장소(git)로 쓸 때 |
+|---|---|---|---|
+| 켜기 | `npx @yun7420/agent-dashboard` | `agent-dashboard` | `npm start` |
+| 끄기 | 켠 터미널에서 Ctrl+C | 켠 터미널에서 Ctrl+C · 자동 실행이면 `agent-dashboard autostart off` | 켠 터미널에서 Ctrl+C · 자동 실행이면 `node bin/agent-dashboard.mjs autostart off` |
+| 다시 로그인(링크를 놓침 · 7일 지남 · 다른 브라우저) | `npx @yun7420/agent-dashboard open` | `agent-dashboard open` | `node bin/agent-dashboard.mjs open` |
+| 업데이트 | 끈 뒤 `npx @yun7420/agent-dashboard@latest` | `npm i -g @yun7420/agent-dashboard@latest` 뒤 다시 켜기 · 자동 실행이면 이어서 `agent-dashboard autostart on` | `git pull` 뒤 다시 켜기 · 자동 실행이면 `git pull && node bin/agent-dashboard.mjs autostart on` |
+| 컴퓨터를 껐다 켠 뒤 세션 복구 | `npx @yun7420/agent-dashboard restore` | `agent-dashboard restore` | `node bin/agent-dashboard.mjs restore` |
+| 로그인 때 저절로 켜기(macOS) | 안 돼요 — npx 캐시는 지워질 수 있어 설치해서 쓰세요 | `agent-dashboard autostart on` | `node bin/agent-dashboard.mjs autostart on` |
+| 다른 포트로 켜기 | `PORT=4600 npx @yun7420/agent-dashboard` | `PORT=4600 agent-dashboard` | `PORT=4600 npm start` |
 
-켠 터미널은 서버가 도는 동안 그대로 두세요(커서가 멈춘 듯 보이는 게 정상) — 끌 때는 그 터미널에서 Ctrl+C.
+- 켠 터미널은 서버가 도는 동안 그대로 두세요(커서가 멈춘 듯 보이는 게 정상) — 끌 때는 그 터미널에서 **Ctrl+C**.
+- 다른 포트로 켰다면 `open` 에도 같은 `PORT=` 를 앞에 붙여요(시작 로그 · 화면 안내에는 붙여서 나와요).
+- npx 의 업데이트에 `@latest` 를 붙이는 까닭: 버전을 안 붙이면 npx 가 예전에 받아 둔 판을 다시 켤 수 있어요.
+- npm 의 `agent-dashboard`(@ 없는 이름)는 이 프로젝트와 상관없는 다른 패키지예요. 꼭 `@yun7420/agent-dashboard` 로 받으세요.
+
+### 로그인이 뭔가요?
+
+- 아이디 · 비밀번호가 아니에요. **「이 브라우저가 이 Mac 주인의 것」** 이라는 표시예요.
+- 왜 필요하냐면: 브라우저에 열어 둔 다른 사이트가 몰래 이 대시보드에 요청을 보내 내 Claude 세션에 명령을 넣지 못하게 하려고요.
+- 터미널에서 켜면 로그인된 브라우저가 저절로 열려요(싫으면 `--no-open` 또는 `DASHBOARD_NO_OPEN=1`). 안 열리면 터미널에 나온 로그인 링크를 눌러요.
+- **10분** = 로그인 링크를 쓸 수 있는 시간(한 번만), **7일** = 로그인한 브라우저를 기억하는 기간이에요. 지나면 위 표의 「다시 로그인」 명령을 실행해요(원리는 아래 「보안」).
 
 같은 일을 `node bin/agent-dashboard.mjs` 로도 할 수 있어요(`--help` 로 도움말). npm 으로 설치했을 때의 `agent-dashboard` 명령과 같아요.
 
@@ -110,7 +114,7 @@ node bin/agent-dashboard.mjs open   # 링크가 지났거나 다른 브라우저
 
 ### 계속 켜 두기 (추천)
 
-**로그인하면 저절로 켜기(macOS)**: `npm i -g @yun7420/agent-dashboard` 로 설치한 뒤 `agent-dashboard autostart on` — 로그인 항목(LaunchAgent)으로 서버를 켜 두고, 꺼지면 10초 뒤 다시 켜요. 저장소에서는 `node bin/agent-dashboard.mjs autostart on`.
+**로그인하면 저절로 켜기(macOS)**: 명령은 위 표의 「로그인 때 저절로 켜기」 줄 — 로그인 항목(LaunchAgent)으로 서버를 켜 두고, 꺼지면 10초 뒤 다시 켜요.
 
 - 끄기 · 확인: `agent-dashboard autostart off` · `agent-dashboard autostart status`(켜짐 여부 · 가리키는 node · 마지막 종료 코드). 로그는 `~/.agent-dashboard/autostart.log`(본인만 읽기, 5MB 를 넘으면 `autostart on` 할 때 `.1` 로). 포트를 이미 다른 대시보드가 쓰고 있으면 5분마다 다시 시도해요.
 - npx 로는 걸 수 없어요 — npx 캐시는 지워질 수 있어 재부팅 뒤 경로가 사라져요. nvm · fnm 처럼 Node 를 버전 폴더에 두었다면 Node 를 바꾼 뒤 `autostart on` 을 다시 해 주세요.
@@ -127,19 +131,19 @@ tmux respawn-pane -k -t dashboard     # 코드를 고친 뒤 다시 켜기 (Ctrl
 - `run` 은 1분 안에 5번 넘게 꺼지면 다시 켜는 간격을 30초로 늘리고, 포트가 이미 쓰이고 있으면 다시 켜지 않고 끝나요. Ctrl+C(SIGINT) · SIGTERM 을 받으면 서버도 함께 끝내요.
 - 저장소 없이: `tmux new -d -s dashboard npx @yun7420/agent-dashboard run` (설치했으면 `agent-dashboard run`).
 
-### 맥을 껐다 켠 뒤: 세션 한 번에 복구
+### 컴퓨터를 껐다 켰을 때
 
-재시동하면 tmux 와 그 안의 세션이 모두 꺼지지만, 대화 기록은 남아 있어 `--resume` 으로 이어서 열 수 있어요. 대시보드가 떠 있는 tmux Claude 세션 목록(이름 · 폴더 · 세션 ID)을 `~/.agent-dashboard/restore.json` 에 계속 저장해 두기 때문에, 한 번에 다시 띄울 수 있어요.
+- **대시보드**: 자동 실행을 켰으면 로그인하면 저절로 떠요. 아니면 표의 「켜기」.
+- **Claude 세션**: 표의 「세션 복구」 한 줄(`… restore`)이 재시동 전 tmux 세션을 같은 대화(`--resume`)로 다시 열어요. 대시보드가 안 떠 있으면 `run` 실행기로 같이 켜요(자동 실행이 켜져 있으면 세션만).
+- **하나씩**: 목록 머리의 **「종료」** 탭에서 카드의 **「다시 열기」**.
 
-```bash
-node bin/agent-dashboard.mjs restore   # 재시동 전 세션들을 tmux 로 다시 띄우고, 대시보드도 run 실행기로 켜요(자동 실행이 켜져 있으면 세션만)
-```
+재시동하면 tmux 와 그 안의 세션이 모두 꺼지지만 대화 기록은 남아 있어요. 대시보드가 떠 있는 tmux Claude 세션 목록(이름 · 폴더 · 세션 ID)을 `~/.agent-dashboard/restore.json` 에 계속 저장해 두기 때문에 한 번에 다시 띄울 수 있어요.
 
 띄우기만 하고 아무것도 끄지 않아요. 이미 떠 있는 세션은 다시 띄우지 않아요. 자동 실행(`autostart`)이 켜져 있거나 대시보드가 이미 포트를 쓰고 있으면 대시보드는 띄우지 않고 세션만 복구해요.
 
 대시보드를 먼저 켰다면 목록 맨 위에 **"재시동 전에 떠 있던 세션 N개 · 모두 다시 열기"** 가 떠요. 모델은 기본 설정을 따르고, 따로 고른 모델(Sonnet·Haiku)만 그대로 붙여요. 30일이 지난 대화는 Claude Code 가 기록을 지워서 이어 열 수 없어요.
 
-재시동이 아니어도 세션이 갑자기 꺼졌다면 목록 머리의 **「종료」** 탭을 누르세요. 최근 24시간 안에 떠 있다가 지금은 꺼진 Claude 세션(tmux 밖에서 띄운 것도) 카드에 **「다시 열기」** 가 붙어 있고, 누르면 같은 대화로 tmux 에 다시 띄워요.
+재시동이 아니어도 세션이 갑자기 꺼졌다면 **「종료」** 탭을 보세요. 최근 24시간 안에 떠 있다가 지금은 꺼진 Claude 세션(tmux 밖에서 띄운 것도) 카드에 **「다시 열기」** 가 붙어 있고, 누르면 같은 대화로 tmux 에 다시 띄워요. tmux 밖에서 띄워 보기만 되는 세션은 패널 입력 칸 자리에 「tmux 로 다시 열기」 단추가 있어요(원래 세션을 끄면 켜져요).
 - 지금 떠 있거나 방금 다시 띄운 세션에는 단추가 없어요(두 번 띄우지 않게).
 - 폴더 신뢰 확인 창이 뜨면 대신 누르지 않고 "신뢰 확인이 필요해요"라고만 알려 줘요.
 - 기억은 `~/.agent-dashboard/recent.json`(본인만 읽기). 화면은 세션 ID 만 보내고, 폴더 · 이름은 서버가 기억해 둔 목록에서만 꺼내요.
@@ -165,12 +169,7 @@ node bin/agent-dashboard.mjs restore   # 재시동 전 세션들을 tmux 로 다
 
 ### 업데이트
 
-| 쓰는 방식 | 새 판으로 |
-|---|---|
-| npx | 끈 뒤 `npx @yun7420/agent-dashboard@latest` — 버전을 안 붙이면 npx 가 예전에 받아 둔 판을 다시 켤 수 있어요 |
-| 전역 설치 | `npm i -g @yun7420/agent-dashboard@latest` 뒤 다시 켜기 |
-| 자동 실행(설치본) | 설치를 올린 뒤 `agent-dashboard autostart on`(새 경로 · node 로 다시 걸어요) |
-| 저장소 | `git pull` 뒤 다시 켜기 |
+명령은 위 [명령 한눈에](#실행--명령-한눈에) 표의 「업데이트」 줄이에요. 새 판이 나오면 켤 때 시작 로그 한 줄과 환경 점검 「버전」 줄이 켠 방법에 맞는 명령을 알려 줘요.
 
 ### 끄기 · 지우기
 
@@ -288,7 +287,7 @@ node bin/agent-dashboard.mjs restore   # 재시동 전 세션들을 tmux 로 다
 
 - **`127.0.0.1` 전용** — 주소(Host)가 localhost 가 아니면 거절해요(DNS 리바인딩 차단). 프롬프트·코드 경로가 그대로 보이니 다른 사람과 주소를 공유하지 마세요.
 - **`~/.agent-dashboard/token`** — 이 대시보드 전용 비밀 열쇠예요. 처음 실행할 때 컴퓨터마다 자동으로 만들어지고(본인만 읽기 가능, 600), **화면에는 넣지 않아요**(화면 파일은 누구나 받을 수 있어서 — 같은 Mac 의 다른 계정 포함).
-  - **로그인**: 이 열쇠로 만든 **로그인 링크**(10분 안에 한 번만 — 두 번째는 「이미 쓴 링크예요」)로 들어온 브라우저에만 쿠키를 줘요. 켤 때 터미널에 링크가 나오고, 나중엔 `node bin/agent-dashboard.mjs open`(npx 로 켰으면 `npx @yun7420/agent-dashboard open`, 설치했으면 `agent-dashboard open`)이 링크를 브라우저로 열어 줘요. 링크는 들어오자마자 `/` 로 바뀌어 주소창 · 방문 기록에 남지 않아요.
+  - **로그인**: 이 열쇠로 만든 **로그인 링크**(10분 안에 한 번만 — 두 번째는 「이미 쓴 링크예요」)로 들어온 브라우저에만 쿠키를 줘요. 켤 때 터미널에 링크가 나오고, 나중엔 `open` 명령(위 표의 「다시 로그인」)이 링크를 브라우저로 열어 줘요. 링크는 들어오자마자 `/` 로 바뀌어 주소창 · 방문 기록에 남지 않아요.
   - 쿠키는 화면 스크립트도 못 읽고(HttpOnly), 다른 사이트에서 오는 요청엔 붙지 않고(SameSite=Strict), 7일이 지나면 끝나요. 값은 열쇠가 아니라 열쇠로 만든 서명이에요.
   - 기록을 보거나 메시지 · 승인 · 종료 같은 명령을 보내려면 로그인이 필요해요. 화면의 요청에는 다른 사이트가 붙일 수 없는 머리글을 붙이고, 같은 Mac 의 다른 포트 페이지에서 온 요청도 거절해요.
   - `open` 은 링크를 넘기기 전에 그 포트의 서버가 진짜 이 대시보드인지(열쇠로 서명한 답) 확인해요. 다른 프로그램이 포트를 먼저 잡고 있으면 링크를 보내지 않아요. 서버는 `127.0.0.1` 과 `[::1]` 을 함께 열어, 다른 프로그램이 `localhost` 의 IPv6 쪽을 가로채지 못하게 해요. 다른 프로그램이 이미 `[::1]` 의 같은 포트를 쓰고 있으면 이유를 알리고 켜지지 않아요(그대로 켜면 열린 탭이 그쪽에 쿠키를 보낼 수 있어서).
@@ -382,7 +381,7 @@ Node 에 들어 있는 테스트 도구(`node --test`)라 설치할 것이 없�
 | 기록 폴더 | `CLAUDE_CONFIG_DIR` · `CODEX_HOME` 으로 옮긴 폴더 | 기본은 대시보드를 켠 셸의 값 하나예요. 다른 계정 폴더는 `DASHBOARD_CLAUDE_DIRS=~/.claude-work:…` 로 더해요(홈 아래 · 내 소유 · 링크로 밖을 가리키지 않는 폴더만 — 어긋나면 그 폴더만 빼고 환경 점검에 이유). 세션 · 기록 · 검색 · 다시 열기는 계정별, 사용 한도 · 기본 모델 · 새 세션은 기본 계정만, 오늘 한 일은 합쳐서. Codex 는 하나만 |
 
 - **채팅 · 승인 · 닫기는 tmux 로 띄운 세션만** 돼요. 일반 터미널 · 에디터 확장(VS Code · Cursor)에서 띄운 세션은 보기만 돼요.
-- **터미널에서 켤 때만 브라우저를 저절로 열어요.** 자동 실행 · 실행기(`run`) · `--no-open` 이면 열지 않으니 터미널에 나온 로그인 링크를 열거나 `node bin/agent-dashboard.mjs open`(npx 로 켰으면 `npx @yun7420/agent-dashboard open`, 설치했으면 `agent-dashboard open`)을 실행해요. `run`(실행기)으로 켰다면 링크는 `~/.agent-dashboard/server.log` 에 있어요.
+- **터미널에서 켤 때만 브라우저를 저절로 열어요.** 자동 실행 · 실행기(`run`) · `--no-open` 이면 열지 않으니 터미널에 나온 로그인 링크를 열거나 `open` 명령([명령 한눈에](#실행--명령-한눈에)의 「다시 로그인」)을 실행해요. `run`(실행기)으로 켰다면 링크는 `~/.agent-dashboard/server.log` 에 있어요.
 - 프로젝트 폴더의 `.claude/settings.json` 에 자기 상태줄(`statusLine`)이 있으면 그 프로젝트 세션은 계정 사용 한도 값이 오지 않아요(상태줄 다리가 불리지 않아서).
 - **Codex 는 일부만** — 목록 · 상태 · 지금 탭(요청 · 답변 · 대화 창) · 기록 탭 · 전체 검색 · 채팅 · **오늘 한 일**(요청 · 명령 · 커밋 · 토큰 — 고친 파일은 기록에 없어 「지원 안 함」) · 환경 점검 「Codex 기록 형식」은 돼요(0.125 기록으로 확인). 승인 창 감지 · 계정 사용 한도 · 자동 요약 시각 · 서브에이전트 · 세션 간 메시지 · 새 세션 · 복구는 Claude Code 만이에요.
 - Gemini 등 다른 도구는 아직 없어요(어댑터 파일 하나로 붙일 수 있게 만들어 뒀어요).

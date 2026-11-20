@@ -72,32 +72,36 @@ You need: **macOS · Node 18+ · tmux · Claude Code**. If something is missing 
 | Claude Code | yes | latest recommended — `brew upgrade claude-code` |
 | tmux | for chat/approve | `brew install tmux` (without it, view-only) |
 
-### Run
+### Run — commands at a glance
 
-**With npm** (no repo needed)
-
-```bash
-npx @yun7420/agent-dashboard          # download and start → a logged-in browser opens for you
-npx @yun7420/agent-dashboard open     # link expired, another browser, or after 7 days: opens a fresh login link in your browser
-
-npm i -g @yun7420/agent-dashboard     # or install it for a short command
-agent-dashboard                       # start (open · run · restore · --help work the same)
-```
-
-`agent-dashboard` on npm (without the scope) is an unrelated package. Always use `@yun7420/agent-dashboard`.
-
-**From the repo**
+Pick one way to use it. **npx** runs it without installing, **install** gives you the short `agent-dashboard` command and autostart, **repo** is for reading the code.
 
 ```bash
-git clone https://github.com/Yun7420/agent-dashboard.git
-cd agent-dashboard
-npm start          # → a logged-in browser opens for you
-node bin/agent-dashboard.mjs open   # link expired, another browser, or after 7 days: opens a fresh login link in your browser
+npm i -g @yun7420/agent-dashboard                                    # to install (once)
+git clone https://github.com/Yun7420/agent-dashboard.git && cd agent-dashboard   # to use the repo (once — run its commands in that folder)
 ```
 
-The page lives at `http://localhost:4545`, but the first visit has to come through a **login link**. Started from a terminal, it opens your browser with that link (turn it off with `--no-open` or `DASHBOARD_NO_OPEN=1`); if nothing opens, click the link printed in the terminal. That browser then stays logged in for 7 days (see "Security").
+| What you want | With npx | Installed | From the repo (git) |
+|---|---|---|---|
+| Start | `npx @yun7420/agent-dashboard` | `agent-dashboard` | `npm start` |
+| Stop | Ctrl+C in the terminal that started it | Ctrl+C in that terminal · with autostart, `agent-dashboard autostart off` | Ctrl+C in that terminal · with autostart, `node bin/agent-dashboard.mjs autostart off` |
+| Log in again (missed the link · after 7 days · another browser) | `npx @yun7420/agent-dashboard open` | `agent-dashboard open` | `node bin/agent-dashboard.mjs open` |
+| Update | Stop it, then `npx @yun7420/agent-dashboard@latest` | `npm i -g @yun7420/agent-dashboard@latest`, then restart · with autostart, follow with `agent-dashboard autostart on` | `git pull`, then restart · with autostart, `git pull && node bin/agent-dashboard.mjs autostart on` |
+| Restore sessions after restarting the Mac | `npx @yun7420/agent-dashboard restore` | `agent-dashboard restore` | `node bin/agent-dashboard.mjs restore` |
+| Start automatically at login (macOS) | Not available — the npx cache can be cleared, so install it | `agent-dashboard autostart on` | `node bin/agent-dashboard.mjs autostart on` |
+| Use another port | `PORT=4600 npx @yun7420/agent-dashboard` | `PORT=4600 agent-dashboard` | `PORT=4600 npm start` |
 
-Leave that terminal running while you use the dashboard (a cursor that seems stuck is normal) — press Ctrl+C there to stop it.
+- Leave the terminal that started it running while you use the dashboard (a cursor that seems stuck is normal) — press **Ctrl+C** there to stop it.
+- If you started it on another port, put the same `PORT=` in front of `open` too (the startup log and on-screen hints already include it).
+- Why npx updates use `@latest`: without a version, npx may start the copy it cached earlier.
+- `agent-dashboard` on npm (without the scope) is an unrelated package. Always use `@yun7420/agent-dashboard`.
+
+### What is "login"?
+
+- It isn't a username or password. It's a mark that says **"this browser belongs to the owner of this Mac"**.
+- Why it's needed: so other sites open in your browser can't secretly send requests to this dashboard and type commands into your Claude sessions.
+- Started from a terminal, it opens a logged-in browser for you (turn that off with `--no-open` or `DASHBOARD_NO_OPEN=1`). If nothing opens, click the login link printed in the terminal.
+- **10 minutes** = how long the login link works (once only), **7 days** = how long a logged-in browser is remembered. After that, run the "Log in again" command from the table (details under "Security").
 
 You can also run `node bin/agent-dashboard.mjs` (see `--help`); it's the same as the `agent-dashboard` command you get from npm.
 
@@ -109,7 +113,7 @@ Pick the **colors** under **⋯ → Display → Theme**: dark **Green** (default
 
 ### Keep it running (recommended)
 
-**Start on login (macOS)**: install with `npm i -g @yun7420/agent-dashboard`, then `agent-dashboard autostart on` — a login item (LaunchAgent) keeps the server running and restarts it 10 seconds after it stops. From the repo: `node bin/agent-dashboard.mjs autostart on`.
+**Start on login (macOS)**: the commands are in the "Start automatically at login" row of the table above — a login item (LaunchAgent) keeps the server running and restarts it 10 seconds after it stops.
 
 - Turn off · check: `agent-dashboard autostart off` · `agent-dashboard autostart status` (on or off, which node it points to, last exit code). Logs go to `~/.agent-dashboard/autostart.log` (readable only by you; over 5 MB it moves to `.1` on `autostart on`). If another dashboard already holds the port, it retries every 5 minutes.
 - It can't be set up from npx — the npx cache can be cleared, so the path may be gone after a reboot. If Node lives in a version folder (nvm, fnm), run `autostart on` again after switching Node.
@@ -126,19 +130,19 @@ tmux respawn-pane -k -t dashboard     # restart after editing code (sending Ctrl
 - `run` widens the restart delay to 30 seconds after 5 exits within a minute, and stops instead of restarting when the port is already in use. On Ctrl+C (SIGINT) or SIGTERM it stops the server too.
 - Without the repo: `tmux new -d -s dashboard npx @yun7420/agent-dashboard run` (`agent-dashboard run` if installed).
 
-### After a restart: restore all sessions at once
+### After restarting the Mac
 
-A restart kills tmux and every session inside it, but the conversations are saved, so they can be reopened with `--resume`. The dashboard keeps saving the list of live tmux Claude sessions (name · folder · session ID) to `~/.agent-dashboard/restore.json`, so you can bring them all back in one go.
+- **The dashboard**: with autostart on, it starts when you log in. Otherwise use "Start" from the table.
+- **Claude sessions**: the "Restore sessions" line from the table (`… restore`) reopens the pre-restart tmux sessions with the same conversations (`--resume`). If no dashboard is running it also starts one with the `run` runner (sessions only if autostart is on).
+- **One at a time**: the **"Ended"** tab at the top of the list, then **"Reopen"** on a card.
 
-```bash
-node bin/agent-dashboard.mjs restore   # reopens the pre-restart sessions in tmux and starts the dashboard with the run runner (sessions only if autostart is on)
-```
+A restart kills tmux and every session inside it, but the conversations are saved. The dashboard keeps saving the list of live tmux Claude sessions (name · folder · session ID) to `~/.agent-dashboard/restore.json`, so you can bring them all back in one go.
 
 It only starts things and never stops anything. Sessions that are already running aren't started again. If autostart is on, or a dashboard already holds the port, it only restores the sessions and doesn't start another dashboard.
 
 If you open the dashboard first, the top of the list shows **"N sessions from before the restart · Reopen all"**. Sessions follow your default model; only ones you picked explicitly (Sonnet/Haiku) keep it. Conversations older than 30 days are cleaned up by Claude Code and can't be resumed.
 
-Even without a restart, if sessions stopped unexpectedly, open the **"Ended"** tab at the top of the list. Claude sessions that were running in the last 24 hours but aren't now (including ones started outside tmux) get a **"Reopen"** button on their card, which resumes the same conversation in tmux.
+Even without a restart, if sessions stopped unexpectedly, check the **"Ended"** tab. Claude sessions that were running in the last 24 hours but aren't now (including ones started outside tmux) get a **"Reopen"** button on their card, which resumes the same conversation in tmux. A view-only session started outside tmux shows a "Reopen in tmux" button where the message box would be (it turns on once you close the original).
 - Sessions that are running now or were just reopened have no button (no duplicates).
 - If the folder trust prompt appears, the dashboard doesn't answer it for you; it only tells you "trust confirmation needed".
 - The list lives in `~/.agent-dashboard/recent.json` (readable only by you). The page sends only the session ID; folders and names come only from the server's saved list.
@@ -164,12 +168,7 @@ Everything the dashboard writes lives in `~/.agent-dashboard/` (it never writes 
 
 ### Updating
 
-| How you run it | To get the new version |
-|---|---|
-| npx | Stop it, then `npx @yun7420/agent-dashboard@latest` — without a version npx may start the copy it cached earlier |
-| Global install | `npm i -g @yun7420/agent-dashboard@latest`, then restart |
-| Autostart (installed) | After updating the install, `agent-dashboard autostart on` (re-registers with the new path and node) |
-| Repo | `git pull`, then restart |
+The commands are in the "Update" row of [commands at a glance](#run--commands-at-a-glance). When a new version is out, a startup log line and the "Version" row of the environment check show the right command for how you run it.
 
 ### Stopping and uninstalling
 
@@ -287,7 +286,7 @@ A session already running in a terminal has no official way to receive input fro
 
 - **`127.0.0.1` only** — requests whose Host isn't localhost are rejected (blocks DNS rebinding). Prompts and code paths are visible, so don't share the address.
 - **`~/.agent-dashboard/token`** — a secret token just for this dashboard. It's generated per machine on first run (readable only by you, 600) and is **never put in the page** (anyone can fetch the page files — including other accounts on the same Mac).
-  - **Login**: only a browser that arrives through a **login link** (valid 10 minutes, once — a second visit says it was already used) made from this token gets a cookie. The link is printed in the terminal on start; later `node bin/agent-dashboard.mjs open` (`npx @yun7420/agent-dashboard open` if started with npx, `agent-dashboard open` when installed) opens one for you. The link immediately redirects to `/`, so it doesn't stay in the address bar or history.
+  - **Login**: only a browser that arrives through a **login link** (valid 10 minutes, once — a second visit says it was already used) made from this token gets a cookie. The link is printed in the terminal on start; later the `open` command ("Log in again" in the table above) opens one for you. The link immediately redirects to `/`, so it doesn't stay in the address bar or history.
   - The cookie can't be read by page scripts (HttpOnly), isn't sent with requests from other sites (SameSite=Strict) and expires after 7 days. Its value is a signature made with the token, not the token itself.
   - Reading history and sending commands (send, approve, close …) require login. The page's requests carry a header other sites can't add, and requests from pages on other ports of this Mac are rejected too.
   - Before handing over the link, `open` checks that the server on that port really is this dashboard (an answer signed with the token). If another program grabbed the port, the link is not sent. The server listens on both `127.0.0.1` and `[::1]` so another program can't take over the IPv6 side of `localhost`. If another program is already using the same port on `[::1]`, the server explains why and doesn't start (otherwise open tabs could send it the cookie).
@@ -382,7 +381,7 @@ Uses Node's built-in test runner (`node --test`), nothing to install. The tests 
 | Record folders | Folders moved with `CLAUDE_CONFIG_DIR` · `CODEX_HOME` | By default the one value of the shell that started the dashboard. Add other account folders with `DASHBOARD_CLAUDE_DIRS=~/.claude-work:…` (only folders under home, owned by you, not linking outside — others are skipped with the reason in the environment check). Sessions · history · search · reopen work per account; usage limits · default model · new sessions use the default account; Today's work is combined. Codex reads one folder |
 
 - **Chat · approve · close work only for sessions started in tmux.** Sessions started in a plain terminal or an editor extension (VS Code · Cursor) are view-only.
-- **It opens the browser by itself only when started from a terminal.** With autostart, the runner (`run`) or `--no-open` it doesn't, so open the login link printed in the terminal or run `node bin/agent-dashboard.mjs open` (`npx @yun7420/agent-dashboard open` with npx, `agent-dashboard open` if installed). If you started it with `run` (the runner), the link is in `~/.agent-dashboard/server.log`.
+- **It opens the browser by itself only when started from a terminal.** With autostart, the runner (`run`) or `--no-open` it doesn't, so open the login link printed in the terminal or run the `open` command ("Log in again" in [commands at a glance](#run--commands-at-a-glance)). If you started it with `run` (the runner), the link is in `~/.agent-dashboard/server.log`.
 - If a project's `.claude/settings.json` has its own `statusLine`, sessions in that project don't get account usage limits (the status-line bridge isn't called).
 - **Codex is partial** — list · status · Now tab (request · answer · context) · History tab · search · chat · **Today's work** (prompts · commands · commits · tokens — edited files are not in its transcripts, so they show "not supported") · the "Codex record format" environment check work (verified with 0.125 transcripts). Prompt detection · account usage limits · last auto-compact time · subagents · messages between sessions · new session · restore are Claude Code only.
 - No Gemini or other tools yet (each can be added as one adapter file).
