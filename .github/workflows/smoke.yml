@@ -48,7 +48,7 @@ jobs:
       - name: registry 에 패키지 파일이 보일 때까지 기다리기
         run: |
           for i in $(seq 20); do
-            URL="$(npm view "@yun7420/agent-dashboard@$VERSION" dist.tarball 2>/dev/null)"
+            URL="$(npm view "@yun7420/agent-dashboard@$VERSION" dist.tarball 2>/dev/null || true)" # 아직 없으면 npm view 가 E404(0 아님) — 셸이 -e 라 || true 가 없으면 여기서 바로 끝났다(0.1.4)
             if [ -n "$URL" ] && curl -sfIL -o /dev/null "$URL"; then echo "보임: $URL"; exit 0; fi
             echo "아직 안 보임($i/20)"; sleep 30
           done
