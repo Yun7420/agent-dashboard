@@ -105,7 +105,8 @@
    - [x] `agent-dashboard autostart on | off | status` — LaunchAgent(io.github.yun7420.agent-dashboard, node · bin 절대 경로 + start, KeepAlive · ThrottleInterval 10, on 할 때의 PATH · LANG · PORT 만, plist · autostart.log 600), npx 캐시면 거절 · 포트 사용 중이면 경고만 · 버전 폴더 node 면 다시 on 안내 · Linux 는 systemd 예시만 `26b3d13` — 가짜 launchctl 시험만, 이 Mac 에서 실제 on 은 사용자 확인 뒤 · autostart.log 크기 제한(on 할 때 5MB 넘으면 .1, 자동 실행 서버는 포트를 못 열면 5분 뒤 끝내기 — DASHBOARD_AUTOSTART) `d3fba2c` · restore 는 자동 실행이 켜져 있거나 포트가 이미 응답하면 대시보드는 띄우지 않고 세션만 `a2a94d0` `0236422`
 4. [x] **여러 계정 · tmux 소켓** — `CLAUDE_CONFIG_DIR` 로 나눈 계정, 기본 소켓이 아닌 tmux 서버
    - [x] 설정한 것만(사용자 결정 — 자동 탐색 · ps -E · accounts.json 없음): `DASHBOARD_CLAUDE_DIRS` · `DASHBOARD_TMUX_SOCKETS`, 홈 아래 · realpath · 내 소유 · 폴더(projects · sessions) / lstat 소켓 · 내 소유 · 링크 아님 · 부모 내 소유 검사, 어긋나면 그것만 빼고 시작 로그 · 환경 점검 「계정 · tmux 서버」, 세션 · 기록 · 다시 열기(CLAUDE_CONFIG_DIR)는 계정별 · 한도 · 기본 모델 · 새 세션은 기본만, tmux 명령은 target 의 소켓으로 -S(서버 세션 정보에서만 · 직전 재검사), 카드 꼬리표 · autostart plist `e3eaa68`
-5. [ ] **좁은 화면(모바일 폭) 종료 목록** — 390px 에서 「종료」 탭 보기 다듬기
+5. [x] **좁은 화면(모바일 폭) 종료 목록** — 390px 에서 「종료」 탭 보기 다듬기
+   - [x] 목록 서랍(사용자 결정 A): 860px 이하 띠 맨 위 ☰ 단추로 목록을 조직도 위에 펼침(활성 | 종료 탭 · 종료 카드 · 다시 열기 그대로), aria-expanded · aria-controls · 두 언어, 밖 inert + Tab 끝에서 돌기, 덮개 · Esc(승인 거절보다 먼저) · 카드 고르기로 닫고 초점은 단추로, 상태 칩 「종료」도 서랍으로, 동작 줄이기면 미끄러짐 없음, 860 보다 넓으면 그대로 `db3ce10` — 390 · 600 · 860 · 1024 × 두 테마 × 두 언어 넘침 0 · 콘솔 0
 - 출시 방법: 버전 올리기 → CI 초록 → 사용자 승인 뒤 `v*` 태그 → Actions 「Review deployments」에서 사용자 Approve (`docs/CONVENTIONS.md` 「출시 절차」)
 - 사용자 몫(선택): npm 패키지 Settings → Publishing access 를 「Require 2FA and disallow bypass 2fa tokens」로(Trusted Publisher 출시는 그대로 됨)
 
