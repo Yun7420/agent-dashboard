@@ -7,7 +7,6 @@
 /* 1024 근처: 로고 옆 「Dashboard」 · 연결 글자를 빼야 머리가 한 줄에 들어간다(연결은 점만, 글자는 title) */
 @media (max-width: 1180px) {
   .brand h1 span { display: none; }
-  .sysload .agents { display: none; } /* 머리 칩: 줄바꿈 전에 에이전트 합계부터 숨긴다(누르면 표에 있음) */
   #conn { font-size: 0; gap: 0; }
 }
 /* 태블릿 세로 · 좁은 창: 목록을 숨기지 않고 접힌 띠(상태 점 + 이니셜)로 둔다 — 접기 단추는 숨김(JS 가 항상 접음) */

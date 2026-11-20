@@ -33,6 +33,13 @@ test('물낯 선은 이름 · 상태 글자 자리에서 끊긴다(evenodd 구�
   assert.ok(Math.abs(w1 - (12 * 7.4 + 8)) < 0.1 && Math.abs(x1 - (170 - w1) / 2) < 0.1);
   assert.ok(w2 > 12 * 6.8 + 8 && w2 < 170, `상태 줄 폭 ${w2}`); // 한글 4자는 10px 씩
   assert.doesNotMatch(svg, /<g clip-path="url\(#wc\d+t\)"><path class="water /); // 물 면은 끊지 않는다
+  // 세션 노드(높이 66)에 CPU · 메모리 셋째 줄이 있으면 구멍 셋, 노드 설명(title)은 하나로 합친다
+  const svg3 = run(`waterSvg(${JSON.stringify({ ...node(45), h: 66, label: 'Lead Manager', sub: '작업 중 · BASH', load: { text: 'CPU 12% · 410MB', hot: false, tip: 'CPU 12%(코어 하나 기준) · 메모리 410MB' } })})`);
+  const id3 = svg3.match(/<g clip-path="url\(#(wc\d+t)\)">/)[1];
+  const d3 = svg3.match(new RegExp(`<clipPath id="${id3}"><path clip-rule="evenodd" d="([^"]+)"`))[1];
+  assert.deepEqual([...d3.matchAll(/M[\d.]+,([\d.]+) h/g)].map((m) => Number(m[1])), [9, 27, 42]); // 기준선 22 · 37 · 52 둘레
+  assert.equal(svg3.match(/<title>/g).length, 1);
+  assert.match(svg3, /<title>CPU 12%\(코어 하나 기준\) · 메모리 410MB · 대화 창 45%/);
 });
 
 test('값이 바뀐 그릴 때만 예전 높이에서 차오르고, 그대로면 움직임 없음(같은 HTML)', () => {

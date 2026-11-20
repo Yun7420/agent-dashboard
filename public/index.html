@@ -24,7 +24,7 @@
     <h1>Agent <span>Dashboard</span></h1>
   </div>
   <button type="button" id="appr-count" class="appr-count" hidden><span class="dot-s waiting"></span>Needs approval <em id="c-waiting">0</em></button>
-  <!-- 컴퓨터 전체 CPU · 메모리 + 에이전트 합계(12-load-pop.js) — 누르면 세션별 표. 6~10초마다 바뀌어 화면 읽기에 알리지 않는다(aria-live 없음, 뜻은 aria-label) -->
+  <!-- 컴퓨터 전체 CPU · 메모리(12-load-pop.js) — 누르면 세션별 표. 6~10초마다 바뀌어 화면 읽기에 알리지 않는다(aria-live 없음, 뜻은 aria-label) -->
   <span class="sysload-wrap"><button type="button" id="sysload" class="sysload" aria-haspopup="true" aria-controls="load-pop" aria-expanded="false" hidden></button><div class="menu-pop" id="load-pop"></div></span>
   <span id="conn" role="status" hidden></span>
   <!-- 맨 위 가운데 기록 검색: 칸에 바로 치면 바로 아래 결과 목록(18-search.js). 좁은 화면은 🔍 를 누르면 칸이 머리 폭으로 펼쳐진다 -->

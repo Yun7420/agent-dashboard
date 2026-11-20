@@ -93,7 +93,7 @@ const KO_UI2 = {
   "Nothing to copy": "복사할 내용이 없어요",
   "Copied as Markdown": "마크다운으로 복사했어요",
   "Could not copy": "복사하지 못했어요",
-  "agents": "에이전트",
+  "CPU {c}% (one core = 100%) · Memory {m}": "CPU {c}%(코어 하나 기준) · 메모리 {m}",
   "About {u} of {n} cores in use (whole Mac = 100%)": "{n}코어 중 약 {u}코어만큼 사용(Mac 전체 = 100%)",
   "Press for each session": "누르면 세션별로",
   "Per session — one core = 100% (same as Activity Monitor)": "세션별 — 코어 하나 = 100%(활성 상태 보기와 같음)",

@@ -6,7 +6,6 @@ const tags = (s) => [
   s.tmux || s.status === 'ended' ? '' : `<span class="badge badge-view" tabindex="0" data-tip="${t('Started outside tmux — chat · approve are off')}">${t('View only')}</span>`,
   s.account ? `<span class="badge badge-view" tabindex="0" data-tip="${t('Claude account (CLAUDE_CONFIG_DIR)')}: ${esc(s.configDir ?? '')}">${esc(s.account)}</span>` : '',
   s.tmux?.socket ? `<span class="badge badge-view" tabindex="0" data-tip="${t('tmux server (socket)')}">${esc(s.tmux.socket)}</span>` : '',
-  hotText(s) ? `<span class="badge badge-hot" tabindex="0" data-tip="${esc(loadText(s.load))}">${hotText(s)}</span>` : '', // 무거울 때만(lib/proc-load.mjs 두 번 연속 규칙)
 ].join('');
 // 탭: 활성 = 지금 떠 있는 세션(정렬 · 끌기) / 종료 = 최근 24시간에 끝난 세션(서버가 24시간만 보낸다) · 다시 열기.
 // 접힌 띠는 탭과 상관없이 활성만(띠의 점 · 머리글자로 지금 일을 보는 자리)

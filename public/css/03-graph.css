@@ -43,6 +43,8 @@ main { position: relative; overflow: hidden; background:
 .node[data-key] > text { paint-order: stroke; stroke: var(--node-bg); stroke-width: 3px; stroke-linejoin: round; } /* 물낯 선이 글자를 긋지 않게 글자 둘레를 바탕색으로(지도 글씨처럼) */
 .node .tick80 { stroke: var(--faint); stroke-width: 1; opacity: .6; }
 .node text.t2 { fill: var(--faint); font: 500 10px var(--sans); letter-spacing: .04em; }
+.node text.ld { fill: var(--faint); font: 500 10px var(--sans); font-variant-numeric: tabular-nums; } /* 세션 CPU · 메모리(상태 색을 따르지 않음) */
+.node text.ld.hot { fill: var(--working-text); font-weight: 700; } /* 무거움(두 번 연속) — 꼬리표 대신 숫자만 강조 */
 /* 세션 상태는 점 대신 아래 줄(대기 · 작업 중 …) 글자색으로 */
 .node:not(.proj):not(.group).idle text.t2 { fill: var(--idle); }
 .node:not(.proj):not(.group).working text.t2 { fill: var(--working); }
