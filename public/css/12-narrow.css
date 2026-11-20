@@ -7,6 +7,7 @@
 /* 1024 근처: 로고 옆 「Dashboard」 · 연결 글자를 빼야 머리가 한 줄에 들어간다(연결은 점만, 글자는 title) */
 @media (max-width: 1180px) {
   .brand h1 span { display: none; }
+  .sysload .agents { display: none; } /* 머리 칩: 줄바꿈 전에 에이전트 합계부터 숨긴다(누르면 표에 있음) */
   #conn { font-size: 0; gap: 0; }
 }
 /* 태블릿 세로 · 좁은 창: 목록을 숨기지 않고 접힌 띠(상태 점 + 이니셜)로 둔다 — 접기 단추는 숨김(JS 가 항상 접음) */
@@ -52,7 +53,7 @@
   #drawer .head-top .grow { display: none; }
 }
 
-@media (max-width: 600px) { #app-menu { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; } } /* 좁은 화면에선 ⋯ 단추 기준으로 두면 왼쪽이 화면 밖으로 나간다 */
+@media (max-width: 600px) { #app-menu, #load-pop { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; } } /* 좁은 화면에선 ⋯ 단추 기준으로 두면 왼쪽이 화면 밖으로 나간다 */
 /* 「동작 줄이기」를 켠 사람: 한 번 깜빡임 · 상태가 바뀐 노드 빛남 · 그래프 나타남 효과도 끈다· 로딩 고리는 멈춘 고리로(계속 움직이는 효과는 로딩 고리 말고는 처음부터 없음) */
 @keyframes peek-in { from { translate: -24px 0; opacity: .6; } }
 @media (prefers-reduced-motion: reduce) {

@@ -33,7 +33,7 @@ test('설정 메뉴에서 언어를 고르면 agent-deck 의 lang 과 서버(/ap
   let fail = false;
   let reloaded = 0;
   const el = (sel) => (els[sel] ??= { value: '', listeners: {}, classList: { toggle() {}, remove() {} }, addEventListener(t, fn) { this.listeners[t] = fn; } });
-  loadFront(['00-md.js', '01-core.js', '13-controls.js'], {
+  loadFront(['00-md.js', '01-core.js', '12-load-pop.js', '13-controls.js'], {
     window: {}, navigator: { language: 'ko-KR' }, setInterval() {}, location: { reload: () => reloaded++ },
     fetch: async (p, o) => { posts.push([p, o.method, o.body]); if (fail) throw new Error('down'); return { ok: true, status: 204, text: async () => '' }; },
     document: { querySelector: el, documentElement: { dataset: {} }, addEventListener() {} },

@@ -126,5 +126,5 @@ test('컴퓨터 전체: vm_stat · meminfo · 압력 읽기, 10초에 한 번, C
   assert.equal(calls, 6); // 세 번 구함 × (vm_stat + sysctl)
   const off = createSysload({ platform: 'win32', cpus });
   off(); await new Promise((r) => setImmediate(r));
-  assert.deepEqual({ ...off(), cpu: 0 }, { cpu: 0, memUsed: null, memTotal: null, pressure: null });
+  assert.deepEqual({ ...off(), cpu: 0, cores: 0 }, { cpu: 0, cores: 0, memUsed: null, memTotal: null, pressure: null });
 });

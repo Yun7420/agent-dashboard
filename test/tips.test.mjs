@@ -9,7 +9,7 @@ function load() {
   const box = { textContent: '', style: {}, offsetWidth: 200, offsetHeight: 40, classList: { add: (c) => cls.add(c), remove: (c) => cls.delete(c), contains: (c) => cls.has(c) } };
   const el = (s) => (s === '#tip' ? box : { id: s, hidden: false, dataset: {}, style: { setProperty() {} }, classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, setAttribute() {}, getBoundingClientRect: () => ({}) });
   const body = { append() {}, classList: { toggle() {}, add() {}, remove() {} } };
-  const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '11-usage.js', '13-controls.js'], {
+  const { run } = loadFront(['00-md.js', '01-core.js', '02-kinds.js', '11-usage.js', '12-load-pop.js', '13-controls.js'], {
     window: {}, innerWidth: 1440, innerHeight: 900, matchMedia: () => ({ matches: false, addEventListener() {} }), asideW: () => 296,
     document: { documentElement: { dataset: {} }, body, querySelector: el, querySelectorAll: () => [], addEventListener: (ty, fn) => { (on[ty] ??= []).push(fn); } },
     localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, setTimeout, clearTimeout,
