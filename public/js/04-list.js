@@ -1,9 +1,9 @@
 // 왼쪽 세션 목록
 // 카드는 이름 · 상태 · 흐린 한 줄(폴더 · 시간)만 — 대화 창은 조직도 물 채우기(전체 비교)와 패널 머리 %(정확한 숫자)가 맡는다.
 // 꼬리표는 기본값이 아닐 때만: tmux 밖(보기만 되는) 세션에만 「보기만」. 에이전트 종류는 이름 앞 표식(02-kinds.js 의 kmark)
-// 꼬리표는 기본값이 아닐 때만: tmux 밖(보기만) · 다른 계정(DASHBOARD_CLAUDE_DIRS) · 다른 tmux 서버(DASHBOARD_TMUX_SOCKETS)
+// 꼬리표는 기본값이 아닐 때만: tmux 밖(보기만 — 떠 있는 세션만, 종료 세션은 tmux 칸이 늘 비어 붙던 것을 뺌) · 다른 계정(DASHBOARD_CLAUDE_DIRS) · 다른 tmux 서버(DASHBOARD_TMUX_SOCKETS)
 const tags = (s) => [
-  s.tmux ? '' : `<span class="badge badge-view" tabindex="0" data-tip="${t('Started outside tmux — chat · approve are off')}">${t('View only')}</span>`,
+  s.tmux || s.status === 'ended' ? '' : `<span class="badge badge-view" tabindex="0" data-tip="${t('Started outside tmux — chat · approve are off')}">${t('View only')}</span>`,
   s.account ? `<span class="badge badge-view" tabindex="0" data-tip="${t('Claude account (CLAUDE_CONFIG_DIR)')}: ${esc(s.configDir ?? '')}">${esc(s.account)}</span>` : '',
   s.tmux?.socket ? `<span class="badge badge-view" tabindex="0" data-tip="${t('tmux server (socket)')}">${esc(s.tmux.socket)}</span>` : '',
 ].join('');
