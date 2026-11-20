@@ -37,7 +37,7 @@ test('tr: 같은 글은 그대로, {자리} 는 값을 옮기고 값도 사전�
   assert.equal(tr('세션 3개를 다시 열었어요. 몇 초 뒤 목록에 나타나요', 'en'), 'Reopened 3 sessions. They appear in the list in a few seconds');
   assert.equal(tr('켜짐 — 5시간·주간 한도와 정확한 대화 창 사용량을 보여 줘요 · 상태줄 node /usr/bin/node (v24.1.0)', 'en'),
     'On — shows the 5-hour and weekly limits and exact context use · status line node /usr/bin/node (v24.1.0)');
-  assert.equal(tr('Agent Dashboard → http://localhost:4545\n로그인 링크(10분): u — 나중엔 「c」', 'en'), 'Agent Dashboard → http://localhost:4545\nLogin link (10 min): u — later: "c"');
+  assert.equal(tr('Agent Dashboard → http://localhost:4545\n로그인 링크(10분) — 나중엔 「c」:\nu', 'en'), 'Agent Dashboard → http://localhost:4545\nLogin link (10 min) — later: "c":\nu'); // 링크는 줄 맨 앞 한 줄로
   assert.equal(tr('사용자가 쓴 글', 'en'), '사용자가 쓴 글');
   assert.equal(tr(null, 'en'), null);
 });

@@ -137,7 +137,7 @@ test('실행 명령 open: 시험 서버에 맞는 링크를 가짜 open 으로 �
     const u = new URL(url);
     const login = await request(PORT, u.pathname + u.search);
     assert.equal(login.status, 303); // 연 링크로 실제 로그인이 된다
-    assert.match(s.log(), new RegExp(`로그인 링크\\(10분\\): http://localhost:${PORT}/login\\?t=`)); // 켤 때 로그에도 링크(10분)
+    assert.match(s.log(), new RegExp(`로그인 링크\\(10분\\) — 나중엔 「PORT=${PORT} [^」]+ open」:\\nhttp://localhost:${PORT}/login\\?t=`)); // 켤 때 로그에도 링크(10분) — 줄 맨 앞 한 줄, 기본이 아닌 포트면 PORT= 붙은 open
   } finally {
     await s.stop();
   }

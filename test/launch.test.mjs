@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { startCommand, portInUseMessage } from '../lib/launch.mjs';
+import { startCommand, portInUseMessage, withPort, openWhere } from '../lib/launch.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { ROOT, testEnv } from './_helpers/server.mjs';
 
@@ -69,4 +69,17 @@ test('npx 안내는 package.json 의 이름(@yun7420/agent-dashboard)으로만 �
     for (const pkg of npx) assert.equal(pkg, name, `${what}: npx ${pkg}`);
   }
   assert.match(help, /사용법/);
+});
+
+test('다시 여는 명령: 기본(4545)이 아닌 포트면 앞에 PORT= (open 도 PORT 를 따른다) · 어느 터미널 안내는 PORT 가 붙어도 같게', () => {
+  assert.equal(withPort('npx @yun7420/agent-dashboard open', 4545), 'npx @yun7420/agent-dashboard open');
+  assert.equal(withPort('npx @yun7420/agent-dashboard open', 4600), 'PORT=4600 npx @yun7420/agent-dashboard open');
+  assert.equal(withPort('node bin/agent-dashboard.mjs open', '4646'), 'PORT=4646 node bin/agent-dashboard.mjs open');
+  assert.equal(openWhere('PORT=4600 node bin/agent-dashboard.mjs open'), openWhere('node bin/agent-dashboard.mjs open')); // 저장소 폴더에서 연 터미널
+  assert.equal(openWhere('PORT=4600 npx @yun7420/agent-dashboard open'), '아무 터미널에서');
+  const server = fs.readFileSync(path.join(ROOT, 'server.mjs'), 'utf8');
+  assert.match(server, /const OPEN_CMD = withPort\(/); // 시작 로그 · 로그인 안내 · 화면 · 환경 점검이 모두 이 값
+  assert.match(server, /로그인 링크\(10분\) — 나중엔 「\$\{OPEN_CMD\}」:\\n\$\{loginUrl\(/); // 링크는 줄 맨 앞 한 줄로
+  // open 이 PORT 를 실제로 따른다
+  assert.match(fs.readFileSync(path.join(ROOT, 'bin', 'agent-dashboard.mjs'), 'utf8'), /openLogin\(\{ token: [^}]*, port: Number\(process\.env\.PORT \?\? 4545\) \}\)/);
 });
