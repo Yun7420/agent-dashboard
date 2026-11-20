@@ -103,7 +103,8 @@
    - [x] Codex 보강 — 오늘 한 일(adapters/codex/day.mjs: 요청 = user_message · 명령 = exec_command · 커밋(exec_command_end 끝 코드로 실패 뺌) · 토큰 = token_count 누적값의 그날 차이, 고친 파일 · 캐시 쓰기는 기록에 없어 「Codex 는 지원 안 함」 · 갈래 빼기) · history-api 는 daySummary 가 있는 어댑터 모두 · 환경 점검 「Codex 기록 형식」 줄(describe 가 읽은 줄만, 아는 줄 없이 50줄 · message · last_token_usage · name 모양, Codex 기록 폴더가 있을 때만, 확인한 버전 0.125.0) `f4aa6b3` — 실제 기록 344,637 토큰 일치 · 실제 서버 /api/env 세 형식 줄 ok. Gemini 는 이 Mac 에 없어 뺌
 3. [x] **로그인 시 자동 실행** — `agent-dashboard autostart on/off`(macOS LaunchAgent, Linux 는 안내만). 지금은 tmux 의 `run`
    - [x] `agent-dashboard autostart on | off | status` — LaunchAgent(io.github.yun7420.agent-dashboard, node · bin 절대 경로 + start, KeepAlive · ThrottleInterval 10, on 할 때의 PATH · LANG · PORT 만, plist · autostart.log 600), npx 캐시면 거절 · 포트 사용 중이면 경고만 · 버전 폴더 node 면 다시 on 안내 · Linux 는 systemd 예시만 `26b3d13` — 가짜 launchctl 시험만, 이 Mac 에서 실제 on 은 사용자 확인 뒤 · autostart.log 크기 제한(on 할 때 5MB 넘으면 .1, 자동 실행 서버는 포트를 못 열면 5분 뒤 끝내기 — DASHBOARD_AUTOSTART) `d3fba2c` · restore 는 자동 실행이 켜져 있거나 포트가 이미 응답하면 대시보드는 띄우지 않고 세션만 `a2a94d0` `0236422`
-4. [ ] **여러 계정 · tmux 소켓** — `CLAUDE_CONFIG_DIR` 로 나눈 계정, 기본 소켓이 아닌 tmux 서버
+4. [x] **여러 계정 · tmux 소켓** — `CLAUDE_CONFIG_DIR` 로 나눈 계정, 기본 소켓이 아닌 tmux 서버
+   - [x] 설정한 것만(사용자 결정 — 자동 탐색 · ps -E · accounts.json 없음): `DASHBOARD_CLAUDE_DIRS` · `DASHBOARD_TMUX_SOCKETS`, 홈 아래 · realpath · 내 소유 · 폴더(projects · sessions) / lstat 소켓 · 내 소유 · 링크 아님 · 부모 내 소유 검사, 어긋나면 그것만 빼고 시작 로그 · 환경 점검 「계정 · tmux 서버」, 세션 · 기록 · 다시 열기(CLAUDE_CONFIG_DIR)는 계정별 · 한도 · 기본 모델 · 새 세션은 기본만, tmux 명령은 target 의 소켓으로 -S(서버 세션 정보에서만 · 직전 재검사), 카드 꼬리표 · autostart plist `e3eaa68`
 5. [ ] **좁은 화면(모바일 폭) 종료 목록** — 390px 에서 「종료」 탭 보기 다듬기
 - 출시 방법: 버전 올리기 → CI 초록 → 사용자 승인 뒤 `v*` 태그 → Actions 「Review deployments」에서 사용자 Approve (`docs/CONVENTIONS.md` 「출시 절차」)
 - 사용자 몫(선택): npm 패키지 Settings → Publishing access 를 「Require 2FA and disallow bypass 2fa tokens」로(Trusted Publisher 출시는 그대로 됨)
