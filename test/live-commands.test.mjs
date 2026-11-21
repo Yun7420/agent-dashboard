@@ -33,6 +33,13 @@ fs.mkdirSync(path.join(TMP, 'outside'));
 fs.symlinkSync(path.join(TMP, 'outside'), path.join(HOME, 'link-out'));
 fs.symlinkSync(CWD, path.join(HOME, 'link-in'));
 const SETTINGS = path.join(HOME, '.claude', 'settings.json');
+// 입력 칸 「/」 목록 재료(lib/slash-commands.mjs): 세션 폴더의 명령(하위 폴더 → a:b) · 홈의 명령 · 홈 밖을 가리키는 링크(빠져야 함)
+fs.mkdirSync(path.join(CWD, '.claude', 'commands', 'sub'), { recursive: true });
+fs.writeFileSync(path.join(CWD, '.claude', 'commands', 'sub', 'deep.md'), '---\ndescription: 깊은 명령\n---\n본문 비밀 글\n');
+fs.mkdirSync(path.join(HOME, '.claude', 'commands'), { recursive: true });
+fs.writeFileSync(path.join(HOME, '.claude', 'commands', 'mine.md'), '내 명령 첫 줄\n');
+fs.writeFileSync(path.join(TMP, 'outside', 'leak.md'), '---\ndescription: 홈 밖\n---\n');
+fs.symlinkSync(path.join(TMP, 'outside', 'leak.md'), path.join(CWD, '.claude', 'commands', 'leak.md'));
 let srv;
 
 before(async () => {
@@ -158,4 +165,29 @@ test('open-dir: 목록에 있어도 홈 밖 · 없는 폴더 · 홈 밖을 가�
   assert.deepEqual(opened().map((c) => [c.cmd, c.args]), [[OPEN, [CWD]]]);
   assert.equal((await cmd('open-dir', { dir: path.join(HOME, 'link-in'), app: 'finder' })).status, 200);
   assert.deepEqual(opened().at(-1).args, [path.join(HOME, 'link-in')]);
+});
+
+// 「/」 자동 완성으로 넣은 명령(끝에 칸)도 채팅의 슬래시 길(send-keys -l → Enter)로 간다 — 붙여넣기면 Claude Code 가 명령으로 보지 않는다
+test('send: 「/compact 」 · 「/sub:deep 인자」 는 글자로 쳐 넣고 Enter(붙여넣기 아님)', async () => {
+  for (const text of ['/compact ', '/sub:deep 인자']) {
+    const n = tmuxCalls('send-keys').length, b = fakeLog().filter((c) => c.cmd === 'tmux' && c.args[0] === 'load-buffer').length;
+    assert.equal((await cmd('send', { key: `claude:${A}`, text })).status, 200, text);
+    assert.deepEqual(tmuxCalls('send-keys').slice(n).map((c) => c.args), [['send-keys', '-l', '-t', '%1', '--', text.trim()], ['send-keys', '-t', '%1', 'Enter']], text);
+    assert.equal(fakeLog().filter((c) => c.cmd === 'tmux' && c.args[0] === 'load-buffer').length, b);
+  }
+});
+
+test('/api/commands: 세션 폴더 · 홈의 명령은 이름 · 설명만(본문 없음), 홈 밖 링크는 빠짐 · 입구 보안 검사를 거침 · 모르는 세션은 404', async () => {
+  const r = await req(`/api/commands?key=${encodeURIComponent(`claude:${A}`)}`, { headers: H });
+  assert.equal(r.status, 200);
+  const { version, commands } = JSON.parse(r.text);
+  assert.equal(version, '2.1.311');
+  const by = Object.fromEntries(commands.map((c) => [c.name, c]));
+  assert.deepEqual(by['/sub:deep'], { name: '/sub:deep', desc: '깊은 명령', source: 'project' });
+  assert.deepEqual(by['/mine'], { name: '/mine', desc: '내 명령 첫 줄', source: 'user' });
+  assert.equal(by['/leak'], undefined);
+  assert.equal(by['/compact'].source, 'builtin');
+  assert.doesNotMatch(r.text, /본문 비밀/);
+  assert.equal((await req(`/api/commands?key=${encodeURIComponent(`claude:${A}`)}`, { headers: { ...H, 'x-dashboard-request': '0' } })).status, 403);
+  assert.equal((await req('/api/commands?key=claude:nope', { headers: H })).status, 404);
 });

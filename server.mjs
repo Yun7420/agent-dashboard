@@ -38,6 +38,7 @@ import { createNotifyApi } from './lib/notify-api.mjs';
 import { createLiveFeed } from './lib/live-feed.mjs';
 import { startHousekeeping } from './lib/housekeeping.mjs';
 import { createHistoryApi } from './lib/history-api.mjs';
+import { createCommandsRoute } from './lib/slash-commands.mjs';
 import { createUsageBridge, STATUS_DIR } from './lib/usage-bridge.mjs';
 import * as demo from './lib/demo.mjs';
 import { saveSnapshot, restoreCandidates, restoreSessions, modelAlias, defaultAlias } from './lib/restore.mjs';
@@ -126,9 +127,7 @@ const authorized = (req, url) => {
   const sameOrigin = (!origin || origin === `http://localhost:${PORT}` || origin === `http://127.0.0.1:${PORT}`) && (!site || site === 'same-origin');
   return sameOrigin && (url.pathname === '/events' || req.headers['x-dashboard-request'] === '1') && auth.loggedIn(req);
 };
-
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
-
 // 모든 응답(화면 · API · SSE · 403/404/500)에 붙는 보안 헤더. 응답마다 따로 쓰면 빠지는 경로가 생기므로 요청을 받는 맨 앞에서 한 번.
 // - 다른 사이트가 이 화면을 iframe 으로 띄워(로그인된 채로) 승인 단추를 누르게 속이는 클릭재킹을 막는다(X-Frame-Options · frame-ancestors)
 // - 브라우저가 Content-Type 을 짐작해 다른 종류로 실행하지 않게 한다(nosniff)
@@ -202,6 +201,7 @@ const ROUTES = [
   { path: '/api/history', handler: history.getHistory },
   { path: '/api/day', handler: history.getDay },
   { path: '/api/search', handler: history.getSearch },
+  { path: '/api/commands', handler: createCommandsRoute({ demo: DEMO, demoCommands: demo.demoCommands, session: findSession }) }, // 입력 칸 「/」 자동 완성(세션 폴더 기준, lib/slash-commands.mjs)
   { path: '/api/pane', handler: getPane },
   { path: '/api/upload', method: 'POST', handler: postUpload },
   { prefix: '/api/cmd/', method: 'POST', handler: postCommand },

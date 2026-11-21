@@ -136,4 +136,8 @@ const KO_UI2 = {
   "none": "없음",
   "Last auto-compact": "마지막 자동 요약",
   "View image": "이미지 크게 보기", // 입력 칸 이미지 칩(09-attach.js)
+  // 입력 칸 「/」 자동 완성(21-slash.js)
+  "Project": "프로젝트",
+  "Yours": "내 명령",
+  "Plugin": "플러그인",
 };

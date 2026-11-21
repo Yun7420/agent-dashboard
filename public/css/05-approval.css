@@ -60,3 +60,14 @@
 #composer .box.drop { border-color: var(--accent); background: var(--accent-soft); }
 #send { color: var(--on-primary); }
 #send svg { transform: translate(-1px, 1px); } /* 종이비행기는 모양이 오른쪽 위로 쏠려 보여서 살짝 보정 */
+/* 입력 칸 「/」 자동 완성(21-slash.js): 입력 상자 바로 위 · 상자 폭 · 길면 안에서 스크롤. 고른 줄 모양은 기록 검색(09-search.css)과 같게 */
+#composer { position: relative; }
+.slash-pop { position: absolute; left: 16px; right: 16px; bottom: calc(100% - 6px); max-height: min(45vh, 320px); overflow: auto; z-index: var(--z-popover); padding: var(--sp-1); border-radius: 12px; background: var(--surface-3); border: 1px solid var(--border-strong); box-shadow: var(--shadow); }
+.slash-pop[hidden] { display: none; }
+.sl-item { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+.sl-item:hover { background: var(--surface-2); }
+.sl-item[aria-selected="true"] { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+.sl-name { flex: none; font: 600 13px var(--mono); color: var(--text); }
+.sl-src { flex: none; font-size: 11px; color: var(--faint); }
+.sl-desc { flex: 1 1 0; min-width: 0; font-size: 12.5px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sl-note { flex-basis: 100%; font-size: 12px; color: var(--working-text); }

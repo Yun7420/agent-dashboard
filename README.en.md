@@ -252,6 +252,7 @@ A session already running in a terminal has no official way to receive input fro
   Shortcuts are off while typing, during Korean IME composition, with Ctrl/⌘/Alt, on key repeat, and while a dialog (search etc.) is open.
 - Answers render **bold** · `code` · headings · **tables** (`| head |` + `|---|`) · **lists** (`-` · `1.`, one nesting level) · **quotes** (`>`) · **code blocks** (fenced with three backticks). Wide tables and long code scroll horizontally inside the block. The **copy button** at the top right of a code block copies just the code, without the backticks or language name (on wide screens it shows on hover or focus; on touch or narrow screens it is always visible).
 - Input: **Enter** to send · Shift+Enter for a new line · 📎 attach (drag & drop or ⌘V, up to 25MB · click an image chip to see it large). A one-line slash command (e.g. `/compact`) is sent as a command
+  - Type `/` at the start to get a command list: built-in commands that work over dashboard chat (based on Claude Code 2.1.311 — the environment check tells you if your version differs) + your commands, skills and enabled plugin commands from that session's folder and `~/.claude` (only names and descriptions are read). ↑↓ to choose · Enter/Tab to insert · Esc to close; you send it yourself. Commands not in the list can still be sent as typed. Commands that open a settings screen (`/config` etc.) are left out because that screen would swallow your next message — use them in the terminal
 - Drafts and attachments are kept **per session** — switching sessions shows that session's own, so nothing goes to the wrong session. Text survives a reload (stored only in your browser); attachments need to be added again after a reload. They're cleared when the session ends
 - Needs approval: a **"what you're allowing" card** on top (run command · edit/write file · web · MCP · question — the full command, or the file path relative to the session folder, flagged if outside it), then the real terminal screen and option buttons. For `rm -rf` · `sudo` · `git push --force` · `git reset --hard` · `curl | sh` · `chmod 777` · files outside the folder · `.env`/key files the card turns **amber** with a one-line reason. **Check what you're allowing before you click.** The approval view fills the panel with the input pinned at the bottom, and keeps your scroll position while you read.
 - Multi-question prompts show **← Previous / Next →** and progress (✓ answered). You can go back to change an answer; you can't skip ahead before answering the current one.
@@ -334,6 +335,7 @@ agent-dashboard/
 │  ├─ i18n · i18n-en · lang-pref · atomic-write   server text in two languages (dictionary) · terminal · notification language · safe file writes
 │  ├─ command-risk · node-check                   risk check for approval cards · Node version check at start
 │  ├─ recent · restore · restore-cli · runner · autostart     restore · restore after reboot · runner · start on login
+│  ├─ slash-commands                              the "/" list in the message box (built-in commands + names · descriptions of your commands, skills, plugin commands)
 │  ├─ history-core · history-api · git-commits    shared transcript reading (new lines only · grouping into turns — adapters only interpret lines) · history tab · search · today's work · commit titles
 │  ├─ notify · notify-api · housekeeping           notifications (what and when · settings · routes) · cleanup at start and every 6 hours
 │  ├─ paging · filecache · lru · serial · lock · util   paged history · caches · ordering
@@ -342,7 +344,7 @@ agent-dashboard/
 ├─ public/             # UI (vanilla HTML/CSS/JS, no build)
 │  ├─ index.html       # structure (no token — login is a cookie)
 │  ├─ css/00-base.css ~ 12-narrow.css   # styles, one file per area, loaded in number order (narrow-screen @media in the last file)
-│  └─ js/00-dict-*.js ~ 20-keys.js # behavior — UI language (dictionary · t()) · saved settings (00-prefs) · one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
+│  └─ js/00-dict-*.js ~ 21-slash.js # behavior — UI language (dictionary · t()) · saved settings (00-prefs) · one file per area (list · org chart · history · attach · notify · restore · search · today · shortcuts …), loaded in number order
 └─ test/               # node --test · _helpers (temp folders · starting servers · requests) · fake-bin (fake tmux · claude · ps · lsof · open · osascript)
 ```
 

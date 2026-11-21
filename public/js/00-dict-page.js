@@ -114,4 +114,5 @@ const KO_PAGE = {
   "Language": "언어",
   "At first it follows the browser language": "처음엔 브라우저 언어를 따라가요",
   "Approval": "승인 필요",
+  "Commands": "명령", // 입력 칸 「/」 자동 완성 목록 이름(index.html)
 };
