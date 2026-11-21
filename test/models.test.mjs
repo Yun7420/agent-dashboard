@@ -15,6 +15,7 @@ const help = (desc) => `Options:\n  --max-turns <n>   Stop after n turns ('5')\n
 
 test('실측 help: --model 설명에서 fable · opus · sonnet 만 — e.g · latest · 다른 옵션의 따옴표 글은 안 잡힌다', () => {
   assert.deepEqual(parseModelAliases(HELP), ['fable', 'opus', 'sonnet']);
+  assert.deepEqual(parseModelAliases(fs.readFileSync(new URL('./fixtures/claude-help-2.1.323.txt', import.meta.url), 'utf8')), ['fable', 'opus', 'sonnet']); // 2.1.323(2026-11-21)도 같은 설명
   assert.deepEqual(orderModels(parseModelAliases(HELP)), ['fable', 'opus', 'sonnet', 'haiku']); // 읽은 것 ∪ 기본, 성능 순
   assert.deepEqual(parseModelAliases(help("an alias for the latest model (e.g. 'opus') or a model's full name.")), ['opus']);
 });
@@ -30,7 +31,7 @@ test('모양이 이상하면 null: --model 줄 없음 · 따옴표 별칭 없음
 test('claude --help 는 파일로 받는다 — 바로 끝나는 claude 도 끝까지 · 못 띄우면 거절', async () => {
   const fake = new URL('./fake-bin/claude', import.meta.url).pathname;
   const full = await readHelp({ cmd: fake });
-  assert.equal(full, HELP);
+  assert.equal(full, fs.readFileSync(new URL('./fixtures/claude-help-2.1.323.txt', import.meta.url), 'utf8')); // 가짜 claude 는 최신 고정 자료
   assert.deepEqual(parseModelAliases(full), ['fable', 'opus', 'sonnet']);
   await assert.rejects(readHelp({ cmd: '/nonexistent/claude' }));
 });

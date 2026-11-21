@@ -87,13 +87,14 @@ test('세션 폴더가 홈 밖이면 그 폴더 몫은 읽지 않는다 · 파�
 });
 
 test('기본 명령: 2.1.311 실측에서 채팅으로 되는 것만 — 겹창 · 설정을 저장하는 명령은 없고, /model 엔 셀렉트 안내 · 버전이 다르면 환경 점검 info', () => {
-  assert.equal(BUILTIN_VERSION, '2.1.311');
+  assert.equal(BUILTIN_VERSION, '2.1.323');
   assert.deepEqual(BUILTIN.map((b) => b.name), ['/compact', '/clear', '/context', '/init', '/recap', '/plan', '/rename', '/model']);
   assert.match(BUILTIN.find((b) => b.name === '/model').note, /모델 셀렉트/);
   for (const bad of ['/effort', '/config', '/permissions', '/mcp', '/status', '/help', '/resume', '/btw', '/exit', '/doctor']) assert.ok(!BUILTIN.some((b) => b.name === bad), bad);
-  assert.equal(builtinEnvItem('2.1.311'), null);
+  assert.equal(builtinEnvItem('2.1.323'), null);
+  assert.equal(builtinEnvItem('2.1.311')?.code, 'builtin:2.1.323'); // 옛 판도 「기준이 달라요」
   assert.equal(builtinEnvItem(null), null);
-  assert.deepEqual(builtinEnvItem('2.1.400'), { name: '기본 명령 목록', level: 'info', code: 'builtin:2.1.311', detail: '기본 명령 목록은 2.1.311 기준이에요' });
+  assert.deepEqual(builtinEnvItem('2.1.400'), { name: '기본 명령 목록', level: 'info', code: 'builtin:2.1.323', detail: '기본 명령 목록은 2.1.323 기준이에요' });
 });
 
 test('경로: 세션 열쇠로만(화면이 경로를 보내지 않음) · Codex · 모르는 세션은 404 · 데모는 예시 · 영어', () => {

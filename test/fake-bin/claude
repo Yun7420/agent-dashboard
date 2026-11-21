@@ -6,4 +6,4 @@ const args = process.argv.slice(2);
 record('claude', args);
 if (args[0] === '--version') process.stdout.write('9.9.9 (Claude Code · 시험용 가짜)\n');
 else if (args[0] === 'agents') process.stdout.write('[]\n');
-else if (args[0] === '--help') { process.stdout.write(fs.readFileSync(new URL('../fixtures/claude-help-2.1.311.txt', import.meta.url), 'utf8')); process.exit(0); } // 모델 별칭 읽기(lib/models.mjs) — 진짜처럼 바로 끝내 파이프면 잘린다
+else if (args[0] === '--help') { process.stdout.write(fs.readFileSync(new URL('../fixtures/claude-help-2.1.323.txt', import.meta.url), 'utf8')); process.exit(0); } // 모델 별칭 읽기(lib/models.mjs) — 진짜처럼 바로 끝내 파이프면 잘린다

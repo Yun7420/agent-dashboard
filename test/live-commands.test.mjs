@@ -181,7 +181,7 @@ test('/api/commands: 세션 폴더 · 홈의 명령은 이름 · 설명만(본�
   const r = await req(`/api/commands?key=${encodeURIComponent(`claude:${A}`)}`, { headers: H });
   assert.equal(r.status, 200);
   const { version, commands } = JSON.parse(r.text);
-  assert.equal(version, '2.1.311');
+  assert.equal(version, '2.1.323');
   const by = Object.fromEntries(commands.map((c) => [c.name, c]));
   assert.deepEqual(by['/sub:deep'], { name: '/sub:deep', desc: '깊은 명령', source: 'project' });
   assert.deepEqual(by['/mine'], { name: '/mine', desc: '내 명령 첫 줄', source: 'user' });
