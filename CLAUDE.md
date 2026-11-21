@@ -64,8 +64,9 @@ lib/                  구역별 일(모듈은 createXxx(deps) 로 필요한 것�
   atomic-write         파일 한 번에 바꾸기(난수 임시 파일 → fsync → rename, 링크를 따라가지 않음)
   autostart · accounts   로그인 시 자동 실행(macOS LaunchAgent) · 여러 계정 · tmux 서버(설정한 것만, DASHBOARD_CLAUDE_DIRS · DASHBOARD_TMUX_SOCKETS)
   proc-load · sysload · update-check   세션별 CPU · 메모리(자손 포함) · 컴퓨터 전체 CPU · 메모리 · 새 버전 알림(하루 한 번)
+  models · slash-commands   모델 별칭(claude --help 에서 읽기 · 못 읽으면 기본 목록) · 「/」 자동 완성 목록(기본 명령 + 내 명령 · 스킬 · 플러그인, 이름 · 설명만)
 bin/                  agent-dashboard.mjs(실행 명령 하나: start · run · restore · open — 실행 방법은 이것과 `npm start` 만) · statusline.mjs(상태줄 다리 원본)
-public/               index.html 뼈대 · css/00-base.css ~ 12-narrow.css(구역별 모양, 번호 순서 · @media 는 맨 뒤 파일 · 색은 00-base 토큰만) · js/00-*.js ~ 20-keys.js(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다 · 00-prefs.js 브라우저 저장값 모양 검사 · 00-i18n.js + 00-dict-*.js 화면 글자는 영어 원문, 한국어는 사전)
+public/               index.html 뼈대 · css/00-base.css ~ 12-narrow.css(구역별 모양, 번호 순서 · @media 는 맨 뒤 파일 · 색은 00-base 토큰만) · js/00-*.js ~ 21-slash.js(번호 순서대로 불러옴 — 뒤 파일이 앞 파일의 함수를 쓴다 · 00-prefs.js 브라우저 저장값 모양 검사 · 00-i18n.js + 00-dict-*.js 화면 글자는 영어 원문, 한국어는 사전)
 test/                 node --test (lib 단위 + 데모 서버로 보안 · 응답 모양 + 시험 서버(가짜 tmux · 임시 홈)로 실제 모드)
 docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 ```
