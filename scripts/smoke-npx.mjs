@@ -11,7 +11,7 @@ import { mkdtempSync, mkdirSync, readdirSync, existsSync, statSync, symlinkSync,
 import { tmpdir } from 'node:os';
 import { join, delimiter } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { startWithRetry } from './npx-retry.mjs';
+import { startWithRetry, askTwice } from './npx-retry.mjs';
 
 const [version, port = '4747'] = process.argv.slice(2);
 if (!/^\d+\.\d+\.\d+(-[\w.]+)?$/.test(version ?? '') || !/^\d+$/.test(port)) {
@@ -62,7 +62,7 @@ async function stop(child) {
   for (let i = 0; i < 50 && tree(child.pid).length; i++) await sleep(100);
 }
 
-const get = (path, headers = {}) => fetch(BASE + path, { headers, redirect: 'manual' });
+const get = (path, headers = {}) => fetch(BASE + path, { headers, redirect: 'manual', signal: AbortSignal.timeout(10_000) }); // 걸리면 끝없이 기다리지 않게
 
 async function run(label, { noTmux }) {
   console.log(`\n■ ${label}`);
@@ -117,8 +117,10 @@ async function run(label, { noTmux }) {
     check(mode(join(home, '.agent-dashboard', 'token')) === '600', 'e. token 600', mode(join(home, '.agent-dashboard', 'token')));
     // f. 2초 틱이 몇 번 돈 뒤에도 살아 있다(tmux · ps 를 부르다 죽지 않는다)
     await sleep(5000);
-    const again = await get(`/hello?n=${n}`).catch(() => null);
-    check(s.exited === null && again?.status === 200, 'f. 5초 뒤에도 살아 있음', s.exited === null ? `${again?.status}` : `exit=${s.exited}\n${mask(s.log)}`);
+    // 요청 자체가 실패하면 1초 뒤 한 번 더(scripts/npx-retry.mjs askTwice) — 실패 종류는 통과해도 남긴다
+    const r = await askTwice(() => get(`/hello?n=${n}`), { sleep });
+    const why = s.exited !== null ? `exit=${s.exited}\n${mask(s.log)}` : r.res ? `${r.res.status}${r.first ? ` (첫 요청 ${r.first} → 1초 뒤 다시)` : ''}` : `요청 실패 ${r.first} → 1초 뒤 다시 ${r.err}`;
+    check(s.exited === null && r.res?.status === 200, 'f. 5초 뒤에도 살아 있음', why);
   } finally {
     await stop(child);
     rmSync(home, { recursive: true, force: true });

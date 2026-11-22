@@ -15,3 +15,22 @@ export async function startWithRetry(start, { tries = 5, waitMs = 30_000, sleep 
     await sleep(waitMs);
   }
 }
+
+// 요청 오류의 종류 — 「undefined」 대신 남긴다(0.1.8 smoke run 45004010007: macOS · Node 18 의 f 만 원인 모를 실패).
+// fetch 는 TypeError('fetch failed') 에 진짜 까닭을 cause 로 단다(ECONNRESET · UND_ERR_SOCKET · TimeoutError …)
+const str = (v) => (typeof v === 'string' && v ? v : null); // 시간 초과 DOMException 의 code 는 옛 숫자(23)라 글자 코드만
+export const errKind = (e) => str(e?.cause?.code) ?? str(e?.code) ?? str(e?.cause?.name) ?? (e?.name && e.name !== 'TypeError' && e.name !== 'Error' ? e.name : null) ?? String(e?.message ?? e);
+
+/**
+ * 살아 있는지 묻기: 요청 자체가 실패하면(연결이 끊김 등) waitMs 뒤 한 번만 더. 응답이 오면 상태가 무엇이든 그대로 돌려준다.
+ * 5초 쉰 뒤 같은 연결을 다시 쓰면 서버의 keep-alive(5초)가 막 닫는 순간과 겹칠 수 있다 — 느린 러너의 한 번 실패는 다시 묻고,
+ * 진짜 죽은 서버는 두 번 다 실패해 그대로 실패로 잡힌다.
+ * 돌려줌 { res, first: 첫 실패 종류 | null, err: 두 번째 실패 종류 | null }
+ */
+export async function askTwice(req, { waitMs = 1000, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+  try { return { res: await req(), first: null, err: null }; } catch (e) {
+    const first = errKind(e);
+    await sleep(waitMs);
+    try { return { res: await req(), first, err: null }; } catch (e2) { return { res: null, first, err: errKind(e2) }; }
+  }
+}
