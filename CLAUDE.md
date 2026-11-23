@@ -76,7 +76,7 @@ docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
 2. 구현 — `docs/CONVENTIONS.md` 와 기존 구역 · 이름 · 주석 스타일을 따른다
 3. `npm test` 전부 통과 + 새 동작은 테스트 추가(가능하면 "되돌리면 실패하는지"도 확인)
 4. 화면이 바뀌면 **데모 모드로 확인**: `DEMO=1 PORT=4646 node server.mjs` → 헤드리스 Playwright 로 스크린샷(창 띄우지 않기), 콘솔 오류 0. 시험이 끝나면 4646 서버를 반드시 끈다(띄울 때 적어 둔 PID 로만 — 아래 「프로세스 끄기 사고」)
-5. 서버 코드를 바꿨으면 실제 대시보드를 다시 켠다: 실제 대시보드는 자동 실행(launchd `io.github.yun7420.agent-dashboard`, 2026-11-20 부터 — 예전 tmux dashboard 실행기 대신)이라 서버가 꺼지면 10초 안에 다시 켜므로, 아래 「알아 둘 것」 4번 방법으로 서버만 끄고 몇 초 뒤 `http://localhost:4545` 200 확인(`autostart off` · `launchctl` 은 하지 않는다). 화면 파일만 바꿨으면 새로고침이면 됨
+5. 실제 대시보드(4545)는 **npm 설치본**(전역 `@yun7420/agent-dashboard` + 자동 실행 launchd `io.github.yun7420.agent-dashboard`, 2026-11-23 부터 — 사용자가 「첫 사용자」로 씀)이라 저장소 코드를 바꿔도 **출시 전까지 4545 에 반영되지 않는다.** 서버 · 화면 코드 확인은 데모(4646) · 시험 서버로만 하고, 보고에 「출시 뒤 반영」이라고 적는다. 4545 는 읽기(상태 · 숫자 확인)만, `autostart on · off` · `launchctl` 은 하지 않는다. 저장소 코드로 4545 를 다시 띄우려면(사용자 결정) 저장소에서 `node bin/agent-dashboard.mjs autostart on`
 6. 커밋: 제목 한 줄(한국어, 무엇을) + 본문 2~4줄(왜 · 어떻게 확인) + 마지막 줄 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` → `git push origin main`. 항목 하나 = 커밋 하나 이상, 중간중간 커밋
 7. `docs/ROADMAP.md` 에 `[x]` 와 커밋 해시 · 한 줄 요약
 8. README(한국어 · 영어 둘 다)에 사용자에게 보이는 변화가 있으면 반영
@@ -97,7 +97,7 @@ docs/ROADMAP.md       할 일 · 끝난 일(커밋 해시) · 나중 구상
   1. `pkill` · `killall` · `lsof … | xargs kill` 금지
   2. 데모는 띄울 때 `… & echo $! > demo.pid` 로 번호를 적고 그 번호만 끈다(`kill "$(cat demo.pid)"`)
   3. 포트로 찾을 땐 `lsof -a -nP -iTCP:포트 -sTCP:LISTEN -t` 가 정확히 1개이고 `ps -o command= -p` 가 `node server.mjs` 인지 확인한 뒤 끈다
-  4. 실제 서버 재시작은 4545 를 듣는 프로세스가 정확히 1개이고 명령이 `…/agent-dashboard/server.mjs` 또는 `…/agent-dashboard/bin/agent-dashboard.mjs start`(자동 실행) 로 끝나는지 확인한 뒤 그것만 끈다(데모 4646 · `node server.mjs` 는 안 잡힘):
+  4. (4545 가 저장소 코드로 떠 있을 때만 — 지금 같은 npm 설치본이면 끄더라도 같은 설치본이 다시 떠서 쓸모없으니 쓰지 않는다) 실제 서버 재시작은 4545 를 듣는 프로세스가 정확히 1개이고 명령이 `…/agent-dashboard/server.mjs` 또는 `…/agent-dashboard/bin/agent-dashboard.mjs start`(자동 실행) 로 끝나는지 확인한 뒤 그것만 끈다(데모 4646 · `node server.mjs` 는 안 잡힘):
      `P=$(lsof -a -nP -iTCP:4545 -sTCP:LISTEN -t); C=$(ps -o command= -p "$P"); echo "대상: [$P] $C"; [ "$(printf '%s\n' "$P" | grep -c .)" = 1 ] && printf '%s' "$C" | grep -Eq '/agent-dashboard/(server\.mjs|bin/agent-dashboard\.mjs start)$' && kill "$P"`
   5. 끄기 전에 대상 목록을 먼저 출력한다
   - 원칙: 보안 문제가 아니면 직접 띄운 것과 실제 서버 재시작 외에는 끄거나 재시작하지 않는다(다른 프로세스 · tmux 세션 · `respawn-pane -k` · `kill-session` · 다른 Claude 세션 · 앱 포함). 꼭 꺼야 하면 먼저 manager 창에서 사용자에게 승인 요청(PID · 명령 · 이유). 보안 문제로 바로 껐다면 끈 뒤 즉시 알린다.
