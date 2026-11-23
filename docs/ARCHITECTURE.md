@@ -156,6 +156,20 @@
 | `lib/notify-api.mjs` | 알림 설정 값을 들고(`createNotifyApi`) 틱마다 알리기(`tick`) · 경로 `/api/notify` · `/api/notify/test` |
 | `lib/housekeeping.mjs` | 켤 때 · 6시간마다 정리(`startHousekeeping`): 권한 600 · 14일 지난 첨부 · 30일 지난 한도 기록 · 상태줄 파일 · settings 백업 최근 5개 |
 | `lib/limits.mjs` | 예전 계정 한도 추이 하루 파일 정리만(`pruneLimits`, 30일 — 추이 기록 · 그래프는 간추리기 2에서 없앰) |
+| `lib/autostart.mjs` | 로그인 시 자동 실행(macOS LaunchAgent): `autostart on · off · status` · 판정 `inspect` · 포트 확인 `portBusy`. npx 캐시에서는 거절, 넘기는 환경 변수는 정해 둔 것만(KEEP_ENV) |
+| `lib/update-check.mjs` | 새 버전 알림: 켤 때 하루 한 번 npm 에 최신 버전 번호만 물음(고정 주소 · 3초 · 끄기 `DASHBOARD_NO_UPDATE_CHECK`). **밖으로 나가는 유일한 연결** |
+
+### lib — 계정 · 모델 · 부하 · 「/」 명령 (11-19 ~ 11-21 에 더함)
+
+| 파일 | 하는 일 |
+|---|---|
+| `lib/accounts.mjs` | 여러 계정 · tmux 서버(설정한 것만): `DASHBOARD_CLAUDE_DIRS` · `DASHBOARD_TMUX_SOCKETS` 검사(홈 아래 · 링크 밖 금지 · 내 소유) |
+| `lib/models.mjs` | 모델 별칭을 `claude --help` 에서 읽기(버전이 바뀔 때만 다시, 못 읽으면 기본 목록 fable · opus · sonnet · haiku + 환경 점검 안내) · 실제 모델 이름 풀기(`claude-opus-5-5` → 「Opus (5.5)」) |
+| `lib/slash-commands.mjs` | 채팅 「/」 자동 완성 목록: 기본 명령(실측해 넣은 것만) + 내 명령 · 스킬 · 플러그인(이름 · 설명만, 홈 아래 · 크기 상한) |
+| `lib/proc-load.mjs` | 세션별 CPU · 메모리: procs 의 ps 결과에서 세션 루트 + 자손 합계, CPU 는 누적 시간 차이(코어 하나 = 100%), 무거움 꼬리표는 두 번 연속 규칙 |
+| `lib/sysload.mjs` | 컴퓨터 전체 CPU · 메모리(10초마다): 머리 칩 「CPU N/100% · 메모리 x/16GB」, macOS 는 vm_stat · 메모리 압력 |
+| `lib/env-report.mjs` | 환경 점검 「점검 결과 복사」 글: 허용 목록으로 버전 · 단계 · 코드만(경로 · 세션 이름 · 토큰 없음) |
+| `adapters/claude/format.mjs` · `adapters/codex/format.mjs` | 기록 · 세션 파일 형식이 바뀌면 환경 점검 경고(모르는 type 만으로는 알리지 않음, 확인한 Claude Code 버전과 함께) |
 
 ### lib — 작은 도구
 
@@ -175,6 +189,14 @@
 |---|---|
 | `bin/agent-dashboard.mjs` | 실행 명령: 그냥 실행 · `start` = 서버, `run` = 실행기, `restore` = 재시동 복구, `open` = 로그인 링크로 열기 |
 | `bin/statusline.mjs` | 상태줄 다리 원본. Claude Code 가 상태줄을 그릴 때 넘겨 주는 값(대화 창 · 한도)을 파일로 남겨요 |
+| `bin/agent-dashboard.mjs autostart` | 위 실행 명령의 하위 명령: 로그인 시 자동 실행 켜기 · 끄기 · 상태(`lib/autostart.mjs`) |
+
+### scripts — 출시 뒤 시험 (npm 패키지에는 안 들어감)
+
+| 파일 | 하는 일 |
+|---|---|
+| `scripts/smoke-npx.mjs` | 새 사용자 첫 실행 시험: 빈 임시 홈에서 npm 에 올라간 판을 `npx` 로 켜 로그인 · 보안 · 권한 · tmux 없을 때를 검사(`.github/workflows/smoke.yml` 이 출시 뒤 자동으로) |
+| `scripts/npx-retry.mjs` | 위 시험의 재시도 규칙: npm 이 새 판을 아직 모르면(ETARGET · E404) 30초 뒤 다시, 확인 요청 실패는 종류를 남기고 1초 뒤 한 번 |
 
 ### public — 화면
 
@@ -187,6 +209,7 @@
 | `00-md.js` | 답변 마크다운 일부만 그리기(`md`) · 글자 안전하게 바꾸기(`esc`) |
 | `00-prefs.js` | 브라우저 저장값(agent-deck): 읽을 때 키마다 모양 검사(`cleanPrefs` · `PREF_SHAPE` — 객체가 아니면 통째로 기본값, 틀린 키만 지우고 고쳤으면 바로 저장) · `pref` · 저장(`savePref`) |
 | `01-core.js` | 공통: 서버 요청 한 길(`apiFetch` · `api` · `apiJson`, 요청 머리글 `REQ_HEADER`, 403 이면 `loginNeeded` — 연동 카드 또는 위쪽 고정 안내, SSE 오류 판단 `sseOnError` · `probeVerdict`) · 바뀐 곳만 그리기(`setHtml`) · 토스트(`toast`) · 오래된 설정 정리(`prunePrefs`) · 대화상자(`openModal`) · 빈 상태 줄(`emptyLine` · `newSessionBtn`) · 목록 순서 · 보이는 세션(`ordered` · `visible`) · 여러 파일이 같이 쓰는 화면 상태(`view` · `drawerTab` · `openFiles` · `sentAt` · `canSend` · `envData` …) · 도우미(`fmtTok` · `ctxLevel` · `modelName` · `initials`) |
+| `02-load.js` | CPU · 메모리 글 도우미: 노드의 「CPU 35% / 메모리 480MB」 두 줄 · ⓘ 세션 정보 한 줄 |
 | `02-kinds.js` | 에이전트 종류 표식(머리글자 + `--kind-<id>` 색 — `kmark` · `kmarkSvg`) · 지금 떠 있는 종류만(`runningKinds`, 범례가 씀) |
 | `02-water.js` | 조직도 세션 노드 물 채우기(`waterSvg`: 대화 창 % 만큼 차오름 · 60 · 85% 색 · 80% 눈금, 값이 바뀔 때만 0.5초) · 물낯 선을 이름 · 상태 글자 자리에서 끊기(`textHoles`) |
 | `03-graph.js` | 가운데 조직도(`buildTree` · `layout` · `renderGraph`) · 세션 사이 화살표(`drawLinks`) · 맞춤 · 이동 · 확대(`autoFit` · `applyView` · 보이는 칸 `visibleBox` · 목록 판 폭 `asideW`) |
@@ -207,6 +230,7 @@
 | `18-search.js` | 맨 위 기록 검색칸(combobox · 칸 아래 결과 목록 — `runSearch` · `gsPick`) |
 | `19-day.js` | 오늘 한 일(`loadDay` · `dayMarkdown`) |
 | `20-keys.js` | 키보드 단축키(`approveKey` · `armTwice` · `nextKey`) |
+| `21-slash.js` | 채팅 입력 칸 「/」 자동 완성(맨 앞 「/글자」일 때 목록 · ↑↓ · Enter/Tab 넣기 · Esc 닫기, 목록 밖 명령도 그대로 보낼 수 있음) |
 
 모양(`css/`)도 `index.html` 이 **번호 순서대로** 불러요(`<link>`). 뒤 파일이 앞 파일을 덮을 수 있어서, 좁은 창 · 동작 줄이기(`@media`)는 맨 뒤 `12-narrow.css` 하나에만 둬요.
 
@@ -225,7 +249,7 @@
 
 ### test
 
-86개 파일, 457개 테스트예요. 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
+100개 파일, 595개 테스트예요(2026-11-23 기준). 「무엇을 지키나」는 [6절](#6-테스트-지도)에서 따로 봐요.
 
 ---
 
