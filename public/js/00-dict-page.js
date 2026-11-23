@@ -115,4 +115,8 @@ const KO_PAGE = {
   "At first it follows the browser language": "처음엔 브라우저 언어를 따라가요",
   "Approval": "승인 필요",
   "Commands": "명령", // 입력 칸 「/」 자동 완성 목록 이름(index.html)
+  // 터미널 전용 명령 확인 상자(index.html term-dlg · 21-slash.js)
+  "Terminal-only command": "터미널 전용 명령이에요",
+  "is a terminal-only command. Sent from the dashboard, its menu inside the terminal can capture your next message too (commands that save settings change your defaults).": "은 터미널 전용 명령이에요 — 대시보드로 보내면 터미널 안 메뉴가 다음 메시지까지 가로챌 수 있어요(설정을 저장하는 명령이면 기본값이 바뀌어요).",
+  "Send anyway": "그래도 보내기",
 };

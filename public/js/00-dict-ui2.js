@@ -140,4 +140,10 @@ const KO_UI2 = {
   "Project": "프로젝트",
   "Yours": "내 명령",
   "Plugin": "플러그인",
+  // 앞으로의 승인을 넓히는 선택지(05-approval.js widens · 20-keys.js)
+  "Pressing this switches the session to auto mode, which asks for approval less from now on": "누르면 이 세션이 앞으로 승인을 덜 묻는 auto mode 로 바뀌어요",
+  "Pressing this stops asking about requests like this from now on": "누르면 앞으로 이런 요청은 다시 묻지 않고 허락해요",
+  "Press twice": "두 번 눌러야 해요",
+  "This option allows more without asking — press it again within 2 seconds": "앞으로 덜 묻게 되는 선택지예요 — 2초 안에 한 번 더 누르면 보내요",
+  "This option allows more without asking — press {k} again within 2 seconds to send": "앞으로 덜 묻게 되는 선택지예요 — 2초 안에 {k} 를 한 번 더 누르면 보내요",
 };

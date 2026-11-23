@@ -114,19 +114,20 @@ test('경로: 세션 열쇠로만(화면이 경로를 보내지 않음) · Codex
 });
 
 // 화면(21-slash.js): 입력 칸 · 목록을 흉내 낸 바탕에서
-function front(list) {
+function front(list, terminal = ['/config', '/status', '/effort']) {
   const els = {};
   const el = (id) => (els[id] ??= { id, value: '', hidden: true, disabled: false, innerHTML: '', attrs: {}, on: {}, selectionEnd: 0, dataset: {}, classList: { add() {}, remove() {}, contains: () => false },
     addEventListener(ev, fn, cap) { (this.on[ev] ??= []).push({ fn, cap }); }, setAttribute(k, v) { this.attrs[k] = v; }, removeAttribute(k) { delete this.attrs[k]; },
-    setSelectionRange(a) { this.selectionEnd = a; }, dispatchEvent(e) { for (const h of this.on[e.type] ?? []) h.fn(e); }, scrollIntoView() {}, closest: () => null });
+    setSelectionRange(a) { this.selectionEnd = a; }, focus() {}, dispatchEvent(e) { for (const h of this.on[e.type] ?? []) h.fn(e); }, scrollIntoView() {}, closest: () => null });
   const opt = {};
-  const { run, ctx } = loadFront(['00-md.js', '01-core.js', '21-slash.js'], { window: {}, document: { querySelector: (s) => (s.startsWith('#sl-o-') ? (opt[s] ??= { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, scrollIntoView() {} }) : el(s)), addEventListener() {}, documentElement: { dataset: {} } }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, Event: class { constructor(type) { this.type = type; } }, fetch: async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ commands: list }) }) });
-  run('selected = "claude:a"');
-  return { run, ctx, msg: els['#msg'], pop: els['#slash-pop'], opt };
+  const { run, ctx } = loadFront(['00-md.js', '01-core.js', '21-slash.js'], { window: {}, document: { querySelector: (s) => (s.startsWith('#sl-o-') ? (opt[s] ??= { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, scrollIntoView() {} }) : el(s)), addEventListener() {}, documentElement: { dataset: {} } }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, Event: class { constructor(type) { this.type = type; } }, fetch: async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ commands: list, terminal }) }) });
+  Object.assign(ctx, { __sent: [], __files: [], __modal: [] });
+  run('selected = "claude:a"; var curFiles = () => __files; var sendMsg = () => __sent.push(document.querySelector("#msg").value); openModal = (d) => __modal.push(d.id);'); // 09-attach.js · 01-core.js 몫을 흉내
+  return { run, ctx, msg: els['#msg'], pop: els['#slash-pop'], dlg: els['#term-dlg'], form: els['#composer'], term: () => els['#term-cmd'], opt };
 }
 const L = [{ name: '/compact', desc: 'c', source: 'builtin' }, { name: '/context', desc: 'x', source: 'builtin' }, { name: '/sub:compact-all', desc: 's', source: 'project' }, { name: '/mine', desc: 'm', source: 'user', note: '주의' }];
 const type = async (f, v) => { f.msg.value = v; f.msg.selectionEnd = v.length; for (const h of f.msg.on.input) await h.fn({}); };
-const key = (f, k, extra = {}) => { const e = { key: k, ...extra, prevented: false, stopped: false, preventDefault() { this.prevented = true; }, stopImmediatePropagation() { this.stopped = true; }, stopPropagation() { this.stopped = true; } }; for (const h of f.msg.on.keydown.filter((x) => x.cap)) h.fn(e); return e; };
+const key = (f, k, extra = {}) => { const e = { key: k, ...extra, prevented: false, stopped: false, get defaultPrevented() { return this.prevented; }, preventDefault() { this.prevented = true; }, stopImmediatePropagation() { this.stopped = true; }, stopPropagation() { this.stopped = true; } }; for (const h of f.msg.on.keydown.filter((x) => x.cap)) h.fn(e); return e; }; // 붙잡기 처리기를 모두 부른다 — 앞 처리기가 막아도(defaultPrevented) 뒤 처리기가 스스로 거르는지까지 본다
 
 test('화면: 맨 앞 「/」 에서만 열림 · 앞부분 일치 먼저 그다음 포함 · 칸을 띄우거나 여러 줄이면 닫힘', async () => {
   const f = front(L);
@@ -161,8 +162,51 @@ test('화면: ↑↓ 고르기(aria-activedescendant) · 목록이 열린 Enter 
   await type(f, '/co');
   const esc = key(f, 'Escape');
   assert.deepEqual([esc.prevented, esc.stopped, f.pop.hidden, f.msg.value], [true, true, true, '/co']);
-  const enter = key(f, 'Enter'); // 닫혀 있으면 그대로 — 보내기(09-attach.js)가 받는다
-  assert.deepEqual([enter.prevented, enter.stopped], [false, false]);
+  const enter = key(f, 'Enter'); // 닫혀 있으면 넣기가 아니라 보내기 — 터미널 전용 확인(slGuard)을 거쳐 목록에 없으니 그대로 보낸다
+  await new Promise((r) => setImmediate(r));
+  assert.deepEqual(f.ctx.__sent, ['/co']);
+  assert.equal(enter.prevented, true);
   const shift = (await type(f, '/co'), key(f, 'Enter', { shiftKey: true })); // Shift+Enter 는 줄바꿈 몫
   assert.equal(shift.prevented, false);
+});
+
+// 터미널 전용 명령 확인(21-slash.js slGuard · lib/slash-commands.mjs TERMINAL_ONLY)
+const tick = () => new Promise((r) => setImmediate(r));
+test('터미널 전용 명령: Enter · 보내기 단추 모두 확인 상자 먼저(보내지 않음) → 「그래도 보내기」면 보냄 · 취소면 안 보냄', async () => {
+  for (const via of ['enter', 'submit']) {
+    const f = front(L);
+    f.msg.value = '/config'; f.msg.selectionEnd = 7;
+    const e = via === 'enter' ? key(f, 'Enter') : (() => { const ev = { prevented: false, stopped: false, preventDefault() { this.prevented = true; }, stopImmediatePropagation() { this.stopped = true; } }; for (const h of f.form.on.submit.filter((x) => x.cap)) h.fn(ev); return ev; })();
+    await tick();
+    assert.deepEqual([e.prevented, e.stopped, f.ctx.__sent.length, f.ctx.__modal], [true, true, 0, ['#term-dlg']], via);
+    assert.equal(f.term().textContent, '/config');
+    f.dlg.returnValue = 'cancel';
+    for (const h of f.dlg.on.close) h.fn();
+    assert.equal(f.ctx.__sent.length, 0);
+    f.dlg.returnValue = 'ok';
+    for (const h of f.dlg.on.close) h.fn();
+    assert.deepEqual(f.ctx.__sent, ['/config'], via);
+  }
+});
+
+test('터미널 전용 확인 밖: 인자가 붙어도 첫 낱말로(/effort high) · 목록에 없는 명령 · 보통 글 · 여러 줄 · 첨부는 확인 없이', async () => {
+  const f = front(L);
+  const sendVia = async (v) => { f.msg.value = v; f.msg.selectionEnd = v.length; f.ctx.__modal.length = 0; f.ctx.__sent.length = 0; const e = key(f, 'Enter'); await tick(); return { e, modal: [...f.ctx.__modal], sent: [...f.ctx.__sent] }; };
+  assert.deepEqual((await sendVia('/effort high')).modal, ['#term-dlg']);
+  assert.deepEqual((await sendVia('/STATUS')).modal, ['#term-dlg']); // 대소문자 상관없이
+  const plain = await sendVia('/compact 요약해');
+  assert.deepEqual([plain.modal, plain.sent], [[], ['/compact 요약해']]); // 목록에 없는 명령은 확인 없이 보냄
+  for (const v of ['안녕', '/config\n둘째 줄', 'see /config']) { const r = await sendVia(v); assert.deepEqual([r.modal, r.e.prevented], [[], false], v); } // 슬래시 줄이 아니면 그대로(09-attach.js 몫)
+  f.ctx.__files.push({ path: '/x.png' });
+  const att = await sendVia('/config');
+  assert.deepEqual([att.modal, att.e.prevented], [[], false]); // 첨부가 붙으면 붙여넣기 — 명령이 아니다
+});
+
+test('서버 목록: 터미널 전용은 실측 분류표 그대로 · 기본 명령(자동 완성)과 겹치지 않음 · 응답에 실림', async () => {
+  const { TERMINAL_ONLY } = await import('../lib/slash-commands.mjs');
+  assert.deepEqual(TERMINAL_ONLY, ['/help', '/status', '/usage', '/cost', '/config', '/permissions', '/mcp', '/memory', '/resume', '/rewind', '/export', '/hooks', '/skills', '/tasks', '/release-notes', '/btw', '/effort', '/doctor']);
+  assert.equal(TERMINAL_ONLY.some((n) => BUILTIN.some((b) => b.name === n)), false);
+  const sent = [];
+  createCommandsRoute({ demo: true, demoCommands: () => [] })({ headers: {} }, { writeHead(s) { sent.push(s); return this; }, end(b) { sent.push(String(b)); } }, new URL('http://x/api/commands'));
+  assert.deepEqual(JSON.parse(sent[1]).terminal, TERMINAL_ONLY);
 });

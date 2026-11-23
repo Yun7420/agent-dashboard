@@ -104,3 +104,60 @@ test('질문 창: 여러 개 고르기는 체크 상자 + 마지막 질문에서
     assert.deepEqual(choices(s).options.map((o) => o.n), dialogOptions(s).filter((o) => !o.free).map((o) => o.n), f);
   }
 });
+
+// 앞으로의 승인을 넓히는 선택지(widens): 2.1.323 실측 승인 창(test/fixtures/approve-2.1.323.txt — 경로만 /Users/me 로 바꿈)
+const APPROVE_323 = (await import('node:fs')).readFileSync(new URL('./fixtures/approve-2.1.323.txt', import.meta.url), 'utf8');
+function panel(screen, pendingTool = { tool: 'Bash', kind: '명령 실행', main: 'touch probe-123.txt', desc: '', risks: [] }) {
+  const els = {}, on = {}, calls = [], toasts = [];
+  const el = (s) => (els[s] ??= { s, hidden: true, innerHTML: '', textContent: '', dataset: {}, style: {}, scrollHeight: 0, scrollTop: 0, clientHeight: 0,
+    classList: { set: new Set(), toggle() {}, add(c) { this.set.add(c); }, remove(c) { this.set.delete(c); }, contains(c) { return this.set.has(c); } },
+    addEventListener(ev, fn) { (on[`${s}:${ev}`] ??= []).push(fn); }, querySelectorAll: () => [], querySelector: () => null });
+  const { run, ctx } = loadFront(['00-md.js', '01-core.js', '05-approval.js'], browserStub({ document: { querySelector: el, hidden: true }, setTimeout: () => 0, clearTimeout() {} }));
+  Object.assign(ctx, { __screen: screen, __calls: calls, __toasts: toasts });
+  run('apiFetch = async () => ({ ok: true, text: async () => __screen, headers: { get: () => "" } }); api = async (p, b) => { __calls.push(b); return "ok"; }; toast = (m) => __toasts.push(m);');
+  const s = { key: 'claude:a', status: 'waiting', tmux: { target: '%1' }, pendingTool };
+  ctx.__s = s;
+  run('selected = "claude:a"; state = { sessions: [__s] }');
+  const press = async (n, extra = {}) => {
+    const b = { dataset: { choice: n, ...extra }, classList: { set: new Set(), add(c) { this.set.add(c); }, remove(c) { this.set.delete(c); } } };
+    for (const fn of on['#approve-btns:click']) await fn({ target: { closest: () => b } });
+    return b;
+  };
+  return { render: () => run('renderApproval(__s)'), html: () => els['#approve-btns'].innerHTML, calls, toasts, press, run };
+}
+
+test('넓히는 선택지 판정: auto mode 로 바꾸기 · 항상 허락 · 다시 묻지 않기 · 모두 허락만 — 보통 「Yes」 · 「No」 는 아님', () => {
+  const { run } = panel('');
+  const w = run('widens');
+  assert.deepEqual(choices(APPROVE_323).options.map((o) => w(o.label)), [null, 'always', 'auto', null]);
+  for (const [l, k] of [["Yes, and don't ask again for npm test commands in this project", 'always'], ['Yes, allow all edits during this session (shift+tab)', 'always'], ['Yes, and switch to Auto-Mode', 'auto'], ['No, and tell Claude what to do differently (esc)', null], ['Yes', null], ['automode', null]]) assert.equal(w(l), k, l);
+});
+
+test('2.1.323 승인 창: 2 · 3 은 경고색 + 설명(title · aria-describedby) + data-twice, 1 · 4 는 그대로 · 질문 창은 규칙 밖', async () => {
+  const p = panel(APPROVE_323);
+  await p.render();
+  const btn = (n) => p.html().match(new RegExp(`<button data-choice="${n}"[^>]*>`))[0];
+  assert.match(btn(3), /class="danger" data-twice="1" aria-describedby="widen-auto" title="누르면 이 세션이 앞으로 승인을 덜 묻는 auto mode 로 바뀌어요 · 두 번 눌러야 해요 · /);
+  assert.match(btn(2), /class="danger" data-twice="1" aria-describedby="widen-always" title="누르면 앞으로 이런 요청은 다시 묻지 않고 허락해요/);
+  for (const n of [1, 4]) assert.doesNotMatch(btn(n), /danger|data-twice/, String(n));
+  assert.match(p.html(), /<span id="widen-auto" hidden>누르면 이 세션이 앞으로 승인을 덜 묻는 auto mode 로 바뀌어요<\/span>/);
+  const q = panel(' ❯ 1. Always allow 같은 답\n   2. 아니요\n Enter to select', { tool: 'AskUserQuestion', kind: '질문', main: '', desc: '', risks: [] });
+  await q.render();
+  assert.doesNotMatch(q.html(), /data-twice|danger/);
+});
+
+test('마우스: 넓히는 선택지는 첫 누름에 무장(kb-arm · 안내)만, 2초 안에 다시 누르면 보냄 · 보통 단추는 바로 · 키보드가 이미 두 번 받은 것(data-ok)은 바로', async () => {
+  const p = panel(APPROVE_323);
+  await p.render();
+  const first = await p.press('3', { twice: '1', label: 'x' });
+  assert.deepEqual([p.calls.length, first.classList.set.has('kb-arm')], [0, true]);
+  assert.match(p.toasts.at(-1), /2초 안에 한 번 더/);
+  await p.press('3', { twice: '1', label: 'x' });
+  assert.deepEqual(p.calls.map((c) => c.choice), ['3']);
+  await p.press('2', { twice: '1', label: 'y' }); // 다른 단추로 바뀌면 다시 처음부터
+  assert.equal(p.calls.length, 1);
+  await p.press('1', { label: 'Yes' });
+  assert.deepEqual(p.calls.map((c) => c.choice), ['3', '1']);
+  await p.press('2', { twice: '1', label: 'y', ok: '1' });
+  assert.deepEqual(p.calls.map((c) => c.choice), ['3', '1', '2']);
+});

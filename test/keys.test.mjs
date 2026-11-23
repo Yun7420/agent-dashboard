@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadFront } from './_helpers/vm.mjs';
+import { loadFront, browserStub } from './_helpers/vm.mjs';
 
 // 브라우저 파일이지만 판정 함수는 화면에 닿지 않는다 → 불러올 때 필요한 document.addEventListener 만 흉내 내고 node:vm 으로 시험
-const { ignoreKey, nextKey, armTwice, canApprove, needsTwice } = loadFront(['20-keys.js'], { document: { addEventListener() {} } }).run('({ ignoreKey, nextKey, armTwice, canApprove, needsTwice })');
+const { ignoreKey, nextKey, armTwice, canApprove, needsTwice } = loadFront(['00-md.js', '01-core.js', '05-approval.js', '20-keys.js'], browserStub({ document: { addEventListener() {}, querySelector: () => ({ addEventListener() {}, classList: { toggle() {} }, dataset: {}, style: {} }), hidden: true } })).run('({ ignoreKey, nextKey, armTwice, canApprove, needsTwice })'); // armTwice 는 05-approval.js(마우스도 씀)
 const key = (k, extra = {}) => ({ key: k, keyCode: 0, ...extra });
 const body = { tagName: 'BODY' };
 
@@ -70,4 +70,10 @@ test('두 번 누르기: 위험 표시가 있으면 숫자는 단추가 거절�
   for (const p of [risky, { risks: [] }, null]) assert.equal(needsTwice('Escape', p), true); // Esc 를 「닫기」로 알고 한 번에 거절하던 문제(R2)
   assert.equal(needsTwice('1', { risks: [] }), false);
   assert.equal(needsTwice('1', null), false);
+});
+
+test('넓히는 선택지 단추(data-twice)는 위험 표시가 없어도 숫자 키 두 번 — 보통 단추는 한 번', () => {
+  assert.equal(needsTwice('3', { risks: [] }, { dataset: { twice: '1' } }), true);
+  assert.equal(needsTwice('1', { risks: [] }, { dataset: {} }), false);
+  assert.equal(needsTwice('1', null, null), false);
 });

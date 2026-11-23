@@ -18,13 +18,6 @@ function nextKey(keys, current, dir) {
   return keys[Math.min(keys.length - 1, Math.max(0, i + dir))];
 }
 
-// 위험 표시가 있는 요청은 같은 키를 2초 안에 한 번 더 눌러야 실행. prev = 지난번 누름 { key, target, at }
-const ARM_MS = 2000;
-function armTwice(prev, { key, target, now }) {
-  if (prev && prev.key === key && prev.target === target && now - prev.at <= ARM_MS) return { fire: true, state: null };
-  return { fire: false, state: { key, target, at: now } };
-}
-
 // 숫자 · Esc 를 승인 단추로 보낼 수 있는지: 패널이 열려 있고, 고른 세션이 승인 필요이고, 승인 창이 보일 때만
 const canApprove = (drawerOpen, s, approvalHidden) => Boolean(drawerOpen && s && s.status === 'waiting' && !approvalHidden);
 
@@ -45,25 +38,27 @@ function moveCursor(dir) {
 // 순수 판정(test/keys.test.mjs): 위험 표시가 있으면 숫자 키는 모두 두 번 — 단추 모양(빨간 거절)으로 건너뛰지 않는다.
 // 단추 글자는 화면에서 읽은 것이라 승인 창 속 가짜 「1. No」 줄로 거절처럼 꾸밀 수 있었다(점검 B1).
 // Esc(거절)는 늘 두 번 — 처음 쓰는 사람은 Esc 를 「닫기」로 알아 한 번에 거절해 버렸다(출시 전 점검 R2)
-const needsTwice = (key, pendingTool) => key === 'Escape' || Boolean(pendingTool?.risks?.length);
+// 앞으로의 승인을 넓히는 선택지(auto mode 로 바꾸기 · 항상 허락 …, 05-approval.js widens)도 두 번 — 단추의 data-twice
+const needsTwice = (key, pendingTool, btn) => key === 'Escape' || Boolean(pendingTool?.risks?.length) || btn?.dataset?.twice === '1';
 // 승인 창이 떠 있는 고른 세션에서만: 화면에 보이는 단추를 그대로 누른다(승인 API · 잠금 · 다시 그리기는 단추 처리 그대로)
 function approveKey(key) {
   const s = state?.sessions.find((x) => x.key === selected);
   if (!canApprove($('#drawer').classList.contains('open'), s, $('#approval').hidden)) return false;
   const btn = $(`#approve-btns [data-choice="${key === 'Escape' ? 'esc' : key}"]`);
   if (!btn || btn.disabled) return false;
-  const risky = needsTwice(key, s.pendingTool);
+  const risky = needsTwice(key, s.pendingTool, btn);
   if (risky) {
     const r = armTwice(armed, { key, target: s.key, now: Date.now() });
     armed = r.state;
     if (!r.fire) {
       btn.classList.add('kb-arm');
       setTimeout(() => btn.classList.remove('kb-arm'), ARM_MS);
-      toast(key === 'Escape' ? t('Press Esc again within 2 seconds to reject') : t('This request is marked risky — press {k} again within 2 seconds to send', { k: key }));
+      toast(key === 'Escape' ? t('Press Esc again within 2 seconds to reject') : btn.dataset.twice === '1' ? t('This option allows more without asking — press {k} again within 2 seconds to send', { k: key }) : t('This request is marked risky — press {k} again within 2 seconds to send', { k: key }));
       return true;
     }
   }
   armed = null;
+  btn.dataset.ok = '1'; // 키보드로 이미 두 번 눌렀다 — 단추 처리(05-approval.js)가 다시 무장하지 않게
   btn.click();
   return true;
 }

@@ -79,6 +79,19 @@ function choiceTone(n, options, pendingTool) {
   const last = Math.max(...options.map((o) => Number(o.n)));
   return risky && options.length > 1 && Number(n) < last ? 'risky' : '';
 }
+// 앞으로의 승인을 넓히는 선택지 — 누르면 다음부터 덜 묻는다: auto mode 로 바꾸기(2.1.323 새 선택지) · 항상 허락 · 다시 묻지 않기 · 모두 허락.
+// 선택지 글자로 정하지만 경고를 「더하기만」 해서, 꾸민 글로 경고를 지우거나 다른 단추를 안전해 보이게 할 수는 없다(choiceTone 은 그대로 서버 정보).
+// 경고색 + 설명(title · aria-describedby) + 마우스 · 키보드 모두 2초 안에 두 번(armTwice). 순수 판정(test/approval-ui.test.mjs)
+const WIDENS = [[/\bauto[- ]mode\b/i, 'auto'], [/\b(always allow|don'?t ask again|allow all)\b/i, 'always']];
+const widens = (label) => WIDENS.find(([re]) => re.test(String(label)))?.[1] ?? null;
+const WIDEN_TIP = { auto: 'Pressing this switches the session to auto mode, which asks for approval less from now on', always: 'Pressing this stops asking about requests like this from now on' };
+// 같은 단추를 2초 안에 한 번 더 눌러야 실행(위험 요청 · 넓히는 선택지 · Esc 거절 — 20-keys.js 키보드도 이것). prev = 지난번 누름 { key, target, at }
+const ARM_MS = 2000;
+function armTwice(prev, { key, target, now }) {
+  if (prev && prev.key === key && prev.target === target && now - prev.at <= ARM_MS) return { fire: true, state: null };
+  return { fire: false, state: { key, target, at: now } };
+}
+let clickArmed = null; // 마우스로 처음 누른 넓히는 선택지
 async function renderApproval(s) {
   const box = $('#approval');
   clearTimeout(paneTimer);
@@ -118,14 +131,17 @@ async function renderApproval(s) {
   }
   // 여러 개 고르기: 숫자는 고르기만 바꾼다 → 따로 「다음 질문 · 제출 화면으로」(→ 키)
   const next = multi && advance && !tabs ? `<button data-choice="right" class="primary" title="${t('Key')} →">${advance === 'submit' ? t('Go to submit') : t('Next question')} →</button>` : '';
+  const asking = s.pendingTool?.tool === 'AskUserQuestion' || multi || Boolean(tabs); // 질문 창의 답은 권한이 아니다 — 넓히는 선택지 규칙 밖
   const btnHtml = nav +
     // 보라색은 실제로 고른 답(✔)에만 — 고르기 전엔 모든 선택지가 같은 모양
     options.map((o) => {
       const risky = choiceTone(o.n, options, s.pendingTool) === 'risky';
-      const cls = o.picked ? 'primary' : risky ? 'danger' : '';
+      const wide = asking ? null : widens(o.label);
+      const cls = o.picked ? 'primary' : risky || wide ? 'danger' : '';
       const mark = o.box ? (o.picked ? '☑ ' : '☐ ') : o.picked ? '✓ ' : ''; // 여러 개 고르기는 체크 상자(누르면 켜고 끄기)
-      return `<button data-choice="${o.n}" data-label="${esc(o.label)}" class="${o.box ? (o.picked ? 'on' : '') : cls}" ${o.box ? `aria-pressed="${o.picked}"` : ''} title="${o.box ? `${t('Toggle')} · ` : o.picked ? `${t('Current answer')} · ` : ''}${risky ? `${t('Allows a risky request')} · ` : ''}${t('Key')} ${o.n}">${mark}${esc(o.n)}. ${esc(o.label)}</button>`;
+      return `<button data-choice="${o.n}" data-label="${esc(o.label)}" class="${o.box ? (o.picked ? 'on' : '') : cls}"${o.box ? ` aria-pressed="${o.picked}"` : ''}${wide ? ` data-twice="1" aria-describedby="widen-${wide}"` : ''} title="${o.box ? `${t('Toggle')} · ` : o.picked ? `${t('Current answer')} · ` : ''}${risky ? `${t('Allows a risky request')} · ` : ''}${wide ? `${t(WIDEN_TIP[wide])} · ${t('Press twice')} · ` : ''}${t('Key')} ${o.n}">${mark}${esc(o.n)}. ${esc(o.label)}</button>`;
     }).join('') + next +
+    [...new Set(options.map((o) => (asking ? null : widens(o.label))).filter(Boolean))].map((w) => `<span id="widen-${w}" hidden>${t(WIDEN_TIP[w])}</span>`).join('') +
     (free ? `<span class="q-note" tabindex="0" data-tip="${t('Typing your own answer or chatting needs the keyboard in the terminal')}">${t('Own answer: in the terminal')}</span>` : '') +
     `<button data-choice="esc" title="${t('Reject — Esc twice')}" aria-label="${t('Reject — Esc twice')}">${t('Reject')}</button>` +
     (options.length ? '' : `<span style="color:var(--faint);align-self:center">${t('Prompt without numbers')} →</span><button data-choice="up">↑</button><button data-choice="down">↓</button><button data-choice="enter" class="primary">Enter (${t('pick the ❯ item')})</button>`);
@@ -135,6 +151,14 @@ async function renderApproval(s) {
 $('#approve-btns').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-choice]');
   if (!b || !selected) return;
+  // 넓히는 선택지는 2초 안에 두 번 — 키보드(20-keys.js)가 이미 두 번 받았으면 data-ok 로 바로
+  if (b.dataset.twice === '1' && b.dataset.ok !== '1') {
+    const r = armTwice(clickArmed, { key: b.dataset.choice, target: selected, now: Date.now() });
+    clickArmed = r.state;
+    if (!r.fire) { b.classList.add('kb-arm'); setTimeout(() => b.classList.remove('kb-arm'), ARM_MS); toast(t('This option allows more without asking — press it again within 2 seconds')); return; }
+  }
+  clickArmed = null;
+  delete b.dataset.ok;
   $('#approve-btns').querySelectorAll('button').forEach((x) => (x.disabled = true));
   // 성공 · 실패 모두 단추를 새로 그린다 — 실패 때 그대로 두면 다음 갱신에서 같은 HTML 이라 다시 그리지 않아 단추가 잠긴 채 남았다(1~9 키도)
   const redraw = (ms) => setTimeout(() => { forget($('#approve-btns')); const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, ms);

@@ -224,6 +224,14 @@
     <div class="row"><button value="cancel">Cancel</button><button class="danger" id="cl-ok" value="ok">Close</button></div>
   </form>
 </dialog>
+<!-- 터미널 전용 명령을 채팅으로 보낼 때 확인(21-slash.js) -->
+<dialog id="term-dlg">
+  <form method="dialog">
+    <h3>Terminal-only command</h3>
+    <p><code id="term-cmd"></code> <span>is a terminal-only command. Sent from the dashboard, its menu inside the terminal can capture your next message too (commands that save settings change your defaults).</span></p>
+    <div class="row"><button value="cancel">Cancel</button><button class="danger" value="ok">Send anyway</button></div>
+  </form>
+</dialog>
 <div class="menu-pop" id="dir-menu"></div>
 <div id="aside-scrim" hidden></div>
 <div id="toast" role="status"></div>
