@@ -39,7 +39,7 @@ header > *, .h-side > * { white-space: nowrap; flex-shrink: 0; }
 #limits-pop .lp-bar { display: block; height: 4px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 8%, transparent); overflow: hidden; }
 #limits-pop .lp-bar .ctx-bar { display: block; }
 #limits-pop .lp-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--faint); }
-#limits-pop button { width: auto; height: 24px; padding: 0 8px; font-size: 11px; }
+#limits-pop button { width: auto; white-space: nowrap; height: 24px; padding: 0 8px; font-size: 11px; }
 #limits-pop .lp-consent { margin: 0; font-size: 12px; line-height: 1.6; color: var(--dim); }
 #limits-pop .lp-act { display: flex; justify-content: flex-end; }
 #limits-pop .lp-foot[hidden] { display: none; }
@@ -49,7 +49,7 @@ header > *, .h-side > * { white-space: nowrap; flex-shrink: 0; }
 :is(#notify-dlg, #settings-dlg) .np-sub { margin: calc(-1 * var(--sp-2)) 0 0; font-size: 12px; color: var(--faint); }
 :is(#notify-dlg, #settings-dlg) .np-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); font-size: 14px; }
 :is(#notify-dlg, #settings-dlg) .np-row small { display: block; font-size: 12px; color: var(--faint); }
-:is(#notify-dlg, #settings-dlg) .np-row button, :is(#notify-dlg, #settings-dlg) .np-row select { width: auto; min-width: 112px; height: 32px; font-size: 13px; }
+:is(#notify-dlg, #settings-dlg) .np-row button, :is(#notify-dlg, #settings-dlg) .np-row select { width: auto; white-space: nowrap; min-width: 112px; height: 32px; font-size: 13px; }
 :is(#notify-dlg, #settings-dlg) .np-row button { border: 1px solid var(--border-strong); }
 #notify-dlg .np-hint { margin: 0; font-size: 12px; line-height: 1.6; color: var(--dim); white-space: normal; }
 #notify-dlg .np-hint:empty { display: none; }

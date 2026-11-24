@@ -49,11 +49,11 @@ function renderNow(s) {
   const html = reply ? mdOnce(reply) : working ? `<span class="spinner"></span>${t('Writing a reply…')}` : t('No reply yet');
   setHtml(el, html); // 1초마다 다시 그려도 스크롤·선택이 튀지 않게
   const stateHtml = working
-    ? `<span class="spinner" style="width:12px;height:12px"></span><span style="color:var(--working-text)">${sentAt && s.status === 'idle' ? t('Delivered · waiting for a reply') : `${t('Working')}${s.lastTool ? ' · ' + esc(s.lastTool) : ''}`}</span>`
-    : s.status === 'waiting' ? `<span class="dot-s waiting"></span><span style="color:var(--waiting)">${t('Needs approval')}</span>`
-    : s.status === 'background' ? `<span class="dot-s background pulse"></span><span style="color:var(--working-text)">${t('Running in background')}</span>`
-    : `<span class="dot-s ${esc(s.status)}"></span>${STATUS_KO[s.status] ?? esc(s.status)}`;
-  if ($('#now-state').innerHTML !== stateHtml) $('#now-state').innerHTML = stateHtml;
+    ? `<span class="spinner" style="width:12px;height:12px"></span><span class="now-st" style="color:var(--working-text)">${sentAt && s.status === 'idle' ? t('Delivered · waiting for a reply') : `${t('Working')}${s.lastTool ? ' · ' + esc(s.lastTool) : ''}`}</span>`
+    : s.status === 'waiting' ? `<span class="dot-s waiting"></span><span class="now-st" style="color:var(--waiting)">${t('Needs approval')}</span>`
+    : s.status === 'background' ? `<span class="dot-s background pulse"></span><span class="now-st" style="color:var(--working-text)">${t('Running in background')}</span>`
+    : `<span class="dot-s ${esc(s.status)}"></span><span class="now-st">${STATUS_KO[s.status] ?? esc(s.status)}</span>`;
+  if ($('#now-state').innerHTML !== stateHtml) { $('#now-state').innerHTML = stateHtml; $('#now-state').title = $('#now-state').textContent; } // 좁으면 말줄임 — 전체 글은 title 로
   const from = working ? (sentAt && s.status === 'idle' ? sentAt : Date.parse(s.lastPromptAt || s.lastAt)) : Date.parse(s.lastAt);
   const sec = Math.max(0, Math.floor((Date.now() - from) / 1000));
   $('#now-time').textContent = working ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : ago(s.lastAt);

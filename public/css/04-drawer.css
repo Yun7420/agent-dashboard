@@ -67,9 +67,9 @@
 .now-card.working { border-color: color-mix(in srgb, var(--working) 45%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--working) 8%, transparent); }
 .now-card.waiting { border-color: color-mix(in srgb, var(--waiting) 50%, transparent); }
 .now-head { flex: none; position: sticky; top: -14px; z-index: var(--z-raised); margin-top: -14px; padding-top: 14px; padding-bottom: 8px; background: var(--surface-2); display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12px; color: var(--faint); }
-.who-now { font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--claude); }
-.now-time { margin-left: auto; }
-.stop-btn { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; font-size: 12px; border-radius: 8px; background: transparent; color: var(--waiting); border: 1px solid color-mix(in srgb, var(--waiting) 40%, transparent); }
+.who-now { flex: none; font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--claude); }
+.now-time { margin-left: auto; flex: none; white-space: nowrap; }
+.stop-btn { flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; font-size: 12px; border-radius: 8px; background: transparent; color: var(--waiting); border: 1px solid color-mix(in srgb, var(--waiting) 40%, transparent); }
 .stop-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--waiting) 12%, transparent); border-color: var(--waiting); }
 .stop-btn[hidden] { display: none; }
 .now-reply { font-size: 15px; line-height: 1.65; color: var(--text); white-space: pre-wrap; word-break: break-word; }
@@ -114,7 +114,9 @@
 .cmd-out { margin: 6px 0 0; padding: 6px 8px; border-radius: 6px; background: var(--surface-2); color: var(--faint); font: 11px/1.45 var(--mono); white-space: pre-wrap; word-break: break-all; max-height: 4.5em; overflow: hidden; }
 .cmd-out.err { color: var(--waiting-text); background: color-mix(in srgb, var(--waiting) 8%, transparent); }
 .chg-cmds code { display: block; white-space: pre-wrap; word-break: break-all; padding: 6px 10px; margin-top: 4px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); color: var(--code-text); font-size: 12px; }
-#now-state { display: inline-flex; align-items: center; gap: 6px; }
+/* 머리줄은 늘 한 줄: 시간 · 「멈추기」는 줄지 않고, 상태 글(작업 중 · 긴 도구 이름)만 말줄임 — 전체는 title(08-now.js) */
+#now-state { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.now-st { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #drawer.approving #now-view { display: none; } /* 승인 창이 곧 "지금" — 승인과 입력창만 보이게 */
 .commit { padding: 16px; border-bottom: 1px solid var(--border); }
 /* 화면 밖 기록 항목은 레이아웃 · 그리기를 건너뛴다(점검 P8 — 300턴에 190ms 긴 작업). 크기는 한 번 그린 뒤 기억(auto), 처음엔 어림값이라 스크롤 막대가 덜 흔들린다 */
