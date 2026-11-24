@@ -99,7 +99,6 @@ function renderDrawerHead(s) {
   $('#d-model').title = $('#d-model').disabled ? t('Model changes work only for sessions started in tmux') : t('Change model — sends /model to the session');
   renderNow(s);
   renderComposer(s);
-  renderBusy(s);
   renderApproval(s);
 }
 

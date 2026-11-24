@@ -152,9 +152,6 @@
 .code-box:hover .copy-code, .copy-code:focus-visible, .copy-code.done { opacity: 1; }
 .copy-code:hover { color: var(--text); }
 
-#busy { display: none !important; align-items: center; gap: 10px; margin: 0 14px 10px; padding: 9px 12px; border-radius: 12px; background: color-mix(in srgb, var(--working) 7%, transparent); border: 1px solid color-mix(in srgb, var(--working) 25%, transparent); color: var(--working-text); font-size: 13px; }
-#busy[hidden] { display: none; }
-#busy-time { margin-left: auto; color: var(--faint); font-size: 12px; }
 .spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--working) 25%, transparent); border-top-color: var(--working); animation: spin .8s linear infinite; flex: none; } /* 진행 표시라 돈다 — 끝없는 애니메이션은 이 로딩 고리만(test/a11y.test.mjs 허용 목록) */
 @keyframes spin { to { transform: rotate(360deg); } }
 .ctx-chip { display: inline-flex; align-items: center; gap: 6px; } /* ⓘ 세션 정보의 대화 창 한 줄 */

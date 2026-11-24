@@ -1,4 +1,4 @@
-// 지금 탭: 마지막 요청 · 답변(renderNow) · 이번 턴에 바꾼 파일 · 실행한 명령(renderChanges) · 진행 표시(renderBusy)
+// 지금 탭: 마지막 요청 · 답변(renderNow) · 이번 턴에 바꾼 파일 · 실행한 명령(renderChanges)
 // 패널 탭: 지금(현재 답변) / 기록 — 지금 탭 drawerTab 은 01-core.js
 function setTab(tab) {
   drawerTab = tab;
@@ -37,6 +37,7 @@ function renderNow(s) {
   const card = document.querySelector('.now-card');
   card.classList.toggle('working', s.status === 'working');
   card.classList.toggle('waiting', s.status === 'waiting');
+  if (s.status === 'working') sentAt = null; // 작업이 시작됐으면 「전달됨」 표시는 끝
   const working = s.status === 'working' || (sentAt && Date.now() - sentAt < 20000 && s.status === 'idle');
   // 끝난 답변은 기록의 전체 답변, 작업 중이면 지금까지 나온 마지막 글
   let reply = '';
@@ -165,18 +166,4 @@ $('#now-changes').addEventListener('toggle', (e) => {
   if (e.target.open) openFiles.add(f); else openFiles.delete(f);
 }, true);
 
-// 진행 표시: 선택한 세션이 일하는 동안 스피너 + 지금 쓰는 도구 + 경과 시간(방금 보낸 시각 sentAt 은 01-core.js)
-function renderBusy(s) {
-  const box = $('#busy');
-  const pending = sentAt && Date.now() - sentAt < 20000 && s.status === 'idle';
-  if (s.status !== 'working' && !pending) { box.hidden = true; return; }
-  box.hidden = false;
-  if (s.status === 'working') sentAt = null;
-  $('#busy-text').textContent = pending
-    ? t('Delivered · waiting for a reply…')
-    : `${t('Working')}${s.lastTool ? ` · ${s.lastTool}` : ''}${s.subagents?.some((a) => !a.done) ? ` · ${t('subagent running')}` : ''}`;
-  const from = pending ? sentAt : Date.parse(s.lastPromptAt || s.lastAt);
-  const sec = Math.max(0, Math.floor((Date.now() - from) / 1000));
-  $('#busy-time').textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-}
-setInterval(() => { const s = selected && state?.sessions.find((x) => x.key === selected); if (s) { renderBusy(s); renderNow(s); } }, 1000);
+setInterval(() => { const s = selected && state?.sessions.find((x) => x.key === selected); if (s) renderNow(s); }, 1000);

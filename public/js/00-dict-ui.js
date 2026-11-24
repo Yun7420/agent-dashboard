@@ -70,8 +70,6 @@ const KO_UI = {
   "{n} files changed": "변경한 파일 {n}개",
   "{n} commands run": "실행한 명령 {n}개",
   "{n} failed": "실패 {n}",
-  "Delivered · waiting for a reply…": "전달됐어요 · 응답 기다리는 중…",
-  "subagent running": "서브에이전트 실행 중",
   "Remove": "빼기",
   "Upload failed": "업로드 실패",
   "Files are still uploading. Send again in a moment": "파일을 올리는 중이에요. 잠시 뒤 보내 주세요",

@@ -81,7 +81,7 @@ let drawerTab = 'now'; // 패널 탭: 지금(현재 답변) / 기록(08-now.js �
 const openFiles = new Set(); // 1초마다 다시 그려도 펼친 파일은 펼친 채로(08-now.js)
 const fullCmds = new Set(); // "전체 보기"로 펼친 명령
 let closedCmds = false; // 실행한 명령은 기본 펼침 — 사용자가 접으면 그 세션 동안 접힌 채로
-let sentAt = null; // 방금 보낸 메시지 — 세션이 작업을 시작하기 전까지 "전달됨" 표시(08-now.js 의 renderBusy)
+let sentAt = null; // 방금 보낸 메시지 — 세션이 작업을 시작하기 전까지 "전달됨" 표시(08-now.js 의 renderNow)
 let canSend = false; // 지금 세션에 보낼 수 있는지(tmux·종료·승인 대기 여부, 09-attach.js 의 updateSendState)
 let envData = null; // 마지막 환경 점검 결과(10-env.js) — 목록 · 패널이 「없는 도구」 안내에 쓴다
 

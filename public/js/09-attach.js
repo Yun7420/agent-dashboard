@@ -125,9 +125,7 @@ async function sendMsg() {
     delete pref.drafts[key];
     savePref();
     if (draftKey === key) { $('#msg').value = ''; renderAttachments(); }
-    sentAt = Date.now();
-    const s = state.sessions.find((x) => x.key === selected);
-    if (s) renderBusy(s); // 보낸 뒤엔 패널의 "전달됐어요 · 응답 기다리는 중"이 곧 확인 표시
+    sentAt = Date.now(); // 보낸 뒤엔 패널 머리줄의 「전달됐어요 · 응답 기다리는 중」이 곧 확인 표시(08-now.js renderNow)
   } catch (err) { toast(err.message); }
   finally { updateSendState(); }
 }

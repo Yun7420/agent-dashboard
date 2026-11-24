@@ -36,9 +36,8 @@ const CYCLE_CALLS = {
   '04-list.js → select': '목록 ↔ 서랍 고르기 — 06 이 04 renderList 를 부름',
   '06-history.js → setTab': '서랍 고르기 ↔ 지금 탭 — 08 이 06 askBubble 을 부름',
   '06-history.js → renderNow': '서랍 고르기 ↔ 지금 탭 — 08 이 06 askBubble 을 부름',
-  '06-history.js → renderBusy': '서랍 고르기 ↔ 지금 탭(진행 표시) — 08 이 06 askBubble 을 부름',
-  '06-history.js → useDraft': '서랍 고르기 → 입력 → 지금 탭 → 서랍 — 09 가 08 renderBusy, 08 이 06 askBubble 을 부름',
-  '06-history.js → updateSendState': '서랍 고르기 → 입력 → 지금 탭 → 서랍 — 09 가 08 renderBusy, 08 이 06 askBubble 을 부름',
+  '06-history.js → useDraft': '서랍 고르기 → 입력 칸 — 고리는 풀림(09 → 08 renderBusy 없앰, 2026-11-24). 09 를 06 앞으로 옮기면 지울 수 있다',
+  '06-history.js → updateSendState': '서랍 고르기 → 입력 칸 — 고리는 풀림(09 → 08 renderBusy 없앰, 2026-11-24). 09 를 06 앞으로 옮기면 지울 수 있다',
   '06-history.js → renderHistory': '서랍 고르기 ↔ 기록 패널 — 12 가 06 select · loadHistory 를 부름',
   '08-now.js → renderHistory': '지금 탭 → 기록 패널 → 서랍 고르기 → 지금 탭 — 12 가 06 select, 06 이 08 setTab 을 부름',
 };

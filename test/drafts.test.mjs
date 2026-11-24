@@ -26,8 +26,8 @@ function load(init = {}) {
       return Promise.resolve({ status: 200, ok: true, text: async () => 'ok' });
     },
   });
-  // 09 가 부르는 08-now 의 renderBusy · 01-core 의 toast 를 흉내(sentAt · canSend 는 01-core.js)
-  run('function renderBusy() {}; function toast() {}; canSend = true;');
+  // 09 가 부르는 01-core 의 toast 를 흉내(sentAt · canSend 는 01-core.js)
+  run('function toast() {}; canSend = true;');
   const file = (name) => ({ name, size: 1, type: 'image/png' });
   return { els, el, stored, sent, uploads, revoked, run, file };
 }
