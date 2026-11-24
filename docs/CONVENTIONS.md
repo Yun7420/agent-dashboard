@@ -171,9 +171,9 @@ public/    ──▶ (서버 파일을 import 하지 않는다 — HTTP 로만)
 ### 출시 절차 (npm `@yun7420/agent-dashboard`)
 
 1. **버전 올리기** — `package.json` 의 `version` 을 올려 커밋 · push 해요(`npm version` 은 태그까지 만드니 쓰지 않아도 돼요).
-2. **태그** — `git tag v<버전>` → `git push origin v<버전>`. 태그와 `version` 이 다르면 Actions 가 멈춰요.
+2. **태그** — `git tag v<버전>` → `git push origin v<버전>`. 태그와 `version` 이 다르면 Actions 가 멈춰요. 태그 push 는 manager 창에서 사용자가 출시를 승인한 뒤에만, manager 지시로 builder 가 해요.
 3. **Actions** — `.github/workflows/publish.yml` 이 Node 24 에서 `npm test` 를 돌린 뒤 `npm publish --provenance --access public` 해요. 인증은 npm Trusted Publisher(OIDC)라 토큰 시크릿이 없어요.
-4. **사용자 승인** — 환경 `npm` 의 승인 단계에서 사용자가 Actions 화면에서 승인해야 올라가요. 태그 push · 승인은 사용자 몫이에요(builder · manager 는 하지 않아요).
+4. **사용자 승인** — 환경 `npm` 의 승인 단계에서 사용자가 Actions 화면에서 승인해야 올라가요. 이 Approve 는 늘 사용자만 눌러요(builder · manager 는 누르지 않아요).
 
 ---
 
