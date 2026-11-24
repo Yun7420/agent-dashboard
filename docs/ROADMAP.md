@@ -122,6 +122,7 @@
 - [x] 0.1.8 전 점검 — Claude Code 2.1.323(시험 tmux + haiku, 설정 바꾸는 명령 없이 · settings.json 전후 같음): 모델 별칭 그대로 · 기록 · 세션 파일 형식 경고 0(새 메타 줄 session-owner · attachment total_tokens_reminder 는 안 읽는 줄) · 승인 창(선택지 4개) · 질문 창 읽기 맞음 · 기본 명령 7개 됨 + /model 목록에 있음 → CHECKED_CLAUDE_VERSION · 기본 명령 기준 2.1.323, help 고정 자료 `9c261d8`
 - [x] 0.1.9 묶음: 승인 창의 「앞으로 덜 묻는」 선택지(2.1.323 「switch to auto mode」 + 같은 성격 항상 허락 · 다시 묻지 않기 · 모두 허락 — widens 한 규칙)는 경고색 · 설명(title · aria-describedby) · 마우스 · 키보드 모두 2초 안에 두 번(armTwice 05 로), 질문 창 답은 밖 · 터미널 전용 명령(TERMINAL_ONLY 18개, 실측 분류표 그대로)을 채팅으로 보내면 Enter · 보내기 단추 모두 확인 상자(한 줄 · 첨부 없는 명령만) `5c63a56`
 - [x] 세션 패널 머리줄 늘 한 줄(사용자 화면: 긴 도구 이름에 「작업 중 · …」 두 줄 · 「멈추 / 기」): 상태 글만 말줄임 + title, CLAUDE · 시간 · 멈추기는 flex: none · nowrap. 같은 규칙(높이가 정해진 글자 단추는 nowrap)을 다시 열기 · 질문 이동 · 사용 한도 · 설정 단추에도 — test/one-line.test.mjs 가 단추 규칙 12곳 검사(0.1.10 에 반영) `82522ce`
+- [x] 정리(동작 · 화면 변화 없음): 숨겨진 진행 표시 줄 #busy(요소 · CSS · renderBusy · 부르는 곳 3곳 · 사전 2줄 — 「작업 시작하면 sentAt 비우기」만 renderNow 로) · 설정 · 알림 창의 안 쓰는 .np-row button 규칙 2개 `9fe9a92` · 0.1.10 버전 올림(태그는 사용자 승인 뒤)
 - 출시 방법: 버전 올리기 → CI 초록 → 사용자 승인 뒤 `v*` 태그 → Actions 「Review deployments」에서 사용자 Approve (`docs/CONVENTIONS.md` 「출시 절차」)
 - 사용자 몫(선택): npm 패키지 Settings → Publishing access 를 「Require 2FA and disallow bypass 2fa tokens」로(Trusted Publisher 출시는 그대로 됨)
 
