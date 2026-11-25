@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { hasDialog, inputReady, detectDialog, dialogMismatch, parseOptions } from '../lib/dialog.mjs';
 import { DEMO_PANE } from '../lib/demo.mjs';
@@ -113,4 +114,23 @@ test('dialogMode · dialogOptions: 체크 상자 · 넘어가기 줄 · 글 칸(
   const a = dialogOptions(fx('a-multi-toggled.txt'));
   assert.deepEqual(a.map((o) => [o.n, o.label, o.box, o.picked, Boolean(o.free)]), [['1', 'Apple', true, true, false], ['2', 'Banana', true, false, false], ['3', 'Cherry', true, false, false], ['4', 'Type something', true, false, true], ['5', 'Chat about this', false, false, true]]);
   assert.deepEqual(dialogOptions(fx('d-typed.txt')).filter((o) => o.free).map((o) => [o.n, o.label]), [['3', '1'], ['4', 'Chat about this']]); // 쳐진 글 「1」도 글 칸 자리로
+});
+
+// Claude Code 2.1.323 실측(시험 tmux · haiku, 2026-11-25 — test/fixtures/dialog-2.1.323, 경로만 /Users/me 로 바꿈)
+// 실제 로그의 「공식 상태는 승인 필요인데 화면에서 선택창을 못 찾음」 재현: 승인 창이 떠 있을 때 터미널에서 ctrl+o(기록 자세히 보기)를 누르면
+// 선택창이 화면에서 빠지고 맨 아래에 「dialog waiting · Showing detailed transcript」만 남는다 — 공식 상태는 계속 waiting
+const fx = (n) => fs.readFileSync(new URL(`./fixtures/dialog-2.1.323/${n}.txt`, import.meta.url), 'utf8');
+test('2.1.323 기록 보기(ctrl+o) 중의 승인 대기: 화면엔 선택창이 없어 엇갈림 official-only 로 적힌다(사용자 화면 상태 — 감지 문구 문제 아님)', () => {
+  const d = detectDialog(fx('transcript-view'));
+  assert.equal(d.dialog, false);
+  assert.match(fx('transcript-view'), /dialog waiting · Showing detailed transcript · ctrl\+o to toggle/);
+  assert.equal(dialogMismatch({ official: true, hint: d.hint, options: d.options }), 'official-only');
+});
+test('2.1.323 웹 가져오기 · 계획 끝 승인 창은 맨 아래 안내 문구가 없어 번호 선택지로 잡는다(엇갈림은 options-only)', () => {
+  for (const [n, count] of [['webfetch', 3], ['plan-exit', 3]]) {
+    const d = detectDialog(fx(n));
+    assert.deepEqual([d.dialog, d.by, d.hint], [true, 'options', false], n);
+    assert.equal(parseOptions(fx(n)).options.length, count, n);
+    assert.equal(dialogMismatch({ official: true, hint: d.hint, options: d.options }), 'options-only', n);
+  }
 });
