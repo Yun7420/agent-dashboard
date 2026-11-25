@@ -40,13 +40,13 @@ test('미리보기 상자가 붙은 선택창을 알아본다', () => {
 });
 
 test('어느 신호로 잡았는지 돌려준다: 안내 문구가 있으면 hint', () => {
-  assert.deepEqual(detectDialog(approval), { dialog: true, by: 'hint', hint: true, options: true });
+  assert.deepEqual(detectDialog(approval), { dialog: true, by: 'hint', hint: true, options: true, transcript: false, known: false });
 });
 
 test('안내 문구가 다른 말로 바뀌어도 커서 있는 번호 선택지로 잡는다', () => {
   const changed = `${DEMO_PANE}\n Press Return to choose · Escape to dismiss`;
   assert.equal(hasDialog(changed), true);
-  assert.deepEqual(detectDialog(changed), { dialog: true, by: 'options', hint: false, options: true });
+  assert.deepEqual(detectDialog(changed), { dialog: true, by: 'options', hint: false, options: true, transcript: false, known: false });
 });
 
 test('대화 속 번호 목록은 선택창이 아니다: 커서가 없거나, 맨 아래가 아니거나, 하나뿐이면', () => {
@@ -72,7 +72,7 @@ test('엇갈림 판별: 공식 상태만 승인 필요 / 선택지만 있고 문
 // 쉬는 세션: 답변 끝에 선택창 문구 · 커서 있는 번호 목록이 있어도, 그 아래 입력칸(가로줄 + 「> 」)이 있으면 선택창이 아니다(2026-11-17 점검 B4)
 const idle = (reply) => [...reply, '', '─'.repeat(60), '> ', '─'.repeat(60), '  ? for shortcuts'].join('\n');
 test('답변 끝의 「Enter to …」 · 「❯ 1. 2.」 는 입력칸 위라서 선택창이 아니다 — 입력칸이 없는 진짜 선택창은 그대로', () => {
-  assert.deepEqual(detectDialog(idle(['⏺ 정리했어요.', '  Enter to continue reading'])), { dialog: false, by: null, hint: false, options: false });
+  assert.deepEqual(detectDialog(idle(['⏺ 정리했어요.', '  Enter to continue reading'])), { dialog: false, by: null, hint: false, options: false, transcript: false, known: false });
   assert.equal(hasDialog(idle(['⏺ 고를 것:', ' ❯ 1. foo', '   2. bar'])), false);
   assert.equal(hasDialog(idle(['Esc to cancel'])), false);
   assert.equal(hasDialog(`${idle(['이전 답변'])}\n${DEMO_PANE}\n Esc to cancel · Tab to amend`), true); // 입력칸 아래에 뜬 선택창
@@ -120,17 +120,26 @@ test('dialogMode · dialogOptions: 체크 상자 · 넘어가기 줄 · 글 칸(
 // 실제 로그의 「공식 상태는 승인 필요인데 화면에서 선택창을 못 찾음」 재현: 승인 창이 떠 있을 때 터미널에서 ctrl+o(기록 자세히 보기)를 누르면
 // 선택창이 화면에서 빠지고 맨 아래에 「dialog waiting · Showing detailed transcript」만 남는다 — 공식 상태는 계속 waiting
 const fx = (n) => fs.readFileSync(new URL(`./fixtures/dialog-2.1.323/${n}.txt`, import.meta.url), 'utf8');
-test('2.1.323 기록 보기(ctrl+o) 중의 승인 대기: 화면엔 선택창이 없어 엇갈림 official-only 로 적힌다(사용자 화면 상태 — 감지 문구 문제 아님)', () => {
+test('2.1.323 기록 보기(ctrl+o) 중의 승인 대기: 화면엔 선택창이 없지만 transcript 로 알아보고 엇갈림으로 세지 않는다', () => {
   const d = detectDialog(fx('transcript-view'));
-  assert.equal(d.dialog, false);
-  assert.match(fx('transcript-view'), /dialog waiting · Showing detailed transcript · ctrl\+o to toggle/);
-  assert.equal(dialogMismatch({ official: true, hint: d.hint, options: d.options }), 'official-only');
+  assert.deepEqual([d.dialog, d.transcript], [false, true]);
+  assert.equal(dialogMismatch({ official: true, ...d }), null);
+  assert.equal(dialogMismatch({ official: true, ...d, transcript: false }), 'official-only'); // 기록 보기가 아니면 여전히 경고
+  // 같은 글자가 대화 속(맨 아래 10줄 밖)에 있으면 기록 보기가 아니다
+  const quoted = `⏺ 터미널에 「Showing detailed transcript · ctrl+o to toggle」 이 보였어요\n${'  줄\n'.repeat(12)}`;
+  assert.equal(detectDialog(quoted).transcript, false);
+  assert.equal(detectDialog(fx('webfetch')).transcript, false);
 });
-test('2.1.323 웹 가져오기 · 계획 끝 승인 창은 맨 아래 안내 문구가 없어 번호 선택지로 잡는다(엇갈림은 options-only)', () => {
-  for (const [n, count] of [['webfetch', 3], ['plan-exit', 3]]) {
+test('2.1.323 웹 가져오기 · 계획 끝 승인 창: 안내 문구 없이 번호 선택지로 잡고, 원래 그런 아는 창이라 options-only 경고를 내지 않는다', async () => {
+  for (const n of ['webfetch', 'plan-exit']) {
     const d = detectDialog(fx(n));
-    assert.deepEqual([d.dialog, d.by, d.hint], [true, 'options', false], n);
-    assert.equal(parseOptions(fx(n)).options.length, count, n);
-    assert.equal(dialogMismatch({ official: true, hint: d.hint, options: d.options }), 'options-only', n);
+    assert.deepEqual([d.dialog, d.by, d.hint, d.known], [true, 'options', false, true], n);
+    assert.deepEqual((await import('../lib/dialog.mjs')).dialogOptions(fx(n)).map((o) => o.n), ['1', '2', '3'], n); // 단추는 커서 묶음만 — 계획 본문의 「1. Create …」는 빠진다
+    assert.equal(dialogMismatch({ official: true, ...d }), null, n);
   }
+  // 모르는 창(문구가 바뀐 낌새)은 여전히 options-only — 아는 창의 질문 줄이 달라진 경우 · 안내 문구가 빠진 승인 창
+  const changed = fx('webfetch').replace('Do you want to allow Claude to fetch this content?', 'Allow fetching this page?');
+  assert.equal(dialogMismatch({ official: true, ...detectDialog(changed) }), 'options-only');
+  const noHint = fs.readFileSync(new URL('./fixtures/approve-2.1.323.txt', import.meta.url), 'utf8').replace(/^.*Esc to cancel.*$/m, '');
+  assert.equal(dialogMismatch({ official: true, ...detectDialog(noHint) }), 'options-only');
 });

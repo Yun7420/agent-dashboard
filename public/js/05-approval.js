@@ -123,6 +123,13 @@ async function renderApproval(s) {
     const { steps, cur, canPrev, canNext } = tabs;
     nav = `<div class="q-nav"><button type="button" data-choice="left" ${canPrev ? '' : 'disabled'} title="${t('Key')} ←">← ${t('Previous question')}</button><span class="q-steps">${steps.map((st, i) => `<span class="${st.done ? 'done' : ''} ${i === cur ? 'cur' : ''}">${st.done ? '✓' : '○'} ${esc(st.label)}</span>`).join('')}</span><button type="button" data-choice="right" class="${canNext && multi ? 'primary' : ''}" ${canNext ? '' : 'disabled'} title="${canNext ? `${t('Key')} →` : t('Answer this question first')}">${cur === steps.length - 1 ? t('Go to submit') : t('Next question')} →</button></div>`;
   }
+  // 터미널이 기록 자세히 보기(ctrl+o) 중이면 선택창이 화면에 없다(lib/dialog.mjs transcript). 단추 없이 안내만 — 이때 Esc 한 번은 거절이 아니라
+  // 기록 보기를 닫을 뿐이라(2.1.323 실측) 「거절」도 두지 않는다. 터미널에서 돌아가면 2초 안에 보통 단추로
+  if (s.transcriptView) {
+    setHtml($('#approve-btns'), `<span class="q-note">${t('The terminal is in transcript view (Ctrl+O) — press Ctrl+O in the terminal to go back and see the options')}</span>`);
+    paneTimer = setTimeout(() => { const cur = state.sessions.find((x) => x.key === selected); if (cur) renderApproval(cur); }, 2000);
+    return;
+  }
   // 커서가 글 칸(Type something)에 있으면 숫자 단추를 두지 않는다 — 누르면 그 칸에 숫자가 쳐진다. ↑/↓ 로 선택지로 돌아가거나 터미널에서
   if (typing) {
     setHtml($('#approve-btns'), `<span class="q-note">${t('This is a text field — please answer in the terminal (or ↑ to go back to the options)')}</span><button data-choice="up">↑</button><button data-choice="down">↓</button><button data-choice="esc" title="${t('Reject — Esc twice')}">${t('Reject')}</button>`);

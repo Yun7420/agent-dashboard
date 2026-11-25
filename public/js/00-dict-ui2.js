@@ -103,6 +103,7 @@ const KO_UI2 = {
   "Could not copy": "복사하지 못했어요",
   "CPU {c}% (one core = 100%) · Memory {m}": "CPU {c}%(코어 하나 기준) · 메모리 {m}",
   "About {u} of {n} cores in use (whole Mac = 100%)": "{n}코어 중 약 {u}코어만큼 사용(Mac 전체 = 100%)",
+  "The terminal is in transcript view (Ctrl+O) — press Ctrl+O in the terminal to go back and see the options": "터미널이 기록 보기(Ctrl+O) 중이에요 — 터미널에서 Ctrl+O 를 눌러 돌아가야 선택지가 보여요",
   "This is a text field — please answer in the terminal (or ↑ to go back to the options)": "글을 치는 칸이에요 — 터미널에서 답해 주세요(↑ 로 선택지로 돌아갈 수 있어요)",
   "Go to submit": "제출 화면으로",
   "Toggle": "고르기 켜고 끄기",

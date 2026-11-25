@@ -161,3 +161,16 @@ test('마우스: 넓히는 선택지는 첫 누름에 무장(kb-arm · 안내)�
   await p.press('2', { twice: '1', label: 'y', ok: '1' });
   assert.deepEqual(p.calls.map((c) => c.choice), ['3', '1', '2']);
 });
+
+// 터미널이 기록 자세히 보기(ctrl+o) 중: 화면에 선택창이 없다(2.1.323 실측 test/fixtures/dialog-2.1.323/transcript-view.txt — 서버가 transcriptView 를 붙인다)
+test('기록 보기 중의 승인 창: 「번호 없는 창」 단추 · 「거절」 대신 안내 한 줄만(Esc 한 번은 기록 보기를 닫을 뿐) — 돌아오면 보통 단추', async () => {
+  const TRANSCRIPT = (await import('node:fs')).readFileSync(new URL('./fixtures/dialog-2.1.323/transcript-view.txt', import.meta.url), 'utf8');
+  const p = panel(TRANSCRIPT);
+  p.run('__s.transcriptView = true');
+  await p.render();
+  assert.equal(p.html(), '<span class="q-note">터미널이 기록 보기(Ctrl+O) 중이에요 — 터미널에서 Ctrl+O 를 눌러 돌아가야 선택지가 보여요</span>');
+  p.run('delete __s.transcriptView; __screen = ' + JSON.stringify(APPROVE_323));
+  await p.render();
+  assert.match(p.html(), /data-choice="1"/);
+  assert.match(p.html(), /data-choice="esc"/);
+});

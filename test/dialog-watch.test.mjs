@@ -50,3 +50,15 @@ test('attachPendingTool: 승인 중이면 기록의 도구 호출(없으면 화�
   assert.equal(s[2].pendingTool, null);
   assert.ok(s.every((x) => !('screenTool' in x)));
 });
+
+test('기록 보기(ctrl+o) 중인 승인 대기: 엇갈림으로 적지 않고 transcriptView 를 붙인다(승인 창 안내) — 돌아오면 다음 틱엔 없다', async () => {
+  const fs = await import('node:fs');
+  const screens = { '%1': fs.readFileSync(new URL('./fixtures/dialog-2.1.323/transcript-view.txt', import.meta.url), 'utf8') };
+  const w = createDialogWatch({ tmux: fakeTmux(screens) });
+  const run = async () => { const s = [{ key: 'a', title: 'A', status: 'waiting', tmux: { target: '%1' } }]; await w.dialogPass(s); w.attachPendingTool(s); return s[0]; };
+  await run(); // 첫 틱은 처음 보는 세션을 건너뛴다(두 틱에 한 번)
+  for (let i = 0; i < 3; i++) assert.equal((await run()).transcriptView, true);
+  assert.equal(w.dialogIssues.size, 0);
+  screens['%1'] = fs.readFileSync(new URL('./fixtures/approve-2.1.323.txt', import.meta.url), 'utf8');
+  assert.equal((await run()).transcriptView, undefined);
+});

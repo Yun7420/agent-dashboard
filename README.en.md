@@ -392,7 +392,7 @@ Uses Node's built-in test runner (`node --test`), nothing to install. The tests 
 - File diffs come from the Edit/Write tools. Files changed by shell commands only show up under "commands".
 - If several sessions start in the same folder without `--resume`, they're matched by process start time. After `/clear` in a long-running session they can occasionally get mixed up.
 - If Claude Code changes its transcript format, some details may be wrong (only the adapter needs fixing).
-- Prompts are detected from Claude Code's English hint line at the bottom of the screen **or** from numbered options with a cursor (❯). If one of them changes the other still catches it, and when the signals (including the official status) disagree, the **"Approval detection"** row in the environment check turns into a warning.
+- Prompts are detected from Claude Code's English hint line at the bottom of the screen **or** from numbered options with a cursor (❯). If one of them changes the other still catches it, and when the signals (including the official status) disagree, the **"Approval detection"** row in the environment check turns into a warning. While the terminal is in transcript view (Ctrl+O) the prompt is not on screen, so the approval panel only says to press Ctrl+O in the terminal to go back (not counted as a mismatch).
 
 ## If something goes wrong
 
