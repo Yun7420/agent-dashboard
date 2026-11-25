@@ -27,7 +27,7 @@ import { createEnvCheck, startupNotices } from './lib/env.mjs';
 import { createUpdateCheck } from './lib/update-check.mjs';
 import { detectEditors, openDir } from './lib/open-dir.mjs';
 import { UPLOAD_DIR, UPLOAD_MAX } from './lib/uploads.mjs';
-import { sendText, sendJson, friendly, logPath, SECURITY_HEADERS } from './lib/respond.mjs';
+import { sendText, sendJson, friendly, logPath, logTime, SECURITY_HEADERS } from './lib/respond.mjs';
 import { isObject } from './lib/validate.mjs';
 import { DATA_DIR, dirOf, isInside, tildify, tokenFiles } from './lib/paths.mjs';
 import { loadToken } from './lib/token.mjs';
@@ -113,7 +113,7 @@ const feed = createLiveFeed({
       latest.restore = restoreCandidates(liveIdSet()).map((e) => ({ id: e.id, title: e.title, cwd: e.cwd }));
       saveSnapshot(latest.sessions);
       const def = defaultAlias();
-      try { recent.observe(liveEntries(latest.sessions, (s) => { const m = modelAlias(s.model); return m === def ? null : m; })); recent.markReopen(latest.sessions, liveIdSet()); } catch (e) { console.error('복구 목록 기억 실패:', e.message); }
+      try { recent.observe(liveEntries(latest.sessions, (s) => { const m = modelAlias(s.model); return m === def ? null : m; })); recent.markReopen(latest.sessions, liveIdSet()); } catch (e) { console.error(logTime(), '복구 목록 기억 실패:', e.message); }
     } else latest.restore = [];
   },
 });
@@ -136,7 +136,7 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 const onRequest = (req, res) => {
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v); // writeHead 의 헤더와 합쳐진다
   handle(req, res).catch((e) => {
-    console.error('[요청 오류]', req.method, logPath(req.url), e?.stack ?? e);
+    console.error(logTime(), '[요청 오류]', req.method, logPath(req.url), e?.stack ?? e);
     if (!res.headersSent) sendText(res, 500, '서버에서 문제가 생겼어요. 잠시 뒤 다시 해 주세요');
     else res.destroy(); // SSE 처럼 이미 보내기 시작한 응답은 끊는다
   });
@@ -256,7 +256,7 @@ function serveStatic(req, res, url) {
   const stream = fs.createReadStream(file);
   stream.on('open', () => { res.writeHead(200, head); stream.pipe(res); });
   stream.on('error', (e) => { // 읽는 사이 지워진 파일 등 — 응답만 정리하고 서버는 계속
-    console.error('[화면 파일]', file, e.message);
+    console.error(logTime(), '[화면 파일]', file, e.message);
     if (!res.headersSent) sendText(res, 500, '파일을 읽지 못했어요');
     else res.destroy();
   });
@@ -265,7 +265,7 @@ function serveStatic(req, res, url) {
 // 처리기 밖에서 놓친 Promise 거절도 로그만 남기고 서버는 계속 돈다.
 // 실행기(agent-dashboard run)가 2초 뒤 다시 살려도 열린 탭의 SSE 가 끊기고, 같은 요청을 웹사이트가 반복해서 보내면 계속 꺼지기 때문.
 // uncaughtException 은 삼키지 않는다 — 동기 코드가 중간에 멈춰 상태가 망가졌을 수 있어 다시 켜는 편이 안전하다
-process.on('unhandledRejection', (e) => console.error('[처리 안 된 거절]', e?.stack ?? e));
+process.on('unhandledRejection', (e) => console.error(logTime(), '[처리 안 된 거절]', e?.stack ?? e));
 
 // 포트가 이미 쓰이면 오류 덩어리 대신 안내를 찍고 끝낸다(다음 포트로 자동으로 넘어가는 건 하지 않음)
 server.on('error', (e) => {
@@ -285,7 +285,7 @@ server.listen(PORT, '127.0.0.1', () => {
   });
   server6.listen(PORT, '::1');
   // 없는 도구(tmux · Claude Code) · 다른 OS 는 로그에 한국어로 안내만 하고 서버는 계속(보기 전용으로라도)
-  checkEnv().then((e) => { if (!DEMO) for (const line of startupNotices(e)) termLog(line); }).catch((e) => console.error('[환경 점검]', e.message)); // 시작 때 실패해도 서버는 계속(화면에서 다시 점검 가능)
+  checkEnv().then((e) => { if (!DEMO) for (const line of startupNotices(e)) termLog(line); }).catch((e) => console.error(logTime(), '[환경 점검]', e.message)); // 시작 때 실패해도 서버는 계속(화면에서 다시 점검 가능)
   env.update.start(termLog); // 켜기를 기다리게 하지 않는다(새 판이 있을 때만 로그 한 줄, lib/update-check.mjs)
   feed.start();
   if (!DEMO) {
@@ -295,6 +295,6 @@ server.listen(PORT, '127.0.0.1', () => {
       const b = usage.sync();
       if (b.copied) termLog('상태줄 다리를 새 버전으로 맞췄어요 →', tildify(usage.bridgeDst));
       if (b.migrated) termLog('상태줄 등록을 새 경로로 바꿨어요 →', tildify(usage.bridgeDst));
-    } catch (e) { console.error('[상태줄 다리]', e.message); }
+    } catch (e) { console.error(logTime(), '[상태줄 다리]', e.message); }
   }
 });

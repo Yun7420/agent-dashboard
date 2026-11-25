@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { friendly, TMUX_MISSING, logPath } from '../lib/respond.mjs';
+import fs from 'node:fs';
+import { friendly, TMUX_MISSING, logPath, logTime } from '../lib/respond.mjs';
 import { isObject, validDate, KEY_RE } from '../lib/validate.mjs';
 
 const fail = (cmd, env) => new Promise((resolve) => execFile(cmd, ['-V'], env ? { env } : {}, (e) => resolve(e)));
@@ -33,4 +34,25 @@ test('logPath: 로그에는 경로만 — ?token= · 검색어 · # 뒤는 남�
   assert.equal(logPath('/x#y?z'), '/x');
   assert.equal(logPath('/api/state'), '/api/state');
   assert.equal(logPath(undefined), '');
+});
+
+// 실행 중 경고 · 오류 · 엇갈림 줄은 앞에 로컬 시각 — autostart.log 에 시각이 없어 「승인 감지」가 언제였는지 못 찾았다(2026-11-25)
+test('logTime: 로컬 MM-DD HH:MM:SS(두 자리 채움) · friendly 의 [오류] 줄도 시각으로 시작', () => {
+  assert.equal(logTime(new Date(2026, 0, 5, 7, 3, 9)), '01-05 07:03:09');
+  assert.equal(logTime(new Date(2026, 10, 25, 23, 59, 58)), '11-25 23:59:58');
+  assert.match(logTime(), /^\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+  const logs = [];
+  friendly(new Error('x'), '폴더를 열지 못했어요', (...a) => logs.push(a.join(' ')));
+  assert.match(logs[0], /^\d{2}-\d{2} \d{2}:\d{2}:\d{2} \[오류\] 폴더를 열지 못했어요:/);
+});
+
+test('서버 쪽 console.log · console.error 는 모두 첫 인자가 logTime() — 켤 때 안내 · 로그인 링크는 termLog · termErr(시각 없음)로만', () => {
+  const files = ['server.mjs', ...['lib', 'adapters', 'adapters/claude'].flatMap((d) => fs.readdirSync(new URL(`../${d}/`, import.meta.url)).filter((f) => f.endsWith('.mjs')).map((f) => `${d}/${f}`))];
+  const bare = [];
+  for (const f of files) {
+    const src = fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
+    for (const m of src.matchAll(/console\.(log|error|warn)\(([^)]{0,12})/g)) if (!m[2].startsWith('logTime(') && !(f === 'lib/lang-pref.mjs' && m[2].startsWith('...trArgs'))) bare.push(`${f}: ${m[0]}`);
+  }
+  assert.deepEqual(bare, []);
+  assert.ok(files.includes('lib/dialog-watch.mjs') && files.includes('server.mjs'));
 });
