@@ -9,6 +9,23 @@ const tags = (s) => [
   s.account ? `<span class="badge badge-view" tabindex="0" data-tip="${t('Claude account (CLAUDE_CONFIG_DIR)')}: ${esc(s.configDir ?? '')}">${esc(s.account)}</span>` : '',
   s.tmux?.socket ? `<span class="badge badge-view" tabindex="0" data-tip="${t('tmux server (socket)')}">${esc(s.tmux.socket)}</span>` : '',
 ].join('');
+// 띠에 함께 보이는 세션끼리 겹치면 겹친 것만 늘린다 — 첫 두 낱말 + 마지막 낱말(Agent-Dashboard manager · builder → ADM · ADB),
+// 그래도 겹치면 두 글자 뒤에 번호(AD1 · AD2 — key 순서라 정렬을 바꿔도 번호는 그대로). 안 겹치는 세션은 두 글자 그대로
+function stripInitials(list) {
+  const count = (vals) => vals.reduce((m, v) => m.set(v, (m.get(v) ?? 0) + 1), new Map());
+  const base = new Map(list.map((s) => [s.key, initials(s.title)]));
+  const nBase = count([...base.values()]);
+  const out = new Map(list.map((s) => [s.key, nBase.get(base.get(s.key)) > 1 ? initials(s.title, true) : base.get(s.key)]));
+  const nOut = count([...out.values()]);
+  const num = new Map();
+  for (const s of [...list].sort((a, b) => (a.key < b.key ? -1 : 1))) {
+    if (nOut.get(out.get(s.key)) < 2) continue;
+    const b = base.get(s.key);
+    num.set(b, (num.get(b) ?? 0) + 1);
+    out.set(s.key, b + num.get(b));
+  }
+  return out;
+}
 // 탭: 활성 = 지금 떠 있는 세션(정렬 · 끌기) / 종료 = 최근 24시간에 끝난 세션(서버가 24시간만 보낸다) · 다시 열기.
 // 접힌 띠는 탭과 상관없이 활성만(띠의 점 · 머리글자로 지금 일을 보는 자리)
 pref.listTab = pref.listTab === 'ended' ? 'ended' : 'live';
@@ -17,6 +34,7 @@ function renderList() {
   const list = $('#list');
   if (dragKey || !state) return; // 끌고 있는 동안은 다시 그리지 않는다 · 첫 상태 전(정렬 바꿈)엔 그릴 것이 없다
   const live = visible().filter((s) => s.status !== 'ended');
+  const ini = stripInitials(live); // 접힌 띠는 활성만 보인다
   const endedAll = ordered(state.sessions.filter((s) => s.status === 'ended' && !pref.hidden.includes(s.key)));
   for (const [tab, n] of [['live', live.length], ['ended', endedAll.length]]) {
     $(`#tab-${tab}-n`).textContent = n;
@@ -35,7 +53,7 @@ function renderList() {
     for (const s of items) {
       // 카드는 Tab 으로 닿고 Enter · Space 로 연다(아래 keydown). 안의 닫기(✕) 단추는 따로 Tab 으로 닿는다
       html += `<div class="card ${esc(s.status)} ${selected === s.key ? 'sel' : ''} ${kbKey === s.key ? 'kb' : ''}" data-key="${esc(s.key)}" title="${esc(s.title)} · ${STATUS_KO[s.status]}" tabindex="0" role="button" aria-label="${esc(s.title)} · ${STATUS_KO[s.status]}${selected === s.key ? ` · ${t('open')}` : ''}" ${manual && s.status !== 'ended' ? 'draggable="true"' : ''}>
-        <span class="ini"><span class="dot-s ${esc(s.status)} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${esc(initials(s.title))}</span>
+        <span class="ini"><span class="dot-s ${esc(s.status)} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${esc(ini.get(s.key) ?? initials(s.title))}</span>
         <div class="row"><div class="title">${kmark(s.tool)}${esc(s.title)}</div><span class="status ${esc(s.status)}"><span class="dot-s ${esc(s.status)} ${['working', 'waiting', 'background'].includes(s.status) ? 'pulse' : ''}"></span>${STATUS_KO[s.status]}</span></div>
         <button class="x" data-close="${esc(s.key)}" title="${s.status === 'ended' ? t('Hide from list') : t('End session')}" aria-label="${esc(s.title)} ${s.status === 'ended' ? t('Hide from list') : t('End session')}">✕</button>
         <div class="sub"><span class="proj">${esc(s.project)}</span><span class="ago" data-key="${esc(s.key)}"></span>${s.subagents?.length ? `<span class="ago">· ${t('sub {n}', { n: s.subagents.length })}</span>` : ''}${tags(s) ? `<span class="ago">·</span>${tags(s)}` : ''}</div>

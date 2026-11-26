@@ -153,10 +153,10 @@ function modelName(id) {
   const m = String(id).match(/^claude-([a-z]+)-(\d+)-(\d{1,2})(?:-\d{8})?$/);
   return m ? `${m[1][0].toUpperCase()}${m[1].slice(1)} (${m[2]}.${m[3]})` : String(id);
 }
-// 접힌 목록 띠의 이니셜: Lead Manager → LM, Project2 Builder → PB
-function initials(title) {
+// 접힌 목록 띠의 이니셜: Lead Manager → LM, Project2 Builder → PB. long 이면 세 낱말 이상에 마지막 낱말을 더함(겹칠 때만 — 04-list.js stripInitials)
+function initials(title, long = false) {
   const w = String(title).replace(/\(.*?\)/g, ' ').trim().split(/[\s_-]+/).filter(Boolean);
-  return !w.length ? '?' : w.length === 1 ? w[0].slice(0, 2).toUpperCase() : (w[0][0] + w[1][0]).toUpperCase();
+  return !w.length ? '?' : (w.length === 1 ? w[0].slice(0, 2) : w[0][0] + w[1][0] + (long && w.length > 2 ? w.at(-1)[0] : '')).toUpperCase();
 }
 // 정렬: 직접 정렬(드래그 순서 저장) · 상태별 최근 활동순. 목록과 조직도가 같은 순서를 쓴다.
 // 이름순은 없앴다(간추리기 B2) — 예전에 저장된 'name' 은 상태별로
