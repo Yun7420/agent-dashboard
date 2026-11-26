@@ -43,7 +43,7 @@
   #new-session span { display: none; } /* 「+」만(이름은 title · aria-label) */
   header { gap: var(--sp-1); }
   /* 휴대폰은 손가락으로 누르니 아이콘 · 주 단추의 누를 자리를 40px 로(docs/CONVENTIONS.md 「화면 디자인 규칙」) */
-  .icon-btn, .icon-btn.sm, #new-session, .appr-count { min-width: 40px; height: 40px; }
+  .icon-btn, .icon-btn.sm, #new-session, .appr-count, .sort-ic { min-width: 40px; height: 40px; }
   .view-note { min-height: 100px; } /* 보기만 안내도 입력 칸 60 + 40px 단추 줄과 같은 높이(05-approval.css) */
   .status-chips button, .kind, .zoom-btns button { height: 40px; } .zoom-btns button { width: 40px; } /* 손가락 자리 40px — 세 무리 높이도 같게 */
   body, body.aside-folded { --aw: 56px; }

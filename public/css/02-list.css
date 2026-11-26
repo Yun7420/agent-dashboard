@@ -16,7 +16,7 @@ aside { position: relative; z-index: var(--z-float); justify-self: start; width:
 body.aside-folded .edge-tab svg { transform: scaleX(-1); }
 /* 접힌 목록: 얇은 띠에 상태 점 + 이니셜만 (눌러서 열기, 승인 필요는 그대로 눈에 띄게) */
 body.aside-folded { --aw: 64px; }
-body.aside-folded .sort-bar { padding: 0 var(--sp-2); justify-content: center; }
+body.aside-folded .sort-bar { flex-direction: column; height: auto; padding: var(--sp-2) 0; } /* 접힌 띠(56~64px)엔 단추 둘이 가로로 안 들어간다(860 이하 목록 열기 + 정렬) — 세로로 쌓기 */
 body.aside-folded .list-tabs, body.aside-folded .group-h { display: none; }
 body.aside-folded #list { padding: 0 var(--sp-2) var(--sp-3); }
 #list { padding: 0 8px 12px; }
