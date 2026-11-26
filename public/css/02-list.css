@@ -1,7 +1,7 @@
 /* 왼쪽 목록: 카드 · 접힌 띠 · 재시동 복구 안내 · 키보드로 고른 카드 */
 /* ---------- 왼쪽 목록 ---------- */
 aside { position: relative; z-index: var(--z-float); justify-self: start; width: var(--aw); overflow-x: hidden; overflow-y: auto; background: var(--surface); box-shadow: var(--shadow-panel); transition: width var(--slide); }
-.sort-bar { position: sticky; top: 0; z-index: var(--z-raised); background: var(--surface); height: var(--bar-h); padding: 0 var(--sp-3) 0 var(--sp-4); display: flex; gap: var(--sp-2); align-items: center; }
+.sort-bar { position: sticky; top: 0; z-index: var(--z-raised); background: var(--surface); height: var(--bar-h); padding: var(--bar-pad); display: flex; gap: var(--sp-2); align-items: center; }
 .list-tabs { margin-right: auto; } /* 세그먼트 탭(00-base.css 의 .seg · .tab) — 정렬 아이콘은 오른쪽 끝 */
 /* 정렬 아이콘: 투명한 select 를 아이콘 위에 겹쳐 누르면 기본 목록이 뜬다 */
 .sort-ic { position: relative; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; color: var(--dim); cursor: pointer; transition: background .15s, color .15s; }

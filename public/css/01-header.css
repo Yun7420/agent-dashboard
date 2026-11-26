@@ -1,6 +1,6 @@
 /* 머리: 로고 · 승인 필요 칩 · 검색 · 단추 — 머리 단추가 여는 팝업(알림 설정)과 범례 위로 열리는 사용 한도 팝업(#limits-pop)도 여기 */
 /* ---------- 헤더 ---------- */
-header { grid-column: 1 / -1; position: relative; z-index: var(--z-head); display: grid; grid-template-columns: var(--hl, 1fr) minmax(0, 800px) var(--hr, 1fr); align-items: center; gap: 14px; padding: 0 20px; border-bottom: 1px solid var(--border); background: var(--surface); }
+header { grid-column: 1 / -1; position: relative; z-index: var(--z-head); display: grid; grid-template-columns: var(--hl, 1fr) minmax(0, 800px) var(--hr, 1fr); align-items: center; gap: 14px; padding: var(--bar-pad); border-bottom: 1px solid var(--border); background: var(--surface); }
 .brand { display: flex; align-items: center; gap: 10px; margin-right: 8px; }
 .brand .logo { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
 .brand h1 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
@@ -16,7 +16,7 @@ header { grid-column: 1 / -1; position: relative; z-index: var(--z-head); displa
 .appr-count em { font-style: normal; font-weight: 600; font-variant-numeric: tabular-nums; }
 /* 머리 세 칸(왼쪽 묶음 · 검색 · 오른쪽 묶음): 양쪽 칸을 같은 폭으로 두면 검색이 화면 정가운데 — 폭은 13-controls.js headSync 가 --hl · --hr 로 */
 .h-side { display: flex; align-items: center; gap: inherit; min-width: 0; }
-.h-left { justify-self: start; } .h-right { justify-self: end; }
+.h-left { justify-self: start; } .h-right { justify-self: end; gap: var(--bar-gap); } /* 오른쪽 묶음은 패널 머리와 같은 사이(00-base.css) */
 /* 머리는 늘 한 줄: 글자는 줄바꿈하지 않고, 자리가 모자라면 좁은 창 규칙이 덜 중요한 것부터 줄인다 */
 header > *, .h-side > * { white-space: nowrap; flex-shrink: 0; }
 /* 연결은 끊겼을 때만 경고로(잘 붙어 있으면 숨김) */

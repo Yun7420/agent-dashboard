@@ -13,7 +13,7 @@
 @media (max-width: 860px) {
   body, body.aside-folded { --aw: 64px; grid-template-rows: 56px 1fr; }
   #aside-fold { display: none; }
-  header { gap: 8px; padding: 0 12px; }
+  header { gap: 8px; padding: 0 var(--sp-3); } /* 오른쪽은 --bar-pad 와 같은 12 — 패널 머리 ⋯ 와 한 세로줄 */
   .brand h1 span { display: none; }
   #conn { font-size: 0; gap: 0; }
   #drawer { top: 0; right: 0; bottom: 0; width: calc(100% - var(--aw)); border-radius: 0; border: none; } /* 목록 띠 오른쪽을 다 덮는다 */
