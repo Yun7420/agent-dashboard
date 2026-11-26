@@ -127,6 +127,7 @@
 - [x] 서버 로그의 실행 중 경고 · 오류 · 엇갈림 줄 앞에 로컬 시각(respond.mjs logTime, 15곳 — 커밋 본문의 16 은 잘못 셈) · 켤 때 안내 · 로그인 링크는 그대로 `775ffe5`
 - [x] 승인 창: 기록 보기(Ctrl+O) 중이면 단추 · 거절 대신 안내 한 줄(Esc 한 번은 기록 보기만 닫음) · 엇갈림 경고에서 뺌 · 웹 가져오기 · 계획 끝(안내 문구 없는 아는 창)은 options-only 헛경고 빼기 `aaaf2ba` · 0.1.11 버전 올림(로그 시각 · 기록 보기 안내 · 헛경고 빼기)
 - [x] 접힌 목록 띠: 함께 보이는 세션끼리 이니셜이 겹칠 때만 늘림 — 첫 두 낱말 + 마지막 낱말(Agent-Dashboard manager · builder → ADM · ADB), 그래도 겹치면 두 글자 + 번호(AD1 · AD2, key 순서). 이름 풍선 그대로 (출시 뒤 반영) `ca21532`
+- [x] 접힌 목록 띠: 맨 위 단추 둘(목록 열기 · 정렬)을 세로로 쌓기 — 860 이하에서 가로로 띠를 넘어 정렬 단추가 잘리던 것, 600 이하 정렬 단추도 누를 자리 40px. 띠 안 요소 넘침을 1600 접힘 · 800 · 390 에서 잼(출시 뒤 반영) `d4c3aa3`
 - 출시 방법: 버전 올리기 → CI 초록 → 사용자 승인 뒤 `v*` 태그 → Actions 「Review deployments」에서 사용자 Approve (`docs/CONVENTIONS.md` 「출시 절차」)
 - 사용자 몫(선택): npm 패키지 Settings → Publishing access 를 「Require 2FA and disallow bypass 2fa tokens」로(Trusted Publisher 출시는 그대로 됨)
 
