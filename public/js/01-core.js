@@ -5,10 +5,10 @@ const REQ_HEADER = { 'X-Dashboard-Request': '1', 'X-Dashboard-Lang': LANG }; // 
 const $ = (s) => document.querySelector(s);
 
 // 서버 요청은 모두 이 길로: 403 = 로그인이 필요함(처음 · 7일 지남 · 토큰 파일을 지우고 다시 켬) → 고정 안내를 한 번 띄우고 오류로 끝낸다.
-// 안내는 켠 방법에 맞게: 명령은 서버가 뼈대 <html data-open-cmd> 에 적어 주고, 저장소면 그 폴더의 터미널 · npx · 설치면 아무 터미널(lib/launch.mjs)
+// 안내는 켠 방법에 맞게: 명령은 서버가 뼈대 <html data-open-cmd> 에 적어 주고, 저장소면 그 폴더의 터미널 · npx · 설치면 아무 터미널(lib/launch.mjs openWhere 와 같은 꼴 — PORT= 가 붙어도)
 const LOGIN_MSG = t('Login needed — open the login link again as shown above');
 const OPEN_CMD = document.documentElement?.dataset?.openCmd || 'node bin/agent-dashboard.mjs open';
-const loginHow = () => t(OPEN_CMD.startsWith('node ') ? 'In a terminal opened in the agent-dashboard folder, run "{cmd}" to reopen it in this browser' : 'In any terminal, run "{cmd}" to reopen it in this browser', { cmd: OPEN_CMD });
+const loginHow = () => t(/^(PORT=\d+ )?node /.test(OPEN_CMD) ? 'In a terminal opened in the agent-dashboard folder, run "{cmd}" to reopen it in this browser' : 'In any terminal, run "{cmd}" to reopen it in this browser', { cmd: OPEN_CMD });
 let loginShown = false;
 function loginNeeded() {
   if (loginShown) return;

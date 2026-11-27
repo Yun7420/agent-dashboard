@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { loadFront, browserStub } from './_helpers/vm.mjs';
+import { openWhere } from '../lib/launch.mjs';
 
 function load(fetchImpl) {
   const banner = { hidden: true };
@@ -63,6 +64,13 @@ test('뼈대가 로그인 전(data-login=need)이면 불러오자마자 안내�
     assert.equal(banner.hidden, !shown);
     if (shown) assert.equal(how.textContent, '로그인이 필요해요 — 아무 터미널에서 「agent-dashboard open」을 실행하면 이 브라우저에 다시 열려요');
     assert.equal(calls.length, 0);
+  }
+  // 어느 터미널인지는 서버(lib/launch.mjs openWhere)와 같은 꼴로 — 저장소를 다른 포트로 켜면 앞에 PORT= 가 붙어도 「그 폴더」
+  for (const [openCmd, where] of [['PORT=4546 node bin/agent-dashboard.mjs open', 'agent-dashboard 폴더에서 연 터미널에서'], ['PORT=4546 agent-dashboard open', '아무 터미널에서'], ['npx @yun7420/agent-dashboard open', '아무 터미널에서']]) {
+    const how = { textContent: '' };
+    loadFront(['01-core.js'], browserStub({ document: { documentElement: { dataset: { login: 'need', openCmd } }, querySelector: (s) => (s === '#login-needed' ? { hidden: true } : s === '#login-how' ? how : null), hidden: true }, fetch: async () => res(200) }));
+    assert.equal(how.textContent, `로그인이 필요해요 — ${where} 「${openCmd}」을 실행하면 이 브라우저에 다시 열려요`, openCmd);
+    assert.equal(openWhere(openCmd), where, `서버 쪽 ${openCmd}`);
   }
   for (const [f, re] of [['15-notify.js', /\nif \(!loginShown\) loadNotifyCfg\(\);/], ['17-live.js', /\nif \(loginShown\) connState\('waiting', t\('Login needed'\)\); else connect\(\);/]]) {
     assert.match(fs.readFileSync(new URL(`../public/js/${f}`, import.meta.url), 'utf8'), re, f);

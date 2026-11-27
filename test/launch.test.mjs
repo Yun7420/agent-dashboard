@@ -5,7 +5,9 @@ import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { startCommand, portInUseMessage, withPort, openWhere } from '../lib/launch.mjs';
+import { startCommand, portInUseMessage, withPort, openWhere, installKind } from '../lib/launch.mjs';
+import { updateCommand } from '../lib/update-check.mjs';
+import { inNpxCache } from '../lib/autostart.mjs';
 import { tmpDir } from './_helpers/tmp.mjs';
 import { ROOT, testEnv } from './_helpers/server.mjs';
 
@@ -19,6 +21,40 @@ test('startCommand: npx · 설치된 명령 · 저장소, start 는 하위 명�
   // 실행기가 「다시 켜지 않을 신호」로 읽는 문구는 그대로
   assert.match(portInUseMessage(4545, 'npx agent-dashboard run'), /^4545 포트를 이미 쓰고 있어요 — PORT=4546 npx agent-dashboard run 처럼/);
   assert.equal(portInUseMessage(4545), '4545 포트를 이미 쓰고 있어요 — PORT=4546 npm start 처럼 다른 포트로 켜 주세요');
+});
+
+// 자동 실행(launchd)은 bin 링크가 아니라 설치 폴더의 bin/agent-dashboard.mjs 를 node 로 켠다 — 이름(agent-dashboard.mjs)만 보면 저장소로 보여
+// 로그인 화면에 「agent-dashboard 폴더에서 … node bin/agent-dashboard.mjs open」이 나왔다(2026-11-27 사용자 화면). 자리(installKind)로 본다
+const MJS = '@yun7420/agent-dashboard/bin/agent-dashboard.mjs';
+const CASES = [
+  // [경우, argv1(실행 파일), 패키지 폴더(root), 다시 여는 명령, 새 판 명령]
+  ['전역 · fnm(자동 실행)', `/Users/me/Library/Application Support/fnm/node-versions/v22.23.5/installation/lib/node_modules/${MJS}`, 'global', 'agent-dashboard open', 'npm i -g @yun7420/agent-dashboard@latest'],
+  ['전역 · fnm 셸', `/Users/me/.local/state/fnm_multishells/123_456/lib/node_modules/${MJS}`, 'global', 'agent-dashboard open', 'npm i -g @yun7420/agent-dashboard@latest'],
+  ['전역 · nvm', `/Users/me/.nvm/versions/node/v24.1.0/lib/node_modules/${MJS}`, 'global', 'agent-dashboard open', 'npm i -g @yun7420/agent-dashboard@latest'],
+  ['전역 · /usr/local', `/usr/local/lib/node_modules/${MJS}`, 'global', 'agent-dashboard open', 'npm i -g @yun7420/agent-dashboard@latest'],
+  ['전역 · Homebrew', `/opt/homebrew/lib/node_modules/${MJS}`, 'global', 'agent-dashboard open', 'npm i -g @yun7420/agent-dashboard@latest'],
+  ['프로젝트 안 설치', `/Users/me/work/tool/node_modules/${MJS}`, 'local', 'npx @yun7420/agent-dashboard open', 'npm i @yun7420/agent-dashboard@latest'],
+  ['npx 캐시', `/Users/me/.npm/_npx/abc123/node_modules/${MJS}`, 'npx', 'npx @yun7420/agent-dashboard open', 'npx @yun7420/agent-dashboard@latest'],
+  ['저장소', '/Users/me/agent-dashboard/bin/agent-dashboard.mjs', 'repo', 'node bin/agent-dashboard.mjs open', 'git pull'],
+];
+
+test('켠 자리별 같은 판단: 다시 여는 명령(로그인 화면 · 시작 로그 · 환경 점검) · 「어느 터미널」 · 새 판 명령 · 자동 실행 npx 검사', () => {
+  for (const [name, argv1, kind, open, update] of CASES) {
+    const root = argv1.replace(/[\\/]bin[\\/]agent-dashboard\.mjs$/, '');
+    assert.equal(installKind(argv1), kind, name);
+    assert.equal(installKind(root), kind, `${name} (패키지 폴더)`);
+    assert.equal(startCommand({ env: {}, argv1, sub: 'open' }), open, name);
+    assert.equal(openWhere(open), kind === 'repo' ? 'agent-dashboard 폴더에서 연 터미널에서' : '아무 터미널에서', name);
+    assert.equal(updateCommand({ startCmd: startCommand({ env: {}, argv1 }), root }), update, name);
+    assert.equal(inNpxCache(argv1), kind === 'npx', name);
+  }
+  // bin 링크(설치 명령 이름)로 부르면 그 이름 — 전역 bin 폴더 · fnm 셸 bin
+  for (const argv1 of ['/usr/local/bin/agent-dashboard', '/opt/homebrew/bin/agent-dashboard', '/Users/me/.local/state/fnm_multishells/1_2/bin/agent-dashboard']) assert.equal(startCommand({ env: {}, argv1, sub: 'run' }), 'agent-dashboard run', argv1);
+  // 프로젝트 안의 bin 링크(node_modules/.bin)는 PATH 에 없으니 npx, npx 실행(npm_command=exec)은 자리와 상관없이 npx
+  assert.equal(startCommand({ env: {}, argv1: '/Users/me/work/tool/node_modules/.bin/agent-dashboard' }), 'npx @yun7420/agent-dashboard');
+  assert.equal(startCommand({ env: { npm_command: 'exec' }, argv1: '/Users/me/agent-dashboard/bin/agent-dashboard.mjs' }), 'npx @yun7420/agent-dashboard');
+  // 자동 실행(전역 설치본) + 포트: 로그인 화면 명령은 PORT= 를 붙인 설치 명령, 저장소 안내가 아니다
+  assert.equal(openWhere(withPort(startCommand({ env: {}, argv1: CASES[0][1], sub: 'open' }), 4546)), '아무 터미널에서');
 });
 
 // 포트를 이 테스트가 먼저 잡아 두고 서버를 켠다 → 충돌 안내 · 종료 코드 1
