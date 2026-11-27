@@ -74,11 +74,14 @@ test('terminalScript: 따옴표 · 공백 · $ 가 든 소켓 경로도 셸 해�
   const srv = net.createServer().listen(sock);
   await new Promise((r) => srv.once('listening', r));
   try {
-    const argv = path.join(dir, 'argv.mjs'); // tmux 대신 받은 인자를 그대로 적는 가짜
-    fs.writeFileSync(argv, `#!${process.execPath}\nprocess.stdout.write(JSON.stringify(process.argv.slice(2)));\n`, { mode: 0o700 });
+    // tmux 대신 받은 인자를 그대로 적는 가짜. shebang 에 node 경로를 쓰지 않는다 — fnm 의 「…/Application Support/…」 처럼 공백이 든 경로는
+    // macOS shebang 이 읽지 못한다(bad interpreter). sh 래퍼가 따옴표 친 "$ARGV_NODE" 로 옆의 .mjs 를 부른다
+    const argv = path.join(dir, 'argv');
+    fs.writeFileSync(`${argv}.mjs`, 'process.stdout.write(JSON.stringify(process.argv.slice(2)));\n');
+    fs.writeFileSync(argv, '#!/bin/sh\nexec "$ARGV_NODE" "$0.mjs" "$@"\n', { mode: 0o700 });
     const file = path.join(dir, 'run me.command');
     fs.writeFileSync(file, terminalScript({ file, tmuxBin: argv, target: `${sock}\t%7`, sockets: [sock] }), { mode: 0o700 });
-    assert.deepEqual(JSON.parse(execFileSync('/bin/sh', [file], { encoding: 'utf8' })), ['-S', sock, 'attach-session', '-t', '%7']);
+    assert.deepEqual(JSON.parse(execFileSync('/bin/sh', [file], { encoding: 'utf8', env: { ...process.env, ARGV_NODE: process.execPath } })), ['-S', sock, 'attach-session', '-t', '%7']);
     assert.equal(fs.existsSync(file), false);
     assert.equal(fs.existsSync(path.join(sockDir, 'PWNED')) || fs.existsSync('PWNED'), false);
   } finally {
