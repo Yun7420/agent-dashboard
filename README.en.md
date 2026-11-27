@@ -221,6 +221,7 @@ A session already running in a terminal has no official way to receive input fro
 - Dashed line = working in the same folder, yellow = working, **blue arrow = messages between sessions** (when a new message arrives, a glowing dot flies along the arrow once). New session nodes grow slightly into focus, and ended ones fade out where they were — each plays once, and none of it plays with reduced motion
 - **Status text color** under each session box: idle = purple · working = yellow · background = light yellow · **needs approval = pink (bold)**
 - **Click a project box** to open that folder in **VS Code · Cursor, or reveal it in Finder** (only installed apps are shown; only folders of listed sessions can be opened)
+- **Session panel ⋯ → Open in terminal** opens a terminal window attached to that session's tmux screen in one step (Terminal · iTerm2 · Ghostty, whichever are installed; pick one if there are several). macOS and tmux sessions only
 - Subagents: all running ones, finished ones folded into one **"N done"** box (click to expand)
 </details>
 
@@ -296,6 +297,7 @@ A session already running in a terminal has no official way to receive input fro
   - Older versions kept it in `.dashboard-token` inside the repo folder. On first start the value is moved to the new place once and the old file is deleted (open tabs keep working). A token file that is a symlink is never used.
 - Attachments outside `~/.agent-dashboard/uploads/` are rejected (symlinks are resolved first, and missing files are rejected too), and attachments are **deleted automatically after 14 days**.
 - Open folder (VS Code · Cursor · Finder) only opens **folders of sessions currently in the list**; any other path sent by the page is rejected.
+- Open in terminal: the page sends **only the session key and an app name from a fixed list**; the server looks up the tmux pane number and socket from its own list. It writes a one-time `.command` file in `~/.agent-dashboard` that only you can run (700) — `exec tmux attach-session -t %N`, every value single-quoted — opens it with `open -b <app>`, and the file deletes itself as soon as it runs (or after a minute if it never ran).
 - New session · open folder · restore only use **folders under your home folder**. Symlinks are resolved first, so a link inside your home pointing outside it (e.g. to `/etc`) is rejected.
 - Aborted or oversized requests are rejected right away (body limit 413, attachments 25MB). If an upload is cut off midway, no half-written file (`.part`) is left behind.
 - The `~/.agent-dashboard` folder is yours only (700), and the files in it (log, settings backups, restore list) are readable only by you (600). On start the server also tightens older folders, subfolders and files that were created wider (only narrowing; symlinks are not followed).

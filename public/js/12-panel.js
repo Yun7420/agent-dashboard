@@ -1,4 +1,4 @@
-// 패널 머리: ⋯ 메뉴(세션 정보 · 세션 종료) · 폭 손잡이(넓히기는 손잡이로만 — 간추리기 B8)
+// 패널 머리: ⋯ 메뉴(세션 정보 · 터미널에서 열기 · 세션 종료) · 폭 손잡이(넓히기는 손잡이로만 — 간추리기 B8)
 // 메뉴 항목을 누르면 메뉴는 닫는다(항목 단추가 stopPropagation 해도 닫히게 잡기 단계에서)
 $('#more-btn').addEventListener('click', (e) => { e.stopPropagation(); $('#d-meta').classList.remove('show'); $('#more-menu').classList.toggle('show'); });
 $('#more-menu').addEventListener('click', () => $('#more-menu').classList.remove('show'), true);
@@ -156,27 +156,40 @@ document.addEventListener('click', (e) => {
   if (el && (el.closest('#list') || el.closest('#graph'))) select(el.dataset.key);
 });
 
-// 프로젝트 박스 → 이 폴더를 VS Code · Cursor · Finder 로 열기 (설치된 것만 보여 줌)
-function openDirMenu(dir, x, y) {
+// 작은 앱 메뉴(#dir-menu): 맨 위 흐린 줄 + 앱 단추들, 누른 자리(x, y) 근처에 화면 밖으로 나가지 않게
+function popMenu(head, title, items, x, y) {
   const m = $('#dir-menu');
-  const apps = envData?.editors?.length ? envData.editors : [{ id: 'finder', label: 'Finder' }];
-  m.innerHTML = `<div class="dm-path" title="${esc(dir)}">${esc(tilde(dir))}</div>` +
-    apps.map((a) => `<button type="button" data-open-app="${esc(a.id)}">${t(a.id === 'finder' ? 'Show in {app}' : 'Open in {app}', { app: esc(a.label === 'File manager' ? t('File manager') : a.label) })}</button>`).join('');
-  m.dataset.dir = dir;
+  m.innerHTML = `<div class="dm-path" title="${esc(title)}">${esc(head)}</div>${items}`;
   m.classList.add('show');
   const r = m.getBoundingClientRect();
   m.style.left = `${Math.min(x, innerWidth - r.width - 8)}px`;
   m.style.top = `${Math.min(y + 8, innerHeight - r.height - 8)}px`;
 }
+// 프로젝트 박스 → 이 폴더를 VS Code · Cursor · Finder 로 열기 (설치된 것만 보여 줌)
+function openDirMenu(dir, x, y) {
+  const apps = envData?.editors?.length ? envData.editors : [{ id: 'finder', label: 'Finder' }];
+  $('#dir-menu').dataset.dir = dir;
+  popMenu(tilde(dir), dir, apps.map((a) => `<button type="button" data-open-app="${esc(a.id)}">${t(a.id === 'finder' ? 'Show in {app}' : 'Open in {app}', { app: esc(a.label === 'File manager' ? t('File manager') : a.label) })}</button>`).join(''), x, y);
+}
+// ⋯ → 터미널에서 열기: 그 세션의 tmux 창에 붙은 터미널 창(서버가 창 · 소켓을 찾는다, lib/open-dir.mjs). 앱이 하나면 바로, 둘 이상이면 고르기
+const openTerm = async (app) => { try { toast(await api('/api/cmd/open-terminal', { key: selected, app })); } catch (err) { toast(err.message); } };
+$('#open-term').addEventListener('click', () => {
+  const apps = envData?.terminals ?? [], s = state.sessions.find((x) => x.key === selected);
+  if (!s || !apps.length) return;
+  if (apps.length === 1) { openTerm(apps[0].id); return; }
+  const r = $('#more-btn').getBoundingClientRect();
+  popMenu(s.title, s.title, apps.map((a) => `<button type="button" data-open-term="${esc(a.id)}">${t('Open in {app}', { app: esc(a.label) })}</button>`).join(''), r.right, r.bottom);
+});
 document.addEventListener('click', async (e) => {
   const m = $('#dir-menu');
   if (!m.classList.contains('show')) return;
-  const b = e.target.closest('[data-open-app]');
+  const b = e.target.closest('[data-open-app]'), tb = e.target.closest('[data-open-term]');
   if (b) {
     m.classList.remove('show');
     try { toast(await api('/api/cmd/open-dir', { dir: m.dataset.dir, app: b.dataset.openApp })); }
     catch (err) { toast(err.message); }
     return;
   }
-  if (!e.target.closest('#dir-menu') && !e.target.closest('#graph [data-dir]')) m.classList.remove('show');
+  if (tb) { m.classList.remove('show'); openTerm(tb.dataset.openTerm); return; }
+  if (!e.target.closest('#dir-menu, #graph [data-dir], #open-term')) m.classList.remove('show');
 });

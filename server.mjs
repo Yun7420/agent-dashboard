@@ -25,7 +25,7 @@ import { createStateBuilder } from './lib/state.mjs';
 import { createSpawned, findCommand } from './lib/spawn.mjs';
 import { createEnvCheck, startupNotices } from './lib/env.mjs';
 import { createUpdateCheck } from './lib/update-check.mjs';
-import { detectEditors, openDir } from './lib/open-dir.mjs';
+import { detectEditors, openDir, detectTerminals, openTerminal } from './lib/open-dir.mjs';
 import { UPLOAD_DIR, UPLOAD_MAX } from './lib/uploads.mjs';
 import { sendText, sendJson, friendly, logPath, logTime, SECURITY_HEADERS } from './lib/respond.mjs';
 import { isObject } from './lib/validate.mjs';
@@ -86,7 +86,7 @@ const env = createEnvCheck({
   demo: DEMO, demoEnv: demo.DEMO_ENV,
   usageEnabled: () => usage.usageEnabled(), bridgeNode: () => usage.bridgeNode(),
   tokenInfo: () => ({ createdNow: TOKEN_CREATED_NOW, path: tildify(TOKEN_FILE), createdAt: fs.statSync(TOKEN_FILE).birthtime.toISOString(), openCmd: OPEN_CMD, loginDays: SESSION_MS / 86400_000 }),
-  detectEditors, dialogIssues, unknownStatuses, formatIssues,
+  detectEditors, detectTerminals, dialogIssues, unknownStatuses, formatIssues,
   update: createUpdateCheck({ demo: DEMO }), // 새 버전 알림 — 밖으로 여는 유일한 연결(하루 한 번 npm 에 버전 번호만, 데모 · 시험 · 끄기 변수면 0)
 });
 const { checkEnv } = env;
@@ -175,7 +175,7 @@ const handleCommand = createCommands({
   restoreDefaultModel: usage.restoreDefaultModel,
   enableUsage: usage.enableUsage,
   disableUsage: usage.disableUsage,
-  openDir,
+  openDir, terminals: detectTerminals, openTerminal: (target, app) => openTerminal(target, app, { tmuxBin: findCommand('tmux') ?? 'tmux' }),
   recent,
   restoreLock,
   restoreSessions,

@@ -70,6 +70,7 @@ const KO_PAGE = {
   "Fold list": "목록 접기",
   "Session info": "세션 정보",
   "End session": "세션 종료",
+  "Open in terminal": "터미널에서 열기",
   "Working folder": "작업 폴더",
   "Close session": "세션 닫기",
   "Check again": "다시 점검",
