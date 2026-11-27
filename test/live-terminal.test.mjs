@@ -31,7 +31,8 @@ let srv;
 before(async () => {
   srv = await startServer({ env: home.env({ DASHBOARD_FAKE_MAC: '1' }), name: '터미널 시험 서버', ready: async () => {
     const st = await firstState();
-    return st.sessions.some((s) => s.id === A && s.tmux) && st.sessions.some((s) => s.id === V) && st.sessions.some((s) => s.id === E);
+    // 화면용 첫 상태(/events)와 명령이 보는 상태(틱의 latest)는 따로 — 명령이 「읽는 중」(503)이 아닐 때까지(test/live-commands 와 같이)
+    return st.sessions.some((s) => s.id === A && s.tmux) && st.sessions.some((s) => s.id === V) && st.sessions.some((s) => s.id === E) && (await cmd('stop', { key: 'x' })).status !== 503;
   } });
 });
 after(() => srv?.stop());
