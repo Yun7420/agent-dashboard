@@ -114,7 +114,7 @@
 |---|---|
 | `lib/commands.mjs` | `/api/cmd/<이름>` 처리 표(`createCommands`). tmux 가 필요한 명령은 세션 찾기 · tmux 확인을 앞에서 한 번에 |
 | `lib/spawn.mjs` | 새 세션 claude 인자(`newSessionArgs`, 첫 프롬프트 없음) · 첫 프롬프트 넣기(`deliverFirstPrompt`: 입력칸이 보이면 tmux 버퍼로 — 인자는 `ps` 에 보여서, 점검 C5) · 연 세션 기억(`createSpawned`: 이름 · 첫 프롬프트 기다림 / 못 넣은 글은 상태 `firstPrompts` 로 화면 입력 칸에 돌려놓고 ack · 30분 뒤 지움) |
-| `lib/open-dir.mjs` | 폴더를 VS Code · Cursor · Finder 로 열기(`openDir`), 설치된 앱 찾기(`detectEditors`) |
+| `lib/open-dir.mjs` | 폴더를 VS Code · Cursor · Finder 로 열기(`openDir`), 설치된 앱 찾기(`detectEditors`) · 세션의 tmux 창을 터미널(Terminal · iTerm2 · Ghostty)에서 열기(`openTerminal` · `detectTerminals`, macOS 만) |
 | `lib/env.mjs` | 환경 점검(`createEnvCheck`) · 시작 로그 안내(`startupNotices`) |
 | `lib/node-check.mjs` | 켤 때 Node 버전 확인(`nodeCheck`): engines 보다 낮으면 한국어 안내 후 종료, 지원 끝난 버전(짝수 LTS 중 18 · 20, 홀수 전부 — `isEol`)은 한 줄 안내. bin · server.mjs 가 맨 앞에서 `checkNode()` 를 부른다(불러오기만 해서는 아무것도 안 함) |
 | `lib/launch.mjs` | 켠 방법(npx · 설치된 명령 · 저장소)에 맞는 다시 켜기 명령(`startCommand`) · 포트 충돌 안내(`portInUseMessage`) |
@@ -378,6 +378,7 @@ lib/live-feed.mjs:tick  (2초마다, 끝나면 setTimeout 으로 다음 틱 — 
 | 화면 파일 경로 | `server.mjs:serveStatic` + `lib/paths.mjs:isInside` | `public/` 안의 일반 파일만. 폴더를 열다 서버가 죽던 경로도 막음 |
 | 첨부 경로 | `lib/commands.mjs` 의 `send` → `lib/paths.mjs:allInside` | 첨부는 uploads 폴더 안만. `uploads-x` 같은 옆 폴더 · 없는 파일 · 링크를 풀면 밖인 파일도 거절(`isInsideReal`) |
 | 폴더 열기 | `lib/commands.mjs` 의 `open-dir` 명령 | 지금 목록에 있는 세션의 폴더만 |
+| 터미널에서 열기 | `lib/commands.mjs` 의 `open-terminal` 명령 → `lib/open-dir.mjs:openTerminal` | 브라우저는 세션 key · 앱 id 만. 앱은 고정 표(번들 ID, 설치된 것만), 창은 서버 상태의 tmux 창 번호(`%N` 숫자만) · 소켓은 켤 때 받은 목록만. 한 번 쓰는 `.command`(700, 실행되면 자기 삭제 · 1분 뒤 정리)를 `open -b` 로 — 셸 · osascript 에 글자를 잇지 않음 |
 | 홈 아래 폴더(링크 풀기) | `lib/paths.mjs:isInsideReal` ← `spawn` · `open-dir` · `lib/restore.mjs:restoreSessions` · 첨부(`allInside`) | 글자로 홈 아래인지 + 링크를 푼 실제 폴더도 홈 아래인지. `~/x → /etc` 같은 링크로 홈 밖에서 세션을 띄우거나 폴더를 열지 못하게 |
 | 복구 | `lib/commands.mjs` 의 `recent-restore` | 화면은 세션 ID 만 보내고, 폴더 · 이름은 서버가 기억한 목록에서만 |
 | 본문 상한 | `lib/body.mjs:readBody` · `saveUpload` | 큰 요청은 413 한 번, 그 뒤 본문은 쌓지 않음. 끊기면 바로 정리(`.part` 안 남김) |
