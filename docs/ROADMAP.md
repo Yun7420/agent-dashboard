@@ -130,6 +130,8 @@
 - [x] 접힌 목록 띠: 맨 위 단추 둘(목록 열기 · 정렬)을 세로로 쌓기 — 860 이하에서 가로로 띠를 넘어 정렬 단추가 잘리던 것, 600 이하 정렬 단추도 누를 자리 40px. 띠 안 요소 넘침을 1600 접힘 · 800 · 390 에서 잼(출시 뒤 반영) `d4c3aa3`
 - [x] 머리줄 ↔ 세션 패널 머리 세로 줄: 좌우 여백 --bar-pad · 오른쪽 단추 사이 --bar-gap 공용 토큰 — 두 ⋯ · 새 작업 ↔ 모델 오른쪽 끝 · 로고 ↔ 목록 탭 왼쪽 차이 0(1600 · 1280 · 900 · 패널 폭 480, 한 · 영). 두 단추 왼쪽 시작점(한 24.5 · 영 2px)은 같은 폭 고정 여부를 사용자가 정함(출시 뒤 반영) `30f0bdb`
 - [x] 「새 작업」 ↔ 모델 고르기 같은 폭 고정은 하지 않음(사용자 결정 2026-11-26 — 지금대로) · 0.1.12 버전 올림(접힌 띠 단추 · 이니셜 겹침 · 머리줄 세로 줄 맞춤)
+- [x] 세션 패널 ⋯ 「터미널에서 열기」(macOS · tmux 세션만, 사용자 승인 2026-11-27): /api/cmd/open-terminal { key, app } — 앱은 Terminal · iTerm2 · Ghostty 표에서 설치된 것만, 창 번호 · 소켓은 서버 상태에서. 700 짜리 한 번 쓰는 .command(tmux attach-session -t %N, 작은따옴표 · 자기 삭제)를 open -b 로. 보기만 · 끝난 세션 · Linux 숨김 (출시 뒤 반영) `5d62df3`
+- [x] 「[승인 감지]」 로그 줄도 터미널 언어로(termLog · 영어 사전 꼴, 종류를 이름 앞에) `e2815e9`
 - 출시 방법: 버전 올리기 → CI 초록 → 사용자 승인 뒤 `v*` 태그 → Actions 「Review deployments」에서 사용자 Approve (`docs/CONVENTIONS.md` 「출시 절차」)
 - 사용자 몫(선택): npm 패키지 Settings → Publishing access 를 「Require 2FA and disallow bypass 2fa tokens」로(Trusted Publisher 출시는 그대로 됨)
 
