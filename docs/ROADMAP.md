@@ -133,6 +133,7 @@
 - [x] 세션 패널 ⋯ 「터미널에서 열기」(macOS · tmux 세션만, 사용자 승인 2026-11-27): /api/cmd/open-terminal { key, app } — 앱은 Terminal · iTerm2 · Ghostty 표에서 설치된 것만, 창 번호 · 소켓은 서버 상태에서. 700 짜리 한 번 쓰는 .command(tmux attach-session -t %N, 작은따옴표 · 자기 삭제)를 open -b 로. 보기만 · 끝난 세션 · Linux 숨김 (출시 뒤 반영) `5d62df3`
 - [x] 「[승인 감지]」 로그 줄도 터미널 언어로(termLog · 영어 사전 꼴, 종류를 이름 앞에) `e2815e9`
 - [x] 0.1.13 버전 올림(터미널에서 열기 · 승인 감지 로그 언어)
+- [x] 켠 자리 판단 하나로(lib/launch.mjs installKind): 자동 실행(전역 설치본)이 로그인 화면에 저장소용 명령을 보이던 것 — 시작 명령 · 새 판 명령 · 자동 실행 npx 검사 · 화면 「어느 터미널」이 같은 판단, 프로젝트 안 설치는 npx (출시 뒤 반영) `492aca1`
 - 출시 방법: 버전 올리기 → CI 초록 → 사용자 승인 뒤 `v*` 태그 → Actions 「Review deployments」에서 사용자 Approve (`docs/CONVENTIONS.md` 「출시 절차」)
 - 사용자 몫(선택): npm 패키지 Settings → Publishing access 를 「Require 2FA and disallow bypass 2fa tokens」로(Trusted Publisher 출시는 그대로 됨)
 
